@@ -1,93 +1,160 @@
 # RTO Calculator Implementation Plan
 
-## Overview
-This document describes the implementation of various features for the RTO Calculator calendar, including drag selection functionality, customizable month views, and adjustable week numbering.
+## Completed Features
 
-## Implementation Details
+### 1. Month Component (`src/components/month.astro`)
+- ✅ Fixed 5x7 grid with 7 columns for day names
+- ✅ Displays month name and year label
+- ✅ Calculates days in month and offset using JavaScript standard library
+- ✅ Individual clear button for each month
+- ✅ Responsive design maintaining square-like appearance
+- ✅ Full accessibility support with ARIA attributes
+- ✅ Keyboard navigation support
+- ✅ Screen reader announcements
 
-### 1. New Utility: DragSelectionManager
-A new utility class `DragSelectionManager` was created in `src/utils/dragSelection.ts` to handle drag selection logic:
+### 2. Day Component (`src/components/day.astro`)
+- ✅ Displays day number (1-31)
+- ✅ Left-click to select "work from home" (blue)
+- ✅ Right-click to select "office day" (red)
+- ✅ Click and drag to paint multiple days with same selection
+- ✅ Toggle selection (clicking same color clears it)
+- ✅ Full date information exposed via data attributes
+- ✅ Accessibility with keyboard navigation (arrow keys, Enter, Space, Escape)
+- ✅ Screen reader announcements for selection changes
+- ✅ Hover effects without layout jitter (dark grey outline)
+- ✅ Support for reduced motion and high contrast preferences
 
-- **State Management**: Tracks drag state including start point, current point, and drag direction
-- **Range Calculation**: Computes all dates between start and current drag points
-- **Selection Logic**: Properly toggles dates based on the initial state of the start point
-- **Validation Integration**: Validates each date during selection while allowing user feedback
+### 3. Main Page (`src/pages/index.astro`)
+- ✅ Displays 12 months starting from current month
+- ✅ Responsive grid layout for month display
+- ✅ Clear all selections button
+- ✅ Updated legend to show "Work from Home" and "Office Day"
+- ✅ Footer updated with interaction instructions
+- ✅ Fully responsive design (desktop, tablet, mobile)
+- ✅ Screen reader support throughout
 
-### 2. Event Handling Updates
-The calendar now supports three new mouse events for drag selection:
+### 4. Accessibility Best Practices
+- ✅ Semantic HTML structure (section, header, table with proper roles)
+- ✅ ARIA landmarks and labels
+- ✅ Keyboard navigation support
+- ✅ Screen reader announcements
+- ✅ Focus indicators with focus-visible
+- ✅ Support for reduced motion preference
+- ✅ Support for high contrast mode
+- ✅ Color + font weight for selection states (not just color)
 
-- **mousedown**: Starts drag selection on a valid date
-- **mouseover**: Updates selection as the mouse moves over cells
-- **mouseup**: Ends drag selection and finalizes changes
+### 5. Code Quality
+- ✅ Proper TypeScript interfaces
+- ✅ JSDoc comments for functions
+- ✅ CSS custom properties for theming
+- ✅ Proper event listener cleanup
+- ✅ Error handling with console warnings
 
-### 3. Integration with Existing Code
-The implementation integrates with existing functionality:
+---
 
-- Preserves all validation logic from `validateSelection`
-- Maintains localStorage persistence
-- Keeps existing click-to-select functionality for single date selection
-- Updates UI in real-time during drag operations
-- Shows only 12 months instead of 365 days for better usability
-- Supports configurable week start (Sunday vs Monday)
-- Implements week numbering relative to year start
+## Remaining Tasks (Walk Stage)
 
-## Technical Approach
+### 1. RTO Compliance Logic
+- [ ] Implement 3/5 office days per week requirement
+- [ ] Track selections per week
+- [ ] Calculate compliance status per week
+- [ ] Update compliance indicator in header
+- [ ] Visual feedback for compliant/violating weeks
 
-### Drag Selection Flow
-1. User clicks on a date to start selection
-2. User drags mouse over other dates
-3. All dates between start and current position are selected/deselected
-4. User releases mouse to finalize selection
+### 2. Rolling Period Evaluation
+- [ ] Implement 12-week rolling period tracking
+- [ ] Evaluate compliance over rolling periods
+- [ ] Display warnings for potential violations
+- [ ] Show remaining allowed days per period
 
-### Selection Behavior
-- If the starting date was **not selected**, dragging will **select** all dates in the range
-- If the starting date was **selected**, dragging will **deselect** all dates in the range
-- Weekends and past dates are automatically skipped during selection
-- Validation warnings are shown but do not prevent selection
+### 3. Date Validation
+- [ ] Prevent selection of past dates
+- [ ] Identify and mark weekends
+- [ ] Different styling for weekends vs weekdays
+- [ ] Visual indicator for past dates
 
-## Files Modified
+### 4. Export Functionality
+- [ ] Export selections to JSON
+- [ ] Export selections to CSV
+- [ ] Export selections to calendar file (ICS)
+- [ ] Include export format options
 
-### New Files
-- `src/utils/dragSelection.ts` - Drag selection utility class
-- `src/utils/weekStart.ts` - Week start configuration utility
+### 5. Persistence
+- [ ] Save selections to localStorage
+- [ ] Load selections from localStorage on page load
+- [ ] Auto-save functionality
+- [ ] Clear all from localStorage
 
-### Modified Files
-- `src/pages/index.astro` - Integration of drag selection functionality
-  - Added import for DragSelectionManager
-  - Created instance in init function
-  - Added mouse event handlers for drag selection
-  - Updated existing click handler to work with drag selection
-- `src/utils/dateUtils.ts` - Updated to support configurable week start
-  - Added import for week start configuration
-  - Updated getStartOfWeek to accept weekStart parameter
-  - Updated getWeekDates and getRollingPeriodDates to support configurable week start
-- `src/utils/astro/calendarFunctions.ts` - Updated calendar rendering and validation
-  - Added import for week start configuration
-  - Updated createMonthElement to support configurable week start
-  - Updated getWeeksForMonth to support configurable week start
-  - Updated renderCalendar to show only 12 months
-  - Updated validateAndUpdateCalendar to use configurable week start
+### 6. User Interface Enhancements
+- [ ] Week numbering display
+- [ ] Month navigation (previous/next 12 months)
+- [ ] Summary statistics (total WFH days, office days)
+- [ ] Quick select options (select all weekdays, etc.)
 
-## Future Improvements
+### 7. Advanced Features
+- [ ] Import selections from file
+- [ ] Share selections via URL parameters
+- [ ] Print-friendly view
+- [ ] Dark mode support
 
-### Visual Feedback
-- Add visual indication of drag selection in progress
-- Highlight dates that will be affected during drag operation
+### 8. Testing
+- [ ] Unit tests for component logic
+- [ ] Integration tests for drag functionality
+- [ ] Accessibility testing with screen readers
+- [ ] Cross-browser testing
+- [ ] Mobile/touch testing
 
-### Performance Optimization
-- Optimize selection updates for large date ranges
-- Implement virtual scrolling for better performance with many dates
+### 9. Documentation
+- [ ] User guide for interactions
+- [ ] README with setup instructions
+- [ ] Component documentation
+- [ ] API documentation for export format
 
-### Accessibility
-- Ensure keyboard navigation still works properly
-- Add ARIA attributes to indicate drag selection state
+### 10. Deployment
+- [ ] Production build configuration
+- [ ] Performance optimization
+- [ ] SEO optimization
+- [ ] CI/CD pipeline setup
 
-### User Experience
-- Add option to toggle between click-only and drag selection modes
-- Implement touch support for mobile devices
+---
 
-### Run Phase Features
-- Make week numbering adjustable to view start
-- Allow users to customize calendar view settings (month grid layout, week start day)
-- Add localization support for different regions' calendar preferences
-```
+## Technical Notes
+
+### Current Architecture
+- Components: Month, Day (Astro components)
+- State Management: Client-side with dataset attributes
+- Styling: Scoped CSS with custom properties
+- Accessibility: ARIA attributes, keyboard navigation, screen readers
+
+### Data Flow
+1. User clicks/drags on day cells
+2. JavaScript updates dataset attributes
+3. CSS classes change based on selection state
+4. Screen readers announce changes via aria-live regions
+5. Selections stored in DOM (localStorage pending)
+
+### Interaction Model
+- **Left-click**: Toggle work-from-home (blue)
+- **Right-click**: Toggle office day (red)
+- **Drag**: Paint multiple days with same selection
+- **Arrow keys**: Navigate between days
+- **Enter/Space**: Select/deselect current day
+- **Escape**: Clear selection on current day
+- **Clear button**: Clear all selections in month
+- **Clear All**: Clear all selections across all months
+
+### Color Scheme
+- Work from Home: #1890ff (blue)
+- Office Day: #f5222d (red)
+- Hover Outline: #555 (dark grey)
+- Focus Outline: #1890ff (blue)
+- Background: White with shadow
+
+---
+
+## Next Priorities
+
+1. **Immediate**: Implement RTO compliance logic to make the calendar functional
+2. **Short-term**: Add persistence (localStorage) and export functionality
+3. **Medium-term**: Add rolling period evaluation and compliance tracking
+4. **Long-term**: Advanced features and polish
