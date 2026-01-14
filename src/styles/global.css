@@ -60,6 +60,9 @@ body {
     line-height: 1.6;
     color: var(--color-text);
     background-color: var(--color-bg);
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 1rem;
 }
 
 /* Accessibility: Reduced motion */
