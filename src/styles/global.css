@@ -6,48 +6,6 @@
 /* Import mvp.css for base styling */
 @import "mvp.css";
 
-/* CSS Variables for theming and accessibility */
-:root {
-    --color-compliant: #22c55e;
-    --color-compliant-bg: #dcfce7;
-    --color-violation: #ef4444;
-    --color-violation-bg: #fee2e2;
-    --color-warning: #f59e0b;
-    --color-warning-bg: #fef3c7;
-    --color-selected: #3b82f6;
-    --color-selected-bg: #dbeafe;
-    --color-weekday: #374151;
-    --color-weekday-bg: #f3f4f6;
-    --color-weekend: #9ca3af;
-    --color-weekend-bg: #f9fafb;
-    --color-past: #e5e7eb;
-    --color-past-bg: #f9fafb;
-
-    --border-radius: 4px;
-    --transition-speed: 0.2s;
-    --focus-ring: 0 0 0 3px rgba(59, 130, 246, 0.5);
-}
-
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-    :root {
-        --color-compliant: #4ade80;
-        --color-compliant-bg: #14532d;
-        --color-violation: #f87171;
-        --color-violation-bg: #7f1d1d;
-        --color-warning: #fbbf24;
-        --color-warning-bg: #78350f;
-        --color-selected: #60a5fa;
-        --color-selected-bg: #1e3a8a;
-        --color-weekday: #d1d5db;
-        --color-weekday-bg: #1f2937;
-        --color-weekend: #6b7280;
-        --color-weekend-bg: #111827;
-        --color-past: #374151;
-        --color-past-bg: #111827;
-    }
-}
-
 /* Base styles */
 * {
     box-sizing: border-box;
@@ -58,8 +16,8 @@ body {
         -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
         Cantarell, sans-serif;
     line-height: 1.6;
-    color: var(--color-text);
-    background-color: var(--color-bg);
+    color: #374151;
+    background-color: #f9fafb;
     max-width: 1400px;
     margin: 0 auto;
     padding: 0 1rem;
@@ -78,24 +36,11 @@ body {
 
 /* Focus styles for keyboard navigation */
 :focus-visible {
-    outline: 2px solid var(--color-selected);
+    outline: 2px solid #3b82f6;
     outline-offset: 2px;
 }
 
 button:focus-visible,
 [role="button"]:focus-visible {
-    outline: var(--focus-ring);
-}
-
-/* Screen reader only utility */
-.sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border-width: 0;
+    outline: 0 0 0 3px rgba(59, 130, 246, 0.5);
 }
