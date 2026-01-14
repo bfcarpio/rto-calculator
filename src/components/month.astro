@@ -45,14 +45,12 @@ const cols = 7;
 // Create unique IDs for this month
 const monthId = `month-${year}-${month}`;
 const clearButtonId = `clear-${year}-${month}`;
-const descriptionId = `desc-${year}-${month}`;
 ---
 
 <section
     class="calendar-month"
     id={monthId}
     aria-labelledby={`${monthId}-heading`}
-    aria-describedby={descriptionId}
 >
     <header class="month-header">
         <h2 id={`${monthId}-heading`} class="month-year">
@@ -70,12 +68,6 @@ const descriptionId = `desc-${year}-${month}`;
             <span class="sr-only">Clear all selections</span>
         </button>
     </header>
-
-    <p id={descriptionId} class="sr-only">
-        Calendar for {monthNames[month]}
-        {year}. Use arrow keys to navigate days, Enter or Space to select work
-        from home. Click and drag to paint multiple days.
-    </p>
 
     <table
         class="calendar-table"
