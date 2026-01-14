@@ -1,0 +1,216 @@
+/**
+ * Styles for dynamically generated calendar
+ * Used by calendarFunctions.ts to render calendar in DOM
+ */
+
+/* Calendar grid container */
+.calendar-grid-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.125rem;
+    margin-bottom: 2rem;
+    max-width: 1100px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+@media (max-width: 1200px) {
+    .calendar-grid-container {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.125rem;
+    }
+}
+
+@media (max-width: 900px) {
+    .calendar-grid-container {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.125rem;
+    }
+}
+
+@media (max-width: 600px) {
+    .calendar-grid-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Month block */
+.month-block {
+    background-color: var(--color-bg);
+    padding: 0.0625rem 0.125rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Month header */
+.month-header {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: var(--color-text);
+    text-align: center;
+    width: 100%;
+    margin-bottom: 0.0625rem;
+}
+
+/* Month grid */
+.month-grid {
+    display: grid;
+    grid-template-columns: repeat(7, var(--day-cell-size, 36px));
+    grid-template-rows: repeat(6, auto);
+    gap: 0.03125rem;
+    justify-content: center;
+}
+
+/* Day header */
+.day-header {
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.65rem;
+    height: var(--day-cell-size, 24px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text);
+}
+
+/* Day cell */
+.day-cell {
+    --day-cell-size: 24px;
+    width: var(--day-cell-size);
+    height: var(--day-cell-size);
+    aspect-ratio: 1 / 1;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: all var(--transition-speed);
+    font-size: 0.75rem;
+    background-color: var(--color-bg);
+    user-select: none;
+    padding: 0;
+}
+
+.day-cell:hover:not(.disabled):not(.past) {
+    transform: scale(1.1);
+    aspect-ratio: 1 / 1;
+    z-index: 1;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.day-cell.disabled {
+    cursor: default;
+    visibility: hidden;
+}
+
+/* Day cell states */
+.day-cell.selected {
+    background-color: var(--color-selected-bg);
+    border-color: var(--color-selected);
+    color: var(--color-selected);
+    font-weight: 600;
+}
+
+.day-cell:not(.weekend):not(.past):not(.selected) {
+    background-color: var(--color-weekday-bg);
+    color: var(--color-weekday);
+}
+
+.day-cell.weekend {
+    background-color: var(--color-weekend-bg);
+    color: var(--color-weekend);
+}
+
+.day-cell.past {
+    background-color: var(--color-past-bg);
+    color: var(--color-past);
+    cursor: not-allowed;
+}
+
+.day-cell.compliant {
+    border-color: var(--color-compliant);
+    border-width: 2px;
+}
+
+.day-cell.violation {
+    border-color: var(--color-violation);
+    border-width: 2px;
+}
+
+.day-cell.today {
+    border-color: var(--color-selected);
+    box-shadow: 0 0 0 1px var(--color-selected);
+    font-weight: bold;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .month-block {
+        min-width: 100%;
+        padding: 0.03125rem 0.0625rem;
+    }
+
+    .day-cell {
+        --day-cell-size: 16px;
+        width: var(--day-cell-size);
+        height: var(--day-cell-size, 16px);
+        aspect-ratio: 1 / 1;
+        font-size: 0.45rem;
+        padding: 0.0625rem;
+    }
+
+    .month-grid {
+        grid-template-columns: repeat(7, var(--day-cell-size));
+    }
+
+    .day-header {
+        height: var(--day-cell-size);
+    }
+}
+
+@media (max-width: 480px) {
+    .month-block {
+        padding: 0;
+    }
+
+    .day-cell {
+        --day-cell-size: 14px;
+        width: var(--day-cell-size);
+        height: var(--day-cell-size);
+        aspect-ratio: 1 / 1;
+        font-size: 0.4rem;
+    }
+
+    .month-grid {
+        grid-template-columns: repeat(7, var(--day-cell-size));
+    }
+
+    .day-header {
+        height: var(--day-cell-size, 14px);
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .day-cell {
+        border-width: 2px;
+    }
+
+    .day-cell.selected {
+        border-width: 3px;
+    }
+
+    .day-cell.violation {
+        border-width: 3px;
+    }
+}
+
+/* Print styles */
+@media print {
+    .day-cell {
+        border: 1px solid #ccc;
+    }
+}
