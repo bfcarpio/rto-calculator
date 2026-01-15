@@ -7,7 +7,12 @@ interface Props {
 const { id = "settings-modal", isOpen = false } = Astro.props;
 ---
 
-<dialog id={id} class="settings-modal" aria-labelledby={`${id}-title`} aria-describedby={`${id}-description`}>
+<dialog
+    id={id}
+    class="settings-modal"
+    aria-labelledby={`${id}-title`}
+    aria-describedby={`${id}-description`}
+>
     <div class="modal-content">
         <header class="modal-header">
             <h2 id={`${id}-title`} class="modal-title">Settings</h2>
@@ -64,7 +69,9 @@ const { id = "settings-modal", isOpen = false } = Astro.props;
                         class="setting-select"
                         aria-label="Select validation strategy"
                     >
-                        <option value="rolling-period">Rolling 12-Week Period</option>
+                        <option value="rolling-period"
+                            >Rolling 12-Week Period</option
+                        >
                         <option value="monthly">Monthly Average</option>
                         <option value="quarterly">Quarterly Period</option>
                     </select>
@@ -454,19 +461,19 @@ const { id = "settings-modal", isOpen = false } = Astro.props;
 
 <script>
     // Initialize settings modal when DOM is ready
-    document.addEventListener('DOMContentLoaded', () => {
-        const modal = document.getElementById('settings-modal');
-        const settingsButton = document.getElementById('settings-button');
-        const closeButton = document.getElementById('settings-modal-close');
-        const saveButton = document.getElementById('settings-modal-save');
-        const resetButton = document.getElementById('settings-modal-reset');
-        const debugToggle = document.getElementById('debug-toggle');
-        const strategySelect = document.getElementById('validation-strategy');
-        const minOfficeDaysInput = document.getElementById('min-office-days');
+    document.addEventListener("DOMContentLoaded", () => {
+        const modal = document.getElementById("settings-modal");
+        const settingsButton = document.getElementById("settings-button");
+        const closeButton = document.getElementById("settings-modal-close");
+        const saveButton = document.getElementById("settings-modal-save");
+        const resetButton = document.getElementById("settings-modal-reset");
+        const debugToggle = document.getElementById("debug-toggle");
+        const strategySelect = document.getElementById("validation-strategy");
+        const minOfficeDaysInput = document.getElementById("min-office-days");
 
         // Open modal
         if (settingsButton) {
-            settingsButton.addEventListener('click', () => {
+            settingsButton.addEventListener("click", () => {
                 modal.showModal();
                 // Sync current settings to UI
                 syncSettings();
@@ -475,31 +482,32 @@ const { id = "settings-modal", isOpen = false } = Astro.props;
 
         // Close modal
         if (closeButton) {
-            closeButton.addEventListener('click', () => {
+            closeButton.addEventListener("click", () => {
                 modal.close();
             });
         }
 
         // Close modal when clicking outside
-        modal.addEventListener('click', (e) => {
+        modal.addEventListener("click", (e) => {
             if (e.target === modal) {
                 modal.close();
             }
         });
 
         // Close modal on Escape key
-        modal.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
+        modal.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") {
                 modal.close();
             }
         });
 
         // Debug toggle functionality
         if (debugToggle) {
-            debugToggle.addEventListener('click', () => {
-                const isChecked = debugToggle.getAttribute('aria-checked') === 'true';
+            debugToggle.addEventListener("click", () => {
+                const isChecked =
+                    debugToggle.getAttribute("aria-checked") === "true";
                 const newState = !isChecked;
-                debugToggle.setAttribute('aria-checked', newState.toString());
+                debugToggle.setAttribute("aria-checked", newState.toString());
 
                 // Update validation manager
                 if (window.validationManager) {
@@ -511,15 +519,19 @@ const { id = "settings-modal", isOpen = false } = Astro.props;
                     window.RTOValidation.CONFIG.DEBUG = newState;
                 }
 
-                console.log(`[Settings] Debug mode ${newState ? 'enabled' : 'disabled'}`);
+                console.log(
+                    `[Settings] Debug mode ${newState ? "enabled" : "disabled"}`,
+                );
             });
         }
 
         // Validation strategy change
         if (strategySelect) {
-            strategySelect.addEventListener('change', (e) => {
+            strategySelect.addEventListener("change", (e) => {
                 const selectedStrategy = e.target.value;
-                console.log(`[Settings] Strategy changed to: ${selectedStrategy}`);
+                console.log(
+                    `[Settings] Strategy changed to: ${selectedStrategy}`,
+                );
 
                 if (window.validationManager) {
                     window.validationManager.setStrategy(selectedStrategy);
@@ -529,14 +541,16 @@ const { id = "settings-modal", isOpen = false } = Astro.props;
 
         // Minimum office days change
         if (minOfficeDaysInput) {
-            minOfficeDaysInput.addEventListener('change', (e) => {
+            minOfficeDaysInput.addEventListener("change", (e) => {
                 const value = parseInt(e.target.value);
                 if (value >= 0 && value <= 5) {
-                    console.log(`[Settings] Min office days changed to: ${value}`);
+                    console.log(
+                        `[Settings] Min office days changed to: ${value}`,
+                    );
 
                     if (window.validationManager) {
                         window.validationManager.updateConfig({
-                            minOfficeDaysPerWeek: value
+                            minOfficeDaysPerWeek: value,
                         });
                     }
                 }
@@ -545,21 +559,21 @@ const { id = "settings-modal", isOpen = false } = Astro.props;
 
         // Save settings
         if (saveButton) {
-            saveButton.addEventListener('click', () => {
+            saveButton.addEventListener("click", () => {
                 // Save to localStorage
                 saveSettingsToLocalStorage();
                 modal.close();
-                announceToScreenReader('Settings saved');
+                announceToScreenReader("Settings saved");
             });
         }
 
         // Reset to defaults
         if (resetButton) {
-            resetButton.addEventListener('click', () => {
-                if (confirm('Reset all settings to default values?')) {
+            resetButton.addEventListener("click", () => {
+                if (confirm("Reset all settings to default values?")) {
                     resetSettings();
                     modal.close();
-                    announceToScreenReader('Settings reset to defaults');
+                    announceToScreenReader("Settings reset to defaults");
                 }
             });
         }
@@ -577,7 +591,10 @@ const { id = "settings-modal", isOpen = false } = Astro.props;
                 : false;
 
             if (debugToggle) {
-                debugToggle.setAttribute('aria-checked', isDebugEnabled.toString());
+                debugToggle.setAttribute(
+                    "aria-checked",
+                    isDebugEnabled.toString(),
+                );
             }
 
             // Sync config values
@@ -585,7 +602,10 @@ const { id = "settings-modal", isOpen = false } = Astro.props;
                 ? window.validationManager.getConfig()
                 : {};
 
-            if (minOfficeDaysInput && config.minOfficeDaysPerWeek !== undefined) {
+            if (
+                minOfficeDaysInput &&
+                config.minOfficeDaysPerWeek !== undefined
+            ) {
                 minOfficeDaysInput.value = config.minOfficeDaysPerWeek;
             }
         }
@@ -595,13 +615,22 @@ const { id = "settings-modal", isOpen = false } = Astro.props;
          */
         function saveSettingsToLocalStorage() {
             const settings = {
-                debug: debugToggle ? debugToggle.getAttribute('aria-checked') === 'true' : false,
-                strategy: strategySelect ? strategySelect.value : 'rolling-period',
-                minOfficeDays: minOfficeDaysInput ? parseInt(minOfficeDaysInput.value) : 3
+                debug: debugToggle
+                    ? debugToggle.getAttribute("aria-checked") === "true"
+                    : false,
+                strategy: strategySelect
+                    ? strategySelect.value
+                    : "rolling-period",
+                minOfficeDays: minOfficeDaysInput
+                    ? parseInt(minOfficeDaysInput.value)
+                    : 3,
             };
 
-            localStorage.setItem('rto-calculator-settings', JSON.stringify(settings));
-            console.log('[Settings] Settings saved to localStorage:', settings);
+            localStorage.setItem(
+                "rto-calculator-settings",
+                JSON.stringify(settings),
+            );
+            console.log("[Settings] Settings saved to localStorage:", settings);
         }
 
         /**
@@ -609,15 +638,20 @@ const { id = "settings-modal", isOpen = false } = Astro.props;
          */
         function loadSettingsFromLocalStorage() {
             try {
-                const saved = localStorage.getItem('rto-calculator-settings');
+                const saved = localStorage.getItem("rto-calculator-settings");
                 if (saved) {
                     const settings = JSON.parse(saved);
 
                     // Apply debug mode
                     if (settings.debug !== undefined && debugToggle) {
-                        debugToggle.setAttribute('aria-checked', settings.debug.toString());
+                        debugToggle.setAttribute(
+                            "aria-checked",
+                            settings.debug.toString(),
+                        );
                         if (window.validationManager) {
-                            window.validationManager.setDebugMode(settings.debug);
+                            window.validationManager.setDebugMode(
+                                settings.debug,
+                            );
                         }
                     }
 
@@ -625,24 +659,32 @@ const { id = "settings-modal", isOpen = false } = Astro.props;
                     if (settings.strategy && strategySelect) {
                         strategySelect.value = settings.strategy;
                         if (window.validationManager) {
-                            window.validationManager.setStrategy(settings.strategy);
+                            window.validationManager.SetValidator(
+                                settings.strategy,
+                            );
                         }
                     }
 
                     // Apply min office days
-                    if (settings.minOfficeDays !== undefined && minOfficeDaysInput) {
+                    if (
+                        settings.minOfficeDays !== undefined &&
+                        minOfficeDaysInput
+                    ) {
                         minOfficeDaysInput.value = settings.minOfficeDays;
                         if (window.validationManager) {
                             window.validationManager.updateConfig({
-                                minOfficeDaysPerWeek: settings.minOfficeDays
+                                minOfficeDaysPerWeek: settings.minOfficeDays,
                             });
                         }
                     }
 
-                    console.log('[Settings] Settings loaded from localStorage:', settings);
+                    console.log(
+                        "[Settings] Settings loaded from localStorage:",
+                        settings,
+                    );
                 }
             } catch (error) {
-                console.error('[Settings] Error loading settings:', error);
+                console.error("[Settings] Error loading settings:", error);
             }
         }
 
@@ -651,16 +693,16 @@ const { id = "settings-modal", isOpen = false } = Astro.props;
          */
         function resetSettings() {
             if (debugToggle) {
-                debugToggle.setAttribute('aria-checked', 'false');
+                debugToggle.setAttribute("aria-checked", "false");
                 if (window.validationManager) {
                     window.validationManager.setDebugMode(false);
                 }
             }
 
             if (strategySelect) {
-                strategySelect.value = 'rolling-period';
+                strategySelect.value = "rolling-period";
                 if (window.validationManager) {
-                    window.validationManager.setStrategy('rolling-period');
+                    window.validationManager.SetValidator("rolling-period");
                 }
             }
 
@@ -668,14 +710,14 @@ const { id = "settings-modal", isOpen = false } = Astro.props;
                 minOfficeDaysInput.value = 3;
                 if (window.validationManager) {
                     window.validationManager.updateConfig({
-                        minOfficeDaysPerWeek: 3
+                        minOfficeDaysPerWeek: 3,
                     });
                 }
             }
 
             // Clear localStorage
-            localStorage.removeItem('rto-calculator-settings');
-            console.log('[Settings] Settings reset to defaults');
+            localStorage.removeItem("rto-calculator-settings");
+            console.log("[Settings] Settings reset to defaults");
         }
 
         /**
@@ -683,11 +725,11 @@ const { id = "settings-modal", isOpen = false } = Astro.props;
          * @param {string} message - Message to announce
          */
         function announceToScreenReader(message) {
-            const announcement = document.createElement('div');
-            announcement.setAttribute('role', 'status');
-            announcement.setAttribute('aria-live', 'polite');
-            announcement.setAttribute('aria-atomic', 'true');
-            announcement.className = 'sr-only calendar-announcement';
+            const announcement = document.createElement("div");
+            announcement.setAttribute("role", "status");
+            announcement.setAttribute("aria-live", "polite");
+            announcement.setAttribute("aria-atomic", "true");
+            announcement.className = "sr-only calendar-announcement";
 
             announcement.textContent = message;
             document.body.appendChild(announcement);

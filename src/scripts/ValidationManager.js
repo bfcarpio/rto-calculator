@@ -26,7 +26,7 @@ class ValidationManager {
      */
     _registerDefaultStrategies() {
         if (typeof RollingPeriodValidation !== 'undefined') {
-            this.registerStrategy(new RollingPeriodValidation());
+            this.registerValidator(new RollingPeriodValidation());
         }
     }
 
@@ -34,7 +34,7 @@ class ValidationManager {
      * Register a new validation strategy
      * @param {ValidationStrategy} strategy - Strategy to register
      */
-    registerStrategy(strategy) {
+    registerValidator(strategy) {
         if (!strategy || !strategy.name) {
             console.error('[ValidationManager] Invalid strategy provided');
             return;
@@ -52,7 +52,7 @@ class ValidationManager {
      * @param {string} name - Strategy name
      * @returns {ValidationStrategy|undefined} Strategy instance or undefined
      */
-    getStrategy(name) {
+    getValidator(name) {
         return this.strategies.get(name);
     }
 
@@ -60,7 +60,7 @@ class ValidationManager {
      * Get all available validation strategies
      * @returns {ValidationStrategy[]} Array of all available strategies
      */
-    getAllStrategies() {
+    getAllValidators() {
         return Array.from(this.strategies.values());
     }
 
@@ -68,7 +68,7 @@ class ValidationManager {
      * Get the default validation strategy
      * @returns {ValidationStrategy} Default strategy instance
      */
-    getDefaultStrategy() {
+    GetDefaultValidator() {
         // Prefer rolling-period strategy, otherwise use first available
         let defaultStrategy = this.strategies.get('rolling-period');
 
@@ -87,8 +87,8 @@ class ValidationManager {
      * Set the current active validation strategy
      * @param {string} name - Strategy name to activate
      */
-    setStrategy(name) {
-        const strategy = this.getStrategy(name);
+    SetValidator(name) {
+        const strategy = this.getValidator(name);
 
         if (!strategy) {
             console.error(`[ValidationManager] Strategy not found: ${name}`);
@@ -109,8 +109,8 @@ class ValidationManager {
      * Get the current active strategy
      * @returns {ValidationStrategy} Current strategy instance
      */
-    getCurrentStrategy() {
-        return this.currentStrategy || this.getDefaultStrategy();
+    GetCurrentValidator() {
+        return this.currentStrategy || this.GetDefaultValidator();
     }
 
     /**
@@ -164,7 +164,7 @@ class ValidationManager {
      * @returns {Promise<ValidationResult>} Validation result
      */
     async validate(selectedDays, options = {}) {
-        const strategy = this.getCurrentStrategy();
+        const strategy = this.GetCurrentValidator();
 
         if (!strategy) {
             throw new Error('[ValidationManager] No validation strategy available');
@@ -217,7 +217,7 @@ class ValidationManager {
      * @returns {WeekCompliance} Week compliance information
      */
     getWeekCompliance(weekStart, selectedDays) {
-        const strategy = this.getCurrentStrategy();
+        const strategy = this.GetCurrentValidator();
 
         if (!strategy) {
             throw new Error('[ValidationManager] No validation strategy available');
@@ -239,7 +239,7 @@ class ValidationManager {
      * @returns {WindowCompliance} Window compliance information
      */
     getWindowCompliance(windowStart, windowSize, selectedDays) {
-        const strategy = this.getCurrentStrategy();
+        const strategy = this.GetCurrentValidator();
 
         if (!strategy) {
             throw new Error('[ValidationManager] No validation strategy available');
@@ -303,7 +303,7 @@ class ValidationManager {
      * Get strategy information for UI display
      * @returns {Array} Array of strategy info objects
      */
-    getStrategyInfo() {
+    getValidatorInfo() {
         return Array.from(this.strategies.values()).map(strategy => ({
             name: strategy.name,
             description: strategy.description,
@@ -321,7 +321,7 @@ class ValidationManager {
         }
 
         if (options.strategy) {
-            this.setStrategy(options.strategy);
+            this.SetValidator(options.strategy);
         }
 
         if (options.config) {
@@ -331,7 +331,7 @@ class ValidationManager {
         if (this.config.debug) {
             console.log('[ValidationManager] Initialized with', {
                 strategies: this.strategies.size,
-                currentStrategy: this.getCurrentStrategy().name,
+                currentStrategy: this.GetCurrentValidator().name,
                 config: this.config
             });
         }
