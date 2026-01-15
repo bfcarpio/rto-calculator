@@ -6,10 +6,18 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run"
   },
   "dependencies": {
     "astro": "^5.16.8",
     "mvp.css": "^1.17.2"
+  },
+  "devDependencies": {
+    "@vitest/ui": "^4.0.17",
+    "jsdom": "^27.4.0",
+    "vitest": "^4.0.17"
   }
 }
