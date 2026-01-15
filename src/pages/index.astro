@@ -1,5 +1,6 @@
 ---
 import Month from "../components/month.astro";
+import ActionButtons from "../components/ActionButtons.astro";
 
 // Page metadata
 const title = "RTO Calculator - Plan Your Time Off";
@@ -85,6 +86,8 @@ const months = Array.from({ length: 12 }, (_, index) => {
                 </div>
             </div>
 
+            <ActionButtons position="top" />
+
             <div
                 class="months-grid"
                 role="region"
@@ -97,32 +100,7 @@ const months = Array.from({ length: 12 }, (_, index) => {
                 }
             </div>
 
-            <div class="action-buttons">
-                <button
-                    id="validate-button"
-                    class="button button-primary"
-                    type="button"
-                    aria-label="Validate RTO compliance"
-                >
-                    <span>✓</span> Validate
-                </button>
-                <button
-                    id="clear-all-button"
-                    class="button button-danger"
-                    type="button"
-                    aria-label="Clear all selections"
-                >
-                    <span>🗑️</span> Clear All
-                </button>
-                <button
-                    id="export-button"
-                    class="button button-secondary"
-                    type="button"
-                    aria-label="Export selections"
-                >
-                    <span>📥</span> Export
-                </button>
-            </div>
+            <ActionButtons position="bottom" />
         </main>
 
         <footer>
@@ -136,59 +114,120 @@ const months = Array.from({ length: 12 }, (_, index) => {
 
         <script>
             /**
-             * Initialize clear all button functionality
+             * Initialize validate button functionality
              */
-            function initClearAllButton() {
-                const clearAllButton =
-                    document.getElementById("clear-all-button");
-                if (!clearAllButton) return;
-
-                clearAllButton.addEventListener("click", (e) => {
-                    e.preventDefault();
-
-                    // Find all selected cells across all months
-                    const selectedCells = document.querySelectorAll(
-                        ".calendar-day.selected[data-year][data-month]",
-                    );
-
-                    if (selectedCells.length === 0) {
-                        announceToScreenReader("No selections to clear");
-                        return;
-                    }
-
-                    const clearedCount = selectedCells.length;
-
-                    // Clear everything: selections, highlights, and status icons
-                    if (
-                        window.RTOValidation &&
-                        window.RTOValidation.clearAllValidationHighlights
-                    ) {
-                        window.RTOValidation.clearAllValidationHighlights();
-                    }
-
-                    // Announce to screen readers
-                    announceToScreenReader(
-                        "Cleared " +
-                            clearedCount +
-                            " selection" +
-                            (clearedCount !== 1 ? "s" : "") +
-                            " from all months",
-                    );
-
-                    // Focus back on button
-                    clearAllButton.focus();
-                });
-
-                // Add keyboard support
-                clearAllButton.addEventListener("keydown", (e) => {
-                    if (e.key === "Enter" || e.key === " ") {
+            function initValidateButtons() {
+                const validateButtons = document.querySelectorAll(
+                    '[id^="validate-button-"]',
+                );
+                validateButtons.forEach((button) => {
+                    button.addEventListener("click", (e) => {
                         e.preventDefault();
-                        clearAllButton.click();
-                    }
+                        if (
+                            window.RTOValidation &&
+                            window.RTOValidation.runValidationWithHighlights
+                        ) {
+                            window.RTOValidation.runValidationWithHighlights();
+                        }
+                        (button as HTMLElement).focus();
+                    });
                 });
             }
 
-            function announceToScreenReader(message) {
+            /**
+             * Initialize clear all button functionality
+             */
+            function initClearAllButtons() {
+                const clearAllButtons = document.querySelectorAll(
+                    '[id^="clear-all-button-"]',
+                );
+                clearAllButtons.forEach((button) => {
+                    button.addEventListener("click", (e) => {
+                        e.preventDefault();
+
+                        // Find all selected cells across all months
+                        const selectedCells = document.querySelectorAll(
+                            ".calendar-day.selected[data-year][data-month]",
+                        );
+
+                        if (selectedCells.length === 0) {
+                            announceToScreenReader("No selections to clear");
+                            return;
+                        }
+
+                        const clearedCount = selectedCells.length;
+
+                        // Clear everything: selections, highlights, and status icons
+                        if (
+                            window.RTOValidation &&
+                            window.RTOValidation.clearAllValidationHighlights
+                        ) {
+                            window.RTOValidation.clearAllValidationHighlights();
+                        }
+
+                        // Announce to screen readers
+                        announceToScreenReader(
+                            "Cleared " +
+                                clearedCount +
+                                " selection" +
+                                (clearedCount !== 1 ? "s" : "") +
+                                " from all months",
+                        );
+
+                        // Focus back on button
+                        (button as HTMLElement).focus();
+                    });
+
+                    // Add keyboard support
+                    button.addEventListener("keydown", (e) => {
+                        const keyboardEvent = e as KeyboardEvent;
+                        if (
+                            keyboardEvent.key === "Enter" ||
+                            keyboardEvent.key === " "
+                        ) {
+                            e.preventDefault();
+                            (button as HTMLElement).click();
+                        }
+                    });
+                });
+            }
+
+            /**
+             * Initialize export button functionality
+             */
+            function initExportButtons() {
+                const exportButtons = document.querySelectorAll(
+                    '[id^="export-button-"]',
+                );
+                exportButtons.forEach((button) => {
+                    button.addEventListener("click", (e) => {
+                        e.preventDefault();
+                        // TODO: Implement export functionality
+                        announceToScreenReader(
+                            "Export functionality coming soon",
+                        );
+                        (button as HTMLElement).focus();
+                    });
+
+                    // Add keyboard support
+                    button.addEventListener("keydown", (e) => {
+                        const keyboardEvent = e as KeyboardEvent;
+                        if (
+                            keyboardEvent.key === "Enter" ||
+                            keyboardEvent.key === " "
+                        ) {
+                            e.preventDefault();
+                            (button as HTMLElement).click();
+                        }
+                    });
+                });
+            }
+
+            /**
+             * Announce a message to screen readers
+             * @param {string} message - The message to announce
+             */
+            function announceToScreenReader(message: string) {
                 const announcement = document.createElement("div");
                 announcement.setAttribute("role", "status");
                 announcement.setAttribute("aria-live", "polite");
@@ -202,6 +241,19 @@ const months = Array.from({ length: 12 }, (_, index) => {
                 setTimeout(() => {
                     document.body.removeChild(announcement);
                 }, 1000);
+            }
+
+            // Initialize all buttons when DOM is ready
+            if (document.readyState === "loading") {
+                document.addEventListener("DOMContentLoaded", () => {
+                    initValidateButtons();
+                    initClearAllButtons();
+                    initExportButtons();
+                });
+            } else {
+                initValidateButtons();
+                initClearAllButtons();
+                initExportButtons();
             }
         </script>
 
@@ -228,10 +280,17 @@ const months = Array.from({ length: 12 }, (_, index) => {
 
             .months-grid {
                 display: grid;
-                grid-template-columns: repeat(4, 1fr);
+                grid-template-columns: repeat(3, 1fr);
                 gap: 0.75rem;
                 padding: 1rem 0;
                 justify-items: center;
+            }
+
+            /* Wide monitors - 4 columns */
+            @media (min-width: 1400px) {
+                .months-grid {
+                    grid-template-columns: repeat(4, 1fr);
+                }
             }
 
             /* Responsive layout for smaller screens */

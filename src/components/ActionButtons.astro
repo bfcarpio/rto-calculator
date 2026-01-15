@@ -1,0 +1,215 @@
+---
+interface ButtonConfig {
+    id: string;
+    text: string;
+    icon: string;
+    variant: 'primary' | 'secondary' | 'danger';
+    ariaLabel: string;
+}
+
+interface Props {
+    position: 'top' | 'bottom';
+}
+
+const { position } = Astro.props;
+
+// Button configurations
+const buttons: ButtonConfig[] = [
+    {
+        id: `validate-button-${position}`,
+        text: 'Validate',
+        icon: '✓',
+        variant: 'primary',
+        ariaLabel: 'Validate RTO compliance'
+    },
+    {
+        id: `clear-all-button-${position}`,
+        text: 'Clear All',
+        icon: '🗑️',
+        variant: 'danger',
+        ariaLabel: 'Clear all selections'
+    },
+    {
+        id: `export-button-${position}`,
+        text: 'Export',
+        icon: '📥',
+        variant: 'secondary',
+        ariaLabel: 'Export selections'
+    }
+];
+---
+
+<div class="action-buttons" data-position={position}>
+    {buttons.map((button) => (
+        <button
+            id={button.id}
+            class={`button button-${button.variant}`}
+            type="button"
+            aria-label={button.ariaLabel}
+            data-button-type={button.variant}
+        >
+            <span class="button-icon" aria-hidden="true">{button.icon}</span>
+            <span class="button-text">{button.text}</span>
+        </button>
+    ))}
+</div>
+
+<style>
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        align-items: center;
+        padding: 1rem 0;
+        flex-wrap: wrap;
+    }
+
+    .action-buttons[data-position="top"] {
+        padding-bottom: 1.5rem;
+        border-bottom: 2px solid #e8e8e8;
+        margin-bottom: 1rem;
+    }
+
+    .action-buttons[data-position="bottom"] {
+        padding-top: 1.5rem;
+        border-top: 2px solid #e8e8e8;
+        margin-top: 1rem;
+    }
+
+    .button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 4px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        min-height: 40px;
+    }
+
+    .button:focus {
+        outline: 2px solid #1890ff;
+        outline-offset: 2px;
+    }
+
+    .button:focus:not(:focus-visible) {
+        outline: none;
+    }
+
+    .button:focus-visible {
+        outline: 2px solid #1890ff;
+        outline-offset: 2px;
+    }
+
+    .button:active {
+        transform: scale(0.95);
+    }
+
+    .button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .button-primary {
+        background-color: #1890ff;
+        color: white;
+    }
+
+    .button-primary:hover:not(:disabled) {
+        background-color: #40a9ff;
+        transform: scale(1.05);
+    }
+
+    .button-primary:active:not(:disabled) {
+        background-color: #096dd9;
+        transform: scale(0.95);
+    }
+
+    .button-secondary {
+        background-color: #f0f0f0;
+        color: #333;
+        border: 1px solid #d9d9d9;
+    }
+
+    .button-secondary:hover:not(:disabled) {
+        background-color: #fafafa;
+        border-color: #40a9ff;
+        transform: scale(1.05);
+    }
+
+    .button-secondary:active:not(:disabled) {
+        background-color: #e6e6e6;
+        border-color: #096dd9;
+        transform: scale(0.95);
+    }
+
+    .button-danger {
+        background-color: #ff4d4f;
+        color: white;
+    }
+
+    .button-danger:hover:not(:disabled) {
+        background-color: #ff7875;
+        transform: scale(1.05);
+    }
+
+    .button-danger:active:not(:disabled) {
+        background-color: #d9363e;
+        transform: scale(0.95);
+    }
+
+    .button-icon {
+        font-size: 1.1rem;
+        line-height: 1;
+    }
+
+    .button-text {
+        line-height: 1;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .action-buttons {
+            gap: 0.5rem;
+        }
+
+        .button {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.9rem;
+            min-height: 36px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .action-buttons {
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .button {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+
+    /* Reduced motion support */
+    @media (prefers-reduced-motion: reduce) {
+        .button,
+        .button:hover,
+        .button:active {
+            transition: none;
+            transform: none;
+        }
+    }
+
+    /* High contrast mode support */
+    @media (prefers-contrast: high) {
+        .button {
+            border: 2px solid currentColor;
+        }
+    }
+</style>

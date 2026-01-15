@@ -13,6 +13,15 @@ const date = new Date(year, month, 1);
 const daysInMonth = new Date(year, month + 1, 0).getDate();
 const offset = date.getDay(); // 0-6 (Sunday-Saturday)
 
+// Helper function to get unique week number based on Sunday position
+function getWeekNumber(date: Date): number {
+    // Calculate which week this date is in (1-based, starting from January 1st)
+    const yearStart = new Date(date.getFullYear(), 0, 1);
+    const diffTime = date.getTime() - yearStart.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    return Math.floor(diffDays / 7) + 1;
+}
+
 const monthNames = [
     "January",
     "February",
@@ -96,6 +105,14 @@ const clearButtonId = `clear-${year}-${month}`;
                         </th>
                     ))
                 }
+                <th
+                    scope="col"
+                    role="columnheader"
+                    class="week-number-header"
+                    aria-label="Week number"
+                >
+                    <span aria-hidden="true">#</span>
+                </th>
             </tr>
         </thead>
         <tbody role="rowgroup">
@@ -104,7 +121,7 @@ const clearButtonId = `clear-${year}-${month}`;
                     // Calculate the first valid day in this row
                     let weekStartStr = "";
 
-                    // Find the first non-empty day in this row to calculate week start
+                    // Find the Sunday of this week row for unique week numbering
                     for (let colIndex = 0; colIndex < cols; colIndex++) {
                         const cellIndex = rowIndex * cols + colIndex;
                         const dayNumber = cellIndex - offset + 1;
@@ -113,14 +130,16 @@ const clearButtonId = `clear-${year}-${month}`;
                             cellIndex >= offset &&
                             cellIndex < offset + daysInMonth
                         ) {
-                            // Calculate week start (Monday) for this date
+                            // Find the Sunday of this week row
                             const rowDate = new Date(year, month, dayNumber);
-                            const dayOfWeek = rowDate.getDay();
-                            const daysToSubtract =
-                                dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-                            rowDate.setDate(rowDate.getDate() - daysToSubtract);
-                            rowDate.setHours(0, 0, 0, 0);
-                            weekStartStr = rowDate.getTime().toString();
+                            const dayOfWeek = rowDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
+                            const daysToSubtract = dayOfWeek; // Subtract to get to Sunday
+                            const sundayDate = new Date(rowDate);
+                            sundayDate.setDate(
+                                rowDate.getDate() - daysToSubtract,
+                            );
+                            sundayDate.setHours(0, 0, 0, 0);
+                            weekStartStr = sundayDate.getTime().toString();
                             break;
                         }
                     }
@@ -167,6 +186,20 @@ const clearButtonId = `clear-${year}-${month}`;
                                     );
                                 }
                             })}
+                            <td
+                                class="week-number-cell"
+                                role="gridcell"
+                                aria-label={`Week ${weekStartStr ? getWeekNumber(new Date(parseInt(weekStartStr))) : ""}`}
+                            >
+                                <span
+                                    aria-hidden="true"
+                                    class="week-number-content"
+                                >
+                                    {weekStartStr
+                                        ? `${getWeekNumber(new Date(parseInt(weekStartStr)))}`
+                                        : ""}
+                                </span>
+                            </td>
                         </tr>
                     );
                 })
@@ -290,7 +323,7 @@ const clearButtonId = `clear-${year}-${month}`;
         --calendar-month-bg: white;
         --calendar-month-border-radius: 8px;
         --calendar-month-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        --calendar-month-padding: 0.25rem;
+        --calendar-month-padding: 0.5rem;
         --calendar-heading-color: #333;
         --calendar-heading-font-size: 1.1rem;
         --calendar-table-border: #ddd;
@@ -320,7 +353,7 @@ const clearButtonId = `clear-${year}-${month}`;
     @media (min-width: 1024px) {
         .calendar-month {
             width: auto;
-            max-width: 15.5rem; /* Adjusted for status column */
+            max-width: 18rem; /* Adjusted for status and week number columns */
             margin: 0.5rem auto;
         }
     }
@@ -332,6 +365,7 @@ const clearButtonId = `clear-${year}-${month}`;
         position: relative;
         margin-bottom: 0;
         gap: 0.5rem;
+        min-height: 2rem;
     }
 
     .month-year {
@@ -339,19 +373,11 @@ const clearButtonId = `clear-${year}-${month}`;
         margin: 0;
         color: var(--calendar-heading-color);
         font-size: var(--calendar-heading-font-size);
-        line-height: 1;
+        line-height: 1.5;
         font-weight: 600;
-        height: 20px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
     }
 
     .clear-button {
-        position: absolute;
-        top: 50%;
-        right: 0;
-        transform: translateY(-50%);
         background-color: var(--clear-button-bg);
         color: var(--clear-button-text);
         border: none;
@@ -368,16 +394,17 @@ const clearButtonId = `clear-${year}-${month}`;
         padding: 0;
         min-width: 20px;
         min-height: 20px;
+        flex-shrink: 0;
     }
 
     .clear-button:hover {
         background-color: var(--clear-button-hover-bg);
-        transform: translateY(-50%) scale(1.1);
+        transform: scale(1.1);
     }
 
     .clear-button:active {
         background-color: var(--clear-button-active-bg);
-        transform: translateY(-50%) scale(0.95);
+        transform: scale(0.95);
     }
 
     .clear-button:focus {
@@ -398,7 +425,8 @@ const clearButtonId = `clear-${year}-${month}`;
         border-collapse: collapse;
         table-layout: fixed;
         width: 100%;
-        max-width: 16.5rem; /* Adjusted for status column */
+        max-width: 19rem; /* Adjusted for status and week number columns */
+        margin-top: -0.25rem; /* Pull table closer to header */
     }
 
     .calendar-table th,
@@ -474,7 +502,7 @@ const clearButtonId = `clear-${year}-${month}`;
 
     /* Status column styles */
     .status-header {
-        width: 2.5rem;
+        width: 3.5rem; /* Wider to comfortably fit emoji */
         background-color: #4a5568;
         font-size: 0.75rem;
     }
@@ -485,7 +513,7 @@ const clearButtonId = `clear-${year}-${month}`;
     }
 
     .week-status-cell {
-        width: 2.5rem;
+        width: 3.5rem; /* Wider to comfortably fit emoji */
         height: var(--calendar-cell-height);
         vertical-align: top;
         background-color: #2d3748;
@@ -514,5 +542,32 @@ const clearButtonId = `clear-${year}-${month}`;
     .week-status-icon.violation {
         color: #f5222d;
         font-weight: 700;
+    }
+
+    /* Week number column styles */
+    .week-number-header {
+        width: 1.25rem;
+        background-color: #4a5568;
+        font-size: 0.75rem;
+    }
+
+    .week-number-cell {
+        width: 1.25rem;
+        height: var(--calendar-cell-height);
+        vertical-align: top;
+        background-color: #2d3748;
+        border-left: 1px solid #4a5568;
+        padding: 0;
+        font-size: 0.55rem;
+        color: #cbd5e0;
+    }
+
+    .week-number-content {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        width: 100%;
+        line-height: 1;
     }
 </style>
