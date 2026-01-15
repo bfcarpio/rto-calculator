@@ -57,8 +57,8 @@ const months = Array.from({ length: 12 }, (_, index) => {
             <div
                 id="validation-message"
                 class="validation-message"
-                role="alert"
-                aria-live="assertive"
+                role="status"
+                aria-live="polite"
                 style="display: none;"
             >
             </div>
@@ -98,6 +98,14 @@ const months = Array.from({ length: 12 }, (_, index) => {
             </div>
 
             <div class="action-buttons">
+                <button
+                    id="validate-button"
+                    class="button button-primary"
+                    type="button"
+                    aria-label="Validate RTO compliance"
+                >
+                    <span>✓</span> Validate
+                </button>
                 <button
                     id="clear-all-button"
                     class="button button-danger"
@@ -148,29 +156,23 @@ const months = Array.from({ length: 12 }, (_, index) => {
                         return;
                     }
 
-                    // Clear all selections
                     const clearedCount = selectedCells.length;
-                    selectedCells.forEach((cell) => {
-                        cell.dataset.selected = "false";
-                        cell.dataset.selectionType = "";
-                        cell.classList.remove(
-                            "selected",
-                            "work-from-home",
-                            "office",
-                        );
-                        cell.ariaSelected = "false";
 
-                        // Update aria-label to reflect unselected state
-                        const currentLabel = cell.ariaLabel;
-                        cell.ariaLabel = currentLabel.replace(
-                            /\. .*$/,
-                            ". Unselected",
-                        );
-                    });
+                    // Clear everything: selections, highlights, and status icons
+                    if (
+                        window.RTOValidation &&
+                        window.RTOValidation.clearAllValidationHighlights
+                    ) {
+                        window.RTOValidation.clearAllValidationHighlights();
+                    }
 
                     // Announce to screen readers
                     announceToScreenReader(
-                        `Cleared ${clearedCount} selection${clearedCount !== 1 ? "s" : ""} from all months`,
+                        "Cleared " +
+                            clearedCount +
+                            " selection" +
+                            (clearedCount !== 1 ? "s" : "") +
+                            " from all months",
                     );
 
                     // Focus back on button
@@ -186,10 +188,6 @@ const months = Array.from({ length: 12 }, (_, index) => {
                 });
             }
 
-            /**
-             * Announce a message to screen readers
-             * @param {string} message - The message to announce
-             */
             function announceToScreenReader(message) {
                 const announcement = document.createElement("div");
                 announcement.setAttribute("role", "status");
@@ -205,17 +203,10 @@ const months = Array.from({ length: 12 }, (_, index) => {
                     document.body.removeChild(announcement);
                 }, 1000);
             }
-
-            // Initialize when DOM is ready
-            if (document.readyState === "loading") {
-                document.addEventListener(
-                    "DOMContentLoaded",
-                    initClearAllButton,
-                );
-            } else {
-                initClearAllButton();
-            }
         </script>
+
+        <!-- Load RTO validation script -->
+        <script src="/src/scripts/rtoValidation.js"></script>
 
         <style>
             .calendar-container {
@@ -279,6 +270,41 @@ const months = Array.from({ length: 12 }, (_, index) => {
             .legend-color.office {
                 background-color: #f5222d;
             }
+
+            /* Validation message centered styling */
+            .validation-message.centered-message {
+                max-width: 800px;
+                margin: 1rem auto;
+                padding: 1rem;
+                font-size: 1.1rem;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+            }
+
+            .validation-message.centered-message::before {
+                content: "";
+                width: 4px;
+                height: 100%;
+                position: absolute;
+                left: 0;
+                top: 0;
+            }
+
+            .validation-message.centered-message.success {
+                border-left: 4px solid #52c41a;
+                background-color: #f6ffed;
+                color: #389e0d;
+            }
+
+            .validation-message.centered-message.error {
+                border-left: 4px solid #ff4d4f;
+                background-color: #fff2f0;
+                color: #cf1322;
+            }
+
+            /* Evaluation and violation indicators are in status column only - no day highlighting */
         </style>
     </body>
 </html>

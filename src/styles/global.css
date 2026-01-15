@@ -6,6 +6,41 @@
 /* Import mvp.css for base styling */
 @import "mvp.css";
 
+/* CSS Custom Properties (Variables) */
+:root {
+    /* Colors - Compliance */
+    --color-compliant: #389e0d;
+    --color-compliant-bg: #f6ffed;
+
+    /* Colors - Violation */
+    --color-violation: #cf1322;
+    --color-violation-bg: #fff2f0;
+
+    /* Colors - Warning */
+    --color-warning: #d48806;
+    --color-warning-bg: #fffbe6;
+
+    /* Colors - Selected */
+    --color-selected: #1890ff;
+    --color-selected-bg: #e6f7ff;
+
+    /* Colors - Text */
+    --color-text: #374151;
+    --color-muted: #6b7280;
+
+    /* Colors - Background */
+    --color-bg-alt: #f5f5f5;
+    --color-border: #d1d5db;
+    --color-weekend: #e5e7eb;
+    --color-past: #9ca3af;
+
+    /* Dimensions */
+    --border-radius: 6px;
+
+    /* Animation */
+    --transition-speed: 0.2s;
+}
+
 /* Base styles */
 * {
     box-sizing: border-box;
@@ -18,7 +53,6 @@ body {
     line-height: 1.6;
     color: #374151;
     background-color: #f9fafb;
-    max-width: 1400px;
     margin: 0 auto;
     padding: 0 1rem;
 }

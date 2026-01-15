@@ -82,7 +82,7 @@ const clearButtonId = `clear-${year}-${month}`;
                     class="status-header"
                     aria-label="Week status"
                 >
-                    <span aria-hidden="true" class="status-icon"> 📊 </span>
+                    <span aria-hidden="true" class="status-icon"></span>
                 </th>
                 {
                     shortDayNames.map((day, index) => (
@@ -100,59 +100,76 @@ const clearButtonId = `clear-${year}-${month}`;
         </thead>
         <tbody role="rowgroup">
             {
-                Array.from({ length: rows }).map((_, rowIndex) => (
-                    <tr role="row">
-                        {rowIndex === 0 && (
+                Array.from({ length: rows }).map((_, rowIndex) => {
+                    // Calculate the first valid day in this row
+                    let weekStartStr = "";
+
+                    // Find the first non-empty day in this row to calculate week start
+                    for (let colIndex = 0; colIndex < cols; colIndex++) {
+                        const cellIndex = rowIndex * cols + colIndex;
+                        const dayNumber = cellIndex - offset + 1;
+
+                        if (
+                            cellIndex >= offset &&
+                            cellIndex < offset + daysInMonth
+                        ) {
+                            // Calculate week start (Monday) for this date
+                            const rowDate = new Date(year, month, dayNumber);
+                            const dayOfWeek = rowDate.getDay();
+                            const daysToSubtract =
+                                dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+                            rowDate.setDate(rowDate.getDate() - daysToSubtract);
+                            rowDate.setHours(0, 0, 0, 0);
+                            weekStartStr = rowDate.getTime().toString();
+                            break;
+                        }
+                    }
+
+                    return (
+                        <tr role="row" class="calendar-week">
                             <td
                                 class="week-status-cell"
                                 role="gridcell"
-                                rowSpan={rows}
                                 aria-label="Week status indicator"
+                                data-week-start={weekStartStr}
                             >
                                 <div class="week-status-container">
-                                    <div
-                                        class="week-status evaluated"
-                                        aria-live="polite"
-                                        aria-label="Week status: Under evaluation"
-                                    >
-                                        <span class="week-status-icon evaluated">
-                                            ⏳
-                                        </span>
-                                        <span class="sr-only">
-                                            Under evaluation
-                                        </span>
-                                    </div>
-                                </div>
-                            </td>
-                        )}
-                        {Array.from({ length: cols }).map((_, colIndex) => {
-                            const cellIndex = rowIndex * cols + colIndex;
-                            const dayNumber = cellIndex - offset + 1;
-
-                            // Check if this cell should contain a day number
-                            if (
-                                cellIndex >= offset &&
-                                cellIndex < offset + daysInMonth
-                            ) {
-                                return (
-                                    <Day
-                                        dayNumber={dayNumber}
-                                        year={year}
-                                        month={month}
-                                    />
-                                );
-                            } else {
-                                return (
-                                    <td
-                                        class="calendar-day empty"
-                                        role="gridcell"
+                                    <span
+                                        class="week-status-icon"
                                         aria-hidden="true"
                                     />
-                                );
-                            }
-                        })}
-                    </tr>
-                ))
+                                    <span class="sr-only">Week status</span>
+                                </div>
+                            </td>
+                            {Array.from({ length: cols }).map((_, colIndex) => {
+                                const cellIndex = rowIndex * cols + colIndex;
+                                const dayNumber = cellIndex - offset + 1;
+
+                                // Check if this cell should contain a day number
+                                if (
+                                    cellIndex >= offset &&
+                                    cellIndex < offset + daysInMonth
+                                ) {
+                                    return (
+                                        <Day
+                                            dayNumber={dayNumber}
+                                            year={year}
+                                            month={month}
+                                        />
+                                    );
+                                } else {
+                                    return (
+                                        <td
+                                            class="calendar-day empty"
+                                            role="gridcell"
+                                            aria-hidden="true"
+                                        />
+                                    );
+                                }
+                            })}
+                        </tr>
+                    );
+                })
             }
         </tbody>
     </table>
@@ -313,7 +330,7 @@ const clearButtonId = `clear-${year}-${month}`;
         justify-content: center;
         align-items: center;
         position: relative;
-        margin-bottom: 0.125rem;
+        margin-bottom: 0;
         gap: 0.5rem;
     }
 
@@ -458,86 +475,44 @@ const clearButtonId = `clear-${year}-${month}`;
     /* Status column styles */
     .status-header {
         width: 2.5rem;
-        background-color: #f0f4ff;
+        background-color: #4a5568;
         font-size: 0.75rem;
     }
 
     .status-icon {
         font-size: 1rem;
+        color: #e2e8f0;
     }
 
     .week-status-cell {
         width: 2.5rem;
+        height: var(--calendar-cell-height);
         vertical-align: top;
-        background-color: #f9fafb;
-        border-right: 2px solid #e2e8f0;
-        padding: 0.25rem 0;
+        background-color: #2d3748;
+        border-right: 1px solid #4a5568;
+        padding: 0;
     }
 
     .week-status-container {
         display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-        height: 100%;
-        justify-content: flex-start;
-    }
-
-    .week-status {
-        display: flex;
         align-items: center;
         justify-content: center;
-        padding: 0.25rem;
-        border-radius: 4px;
-        font-size: 0.7rem;
-        font-weight: 600;
-        transition: all 0.2s ease;
-        position: relative;
-    }
-
-    .week-status.evaluated {
-        background-color: #e0f2fe;
-        color: #0969da;
-        border: 1px solid #bae7ff;
-    }
-
-    .week-status.compliant {
-        background-color: #dcfce7;
-        color: #16a34a;
-        border: 1px solid #bbf7d0;
-    }
-
-    .week-status.non-compliant {
-        background-color: #fee2e2;
-        color: #dc2626;
-        border: 1px solid #fecaca;
+        height: 100%;
+        width: 100%;
     }
 
     .week-status-icon {
-        font-size: 0.9rem;
+        font-size: 0.8rem;
+        color: #718096;
         line-height: 1;
     }
 
-    .week-status.compliant .week-status-icon::after {
-        content: "✓";
-        position: absolute;
-        top: 2px;
-        right: 2px;
-        font-size: 0.6rem;
-        color: #16a34a;
-        background-color: #dcfce7;
-        border-radius: 50%;
-        padding: 0 3px;
+    .week-status-icon.evaluating {
+        color: #ecc94b;
     }
 
-    .week-status.non-compliant .week-status-icon::after {
-        content: "✗";
-        position: absolute;
-        top: 2px;
-        right: 2px;
-        font-size: 0.6rem;
-        color: #dc2626;
-        background-color: #fee2e2;
-        border-radius: 50%;
-        padding: 0 3px;
+    .week-status-icon.violation {
+        color: #f5222d;
+        font-weight: 700;
     }
 </style>
