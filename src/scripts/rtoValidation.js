@@ -373,16 +373,88 @@ function setWeekStatusViolation(weekStart) {
 }
 
 /**
+ * Set week status to least attended (grey square)
+ * @param {Date} weekStart - Sunday of the week
+ */
+function setWeekStatusLeastAttended(weekStart) {
+  const weekKey = weekStart.getTime().toString();
+  const statusCell = document.querySelector(`[data-week-start="${weekKey}"]`);
+
+  if (CONFIG.DEBUG) {
+    console.log(
+      `[setWeekStatusLeastAttended] Looking for cell with data-week-start="${weekKey}"`,
+    );
+    console.log(`[setWeekStatusLeastAttended] Status cell found:`, statusCell);
+  }
+
+  if (statusCell) {
+    const statusIcon = statusCell.querySelector(".week-status-icon");
+    if (statusIcon) {
+      statusIcon.textContent = "⬜";
+      statusIcon.classList.remove("evaluating", "violation");
+      statusIcon.classList.add("least-attended");
+      if (CONFIG.DEBUG) {
+        console.log(
+          `[setWeekStatusLeastAttended] Set ⬜ icon for week ${weekKey}`,
+        );
+      }
+    }
+  }
+}
+
+/**
+ * Identify and mark the 4 least attended weeks
+ * @param {Map} weeksByWFH - Map of week start timestamp to WFH count
+ * @param {Date} currentWeekStart - Current week start date
+ */
+function markLeastAttendedWeeks(weeksByWFH, currentWeekStart) {
+  if (CONFIG.DEBUG) {
+    console.log("[markLeastAttendedWeeks] Identifying 4 least attended weeks");
+  }
+
+  // Create array of week info with WFH counts
+  const weekInfo = [];
+  weeksByWFH.forEach((wfhCount, weekKey) => {
+    weekInfo.push({
+      weekKey: parseInt(weekKey),
+      wfhCount,
+      weekDate: new Date(parseInt(weekKey)),
+    });
+  });
+
+  // Sort by WFH count (ascending) to find least attended
+  weekInfo.sort((a, b) => a.wfhCount - b.wfhCount);
+
+  // Get the 4 weeks with fewest WFH days
+  const leastAttendedWeeks = weekInfo.slice(0, 4);
+
+  if (CONFIG.DEBUG) {
+    console.log(
+      `[markLeastAttendedWeeks] Least attended weeks:`,
+      leastAttendedWeeks.map((w) => ({
+        week: w.weekDate.toDateString(),
+        wfhCount: w.wfhCount,
+      })),
+    );
+  }
+
+  // Mark each least attended week with grey square emoji
+  leastAttendedWeeks.forEach((week) => {
+    setWeekStatusLeastAttended(week.weekDate);
+  });
+}
+
+/**
  * Clear all week status icons
  */
 function clearWeekStatusIcons() {
   document
     .querySelectorAll(
-      ".week-status-icon.evaluating, .week-status-icon.violation",
+      ".week-status-icon.evaluating, .week-status-icon.violation, .week-status-icon.least-attended",
     )
     .forEach((icon) => {
       icon.textContent = "";
-      icon.classList.remove("evaluating", "violation");
+      icon.classList.remove("evaluating", "violation", "least-attended");
     });
 }
 
@@ -459,6 +531,9 @@ function runValidationWithHighlights() {
 
   let violationFound = false;
   let violatingWindowStart = null;
+
+  // Identify and mark 4 least attended weeks (fewest selections)
+  markLeastAttendedWeeks(weeksByWFH, currentWeekStart);
 
   // Calculate total weeks in 12-month calendar (approximately 52 weeks)
   const totalWeeksInCalendar = 52;
