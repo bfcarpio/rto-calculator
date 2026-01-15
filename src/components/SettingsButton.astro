@@ -1,0 +1,120 @@
+---
+interface Props {
+    id?: string;
+    ariaLabel?: string;
+}
+
+const { id = "settings-button", ariaLabel = "Open settings" } = Astro.props;
+---
+
+<button
+    id={id}
+    class="settings-button"
+    type="button"
+    aria-label={ariaLabel}
+    aria-haspopup="dialog"
+    aria-controls="settings-modal"
+>
+    <span class="settings-icon" aria-hidden="true">⚙️</span>
+    <span class="sr-only">Settings</span>
+</button>
+
+<style>
+    .settings-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border: none;
+        border-radius: 50%;
+        background-color: #f0f0f0;
+        color: #333;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        padding: 0;
+        font-size: 1.2rem;
+        position: fixed;
+        top: 1rem;
+        right: 1rem;
+        z-index: 1000;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .settings-button:hover {
+        background-color: #e0e0e0;
+        transform: scale(1.1);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .settings-button:active {
+        transform: scale(0.95);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .settings-button:focus {
+        outline: 2px solid #1890ff;
+        outline-offset: 2px;
+    }
+
+    .settings-button:focus:not(:focus-visible) {
+        outline: none;
+    }
+
+    .settings-button:focus-visible {
+        outline: 2px solid #1890ff;
+        outline-offset: 2px;
+    }
+
+    .settings-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        line-height: 1;
+    }
+
+    /* Screen reader only content */
+    .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border-width: 0;
+    }
+
+    /* Reduced motion support */
+    @media (prefers-reduced-motion: reduce) {
+        .settings-button {
+            transition: none;
+        }
+
+        .settings-button:hover,
+        .settings-button:active {
+            transform: none;
+        }
+    }
+
+    /* High contrast mode support */
+    @media (prefers-contrast: high) {
+        .settings-button {
+            border: 2px solid #000;
+        }
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .settings-button {
+            width: 36px;
+            height: 36px;
+            font-size: 1rem;
+            top: 0.75rem;
+            right: 0.75rem;
+        }
+    }
+</style>

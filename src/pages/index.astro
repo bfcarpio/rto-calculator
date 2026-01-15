@@ -1,6 +1,8 @@
 ---
 import Month from "../components/month.astro";
 import ActionButtons from "../components/ActionButtons.astro";
+import SettingsButton from "../components/SettingsButton.astro";
+import SettingsModal from "../components/SettingsModal.astro";
 
 // Page metadata
 const title = "RTO Calculator - Plan Your Time Off";
@@ -87,6 +89,7 @@ const months = Array.from({ length: 12 }, (_, index) => {
             </div>
 
             <ActionButtons position="top" />
+            <SettingsButton />
 
             <div
                 class="months-grid"
@@ -102,6 +105,8 @@ const months = Array.from({ length: 12 }, (_, index) => {
 
             <ActionButtons position="bottom" />
         </main>
+
+        <SettingsModal />
 
         <footer>
             <p>
@@ -259,6 +264,9 @@ const months = Array.from({ length: 12 }, (_, index) => {
 
         <!-- Load RTO validation script -->
         <script src="/src/scripts/rtoValidation.js"></script>
+        <!-- Load validation strategy pattern -->
+        <script src="/src/strategies/RollingPeriodValidation.js"></script>
+        <script src="/src/scripts/ValidationManager.js"></script>
 
         <style>
             .calendar-container {
