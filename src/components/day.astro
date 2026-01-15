@@ -115,6 +115,16 @@ const cellId = `day-cell-${year}-${month}-${dayNumber}`;
                     `.${label}`,
                 );
             }
+
+            // Dispatch custom event to trigger RTO validation update
+            const selectionEvent = new CustomEvent("rto-selection-changed", {
+                bubbles: true,
+                detail: {
+                    cell: targetCell,
+                    selectionType: type,
+                },
+            });
+            targetCell.dispatchEvent(selectionEvent);
         }
 
         /**
