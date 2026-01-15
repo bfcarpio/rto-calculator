@@ -4,6 +4,7 @@
  */
 
 import type { WeekData } from "../../types";
+import type { IDragSelectionManager } from "../../types/calendar-types";
 import {
   getCalendarDates,
   formatDateISO,
@@ -675,17 +676,18 @@ export function init(): void {
   }
 
   // Initialize drag selection manager
-  dragSelectionManager = new DragSelectionManager(
-    selectedDates,
-    (newDates: Set<string>) => {
-      selectedDates = newDates;
-      saveSelectedDates(selectedDates);
-      validateAndUpdateCalendar(weekStart);
-      updateComplianceIndicator();
-    },
-    validateSelection,
-    DEFAULT_POLICY.minOfficeDaysPerWeek,
-  );
+  const dragSelectionManager: IDragSelectionManager | null =
+    new DragSelectionManager(
+      selectedDates,
+      (newDates: Set<string>) => {
+        selectedDates = newDates;
+        saveSelectedDates(selectedDates);
+        validateAndUpdateCalendar(weekStart);
+        updateComplianceIndicator();
+      },
+      validateSelection,
+      DEFAULT_POLICY.minOfficeDaysPerWeek,
+    );
 
   // Setup event listeners
   setupEventListeners();
@@ -702,7 +704,7 @@ export function getWeekDataMap(): Map<string, any> {
   return weekDataMap;
 }
 
-export function getDragSelectionManager(): any {
+export function getDragSelectionManager(): IDragSelectionManager | null {
   return dragSelectionManager;
 }
 
@@ -715,6 +717,8 @@ export function setWeekDataMap(newWeekDataMap: Map<string, any>): void {
   weekDataMap = newWeekDataMap;
 }
 
-export function setDragSelectionManager(newDragSelectionManager: any): void {
+export function setDragSelectionManager(
+  newDragSelectionManager: IDragSelectionManager | null,
+): void {
   dragSelectionManager = newDragSelectionManager;
 }
