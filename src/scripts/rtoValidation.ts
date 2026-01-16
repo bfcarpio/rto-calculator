@@ -643,6 +643,14 @@ export function runValidationWithHighlights(): void {
     const averageOfficeDays = totalOfficeDays / weeksToEvaluate;
 
     // Track the window that gives us the best average
+    // Exit early if we find a compliant window (first success wins)
+    if (isValid && bestAverageOfficeDays === 0) {
+      bestAverageOfficeDays = averageOfficeDays;
+      bestWindowStart = windowStart;
+      best8Weeks = top8;
+      break;
+    }
+
     if (averageOfficeDays > bestAverageOfficeDays) {
       bestAverageOfficeDays = averageOfficeDays;
       bestWindowStart = windowStart;
