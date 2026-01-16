@@ -215,17 +215,37 @@ function getSelectedWFHDays(): Array<{
 
   const selectedDays: Array<{ year: number; month: number; day: number }> = [];
 
+  if (CONFIG.DEBUG) {
+    console.log("[RTO Validation] Scanning cache for WFH selections...");
+    console.log("[RTO Validation] Total cells in cache:", cellCache.size);
+  }
+
+  let selectedCount = 0;
   cellCache.forEach((cell) => {
-    if (
-      cell.classList.contains("selected") &&
-      cell.dataset.selectionType === "work-from-home"
-    ) {
+    const isSelected = cell.classList.contains("selected");
+    const isWFH = cell.dataset.selectionType === "work-from-home";
+
+    if (CONFIG.DEBUG && isSelected) {
+      selectedCount++;
+      console.log(
+        `[RTO Validation] Selected cell: ${cell.dataset.year}-${cell.dataset.month}-${cell.dataset.day}, selectionType: ${cell.dataset.selectionType}`,
+      );
+    }
+
+    if (isSelected && isWFH) {
       const year = parseInt(cell.dataset.year || "0");
       const month = parseInt(cell.dataset.month || "0");
       const day = parseInt(cell.dataset.day || "0");
       selectedDays.push({ year, month, day });
     }
   });
+
+  if (CONFIG.DEBUG) {
+    console.log(`[RTO Validation] Total selected cells: ${selectedCount}`);
+    console.log(
+      `[RTO Validation] WFH selections found: ${selectedDays.length}`,
+    );
+  }
 
   return selectedDays;
 }
@@ -261,11 +281,22 @@ function calculateWeekData(weekStart: Date, wfhDaysCount: number): WeekInfo {
 
   // Check cache first
   if (weekDataCache.has(weekKey)) {
+    if (CONFIG.DEBUG) {
+      console.log(
+        `[RTO Validation] Week ${weekStart.toISOString().split("T")[0]}: Using cached data`,
+      );
+    }
     return weekDataCache.get(weekKey)!;
   }
 
   const officeDays = CONFIG.TOTAL_WEEKDAYS_PER_WEEK - wfhDaysCount;
   const isCompliant = officeDays >= CONFIG.MIN_OFFICE_DAYS_PER_WEEK;
+
+  if (CONFIG.DEBUG) {
+    console.log(
+      `[RTO Validation] Week ${weekStart.toISOString().split("T")[0]}: WFH=${wfhDaysCount}, Office=${officeDays}, Compliant=${isCompliant} (need >=${CONFIG.MIN_OFFICE_DAYS_PER_WEEK})`,
+    );
+  }
 
   const weekInfo: WeekInfo = {
     week: new Date(weekStart),
@@ -492,11 +523,19 @@ export function runValidationWithHighlights(): void {
   const firstWeekStart = getFirstMondayOnOrAfter(calendarStartDate);
 
   // Pre-calculate week data for all weeks with sliding window optimization (O(n))
-  // When sliding the window, 11 of 12 weeks are reused - just remove one, add one
+  // When sliding window, 11 of 12 weeks are reused - just remove one, add one
   const weekDataArray: WeekInfo[] = [];
   let totalOfficeDaysTop8 = 0;
   let windowStart = 0; // First week index in top-8 window
   let windowEnd = 0; // Last week index in top-8 window (inclusive)
+
+  if (CONFIG.DEBUG) {
+    console.log("[RTO Validation] Starting week calculations...");
+    console.log(
+      "[RTO Validation] First week start:",
+      firstWeekStart.toISOString().split("T")[0],
+    );
+  }
 
   for (
     let weekIndex = 0;
@@ -507,6 +546,11 @@ export function runValidationWithHighlights(): void {
     weekStart.setDate(firstWeekStart.getDate() + weekIndex * 7);
 
     const wfhDaysCount = weeksByWFH.get(weekStart.getTime()) || 0;
+    if (CONFIG.DEBUG) {
+      console.log(
+        `[RTO Validation] Week ${weekIndex + 1} (${weekStart.toISOString().split("T")[0]}): WFH days = ${wfhDaysCount}`,
+      );
+    }
     const weekInfo = calculateWeekData(weekStart, wfhDaysCount);
     weekInfo.weekNumber = weekIndex + 1;
     weekDataArray.push(weekInfo);
