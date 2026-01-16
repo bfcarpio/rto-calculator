@@ -110,7 +110,6 @@ function initializeCellCache(): void {
     return;
   }
 
-  const startTime = performance.now();
   const cells = document.querySelectorAll(
     ".calendar-day[data-year][data-month][data-day]",
   );
@@ -476,7 +475,9 @@ export function runValidationWithHighlights(): void {
     } else {
       // Sliding window: remove oldest week, add new week
       const oldWeekInfo = weekDataArray[windowStart];
-      totalOfficeDaysTop8 -= oldWeekInfo.officeDays;
+      if (oldWeekInfo) {
+        totalOfficeDaysTop8 -= oldWeekInfo.officeDays;
+      }
       totalOfficeDaysTop8 += weekInfo.officeDays;
       windowStart++;
       windowEnd++;
