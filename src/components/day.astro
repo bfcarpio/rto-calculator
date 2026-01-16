@@ -287,6 +287,11 @@ const cellId = `day-cell-${year}-${month}-${dayNumber}`;
         if (dragState) {
             dragState.isDragging = false;
             dragState.selectionType = null;
+
+            // Trigger validation after drag completes
+            if (window.RTOValidation && window.RTOValidation.runValidationWithHighlights) {
+                window.RTOValidation.runValidationWithHighlights();
+            }
         }
     }
 

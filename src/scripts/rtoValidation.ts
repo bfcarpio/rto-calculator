@@ -141,40 +141,11 @@ function initializeCellCache(): void {
       ) as HTMLElement;
       if (statusContainer) {
         statusCellCache.set(parseInt(weekStart), statusContainer);
-      } else {
-        if (CONFIG.DEBUG) {
-          console.warn(
-            `[RTO Validation] Status cell found but no container for week-start: ${weekStart}`,
-          );
-        }
-      }
-    } else {
-      if (CONFIG.DEBUG) {
-        console.warn(
-          `[RTO Validation] Status cell found but no data-week-start attribute`,
-        );
       }
     }
   });
 
   cacheInitialized = true;
-
-  if (CONFIG.DEBUG) {
-    const endTime = performance.now();
-    console.log(
-      `[RTO Validation] Cache initialized in ${(endTime - startTime).toFixed(2)}ms`,
-    );
-    console.log(
-      `[RTO Validation] Cached ${cellCache.size} cells and ${statusCellCache.size} status cells`,
-    );
-    if (statusCellCache.size > 0) {
-      console.log(
-        `[RTO Validation] First status cell key: ${
-          Array.from(statusCellCache.keys())[0]
-        }`,
-      );
-    }
-  }
 }
 
 /**
@@ -420,15 +391,6 @@ function updateWeekStatusIcon(
   const statusCell = statusCellCache.get(weekKey);
 
   if (!statusCell) {
-    if (CONFIG.DEBUG) {
-      console.warn(
-        `[RTO Validation] Status cell not found for week: ${weekStart.toISOString().split("T")[0]} (key: ${weekKey})`,
-      );
-      console.log(
-        `[RTO Validation] Available week keys:`,
-        Array.from(statusCellCache.keys()).slice(0, 5),
-      );
-    }
     return;
   }
 
@@ -436,11 +398,6 @@ function updateWeekStatusIcon(
   const srElement = statusCell.querySelector(".sr-only");
 
   if (!iconElement || !srElement) {
-    if (CONFIG.DEBUG) {
-      console.warn(
-        `[RTO Validation] Icon or SR element not found in status cell for week: ${weekStart.toISOString().split("T")[0]}`,
-      );
-    }
     return;
   }
 
@@ -452,30 +409,15 @@ function updateWeekStatusIcon(
       statusCell.classList.add("evaluated", "compliant");
       iconElement.textContent = "✓";
       srElement.textContent = "Compliant week";
-      if (CONFIG.DEBUG) {
-        console.log(
-          `[RTO Validation] Week ${weekStart.toISOString().split("T")[0]}: ✓ Compliant`,
-        );
-      }
     } else {
       statusCell.classList.add("evaluated", "non-compliant");
       iconElement.textContent = "✗";
       srElement.textContent = "Non-compliant week";
-      if (CONFIG.DEBUG) {
-        console.log(
-          `[RTO Validation] Week ${weekStart.toISOString().split("T")[0]}: ✗ Non-compliant`,
-        );
-      }
     }
   } else {
     statusCell.classList.add("evaluated");
     iconElement.textContent = "⏳";
     srElement.textContent = "Under evaluation";
-    if (CONFIG.DEBUG) {
-      console.log(
-        `[RTO Validation] Week ${weekStart.toISOString().split("T")[0]}: ⏳ Under evaluation`,
-      );
-    }
   }
 }
 
@@ -490,12 +432,6 @@ function updateWeekStatusIcon(
  * 4. Reduces complexity from ~500 DOM queries to ~50 DOM queries
  */
 export function runValidationWithHighlights(): void {
-  let startTime = 0;
-  if (CONFIG.DEBUG) {
-    console.log("[RTO Validation] Starting validation with highlights...");
-    startTime = performance.now();
-  }
-
   // Ensure cache is initialized
   if (!cacheInitialized) {
     initializeCellCache();
@@ -572,22 +508,6 @@ export function runValidationWithHighlights(): void {
 
   currentResult = result;
   updateComplianceIndicator(result);
-
-  if (CONFIG.DEBUG) {
-    const endTime = performance.now();
-    console.log(
-      `[RTO Validation] Validation with highlights completed in ${(endTime - startTime).toFixed(2)}ms`,
-    );
-    console.log("[RTO Validation] Result:", result);
-    console.log(
-      "[RTO Validation] Week data:",
-      weekDataArray.map((w) => ({
-        week: w.week.toISOString().split("T")[0],
-        officeDays: w.officeDays,
-        isCompliant: w.isCompliant,
-      })),
-    );
-  }
 }
 
 /**
@@ -663,13 +583,6 @@ export function updateComplianceIndicator(result?: ComplianceResult): void {
     messageContainer.style.display = "block";
     messageContainer.textContent = complianceResult.message;
   }
-
-  if (CONFIG.DEBUG) {
-    console.log(
-      "[RTO Validation] Updated compliance indicator:",
-      complianceResult,
-    );
-  }
 }
 
 /**
@@ -697,10 +610,6 @@ export function cleanupRTOValidation(): void {
 
   clearCaches();
   clearAllValidationHighlights();
-
-  if (CONFIG.DEBUG) {
-    console.log("[RTO Validation] Cleaned up");
-  }
 }
 
 // ==================== Global Export ====================
