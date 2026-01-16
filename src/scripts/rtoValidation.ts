@@ -602,9 +602,20 @@ export function clearAllValidationHighlights(): void {
  * @param result - Compliance result (optional, uses cached result if not provided)
  */
 export function updateComplianceIndicator(result?: ComplianceResult): void {
+  if (CONFIG.DEBUG) {
+    console.log(
+      "[RTO Validation] updateComplianceIndicator called with:",
+      result,
+    );
+    console.log("[RTO Validation] currentResult:", currentResult);
+  }
+
   const complianceResult = result || currentResult;
 
   if (!complianceResult) {
+    if (CONFIG.DEBUG) {
+      console.log("[RTO Validation] No result, calculating new one");
+    }
     // Calculate if no result provided
     const newResult = calculateRollingCompliance();
     updateComplianceIndicator(newResult);
@@ -613,6 +624,10 @@ export function updateComplianceIndicator(result?: ComplianceResult): void {
 
   // Update header compliance indicator
   const indicator = document.getElementById("compliance-indicator");
+  if (CONFIG.DEBUG) {
+    console.log("[RTO Validation] Found indicator element:", indicator);
+  }
+
   if (indicator) {
     // Remove all status classes
     indicator.classList.remove("compliant", "non-compliant");
@@ -620,29 +635,57 @@ export function updateComplianceIndicator(result?: ComplianceResult): void {
     // Add appropriate status class
     if (complianceResult.isValid) {
       indicator.classList.add("compliant");
+      if (CONFIG.DEBUG) {
+        console.log("[RTO Validation] Added 'compliant' class");
+      }
     } else {
       indicator.classList.add("non-compliant");
+      if (CONFIG.DEBUG) {
+        console.log("[RTO Validation] Added 'non-compliant' class");
+      }
     }
 
     // Update icon
     const iconElement = document.getElementById("compliance-icon");
     if (iconElement) {
       iconElement.textContent = complianceResult.isValid ? "✓" : "✗";
+      if (CONFIG.DEBUG) {
+        console.log(
+          "[RTO Validation] Updated icon to:",
+          iconElement.textContent,
+        );
+      }
     }
 
     // Update text
     const textElement = document.getElementById("compliance-text");
     if (textElement) {
       const statusText = complianceResult.isValid ? "Compliant" : "Violation";
-      textElement.textContent = `${statusText} (${complianceResult.overallCompliance.toFixed(0)}%)`;
+      const newText = `${statusText} (${complianceResult.overallCompliance.toFixed(0)}%)`;
+      textElement.textContent = newText;
+      if (CONFIG.DEBUG) {
+        console.log("[RTO Validation] Updated text to:", newText);
+      }
     }
   }
 
   // Update main validation message
   const messageContainer = document.getElementById("validation-message");
+  if (CONFIG.DEBUG) {
+    console.log("[RTO Validation] Found message container:", messageContainer);
+  }
+
   if (messageContainer) {
     messageContainer.style.display = "block";
-    messageContainer.textContent = complianceResult.message;
+    const message = complianceResult.message;
+    messageContainer.textContent = message;
+    if (CONFIG.DEBUG) {
+      console.log("[RTO Validation] Updated message to:", message);
+      console.log(
+        "[RTO Validation] Message container display:",
+        messageContainer.style.display,
+      );
+    }
   }
 
   if (CONFIG.DEBUG) {
