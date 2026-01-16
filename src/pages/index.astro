@@ -101,14 +101,15 @@ const months = Array.from({ length: 12 }, (_, index) => {
                         <Month month={month} year={year} />
                     ))
                 }
-            </div>
+            <SettingsModal />
+        </div>
 
-            <ActionButtons position="bottom" />
-        </main>
+        <ActionButtons position="bottom" />
+    </main>
 
-        <SettingsModal />
+    <SettingsModal />
 
-        <footer>
+    <footer>
             <p>
                 <small>
                     RTO Calculator - Left-click for work from home, right-click
@@ -262,11 +263,8 @@ const months = Array.from({ length: 12 }, (_, index) => {
             }
         </script>
 
-        <!-- Load RTO validation script -->
-        <script src="/src/scripts/rtoValidation.js"></script>
-        <!-- Load validation strategy pattern -->
-        <script src="/src/strategies/RollingPeriodValidation.js"></script>
-        <script src="/src/scripts/ValidationManager.js"></script>
+    <!-- Load validation scripts in correct order -->
+    <script src="/src/scripts/rtoValidation.ts"></script>
 
         <style>
             .calendar-container {
