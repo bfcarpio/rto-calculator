@@ -1,10 +1,9 @@
 ---
 interface Props {
     id?: string;
-    isOpen?: boolean;
 }
 
-const { id = "settings-modal", isOpen = false } = Astro.props;
+const { id = "settings-modal" } = Astro.props;
 ---
 
 <dialog
@@ -460,19 +459,27 @@ const { id = "settings-modal", isOpen = false } = Astro.props;
 <script>
     // Initialize settings modal when DOM is ready
     document.addEventListener("DOMContentLoaded", () => {
-        const modal = document.getElementById("settings-modal");
+        const modal = document.getElementById(
+            "settings-modal",
+        ) as HTMLDialogElement | null;
         const settingsButton = document.getElementById("settings-button");
         const closeButton = document.getElementById("settings-modal-close");
         const saveButton = document.getElementById("settings-modal-save");
         const resetButton = document.getElementById("settings-modal-reset");
-        const debugToggle = document.getElementById("debug-toggle");
-        const strategySelect = document.getElementById("validation-strategy");
-        const minOfficeDaysInput = document.getElementById("min-office-days");
+        const debugToggle = document.getElementById(
+            "debug-toggle",
+        ) as HTMLButtonElement | null;
+        const strategySelect = document.getElementById(
+            "validation-strategy",
+        ) as HTMLSelectElement | null;
+        const minOfficeDaysInput = document.getElementById(
+            "min-office-days",
+        ) as HTMLInputElement | null;
 
         // Open modal
         if (settingsButton) {
             settingsButton.addEventListener("click", () => {
-                modal.showModal();
+                if (modal) modal.showModal();
                 // Sync current settings to UI
                 syncSettings();
             });
@@ -481,40 +488,45 @@ const { id = "settings-modal", isOpen = false } = Astro.props;
         // Close modal
         if (closeButton) {
             closeButton.addEventListener("click", () => {
-                modal.close();
+                if (modal) modal.close();
             });
         }
 
         // Close modal when clicking outside
-        modal.addEventListener("click", (e) => {
-            if (e.target === modal) {
-                modal.close();
-            }
-        });
+        if (modal) {
+            modal.addEventListener("click", (e) => {
+                if (e.target === modal) {
+                    modal.close();
+                }
+            });
 
-        // Close modal on Escape key
-        modal.addEventListener("keydown", (e) => {
-            if (e.key === "Escape") {
-                modal.close();
-            }
-        });
+            // Close modal on Escape key
+            modal.addEventListener("keydown", (e) => {
+                if (e.key === "Escape") {
+                    modal.close();
+                }
+            });
+        }
 
         // Debug toggle functionality
         if (debugToggle) {
             debugToggle.addEventListener("click", () => {
+                if (!debugToggle) return;
                 const isChecked =
                     debugToggle.getAttribute("aria-checked") === "true";
                 const newState = !isChecked;
                 debugToggle.setAttribute("aria-checked", newState.toString());
 
                 // Update validation manager
-                if (window.validationManager) {
-                    window.validationManager.setDebugMode(newState);
+                const validationManager = (window as any).validationManager;
+                if (validationManager) {
+                    validationManager.setDebugMode(newState);
                 }
 
                 // Update existing validation script config
-                if (window.RTOValidation && window.RTOValidation.CONFIG) {
-                    window.RTOValidation.CONFIG.DEBUG = newState;
+                const rtoValidation = (window as any).RTOValidation;
+                if (rtoValidation && rtoValidation.CONFIG) {
+                    rtoValidation.CONFIG.DEBUG = newState;
                 }
 
                 console.log(
@@ -526,13 +538,14 @@ const { id = "settings-modal", isOpen = false } = Astro.props;
         // Validation strategy change
         if (strategySelect) {
             strategySelect.addEventListener("change", (e) => {
-                const selectedStrategy = e.target.value;
+                const selectedStrategy = (e.target as HTMLSelectElement).value;
                 console.log(
                     `[Settings] Strategy changed to: ${selectedStrategy}`,
                 );
 
-                if (window.validationManager) {
-                    window.validationManager.setStrategy(selectedStrategy);
+                const validationManager = (window as any).validationManager;
+                if (validationManager) {
+                    validationManager.SetValidator(selectedStrategy);
                 }
             });
         }
@@ -540,14 +553,15 @@ const { id = "settings-modal", isOpen = false } = Astro.props;
         // Minimum office days change
         if (minOfficeDaysInput) {
             minOfficeDaysInput.addEventListener("change", (e) => {
-                const value = parseInt(e.target.value);
+                const value = parseInt((e.target as HTMLInputElement).value);
                 if (value >= 0 && value <= 5) {
                     console.log(
                         `[Settings] Min office days changed to: ${value}`,
                     );
 
-                    if (window.validationManager) {
-                        window.validationManager.updateConfig({
+                    const validationManager = (window as any).validationManager;
+                    if (validationManager) {
+                        validationManager.updateConfig({
                             minOfficeDaysPerWeek: value,
                         });
                     }
@@ -582,10 +596,11 @@ const { id = "settings-modal", isOpen = false } = Astro.props;
         /**
          * Sync current settings to modal UI
          */
-        function syncSettings() {
+        function syncSettings(): void {
+            const validationManager = (window as any).validationManager;
             // Sync debug mode
-            const isDebugEnabled = window.validationManager
-                ? window.validationManager.getDebugMode()
+            const isDebugEnabled = validationManager
+                ? validationManager.getDebugMode()
                 : false;
 
             if (debugToggle) {
@@ -596,8 +611,8 @@ const { id = "settings-modal", isOpen = false } = Astro.props;
             }
 
             // Sync config values
-            const config = window.validationManager
-                ? window.validationManager.getConfig()
+            const config = validationManager
+                ? validationManager.getConfig()
                 : {};
 
             if (
@@ -646,20 +661,20 @@ const { id = "settings-modal", isOpen = false } = Astro.props;
                             "aria-checked",
                             settings.debug.toString(),
                         );
-                        if (window.validationManager) {
-                            window.validationManager.setDebugMode(
-                                settings.debug,
-                            );
+                        const validationManager = (window as any)
+                            .validationManager;
+                        if (validationManager) {
+                            validationManager.setDebugMode(settings.debug);
                         }
                     }
 
                     // Apply strategy
                     if (settings.strategy && strategySelect) {
                         strategySelect.value = settings.strategy;
-                        if (window.validationManager) {
-                            window.validationManager.SetValidator(
-                                settings.strategy,
-                            );
+                        const validationManager = (window as any)
+                            .validationManager;
+                        if (validationManager) {
+                            validationManager.SetValidator(settings.strategy);
                         }
                     }
 
@@ -669,8 +684,10 @@ const { id = "settings-modal", isOpen = false } = Astro.props;
                         minOfficeDaysInput
                     ) {
                         minOfficeDaysInput.value = settings.minOfficeDays;
-                        if (window.validationManager) {
-                            window.validationManager.updateConfig({
+                        const validationManager = (window as any)
+                            .validationManager;
+                        if (validationManager) {
+                            validationManager.updateConfig({
                                 minOfficeDaysPerWeek: settings.minOfficeDays,
                             });
                         }
@@ -689,25 +706,27 @@ const { id = "settings-modal", isOpen = false } = Astro.props;
         /**
          * Reset settings to defaults
          */
-        function resetSettings() {
+        function resetSettings(): void {
+            const validationManager = (window as any).validationManager;
+
             if (debugToggle) {
                 debugToggle.setAttribute("aria-checked", "false");
-                if (window.validationManager) {
-                    window.validationManager.setDebugMode(false);
+                if (validationManager) {
+                    validationManager.setDebugMode(false);
                 }
             }
 
             if (strategySelect) {
                 strategySelect.value = "rolling-period";
-                if (window.validationManager) {
-                    window.validationManager.SetValidator("rolling-period");
+                if (validationManager) {
+                    validationManager.SetValidator("rolling-period");
                 }
             }
 
             if (minOfficeDaysInput) {
                 minOfficeDaysInput.value = 3;
-                if (window.validationManager) {
-                    window.validationManager.updateConfig({
+                if (validationManager) {
+                    validationManager.updateConfig({
                         minOfficeDaysPerWeek: 3,
                     });
                 }
@@ -722,7 +741,7 @@ const { id = "settings-modal", isOpen = false } = Astro.props;
          * Announce message to screen readers
          * @param {string} message - Message to announce
          */
-        function announceToScreenReader(message) {
+        function announceToScreenReader(message: string): void {
             const announcement = document.createElement("div");
             announcement.setAttribute("role", "status");
             announcement.setAttribute("aria-live", "polite");

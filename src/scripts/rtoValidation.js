@@ -99,7 +99,7 @@ function getCurrentWeekStart() {
  * @returns {Map<number, number>} Map of week start timestamp to WFH day count
  */
 function groupDatesByWeek(wfhDates) {
-  const weeksMap = new Map();
+  const weeksMap = new Map<number, number>();
 
   wfhDates.forEach((date) => {
     const weekStart = getStartOfWeek(date);
@@ -245,7 +245,7 @@ function calculateRollingCompliance() {
 /**
  * Update the compliance indicator in the UI
  */
-function updateComplianceIndicator(result) {
+function updateComplianceIndicator(result: ComplianceResult): void {
   // If no result provided, fall back to old calculation
   if (!result) {
     result = calculateRollingCompliance();
@@ -413,7 +413,7 @@ function markLeastAttendedWeeks(weeksByWFH, currentWeekStart) {
   }
 
   // Create array of week info with WFH counts
-  const weekInfo = [];
+  const weekInfo: Array<{week: Date; weekNumber: number}> = [];
   weeksByWFH.forEach((wfhCount, weekKey) => {
     weekInfo.push({
       weekKey: parseInt(weekKey),
@@ -520,7 +520,7 @@ function runValidation() {
  * Run validation with chunked week highlighting
  */
 function runValidationWithHighlights() {
-  const currentWeekStart = getCurrentWeekStart();
+  // currentWeekStart - unused variable removed
   if (!currentWeekStart) {
     updateComplianceIndicator();
     return;
@@ -569,7 +569,7 @@ function runValidationWithHighlights() {
 
     // Clear evaluation highlights for this window before moving to next
     for (
-      let weekIndex = windowStart;
+      let weekIndex: number = windowStart;
       weekIndex < windowStart + 12;
       weekIndex++
     ) {
@@ -586,8 +586,8 @@ function runValidationWithHighlights() {
   let totalWeekdays = 0;
 
   for (
-    let weekIndex = resultWindowStart;
-    weekIndex < resultWindowStart + 12;
+    let weekIndex: number = windowStart;
+    weekIndex < windowStart + 12;
     weekIndex++
   ) {
     const weekStart = new Date(currentWeekStart);
@@ -674,7 +674,7 @@ function clearAllValidationHighlights() {
     cellElement.ariaSelected = "false";
 
     // Update aria-label to reflect unselected state
-    const currentLabel = cellElement.ariaLabel;
+    const currentLabel = (cellElement as HTMLElement).ariaLabel;
     if (currentLabel) {
       cellElement.ariaLabel = currentLabel.replace(/\. .*$/, ". Unselected");
     }
