@@ -59,34 +59,14 @@ const months = Array.from({ length: 12 }, (_, index) => {
         <main id="calendar" class="calendar-container">
             <div
                 id="validation-message"
-                class="validation-message"
+                class="validation-message prominent-message"
                 role="status"
                 aria-live="polite"
                 style="display: none;"
             >
             </div>
 
-            <div class="legend" role="region" aria-label="Calendar legend">
-                <div class="legend-item">
-                    <div class="legend-color compliant" aria-hidden="true">
-                    </div>
-                    <span>Compliant</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color violation" aria-hidden="true">
-                    </div>
-                    <span>Violation</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color work-from-home" aria-hidden="true">
-                    </div>
-                    <span>Work from Home</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color office" aria-hidden="true"></div>
-                    <span>Office Day</span>
-                </div>
-            </div>
+
 
             <ActionButtons position="top" />
             <SettingsButton />
