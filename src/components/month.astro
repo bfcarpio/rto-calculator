@@ -121,7 +121,7 @@ const clearButtonId = `clear-${year}-${month}`;
                     // Calculate the first valid day in this row
                     let weekStartStr = "";
 
-                    // Find the Sunday of this week row for unique week numbering
+                    // Find the Monday of this week row for unique week numbering
                     for (let colIndex = 0; colIndex < cols; colIndex++) {
                         const cellIndex = rowIndex * cols + colIndex;
                         const dayNumber = cellIndex - offset + 1;
@@ -130,16 +130,16 @@ const clearButtonId = `clear-${year}-${month}`;
                             cellIndex >= offset &&
                             cellIndex < offset + daysInMonth
                         ) {
-                            // Find the Sunday of this week row
+                            // Find the Monday of this week row
                             const rowDate = new Date(year, month, dayNumber);
                             const dayOfWeek = rowDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
-                            const daysToSubtract = dayOfWeek; // Subtract to get to Sunday
-                            const sundayDate = new Date(rowDate);
-                            sundayDate.setDate(
+                            const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Subtract to get to Monday
+                            const mondayDate = new Date(rowDate);
+                            mondayDate.setDate(
                                 rowDate.getDate() - daysToSubtract,
                             );
-                            sundayDate.setHours(0, 0, 0, 0);
-                            weekStartStr = sundayDate.getTime().toString();
+                            mondayDate.setHours(0, 0, 0, 0);
+                            weekStartStr = mondayDate.getTime().toString();
                             break;
                         }
                     }
