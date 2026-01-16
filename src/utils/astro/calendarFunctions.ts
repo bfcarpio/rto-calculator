@@ -4,13 +4,14 @@
  */
 
 import type { WeekData } from "../../types";
-import type { IDragSelectionManager } from "../../types/calendar-types";
+import type {
+  DateString,
+  IDragSelectionManager,
+} from "../../types/calendar-types";
 import {
   getCalendarDates,
   formatDateISO,
   formatDateDisplay,
-  getDayNameShort,
-  getMonthName,
   isWeekend,
   isPastDate,
   isSameDay,
@@ -37,19 +38,15 @@ import {
   DEFAULT_POLICY,
 } from "../validation";
 
-import {
-  saveSelectedDates,
-  loadSelectedDates,
-  isLocalStorageAvailable,
-} from "../storage";
+import { saveSelectedDates, loadSelectedDates } from "../storage";
 
 import { DragSelectionManager } from "../dragSelection";
 
 // State management
-let selectedDates = new Set<string>();
+let selectedDates: Set<DateString> = new Set<DateString>();
 let weekStart: WeekStart = DEFAULT_WEEK_START;
 let weekDataMap = new Map<string, any>();
-let dragSelectionManager: DragSelectionManager | null = null;
+let dragSelectionManager: IDragSelectionManager | null = null;
 const today = new Date();
 today.setHours(0, 0, 0, 0);
 
@@ -116,6 +113,7 @@ export function getWeeksForMonth(
 
   // Fill in days from the beginning of the week to the first date
   const firstDate = monthDates[0];
+  if (!firstDate) return [];
   const firstDay = firstDate.getDay();
 
   let daysToAdd;
@@ -129,8 +127,8 @@ export function getWeeksForMonth(
 
   // Add preceding days from previous month
   for (let i = daysToAdd; i > 0; i--) {
-    const prevDate = new Date(firstDate);
-    prevDate.setDate(firstDate.getDate() - i);
+    const prevDate = new Date(firstDate ?? new Date());
+    prevDate.setDate((firstDate ?? new Date()).getDate() - i);
     currentWeek.push(prevDate);
   }
 
@@ -148,7 +146,7 @@ export function getWeeksForMonth(
   // Fill in remaining days of the last week
   if (currentWeek.length > 0) {
     const remainingDays = 7 - currentWeek.length;
-    const lastDate = currentWeek[currentWeek.length - 1];
+    const lastDate = currentWeek[currentWeek.length - 1] ?? new Date();
 
     for (let i = 1; i <= remainingDays; i++) {
       const nextDate = new Date(lastDate);
@@ -171,9 +169,9 @@ export function getWeeksForMonth(
 export function createDayCell(
   date: Date,
   currentMonth: number,
-  weekStart: WeekStart = DEFAULT_WEEK_START,
+  _weekStart: WeekStart = DEFAULT_WEEK_START,
 ): HTMLButtonElement {
-  const isoDate = formatDateISO(date);
+  const isoDate = formatDateISO(date) as DateString;
   const isSelected = selectedDates.has(isoDate);
   const isWeekendDay = isWeekend(date);
   const isPast = isPastDate(date);
@@ -236,7 +234,7 @@ export function createMonthElement(
   weekStart: WeekStart = DEFAULT_WEEK_START,
 ): HTMLDivElement {
   const [year, monthIndex] = monthKey.split("-").map(Number);
-  const monthDate = new Date(year, monthIndex, 1);
+  const monthDate = new Date(year ?? 0, (monthIndex ?? 0) - 1, 1);
 
   const monthContainer = document.createElement("div");
   monthContainer.className = "month-block";
@@ -272,7 +270,7 @@ export function createMonthElement(
   const weeks = getWeeksForMonth(monthDates, weekStart);
   weeks.forEach((week) => {
     week.forEach((date) => {
-      const dayCell = createDayCell(date, monthIndex, weekStart);
+      const dayCell = createDayCell(date, (monthIndex ?? 0) - 1, weekStart);
       grid.appendChild(dayCell);
     });
   });
@@ -306,14 +304,18 @@ export function renderCalendar(
 
   // Sort months chronologically
   const sortedMonthKeys = Object.keys(months).sort((a, b) => {
-    const [yearA, monthA] = a.split("-").map(Number);
-    const [yearB, monthB] = b.split("-").map(Number);
+    const partsA = a.split("-").map(Number);
+    const partsB = b.split("-").map(Number);
+    const yearA = partsA[0] ?? 0;
+    const monthA = partsA[1] ?? 0;
+    const yearB = partsB[0] ?? 0;
+    const monthB = partsB[1] ?? 0;
     if (yearA !== yearB) return yearA - yearB;
     return monthA - monthB;
   });
 
   sortedMonthKeys.forEach((monthKey) => {
-    const monthDates = months[monthKey];
+    const monthDates = months[monthKey] ?? [];
     const monthElement = createMonthElement(monthKey, monthDates, weekStart);
     container.appendChild(monthElement);
   });
@@ -323,7 +325,7 @@ export function renderCalendar(
 }
 
 export function validateAndUpdateCalendar(
-  weekStart: WeekStart = DEFAULT_WEEK_START,
+  _weekStart: WeekStart = DEFAULT_WEEK_START,
 ): void {
   const calendarContainer = document.getElementById("calendar-container");
   if (!calendarContainer) return;
@@ -338,19 +340,19 @@ export function validateAndUpdateCalendar(
 
     const date = new Date(dateStr);
     const weekStartLocal = getStartOfWeek(date);
-    const weekKey = formatDateISO(weekStartLocal);
+    const weekKey = formatDateISO(weekStartLocal) as DateString;
 
     if (!weeksMap.has(weekKey)) {
       const weekDates = getWeekDates(date);
       const weekData = validateWeek(
         weekDates,
-        selectedDates,
+        selectedDates as Set<string>,
         DEFAULT_POLICY.minOfficeDaysPerWeek,
       );
       weeksMap.set(weekKey, weekData);
     }
 
-    const weekData = weeksMap.get(weekKey);
+    weeksMap.get(weekKey);
     (dayCell as HTMLElement).setAttribute(
       "aria-describedby",
       `week-${weekKey}`,
@@ -364,11 +366,11 @@ export function validateAndUpdateCalendar(
 
     const date = new Date(dateStr);
     const weekStartLocal = getStartOfWeek(date);
-    const weekKey = formatDateISO(weekStartLocal);
+    const weekKey = formatDateISO(weekStartLocal) as DateString;
     const weekData = weeksMap.get(weekKey);
 
     // Update selected state
-    if (selectedDates.has(dateStr)) {
+    if (dateStr && selectedDates.has(dateStr as DateString)) {
       (dayCell as HTMLElement).classList.add("selected");
     } else {
       (dayCell as HTMLElement).classList.remove("selected");
@@ -399,9 +401,10 @@ export function handleDayClick(event: Event): void {
   if (!dateStr) return;
 
   // Toggle selection
-  if (selectedDates.has(dateStr)) {
-    selectedDates.delete(dateStr);
-  } else {
+  const dateString = dateStr as DateString;
+  if (dateStr && selectedDates.has(dateString)) {
+    selectedDates.delete(dateString);
+  } else if (dateStr) {
     // Validate selection before adding
     const date = new Date(dateStr);
     const validation = validateSelection(
@@ -415,7 +418,7 @@ export function handleDayClick(event: Event): void {
       // Still allow selection despite warning
     }
 
-    selectedDates.add(dateStr);
+    selectedDates.add(dateString);
   }
 
   // Save selections
@@ -423,7 +426,7 @@ export function handleDayClick(event: Event): void {
 
   // Update drag selection manager
   if (dragSelectionManager) {
-    dragSelectionManager.updateSelectedDates(selectedDates);
+    dragSelectionManager.updateSelectedDates(selectedDates as Set<DateString>);
   }
 
   // Update UI
@@ -451,7 +454,7 @@ export function handleDayMouseDown(event: Event): void {
 
   console.log("Starting drag on date:", dateStr);
   if (dragSelectionManager) {
-    dragSelectionManager.startDrag(dateStr);
+    dragSelectionManager.startDrag(dateStr as DateString);
     console.log("Drag started successfully");
   } else {
     console.log("ERROR: dragSelectionManager is null!");
@@ -471,8 +474,7 @@ export function handleDayMouseOver(event: Event): void {
 
   if (dragSelectionManager) {
     if (dragSelectionManager.isDragging()) {
-      console.log("Dragging over date:", dateStr);
-      dragSelectionManager.updateDrag(dateStr);
+      dragSelectionManager.updateDrag(dateStr as DateString);
       dragSelectionManager.updateSelection();
 
       // Update UI for all affected cells
@@ -499,7 +501,7 @@ export function handleDayMouseUp(): void {
  * @param dateStr - The date string for this cell
  */
 export function updateDayCell(cell: HTMLElement, dateStr: string): void {
-  const isSelected = selectedDates.has(dateStr);
+  const isSelected = selectedDates.has(dateStr as DateString);
   const date = new Date(dateStr);
 
   if (isSelected) {
@@ -591,7 +593,7 @@ export function clearAllSelections(): void {
 
   // Update drag selection manager
   if (dragSelectionManager) {
-    dragSelectionManager.updateSelectedDates(selectedDates);
+    dragSelectionManager.updateSelectedDates(selectedDates as Set<DateString>);
   }
 
   const calendarContainer = document.getElementById("calendar-container");
@@ -667,7 +669,7 @@ export function init(): void {
   weekStart = getLocaleWeekStart();
 
   // Load saved selections
-  selectedDates = loadSelectedDates();
+  selectedDates = loadSelectedDates() as Set<DateString>;
 
   // Render calendar
   const calendarContainer = document.getElementById("calendar-container");
@@ -676,18 +678,15 @@ export function init(): void {
   }
 
   // Initialize drag selection manager
-  const dragSelectionManager: IDragSelectionManager | null =
-    new DragSelectionManager(
-      selectedDates,
-      (newDates: Set<string>) => {
-        selectedDates = newDates;
-        saveSelectedDates(selectedDates);
-        validateAndUpdateCalendar(weekStart);
-        updateComplianceIndicator();
-      },
-      validateSelection,
-      DEFAULT_POLICY.minOfficeDaysPerWeek,
-    );
+  dragSelectionManager = new DragSelectionManager(
+    selectedDates as Set<DateString>,
+    (newDates: Set<DateString>) => {
+      selectedDates = newDates;
+      saveSelectedDates(selectedDates);
+      validateAndUpdateCalendar(weekStart);
+      updateComplianceIndicator();
+    },
+  ) as IDragSelectionManager | null;
 
   // Setup event listeners
   setupEventListeners();
@@ -710,7 +709,7 @@ export function getDragSelectionManager(): IDragSelectionManager | null {
 
 // Export setter functions for state variables
 export function setSelectedDates(newSelectedDates: Set<string>): void {
-  selectedDates = new Set(newSelectedDates);
+  selectedDates = new Set(newSelectedDates) as Set<DateString>;
 }
 
 export function setWeekDataMap(newWeekDataMap: Map<string, any>): void {

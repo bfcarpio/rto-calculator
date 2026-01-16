@@ -11,25 +11,31 @@
  * - Week is compliant if office days >= 3 (60%)
  */
 
+// Define ComplianceResult locally since it's not exported from the type file
+interface ComplianceResult {
+  isValid: boolean;
+  message: string;
+  overallCompliance: number;
+}
+
 // Configuration
 const CONFIG = {
   MIN_OFFICE_DAYS_PER_WEEK: 3,
   TOTAL_WEEKDAYS_PER_WEEK: 5,
   ROLLING_PERIOD_WEEKS: 12,
   THRESHOLD_PERCENTAGE: 0.6, // 3/5 = 60%
-  DEBUG: true, // Debug mode enabled
-};
+  DEBUG: false, // Debug mode disabled
+} as const;
 
 // State
-/** @type {number | null} */
-let validationTimeout = null;
+let validationTimeout: number | null = null;
 
 /**
  * Get the Monday (start) of the week for a given date
- * @param {Date} date - The reference date
- * @returns {Date} Monday of that week
+ * @param date - The reference date
+ * @returns Monday of that week
  */
-function getStartOfWeek(date) {
+function getStartOfWeek(date: Date): Date {
   const d = new Date(date);
   const day = d.getDay();
   // Sunday (0) -> same day (start of calendar week)
@@ -43,18 +49,17 @@ function getStartOfWeek(date) {
 }
 
 /**
- * Get all work-from-home dates from the DOM
- * @returns {Array<Date>} Array of work-from-home dates
+ * Get work-from-home dates from DOM
+ * @returns Array of date objects
  */
-function getWorkFromHomeDates() {
+function getWorkFromHomeDates(): Date[] {
   const wfhCells = document.querySelectorAll(
     ".calendar-day.selected.work-from-home[data-year][data-month][data-day]",
   );
-  /** @type {Array<Date>} */
-  const wfhDates = [];
+  const wfhDates: Date[] = [];
 
   wfhCells.forEach((cell) => {
-    const cellElement = /** @type {HTMLElement} */ (cell);
+    const cellElement = cell as HTMLElement;
     const year = parseInt(cellElement.dataset.year || "0");
     const month = parseInt(cellElement.dataset.month || "0");
     const day = parseInt(cellElement.dataset.day || "0");
@@ -73,9 +78,9 @@ function getWorkFromHomeDates() {
 
 /**
  * Get the Monday of the current week
- * @returns {Date|null} Monday of current week, or null if no calendar found
+ * @returns Monday of current week, or null if no calendar found
  */
-function getCurrentWeekStart() {
+function getCurrentWeekStart(): Date | null {
   // Find any calendar cell to determine current week
   const calendarCells = document.querySelectorAll(
     ".calendar-day[data-year][data-month][data-day]:not(.empty)",
@@ -85,7 +90,7 @@ function getCurrentWeekStart() {
     return null;
   }
 
-  const firstCell = /** @type {HTMLElement} */ (calendarCells[0]);
+  const firstCell = calendarCells[0] as HTMLElement;
   const year = parseInt(firstCell.dataset.year || "0");
   const month = parseInt(firstCell.dataset.month || "0");
   const day = parseInt(firstCell.dataset.day || "0");
@@ -95,10 +100,10 @@ function getCurrentWeekStart() {
 
 /**
  * Group work-from-home dates by week
- * @param {Array<Date>} wfhDates - Work-from-home dates
- * @returns {Map<number, number>} Map of week start timestamp to WFH day count
+ * @param wfhDates - Work-from-home dates
+ * @returns Map of week start timestamp to WFH day count
  */
-function groupDatesByWeek(wfhDates) {
+function groupDatesByWeek(wfhDates: Date[]): Map<number, number> {
   const weeksMap = new Map<number, number>();
 
   wfhDates.forEach((date) => {
@@ -116,11 +121,20 @@ function groupDatesByWeek(wfhDates) {
 
 /**
  * Calculate compliance for a specific week
- * @param {Date} weekStart - Monday of the week
- * @param {Map<number, number>} weeksByWFH - Map of weeks with WFH counts
- * @returns {{weekStart: Date, officeDays: number, wfhDays: number, totalDays: number, isCompliant: boolean, percentage: number}} Week compliance data
  */
-function calculateWeekCompliance(weekStart, weeksByWFH) {
+interface WeekCompliance {
+  weekStart: Date;
+  officeDays: number;
+  wfhDays: number;
+  totalDays: number;
+  isCompliant: boolean;
+  percentage: number;
+}
+
+function calculateWeekCompliance(
+  weekStart: Date,
+  weeksByWFH: Map<number, number>,
+): WeekCompliance {
   const weekKey = weekStart.getTime();
   const wfhDays = weeksByWFH.get(weekKey) || 0;
   const officeDays = CONFIG.TOTAL_WEEKDAYS_PER_WEEK - wfhDays;
@@ -139,11 +153,11 @@ function calculateWeekCompliance(weekStart, weeksByWFH) {
 
 /**
  * Get all days in a week (Monday-Friday)
- * @param {Date} weekStart - Monday of the week
- * @returns {Array<Date>} Weekday dates for the week
+ * @param weekStart - Monday of the week
+ * @returns Weekday dates for the week
  */
-function getWeekDates(weekStart) {
-  const dates = [];
+function getWeekDates(weekStart: Date): Date[] {
+  const dates: Date[] = [];
   for (let i = 0; i < 5; i++) {
     const d = new Date(weekStart);
     d.setDate(weekStart.getDate() + i);
@@ -154,10 +168,10 @@ function getWeekDates(weekStart) {
 
 /**
  * Get the week number for a date within the rolling period
- * @param {Date} weekStart - Monday of the week
- * @returns {number} Week number (0-11 for rolling period)
+ * @param weekStart - Monday of the week
+ * @returns Week number (0-11 for rolling period)
  */
-function getRollingWeekNumber(weekStart) {
+function getRollingWeekNumber(weekStart: Date): number {
   const currentWeekStart = getCurrentWeekStart();
   if (!currentWeekStart) return 0;
 
@@ -172,9 +186,16 @@ function getRollingWeekNumber(weekStart) {
 
 /**
  * Calculate rolling 12-week compliance
- * @returns {{isValid: boolean, message: string, weeksData: Array<{weekStart: Date, officeDays: number, wfhDays: number, totalDays: number, isCompliant: boolean, percentage: number}>, overallCompliance: number, currentWeekNumber: number}} Overall compliance data
  */
-function calculateRollingCompliance() {
+interface RollingComplianceResult {
+  isValid: boolean;
+  message: string;
+  weeksData: WeekCompliance[];
+  overallCompliance: number;
+  currentWeekNumber: number;
+}
+
+function calculateRollingCompliance(): RollingComplianceResult {
   const wfhDates = getWorkFromHomeDates();
   const weeksByWFH = groupDatesByWeek(wfhDates);
   const currentWeekStart = getCurrentWeekStart();
@@ -190,8 +211,7 @@ function calculateRollingCompliance() {
   }
 
   // Get data for rolling 12-week period
-  /** @type {Array<{weekStart: Date, officeDays: number, wfhDays: number, totalDays: number, isCompliant: boolean, percentage: number}>} */
-  const weeksData = [];
+  const weeksData: WeekCompliance[] = [];
   for (let week = 0; week < CONFIG.ROLLING_PERIOD_WEEKS; week++) {
     const weekStart = new Date(currentWeekStart);
     weekStart.setDate(currentWeekStart.getDate() + week * 7);
@@ -245,10 +265,15 @@ function calculateRollingCompliance() {
 /**
  * Update the compliance indicator in the UI
  */
-function updateComplianceIndicator(result: ComplianceResult): void {
+function updateComplianceIndicator(result?: ComplianceResult): void {
   // If no result provided, fall back to old calculation
   if (!result) {
-    result = calculateRollingCompliance();
+    const rollingResult = calculateRollingCompliance();
+    result = {
+      isValid: rollingResult.isValid,
+      message: rollingResult.message,
+      overallCompliance: rollingResult.overallCompliance,
+    };
   }
 
   const indicator = document.getElementById("compliance-indicator");
@@ -285,7 +310,7 @@ function updateComplianceIndicator(result: ComplianceResult): void {
 /**
  * Highlight the current week being evaluated
  */
-function highlightCurrentWeek() {
+function highlightCurrentWeek(): void {
   const currentWeekStart = getCurrentWeekStart();
   if (!currentWeekStart) return;
 
@@ -309,10 +334,11 @@ function highlightCurrentWeek() {
 
 /**
  * Update week status icon during evaluation
- * @param {Date} weekStart - Monday of week being evaluated
- * @param {boolean} isEvaluating - Whether this week is currently being evaluated
  */
-function updateWeekStatusIcon(weekStart, isEvaluating = true) {
+function updateWeekStatusIcon(
+  weekStart: Date,
+  isEvaluating: boolean = true,
+): void {
   const weekKey = weekStart.getTime().toString();
   const statusCell = document.querySelector(`[data-week-start="${weekKey}"]`);
 
@@ -329,26 +355,23 @@ function updateWeekStatusIcon(weekStart, isEvaluating = true) {
   if (!statusIcon) return;
 
   if (isEvaluating) {
-    statusIcon.textContent = "⏳";
+    (statusIcon as HTMLElement).textContent = "⏳";
     statusIcon.classList.add("evaluating");
     statusIcon.classList.remove("violation");
     if (CONFIG.DEBUG) {
       console.log(`[updateWeekStatusIcon] Set ⏳ icon for week ${weekKey}`);
     }
   } else {
-    statusIcon.textContent = "";
+    (statusIcon as HTMLElement).textContent = "";
     statusIcon.classList.remove("evaluating", "violation");
-    if (CONFIG.DEBUG) {
-      console.log(`[updateWeekStatusIcon] Cleared icon for week ${weekKey}`);
-    }
   }
 }
 
 /**
  * Set week status to violation (red X)
- * @param {Date} weekStart - Monday of the week
+ * @param weekStart - Sunday of the week
  */
-function setWeekStatusViolation(weekStart) {
+function setWeekStatusViolation(weekStart: Date): void {
   const weekKey = weekStart.getTime().toString();
   const statusCell = document.querySelector(`[data-week-start="${weekKey}"]`);
 
@@ -362,7 +385,7 @@ function setWeekStatusViolation(weekStart) {
   if (statusCell) {
     const statusIcon = statusCell.querySelector(".week-status-icon");
     if (statusIcon) {
-      statusIcon.textContent = "✗";
+      (statusIcon as HTMLElement).textContent = "✗";
       statusIcon.classList.remove("evaluating");
       statusIcon.classList.add("violation");
       if (CONFIG.DEBUG) {
@@ -374,9 +397,9 @@ function setWeekStatusViolation(weekStart) {
 
 /**
  * Set week status to least attended (grey square)
- * @param {Date} weekStart - Sunday of the week
+ * @param weekStart - Sunday of the week
  */
-function setWeekStatusLeastAttended(weekStart) {
+function setWeekStatusLeastAttended(weekStart: Date): void {
   const weekKey = weekStart.getTime().toString();
   const statusCell = document.querySelector(`[data-week-start="${weekKey}"]`);
 
@@ -390,7 +413,7 @@ function setWeekStatusLeastAttended(weekStart) {
   if (statusCell) {
     const statusIcon = statusCell.querySelector(".week-status-icon");
     if (statusIcon) {
-      statusIcon.textContent = "⬜";
+      (statusIcon as HTMLElement).textContent = "⬜";
       statusIcon.classList.remove("evaluating", "violation");
       statusIcon.classList.add("least-attended");
       if (CONFIG.DEBUG) {
@@ -404,25 +427,29 @@ function setWeekStatusLeastAttended(weekStart) {
 
 /**
  * Identify and mark the 4 least attended weeks
- * @param {Map} weeksByWFH - Map of week start timestamp to WFH count
- * @param {Date} currentWeekStart - Current week start date
+ * @param weeksByWFH - Map of week start timestamp to WFH count
+ * @param _currentWeekStart - Current week start date (unused)
  */
-function markLeastAttendedWeeks(weeksByWFH, currentWeekStart) {
+function markLeastAttendedWeeks(
+  weeksByWFH: Map<number, number>,
+  _currentWeekStart: Date,
+): void {
   if (CONFIG.DEBUG) {
     console.log("[markLeastAttendedWeeks] Identifying 4 least attended weeks");
   }
 
-  // Create array of week info with WFH counts
-  const weekInfo: Array<{week: Date; weekNumber: number}> = [];
-  weeksByWFH.forEach((wfhCount, weekKey) => {
+  const weekInfo: Array<{ weekKey: number; wfhCount: number; weekDate: Date }> =
+    [];
+
+  // Sort by WFH count (ascending) to find least attended
+  weeksByWFH.forEach((wfhCount: number, weekKey: number) => {
     weekInfo.push({
-      weekKey: parseInt(weekKey),
+      weekKey,
       wfhCount,
-      weekDate: new Date(parseInt(weekKey)),
+      weekDate: new Date(weekKey),
     });
   });
 
-  // Sort by WFH count (ascending) to find least attended
   weekInfo.sort((a, b) => a.wfhCount - b.wfhCount);
 
   // Get the 4 weeks with fewest WFH days
@@ -447,13 +474,13 @@ function markLeastAttendedWeeks(weeksByWFH, currentWeekStart) {
 /**
  * Clear all week status icons
  */
-function clearWeekStatusIcons() {
+function clearWeekStatusIcons(): void {
   document
     .querySelectorAll(
       ".week-status-icon.evaluating, .week-status-icon.violation, .week-status-icon.least-attended",
     )
     .forEach((icon) => {
-      icon.textContent = "";
+      (icon as HTMLElement).textContent = "";
       icon.classList.remove("evaluating", "violation", "least-attended");
     });
 }
@@ -461,11 +488,11 @@ function clearWeekStatusIcons() {
 /**
  * Dim weekends in the calendar
  */
-function dimWeekends() {
+function dimWeekends(): void {
   const allCells = document.querySelectorAll(".calendar-day[data-day]");
 
   allCells.forEach((cell) => {
-    const cellElement = /** @type {HTMLElement} */ (cell);
+    const cellElement = cell as HTMLElement;
     const year = parseInt(cellElement.dataset.year || "0");
     const month = parseInt(cellElement.dataset.month || "0");
     const day = parseInt(cellElement.dataset.day || "0");
@@ -483,9 +510,9 @@ function dimWeekends() {
 
 /**
  * Announce a message to screen readers
- * @param {string} message - The message to announce
+ * @param message - The message to announce
  */
-function announceToScreenReader(message) {
+function announceToScreenReader(message: string): void {
   const announcement = document.createElement("div");
   announcement.setAttribute("role", "status");
   announcement.setAttribute("aria-live", "polite");
@@ -500,9 +527,9 @@ function announceToScreenReader(message) {
 }
 
 /**
- * Run full validation when triggered by user
+ * Run validation with status column updates
  */
-function runValidation() {
+function runValidation(): void {
   // Highlight current week
   highlightCurrentWeek();
 
@@ -519,8 +546,8 @@ function runValidation() {
 /**
  * Run validation with chunked week highlighting
  */
-function runValidationWithHighlights() {
-  // currentWeekStart - unused variable removed
+function runValidationWithHighlights(): void {
+  const currentWeekStart = getCurrentWeekStart();
   if (!currentWeekStart) {
     updateComplianceIndicator();
     return;
@@ -530,7 +557,7 @@ function runValidationWithHighlights() {
   const weeksByWFH = groupDatesByWeek(wfhDates);
 
   let violationFound = false;
-  let violatingWindowStart = null;
+  let violatingWindowStart: number | null = null;
 
   // Identify and mark 4 least attended weeks (fewest selections)
   markLeastAttendedWeeks(weeksByWFH, currentWeekStart);
@@ -569,7 +596,7 @@ function runValidationWithHighlights() {
 
     // Clear evaluation highlights for this window before moving to next
     for (
-      let weekIndex: number = windowStart;
+      let weekIndex = windowStart;
       weekIndex < windowStart + 12;
       weekIndex++
     ) {
@@ -585,11 +612,9 @@ function runValidationWithHighlights() {
   let totalOfficeDays = 0;
   let totalWeekdays = 0;
 
-  for (
-    let weekIndex: number = windowStart;
-    weekIndex < windowStart + 12;
-    weekIndex++
-  ) {
+  const windowStart = resultWindowStart ?? 0;
+
+  for (let weekIndex = windowStart; weekIndex < windowStart + 12; weekIndex++) {
     const weekStart = new Date(currentWeekStart);
     weekStart.setDate(currentWeekStart.getDate() + weekIndex * 7);
     const weekKey = weekStart.getTime();
@@ -620,12 +645,16 @@ function runValidationWithHighlights() {
 
 /**
  * Check if a 12-week window is compliant
- * @param {Map<number, number>} weeksByWFH - Map of weeks with WFH counts
- * @param {Date} currentWeekStart - Monday of current week
- * @param {number} windowStart - Starting week index (0-12)
- * @returns {boolean} Whether the window is compliant
+ * @param weeksByWFH - Map of weeks with WFH counts
+ * @param currentWeekStart - Monday of current week
+ * @param windowStart - Starting week index (0-12)
+ * @returns Whether the window is compliant
  */
-function check12WeekCompliance(weeksByWFH, currentWeekStart, windowStart) {
+function check12WeekCompliance(
+  weeksByWFH: Map<number, number>,
+  currentWeekStart: Date,
+  windowStart: number,
+): boolean {
   let totalOfficeDays = 0;
   let totalWeekdays = 0;
 
@@ -646,10 +675,13 @@ function check12WeekCompliance(weeksByWFH, currentWeekStart, windowStart) {
 
 /**
  * Mark violating weeks in status column (red X)
- * @param {Date} currentWeekStart - Monday of current week
- * @param {number} windowStart - Starting week index of violation
+ * @param currentWeekStart - Monday of current week
+ * @param windowStart - Starting week index of violation
  */
-function mark12WeekViolation(currentWeekStart, windowStart) {
+function mark12WeekViolation(
+  currentWeekStart: Date,
+  windowStart: number,
+): void {
   // Mark each week in the violating window with red X
   for (let weekIndex = windowStart; weekIndex < windowStart + 12; weekIndex++) {
     const weekStart = new Date(currentWeekStart);
@@ -661,20 +693,20 @@ function mark12WeekViolation(currentWeekStart, windowStart) {
 /**
  * Clear all validation highlights, status icons, and day selections
  */
-function clearAllValidationHighlights() {
+function clearAllValidationHighlights(): void {
   clearWeekStatusIcons();
 
   // Clear all day selections
   const selectedCells = document.querySelectorAll(".calendar-day.selected");
   selectedCells.forEach((cell) => {
-    const cellElement = cell;
+    const cellElement = cell as HTMLElement;
     cellElement.dataset.selected = "false";
     cellElement.dataset.selectionType = "";
     cellElement.classList.remove("selected", "work-from-home", "office");
     cellElement.ariaSelected = "false";
 
     // Update aria-label to reflect unselected state
-    const currentLabel = (cellElement as HTMLElement).ariaLabel;
+    const currentLabel = cellElement.ariaLabel;
     if (currentLabel) {
       cellElement.ariaLabel = currentLabel.replace(/\. .*$/, ". Unselected");
     }
@@ -684,7 +716,7 @@ function clearAllValidationHighlights() {
 /**
  * Initialize RTO validation
  */
-function initRTOValidation() {
+function initRTOValidation(): void {
   // Highlight current week
   highlightCurrentWeek();
 
@@ -731,7 +763,7 @@ function initRTOValidation() {
 /**
  * Clean up RTO validation resources
  */
-function cleanupRTOValidation() {
+export function cleanupRTOValidation(): void {
   if (validationTimeout) {
     clearTimeout(validationTimeout);
   }
@@ -749,14 +781,15 @@ if (document.readyState === "loading") {
 }
 
 // Export functions for external access if needed
-/** @type {any} */
-const globalWindow = window;
-globalWindow.RTOValidation = {
-  calculateRollingCompliance,
-  updateComplianceIndicator,
-  highlightCurrentWeek,
-  runValidation,
-  runValidationWithHighlights,
-  clearAllValidationHighlights,
-  cleanupRTOValidation,
-};
+declare global {
+  interface Window {
+    runValidation: typeof runValidation;
+    clearAllValidationHighlights: typeof clearAllValidationHighlights;
+  }
+}
+
+// Make functions available globally
+if (typeof window !== "undefined") {
+  window.runValidation = runValidation;
+  window.clearAllValidationHighlights = clearAllValidationHighlights;
+}

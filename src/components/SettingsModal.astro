@@ -574,7 +574,7 @@ const { id = "settings-modal" } = Astro.props;
             saveButton.addEventListener("click", () => {
                 // Save to localStorage
                 saveSettingsToLocalStorage();
-                modal.close();
+                if (modal) modal.close();
                 announceToScreenReader("Settings saved");
             });
         }
@@ -584,7 +584,7 @@ const { id = "settings-modal" } = Astro.props;
             resetButton.addEventListener("click", () => {
                 if (confirm("Reset all settings to default values?")) {
                     resetSettings();
-                    modal.close();
+                    if (modal) modal.close();
                     announceToScreenReader("Settings reset to defaults");
                 }
             });
@@ -724,7 +724,7 @@ const { id = "settings-modal" } = Astro.props;
             }
 
             if (minOfficeDaysInput) {
-                minOfficeDaysInput.value = 3;
+                minOfficeDaysInput.value = "3";
                 if (validationManager) {
                     validationManager.updateConfig({
                         minOfficeDaysPerWeek: 3,

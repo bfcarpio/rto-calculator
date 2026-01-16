@@ -118,7 +118,11 @@ export interface SelectionValidationResult {
 /**
  * Calendar event types
  */
-export type CalendarEventType = "selection" | "validation" | "highlight" | "clear";
+export type CalendarEventType =
+  | "selection"
+  | "validation"
+  | "highlight"
+  | "clear";
 
 /**
  * Calendar event payload
@@ -153,13 +157,18 @@ export interface IDragSelectionManager {
   readonly state: Readonly<DragState>;
   readonly selectedDates: ReadonlySet<DateString>;
   startDrag(startPoint: CellPosition): void;
+  startDrag(dateString: DateString): void;
   updateDrag(currentPoint: CellPosition): void;
+  updateDrag(dateString: DateString): void;
   endDrag(): void;
   clearSelection(): void;
   addSelection(dateString: DateString): void;
   removeSelection(dateString: DateString): void;
   toggleSelection(dateString: DateString): void;
   validateSelection(dateString: DateString): SelectionValidationResult;
+  updateSelectedDates(selectedDates: Set<DateString>): void;
+  updateSelection(): void;
+  isDragging(): boolean;
   destroy(): void;
 }
 
@@ -180,7 +189,11 @@ export interface CalendarCellDataAttributes {
 /**
  * Compliance status
  */
-export type ComplianceStatus = "compliant" | "violation" | "warning" | "unknown";
+export type ComplianceStatus =
+  | "compliant"
+  | "violation"
+  | "warning"
+  | "unknown";
 
 /**
  * Compliance result

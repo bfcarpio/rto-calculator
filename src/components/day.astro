@@ -59,11 +59,12 @@ const cellId = `day-cell-${year}-${month}-${dayNumber}`;
     <span class="sr-only">{dateString}</span>
 </td>
 
-<script define:vars={{ cellId, dayNumber }}>
+<script define:vars={{ cellId, dayNumber }} is:inline>
     /**
      * Initialize day cell with proper accessibility and event handling
      */
     function initDayCell() {
+        // @ts-ignore - cellId is defined via define:vars
         const cell = document.getElementById(cellId);
         if (!cell) {
             return;

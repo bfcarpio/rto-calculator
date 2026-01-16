@@ -10,65 +10,67 @@ import type {
   DateString,
   SelectionValidationResult,
   DragState,
-} from "../../types/calendar-types";
+} from "../types/calendar-types";
 
 /**
  * Drag selection manager for calendar
  * Implements IDragSelectionManager interface
  */
 export class DragSelectionManager implements IDragSelectionManager {
-  private dragState: DragState = {
+  private _dragState: DragState = {
     isDragging: false,
     startPoint: null,
     currentPoint: null,
     direction: null,
   };
 
-  private selectedDates: Set<DateString>;
+  private _selectedDates: Set<DateString>;
   private onSelectionChange: (selectedDates: Set<DateString>) => void;
-  private validateSelection: (
-    date: Date,
-    selectedDates: Set<DateString>,
-    minOfficeDaysPerWeek: number,
-  ) => SelectionValidationResult;
-  private minOfficeDaysPerWeek: number;
 
   constructor(
     initialSelectedDates: Set<DateString>,
     onSelectionChange: (selectedDates: Set<DateString>) => void,
-    validateSelection: (
-      date: Date,
-      selectedDates: Set<DateString>,
-      minOfficeDaysPerWeek: number,
-    ) => SelectionValidationResult,
-    minOfficeDaysPerWeek: number,
   ) {
-    this.selectedDates = new Set(initialSelectedDates);
+    this._selectedDates = new Set(initialSelectedDates);
     this.onSelectionChange = onSelectionChange;
-    this.validateSelection = validateSelection;
-    this.minOfficeDaysPerWeek = minOfficeDaysPerWeek;
   }
 
   /**
    * Get current drag state
    */
   get state(): Readonly<DragState> {
-    return Object.freeze({ ...this.dragState });
+    return Object.freeze({ ...this._dragState });
+  }
+
+  /**
+   * Set the drag state (public setter)
+   */
+  set state(newState: DragState) {
+    this._dragState = newState;
   }
 
   /**
    * Get all currently selected dates
    */
   get selectedDates(): ReadonlySet<DateString> {
-    return new Set(this.selectedDates) as ReadonlySet<DateString>;
+    return new Set(this._selectedDates) as ReadonlySet<DateString>;
   }
 
   /**
    * Start drag selection from a cell position
    */
-  startDrag(startPoint: CellPosition): void {
-    const dateStr = this.cellPositionToDate(startPoint);
-    this.dragState = {
+  startDrag(startPoint: CellPosition): void;
+  /**
+   * Start drag selection from a date string
+   */
+  startDrag(dateString: DateString): void;
+  /**
+   * Start drag selection implementation
+   */
+  startDrag(input: CellPosition | DateString): void {
+    const dateStr =
+      typeof input === "string" ? input : this.cellPositionToDate(input);
+    this._dragState = {
       isDragging: true,
       startPoint: dateStr,
       currentPoint: dateStr,
@@ -79,19 +81,28 @@ export class DragSelectionManager implements IDragSelectionManager {
   /**
    * Update drag selection to a new cell position
    */
-  updateDrag(currentPoint: CellPosition): void {
-    const dateStr = this.cellPositionToDate(currentPoint);
-    if (!this.dragState.isDragging || !this.dragState.startPoint) {
+  updateDrag(currentPoint: CellPosition): void;
+  /**
+   * Update drag selection to a date string
+   */
+  updateDrag(dateString: DateString): void;
+  /**
+   * Update drag selection implementation
+   */
+  updateDrag(input: CellPosition | DateString): void {
+    const dateStr =
+      typeof input === "string" ? input : this.cellPositionToDate(input);
+    if (!this._dragState.isDragging || !this._dragState.startPoint) {
       return;
     }
 
-    this.dragState.currentPoint = dateStr;
+    this._dragState.currentPoint = dateStr;
 
     // Determine drag direction
-    const startDate = new Date(this.dragState.startPoint);
+    const startDate = new Date(this._dragState.startPoint);
     const currentDate = new Date(dateStr);
 
-    this.dragState.direction =
+    this._dragState.direction =
       currentDate >= startDate ? "forward" : "backward";
   }
 
@@ -99,14 +110,14 @@ export class DragSelectionManager implements IDragSelectionManager {
    * End drag selection and apply changes
    */
   endDrag(): void {
-    if (!this.dragState.isDragging) {
+    if (!this._dragState.isDragging) {
       return;
     }
 
-    this.dragState.isDragging = false;
-    this.dragState.startPoint = null;
-    this.dragState.currentPoint = null;
-    this.dragState.direction = null;
+    this._dragState.isDragging = false;
+    this._dragState.startPoint = null;
+    this._dragState.currentPoint = null;
+    this._dragState.direction = null;
 
     // Apply the selection
     this.updateSelection();
@@ -116,7 +127,7 @@ export class DragSelectionManager implements IDragSelectionManager {
    * Clear all selections
    */
   clearSelection(): void {
-    this.selectedDates.clear();
+    this._selectedDates.clear();
     this.onSelectionChange(new Set<DateString>());
   }
 
@@ -124,27 +135,43 @@ export class DragSelectionManager implements IDragSelectionManager {
    * Add a date to selection
    */
   addSelection(dateString: DateString): void {
-    this.selectedDates.add(dateString);
-    this.onSelectionChange(new Set(this.selectedDates));
+    this._selectedDates.add(dateString);
+    this.onSelectionChange(new Set(this._selectedDates));
   }
 
   /**
    * Remove a date from selection
    */
   removeSelection(dateString: DateString): void {
-    this.selectedDates.delete(dateString);
-    this.onSelectionChange(new Set(this.selectedDates));
+    this._selectedDates.delete(dateString);
+    this.onSelectionChange(new Set(this._selectedDates));
   }
 
   /**
    * Toggle a date's selection state
    */
   toggleSelection(dateString: DateString): void {
-    if (this.selectedDates.has(dateString)) {
+    if (this._selectedDates.has(dateString)) {
       this.removeSelection(dateString);
     } else {
       this.addSelection(dateString);
     }
+  }
+
+  /**
+   * Check if currently dragging
+   */
+  isDragging(): boolean {
+    return this._dragState.isDragging;
+  }
+
+  /**
+   * Update selected dates from external source
+   * @param selectedDates - New set of selected dates
+   */
+  updateSelectedDates(selectedDates: Set<DateString>): void {
+    this._selectedDates = new Set(selectedDates);
+    this.onSelectionChange(new Set(this._selectedDates));
   }
 
   /**
@@ -182,7 +209,7 @@ export class DragSelectionManager implements IDragSelectionManager {
    */
   destroy(): void {
     this.clearSelection();
-    this.dragState = {
+    this._dragState = {
       isDragging: false,
       startPoint: null,
       currentPoint: null,
@@ -194,12 +221,12 @@ export class DragSelectionManager implements IDragSelectionManager {
    * Get all dates between start and current drag points
    */
   private getDragSelectionRange(): DateString[] {
-    if (!this.dragState.startPoint || !this.dragState.currentPoint) {
+    if (!this._dragState.startPoint || !this._dragState.currentPoint) {
       return [];
     }
 
-    const startDate = new Date(this.dragState.startPoint);
-    const currentDate = new Date(this.dragState.currentPoint);
+    const startDate = new Date(this._dragState.startPoint);
+    const currentDate = new Date(this._dragState.currentPoint);
 
     // Ensure we work with dates at midnight for accurate comparison
     startDate.setHours(0, 0, 0, 0);
@@ -216,7 +243,8 @@ export class DragSelectionManager implements IDragSelectionManager {
       (step > 0 && currentDateCopy <= currentDate) ||
       (step < 0 && currentDateCopy >= currentDate)
     ) {
-      dates.push(formatDateISO(currentDateCopy));
+      const dateStr = formatDateISO(currentDateCopy);
+      dates.push(dateStr as DateString);
       currentDateCopy.setDate(currentDateCopy.getDate() + step);
     }
 
@@ -226,8 +254,8 @@ export class DragSelectionManager implements IDragSelectionManager {
   /**
    * Update selected dates based on drag selection
    */
-  private updateSelection(): void {
-    if (!this.dragState.startPoint || !this.dragState.currentPoint) {
+  public updateSelection(): void {
+    if (!this._dragState.startPoint || !this._dragState.currentPoint) {
       return;
     }
 
@@ -239,10 +267,10 @@ export class DragSelectionManager implements IDragSelectionManager {
     }
 
     // Create a copy of current selections
-    const newSelectedDates = new Set(this.selectedDates);
+    const newSelectedDates = new Set(this._selectedDates);
 
     // Determine if we're adding or removing dates based on state of start point
-    const shouldSelect = !this.selectedDates.has(this.dragState.startPoint);
+    const shouldSelect = !this._selectedDates.has(this._dragState.startPoint);
 
     // Update all dates in range
     dragRange.forEach((dateStr) => {
@@ -256,7 +284,7 @@ export class DragSelectionManager implements IDragSelectionManager {
     });
 
     // Update selection
-    this.selectedDates = newSelectedDates;
+    this._selectedDates = newSelectedDates;
     this.onSelectionChange(newSelectedDates);
   }
 
@@ -267,8 +295,9 @@ export class DragSelectionManager implements IDragSelectionManager {
     const year = (position.row % 2000) + 2000; // Simplified logic
     const month = Math.floor(position.row / 12);
     const day = (position.col % 31) + 1;
-    return `${year}-${String(month + 1).padStart(2, "0")}-${String(
+    const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(
       day,
     ).padStart(2, "0")}`;
+    return dateStr as DateString;
   }
 }
