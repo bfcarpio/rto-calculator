@@ -512,10 +512,12 @@ export function runValidationWithHighlights(): void {
   const calendarStartDate = getCalendarStartDate();
   const firstWeekStart = getFirstMondayOnOrAfter(calendarStartDate);
 
-  // Pre-calculate week data for all weeks (O(n))
-  // This replaces the redundant calculateRollingCompliance call
+  // Pre-calculate week data for all weeks with sliding window optimization (O(n))
+  // When sliding the window, 11 of 12 weeks are reused - just remove one, add one
   const weekDataArray: WeekInfo[] = [];
   let totalOfficeDaysTop8 = 0;
+  let windowStart = 0; // First week index in top-8 window
+  let windowEnd = 0; // Last week index in top-8 window (inclusive)
 
   for (
     let weekIndex = 0;
@@ -530,9 +532,18 @@ export function runValidationWithHighlights(): void {
     weekInfo.weekNumber = weekIndex + 1;
     weekDataArray.push(weekInfo);
 
-    // Track top 8 weeks for compliance calculation
+    // Update sliding window for top 8 weeks
     if (weekIndex < 8) {
+      // Expanding window: just add new week
       totalOfficeDaysTop8 += weekInfo.officeDays;
+      windowEnd = weekIndex;
+    } else {
+      // Sliding window: remove oldest week, add new week
+      const oldWeekInfo = weekDataArray[windowStart];
+      totalOfficeDaysTop8 -= oldWeekInfo.officeDays;
+      totalOfficeDaysTop8 += weekInfo.officeDays;
+      windowStart++;
+      windowEnd++;
     }
 
     // Update status icons as we calculate (O(n))
