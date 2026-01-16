@@ -548,8 +548,15 @@ export function runValidationWithHighlights(): void {
   const calendarStartDate = getCalendarStartDate();
   const firstWeekStart = getFirstMondayOnOrAfter(calendarStartDate);
 
-  // Pre-calculate week data for all 12 weeks (O(n))
+  // Pre-calculate week data for ALL available weeks (O(n))
   const weekDataArray: WeekInfo[] = [];
+  if (CONFIG.DEBUG) {
+    console.log("[RTO Validation] Starting week calculations...");
+    console.log(
+      "[RTO Validation] First week start:",
+      firstWeekStart.toISOString().split("T")[0],
+    );
+  }
 
   if (CONFIG.DEBUG) {
     console.log("[RTO Validation] Starting week calculations...");
@@ -559,13 +566,28 @@ export function runValidationWithHighlights(): void {
     );
   }
 
-  for (
-    let weekIndex = 0;
-    weekIndex < CONFIG.ROLLING_PERIOD_WEEKS;
-    weekIndex++
-  ) {
+  // Calculate all weeks until we run out of calendar data
+  let weekIndex = 0;
+  while (true) {
     const weekStart = new Date(firstWeekStart);
     weekStart.setDate(firstWeekStart.getDate() + weekIndex * 7);
+
+    // Check if this week has any days in our calendar
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+
+    const hasWeekData = cellCache.some((cell) => {
+      const cellYear = parseInt(cell.dataset.year || "0");
+      const cellMonth = parseInt(cell.dataset.month || "0");
+      const cellDay = parseInt(cell.dataset.day || "0");
+      const cellDate = new Date(cellYear, cellMonth, cellDay);
+      return cellDate >= weekStart && cellDate <= weekEnd;
+    });
+
+    if (!hasWeekData) {
+      // No more weeks in calendar, stop
+      break;
+    }
 
     const wfhDaysCount = weeksByWFH.get(weekStart.getTime()) || 0;
 
@@ -577,29 +599,86 @@ export function runValidationWithHighlights(): void {
     const weekInfo = calculateWeekData(weekStart, wfhDaysCount);
     weekInfo.weekNumber = weekIndex + 1;
     weekDataArray.push(weekInfo);
+
+    weekIndex++;
   }
 
-  // Get top 8 weeks using slice (O(1))
-  const top8Weeks = weekDataArray.slice(0, 8);
+  // Slide through 12-week windows to find the best 8-week period
+  const windowSize = 12;
+  const weeksToEvaluate = 8;
+  let bestAverageOfficeDays = 0;
+  let bestWindowStart = 0;
+  let best8Weeks: WeekInfo[] = [];
 
-  // Calculate compliance from top 8 weeks (O(n) where n=8)
-  const totalOfficeDaysTop8 = top8Weeks.reduce(
+  if (CONFIG.DEBUG) {
+    console.log(
+      `[RTO Validation] Total weeks: ${weekDataArray.length}, sliding ${windowSize}-week windows to find best ${weeksToEvaluate} weeks`,
+    );
+  }
+
+  for (
+    let windowStart = 0;
+    windowStart <= weekDataArray.length - windowSize;
+    windowStart++
+  ) {
+    // Get the 12-week window
+    const windowWeeks = weekDataArray.slice(
+      windowStart,
+      windowStart + windowSize,
+    );
+
+    // Sort by office days descending to find best weeks
+    const sortedByOfficeDays = [...windowWeeks].sort(
+      (a, b) => b.officeDays - a.officeDays,
+    );
+
+    // Take top 8 weeks (the best weeks)
+    const top8 = sortedByOfficeDays.slice(0, weeksToEvaluate);
+
+    // Calculate average office days for top 8
+    const totalOfficeDays = top8.reduce(
+      (sum, week) => sum + week.officeDays,
+      0,
+    );
+    const averageOfficeDays = totalOfficeDays / weeksToEvaluate;
+
+    // Track the window that gives us the best average
+    if (averageOfficeDays > bestAverageOfficeDays) {
+      bestAverageOfficeDays = averageOfficeDays;
+      bestWindowStart = windowStart;
+      best8Weeks = top8;
+    }
+  }
+
+  if (CONFIG.DEBUG) {
+    console.log(
+      `[RTO Validation] Best window starts at week ${bestWindowStart + 1}, weeks ${bestWindowStart + 1}-${bestWindowStart + weeksToEvaluate}`,
+    );
+    console.log(
+      "[RTO Validation] Best 8 weeks:",
+      best8Weeks.map((w) => ({
+        week: w.week.toISOString().split("T")[0],
+        officeDays: w.officeDays,
+      })),
+    );
+  }
+
+  // Calculate compliance from best 8 weeks (O(n) where n=8)
+  const totalOfficeDaysTop8 = best8Weeks.reduce(
     (sum, week) => sum + week.officeDays,
     0,
   );
 
-  // Calculate compliance (O(1))
-  const averageOfficeDays = totalOfficeDaysTop8 / 8;
+  const averageOfficeDays = totalOfficeDaysTop8 / weeksToEvaluate;
   const averageOfficePercentage =
     (averageOfficeDays / CONFIG.TOTAL_WEEKDAYS_PER_WEEK) * 100;
-  const requiredPercentage = CONFIG.THRESHOLD_PERCENTAGE * 100;
   const isValid = averageOfficePercentage >= requiredPercentage;
 
   const result: ComplianceResult = {
     isValid,
     message: isValid
-      ? `✓ RTO Compliant: Top 8 weeks average ${averageOfficeDays.toFixed(1)} office days (${averageOfficePercentage.toFixed(0)}%) of ${CONFIG.TOTAL_WEEKDAYS_PER_WEEK} weekdays. Required: ${requiredPercentage.toFixed(0)}%`
-      : `✗ RTO Violation: Top 8 weeks average ${averageOfficeDays.toFixed(1)} office days (${averageOfficePercentage.toFixed(0)}%) of ${CONFIG.TOTAL_WEEKDAYS_PER_WEEK} weekdays. Required: ${requiredPercentage.toFixed(0)}%`,
+      ? `✓ RTO Compliant: Best 8 of ${windowSize} weeks average ${averageOfficeDays.toFixed(1)} office days (${averageOfficePercentage.toFixed(0)}%) of ${CONFIG.TOTAL_WEEKDAYS_PER_WEEK} weekdays. Required: ${requiredPercentage.toFixed(0)}%`
+      : `✗ RTO Violation: Best 8 of ${windowSize} weeks average ${averageOfficeDays.toFixed(1)} office days (${averageOfficePercentage.toFixed(0)}%) of ${CONFIG.TOTAL_WEEKDAYS_PER_WEEK} weekdays. Required: ${requiredPercentage.toFixed(0)}%`,
     overallCompliance: averageOfficePercentage,
   };
 
