@@ -1,5 +1,6 @@
 ---
 import Day from "./day.astro";
+import { getISOWeekNumber } from "../utils/dateUtils";
 
 interface Props {
     month: number; // 0-11 (January-December)
@@ -12,15 +13,6 @@ const { month, year } = Astro.props;
 const date = new Date(year, month, 1);
 const daysInMonth = new Date(year, month + 1, 0).getDate();
 const offset = date.getDay(); // 0-6 (Sunday-Saturday)
-
-// Helper function to get unique week number based on Sunday position
-function getWeekNumber(date: Date): number {
-    // Calculate which week this date is in (1-based, starting from January 1st)
-    const yearStart = new Date(date.getFullYear(), 0, 1);
-    const diffTime = date.getTime() - yearStart.getTime();
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    return Math.floor(diffDays / 7) + 1;
-}
 
 const monthNames = [
     "January",
@@ -117,34 +109,50 @@ const clearButtonId = `clear-${year}-${month}`;
         </thead>
         <tbody role="rowgroup">
             {
-                Array.from({ length: rows }).map((_, rowIndex) => {
-                    // Calculate the first valid day in this row
-                    let weekStartStr = "";
+                Array.from({ length: rows })
+                    .filter((_, rowIndex) => {
+                        // Check if this row has any valid days
+                        for (let colIndex = 0; colIndex < cols; colIndex++) {
+                            const cellIndex = rowIndex * cols + colIndex;
+                            const dayNumber = cellIndex - offset + 1;
 
-                    // Find the Monday of this week row for unique week numbering
-                    for (let colIndex = 0; colIndex < cols; colIndex++) {
-                        const cellIndex = rowIndex * cols + colIndex;
-                        const dayNumber = cellIndex - offset + 1;
-
-                        if (
-                            cellIndex >= offset &&
-                            cellIndex < offset + daysInMonth
-                        ) {
-                            // Find the Monday of this week row
-                            const rowDate = new Date(year, month, dayNumber);
-                            const dayOfWeek = rowDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
-                            const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Subtract to get to Monday
-                            const mondayDate = new Date(rowDate);
-                            mondayDate.setDate(
-                                rowDate.getDate() - daysToSubtract,
-                            );
-                            mondayDate.setHours(0, 0, 0, 0);
-                            weekStartStr = mondayDate.getTime().toString();
-                            break;
+                            if (
+                                cellIndex >= offset &&
+                                cellIndex < offset + daysInMonth
+                            ) {
+                                return true;
+                            }
                         }
-                    }
+                        return false;
+                    })
+                    .map((_, rowIndex) => {
+                        // Calculate the first valid day in this row
+                        let weekStartStr = "";
 
-                    return (
+                        // Find the Monday of this week row for unique week numbering
+                        for (let colIndex = 0; colIndex < cols; colIndex++) {
+                            const cellIndex = rowIndex * cols + colIndex;
+                            const dayNumber = cellIndex - offset + 1;
+
+                            if (
+                                cellIndex >= offset &&
+                                cellIndex < offset + daysInMonth
+                            ) {
+                                // Find the Monday of this week row
+                                const rowDate = new Date(year, month, dayNumber);
+                                const dayOfWeek = rowDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
+                                const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Subtract to get to Monday
+                                const mondayDate = new Date(rowDate);
+                                mondayDate.setDate(
+                                    rowDate.getDate() - daysToSubtract,
+                                );
+                                mondayDate.setHours(0, 0, 0, 0);
+                                weekStartStr = mondayDate.getTime().toString();
+                                break;
+                            }
+                        }
+
+                        return (
                         <tr role="row" class="calendar-week">
                             <td
                                 class="week-status-cell"
@@ -189,14 +197,14 @@ const clearButtonId = `clear-${year}-${month}`;
                             <td
                                 class="week-number-cell"
                                 role="gridcell"
-                                aria-label={`Week ${weekStartStr ? getWeekNumber(new Date(parseInt(weekStartStr))) : ""}`}
+                                aria-label={`Week ${weekStartStr ? getISOWeekNumber(new Date(parseInt(weekStartStr))) : ""}`}
                             >
                                 <span
                                     aria-hidden="true"
                                     class="week-number-content"
                                 >
                                     {weekStartStr
-                                        ? `${getWeekNumber(new Date(parseInt(weekStartStr)))}`
+                                        ? `${getISOWeekNumber(new Date(parseInt(weekStartStr)))}`
                                         : ""}
                                 </span>
                             </td>
@@ -529,6 +537,10 @@ const clearButtonId = `clear-${year}-${month}`;
         padding: 0;
     }
 
+    .week-status-cell.excluded {
+        background-color: #1a202c;
+    }
+
     .week-status-container {
         display: flex;
         align-items: center;
@@ -554,6 +566,14 @@ const clearButtonId = `clear-${year}-${month}`;
         opacity: 0.7;
         transform: scale(0.85);
     }
+
+    .week-status-icon.excluded {
+        color: #718096;
+        font-weight: 400;
+        opacity: 0.6;
+    }
+
+
 
     /* Week number column styles */
     .week-number-header {

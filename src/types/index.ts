@@ -26,7 +26,12 @@ export interface DayInfo {
 /**
  * Week status types for validation feedback
  */
-export type WeekStatus = "compliant" | "invalid" | "pending" | "ignored";
+export type WeekStatus =
+  | "compliant"
+  | "invalid"
+  | "pending"
+  | "excluded"
+  | "ignored";
 
 /**
  * Represents a week's compliance data

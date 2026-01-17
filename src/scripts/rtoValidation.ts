@@ -32,7 +32,7 @@ interface DayInfo {
 /**
  * Week status types for validation feedback
  */
-type WeekStatus = "compliant" | "invalid" | "pending" | "ignored";
+type WeekStatus = "compliant" | "invalid" | "pending" | "excluded" | "ignored";
 
 /**
  * Week information for tracking
@@ -67,6 +67,7 @@ interface ComplianceResult {
   message: string;
   overallCompliance: number;
   evaluatedWeekStarts: number[];
+  windowWeekStarts: number[];
   invalidWeekStart: number | null;
   windowStart: number | null;
 }
@@ -100,7 +101,7 @@ let weeksData: WeekInfo[] = [];
 /**
  * Current validation result
  */
-let currentResult: ComplianceResult | null = null;
+let currentResult: ComplianceResult | undefined = undefined;
 
 // ==================== DOM Reading ====================
 
@@ -251,14 +252,20 @@ function updateWeekStatusIcon(weekInfo: WeekInfo): void {
   }
 
   // Remove all status classes
-  statusCellElement.classList.remove("evaluated", "compliant", "non-compliant");
+  statusCellElement.classList.remove(
+    "evaluated",
+    "compliant",
+    "non-compliant",
+    "excluded",
+  );
   iconElement.classList.remove("violation", "least-attended");
 
-  // Four states based on WeekStatus:
+  // Five states based on WeekStatus:
   // 1. "compliant": Green checkmark (valid compliant week in evaluated set)
   // 2. "invalid": Red X (the invalid week with lowest office days when window is invalid)
   // 3. "pending": Hourglass (remaining evaluated weeks when window is invalid)
-  // 4. "ignored": Grey (weeks not in the evaluated set)
+  // 4. "excluded": Grey circle (weeks in 12-week window but not in evaluated set - the "worst 4 weeks")
+  // 5. "ignored": Empty (weeks not in the 12-week evaluation window)
   switch (status) {
     case "compliant":
       statusCellElement.classList.add("evaluated", "compliant");
@@ -296,14 +303,27 @@ function updateWeekStatusIcon(weekInfo: WeekInfo): void {
       }
       break;
 
+    case "excluded":
+      // Grey circle for weeks in the 12-week window but not in evaluated set
+      statusCellElement.classList.add("evaluated", "excluded");
+      iconElement.textContent = "○";
+      srElement.textContent =
+        "Excluded - in evaluation window but not evaluated (worst 4 weeks)";
+      if (CONFIG.DEBUG) {
+        console.log(
+          `[RTO Validation UI] Week ${weekStart.toISOString().split("T")[0]}: ○ Excluded (in window but not evaluated)`,
+        );
+      }
+      break;
+
     case "ignored":
     default:
-      // Don't add any status classes or icons for weeks not in the evaluated set
+      // Empty status for weeks not in the 12-week evaluation window
       iconElement.textContent = "";
       srElement.textContent = "";
       if (CONFIG.DEBUG) {
         console.log(
-          `[RTO Validation UI] Week ${weekStart.toISOString().split("T")[0]}: Ignored (not in evaluated window)`,
+          `[RTO Validation UI] Week ${weekStart.toISOString().split("T")[0]}: Ignored (not in 12-week window)`,
         );
       }
       break;
@@ -505,6 +525,7 @@ export function runValidationWithHighlights(): void {
 
     // Step 5: Update week data with evaluation status
     console.log("[RTO Validation UI] Step 5: Updating week statuses...");
+    const windowTimestamps = new Set(validation.windowWeekStarts);
     const evaluatedTimestamps = new Set(validation.evaluatedWeekStarts);
     const isInvalid = !validation.isValid;
     const invalidWeekStart = validation.invalidWeekStart;
@@ -517,26 +538,33 @@ export function runValidationWithHighlights(): void {
     }
 
     weeksData.forEach((week) => {
-      week.isUnderEvaluation = evaluatedTimestamps.has(
-        week.weekStart.getTime(),
-      );
+      week.isUnderEvaluation = windowTimestamps.has(week.weekStart.getTime());
 
       // Determine week status based on validation result
       if (!week.isUnderEvaluation) {
-        // Week is not in the evaluated set
+        // Week is not in the 12-week evaluation window
         week.status = "ignored";
       } else if (!week.isCompliant) {
         // Individual week violates the 3-office-days minimum
         week.status = "invalid";
       } else if (!isInvalid) {
-        // Overall validation is valid and this week meets the 3-day minimum
-        week.status = "compliant";
+        // Overall validation is valid
+        if (evaluatedTimestamps.has(week.weekStart.getTime())) {
+          // Week is in the best 8 evaluated set
+          week.status = "compliant";
+        } else {
+          // Week is in evaluation window but not in best 8 (when valid) - the "worst 4 weeks"
+          week.status = "excluded";
+        }
       } else if (week.weekStart.getTime() === invalidWeekStart) {
         // This is the week with lowest office days in evaluated set (when window is invalid)
         week.status = "invalid";
+      } else if (evaluatedTimestamps.has(week.weekStart.getTime())) {
+        // This week is in the best 8 evaluated set when window is invalid
+        week.status = "compliant";
       } else {
-        // Remaining evaluated weeks in an invalid window are pending
-        week.status = "pending";
+        // Remaining weeks in evaluation window that are not in best 8 (when invalid)
+        week.status = "excluded";
       }
     });
 
@@ -556,6 +584,7 @@ export function runValidationWithHighlights(): void {
       message: validation.message,
       overallCompliance: validation.overallCompliance,
       evaluatedWeekStarts: validation.evaluatedWeekStarts,
+      windowWeekStarts: validation.windowWeekStarts,
       invalidWeekStart: validation.invalidWeekStart,
       windowStart: validation.windowStart,
     };
@@ -608,6 +637,7 @@ export function runValidation(): void {
     message: validation.message,
     overallCompliance: validation.overallCompliance,
     evaluatedWeekStarts: validation.evaluatedWeekStarts,
+    windowWeekStarts: validation.windowWeekStarts,
     invalidWeekStart: validation.invalidWeekStart,
     windowStart: validation.windowStart,
   };
@@ -628,7 +658,7 @@ export function clearAllValidationHighlights(): void {
 export function cleanupRTOValidation(): void {
   clearAllValidationHighlightsInternal();
   weeksData = [];
-  currentResult = null;
+  currentResult = undefined;
 
   if (CONFIG.DEBUG) {
     console.log("[RTO Validation UI] Cleaned up");

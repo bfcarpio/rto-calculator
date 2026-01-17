@@ -1,14 +1,36 @@
 /**
  * Date utility functions for RTO Calculator
-// Week start configuration
-type WeekStart = "sunday" | "monday";
-const DEFAULT_WEEK_START: WeekStart = "sunday";
-
  * Uses native Date API for minimal dependencies
  */
 
 /**
- * Get the start of the week (Monday) for a given date
+ * Get ISO 8601 week number (1-52)
+ * @param date - The date to get week number for
+ * @returns Week number (1-52)
+ */
+export function getISOWeekNumber(date: Date): number {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  // Thursday in current week decides the year
+  d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7));
+  // January 4 is always in week 1
+  const week1 = new Date(d.getFullYear(), 0, 4);
+  // Adjust to Thursday of week 1
+  week1.setDate(week1.getDate() + 3 - ((week1.getDay() + 6) % 7));
+  // Calculate week number
+  const weekNum =
+    1 +
+    Math.round(
+      ((d.getTime() - week1.getTime()) / 86400000 -
+        3 +
+        ((week1.getDay() + 6) % 7)) /
+        7,
+    );
+  return weekNum;
+}
+
+/**
+ * Get start of week (Monday) for a given date
  * @param date - The reference date
  * @returns Date object representing Monday of that week
  */
