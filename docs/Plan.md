@@ -179,10 +179,7 @@ ValidationManager (Context)
 ### Validation Flow
 
 ```
-User selects day
-      │
-      ▼
-Dispatch "rto-selection-changed" event
+User clicks "Validate" button
       │
       ▼
 ValidationManager.validate() called
@@ -200,6 +197,8 @@ Update UI:
   - Week status icons
   - Compliance indicator
   - Validation message
+
+Note: Validation is NOT automatic. It only runs when user explicitly clicks the Validate button.
 ```
 
 ## Data Flow
@@ -220,21 +219,23 @@ day.astro handleMouseDown()
         │   - .selected
         │   - .work-from-home / .office
         │
-        ├─► Update ARIA attributes
-        │   - ariaSelected: "true"/"false"
-        │   - ariaLabel: "Day X. Work from home"
-        │
-        └─► Dispatch CustomEvent
-            "rto-selection-changed"
-            {
-              cell: HTMLElement,
-              selectionType: string
-            }
+        └─► Update ARIA attributes
+            │   - ariaSelected: "true"/"false"
+            │   - ariaLabel: "Day X. Work from home"
+
+Note: Selection changes do NOT trigger automatic validation.
+Validation only occurs when user clicks the "Validate" button.
 ```
 
 ### Validation Flow
 
 ```
+User clicks "Validate" button
+        │
+        ▼
+ValidationManager.validate() called
+        │
+        ▼
 DOM Read
     │
     ▼
@@ -284,6 +285,8 @@ updateWeekStatusIcon()
     │       └─► Other 4 weeks in window: Grey circle ○ (excluded)
     │           - CSS classes: .evaluated .excluded
     │           - Screen reader: "Excluded - in evaluation window but not evaluated (worst 4 weeks)"
+
+Note: Validation is NOT automatic. It only runs when user explicitly clicks the Validate button.
 ```
 
 ## State Management
@@ -496,6 +499,45 @@ validationManager.registerValidator(new MyCustomValidation());
 3. **Limited Export**: Export functionality not yet implemented
 4. **No Collaboration**: Single-user design
 5. **Fixed 12-Month View**: Cannot navigate to different years
+
+## Bug Fixes
+
+### Partial Weeks Filtering (January 2025)
+
+**Issue:** 
+The first week of January 2025 was incorrectly marked as invalid (red X) when it contained only 3 weekdays (Wed Jan 1, Thu Jan 2, Fri Jan 3). This occurred because the calendar grid doesn't include days from the previous month in the same row, resulting in partial weeks with incomplete weekday data.
+
+**Root Cause:**
+The `readCalendarData()` function in `src/scripts/rtoValidation.ts` was including all weeks that had calendar cells, even if they contained fewer than 5 weekdays. When these partial weeks had insufficient office days (e.g., only 0-1 office days when minimum is 3), they were marked as invalid.
+
+**Solution:**
+Added filtering logic in `readCalendarData()` to exclude weeks with fewer than `POLICY.totalWeekdaysPerWeek` (5) weekdays from validation. This ensures that partial weeks at the start/end of the calendar (which don't include days from previous/next months) are not evaluated for compliance.
+
+**Code Changes:**
+```typescript
+// Filter out partial weeks (weeks with fewer than the required weekdays)
+// These occur at the start/end of calendar when the grid doesn't include
+// days from previous/next months. Partial weeks should not be evaluated.
+const completeWeeks = weeks.filter(
+  (week) =>
+    week.days.filter((d) => d.isWeekday).length >=
+    POLICY.totalWeekdaysPerWeek,
+);
+```
+
+**Impact:**
+- Partial weeks now show empty status (ignored) instead of invalid
+- Users no longer see red X on weeks with incomplete data
+- Validation only evaluates complete weeks with all 5 weekdays
+
+**⚠️ TODO: Evaluate in Run Phase**
+This fix filters partial weeks based on weekday count, but there may be edge cases to verify:
+1. Does this work correctly for calendars that span year boundaries?
+2. Are there scenarios where weeks should be evaluated even with fewer weekdays?
+3. Should partial weeks be configurable (e.g., allow 4-day weeks)?
+4. Test with actual calendar UI to confirm partial weeks are properly ignored
+
+**Status:** ✅ Implemented | 🔍 Needs Testing in Run Phase
 
 ## Future Enhancements
 

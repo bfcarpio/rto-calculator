@@ -112,9 +112,9 @@ let currentResult: ComplianceResult | undefined = undefined;
 function readCalendarData(): WeekInfo[] {
   const startTime = performance.now();
 
-  // Find all calendar cells - single DOM query
+  // Find all calendar cells - single DOM query, excluding empty cells
   const cells = document.querySelectorAll(
-    ".calendar-day[data-year][data-month][data-day]",
+    ".calendar-day:not(.empty)[data-year][data-month][data-day]",
   );
 
   // Group cells by week - element references stored in DayInfo objects
@@ -175,9 +175,24 @@ function readCalendarData(): WeekInfo[] {
     const weekStart = new Date(weekKey);
 
     // Find status cell for this week (single DOM query per week)
+    // Convert weekKey to string for reliable matching
     const statusCell = document.querySelector(
-      `.week-status-cell[data-week-start="${weekKey}"] .week-status-container`,
+      `.week-status-cell[data-week-start="${String(weekKey)}"] .week-status-container`,
     ) as HTMLElement | null;
+
+    if (CONFIG.DEBUG) {
+      console.log(
+        `[RTO Validation UI] Week ${index + 1}: ${weekStart.toISOString().split("T")[0]} (key: ${weekKey})`,
+      );
+      console.log(
+        `[RTO Validation UI]   Days: ${days.length}, Status cell found: ${statusCell !== null}`,
+      );
+      if (statusCell) {
+        console.log(
+          `[RTO Validation UI]   Status cell data-week-start: ${statusCell.parentElement?.getAttribute("data-week-start")}`,
+        );
+      }
+    }
 
     // Calculate week statistics
     const wfhCount = days.filter(
@@ -210,15 +225,34 @@ function readCalendarData(): WeekInfo[] {
     weeks[index] = weekInfo;
   });
 
+  // Filter out partial weeks (weeks with fewer than the required weekdays)
+  // These occur at the start/end of calendar when the grid doesn't include
+  // days from previous/next months. Partial weeks should not be evaluated.
+  const completeWeeks = weeks.filter(
+    (week) =>
+      week.days.filter((d) => d.isWeekday).length >=
+      POLICY.totalWeekdaysPerWeek,
+  );
+
   if (CONFIG.DEBUG) {
+    const filteredCount = weeks.length - completeWeeks.length;
+    if (filteredCount > 0) {
+      console.log(
+        `[RTO Validation UI] Filtered out ${filteredCount} partial week(s) with fewer than ${POLICY.totalWeekdaysPerWeek} weekdays`,
+      );
+    }
     const endTime = performance.now();
     console.log(
-      `[RTO Validation UI] Read ${weeks.length} weeks from calendar in ${(endTime - startTime).toFixed(2)}ms`,
+      `[RTO Validation UI] Read ${completeWeeks.length} complete weeks from calendar in ${(endTime - startTime).toFixed(2)}ms`,
     );
     console.log(`[RTO Validation UI] Processed ${cells.length} calendar cells`);
+    console.log(
+      "[RTO Validation UI] Week keys found:",
+      Array.from(weekMap.keys()).join(", "),
+    );
   }
 
-  return weeks;
+  return completeWeeks;
 }
 
 // ==================== DOM Updating ====================
@@ -476,6 +510,9 @@ export function runValidationWithHighlights(): void {
     if (CONFIG.DEBUG) {
       startTime = performance.now();
     }
+
+    // Clear any cached data to ensure fresh read
+    weeksData = [];
 
     // Step 1: Read DOM once into pure data structure
     console.log(
