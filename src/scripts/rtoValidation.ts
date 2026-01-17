@@ -30,6 +30,11 @@ interface DayInfo {
 }
 
 /**
+ * Week status types for validation feedback
+ */
+type WeekStatus = "compliant" | "invalid" | "pending" | "ignored";
+
+/**
  * Week information for tracking
  * All DOM references stored directly in data structure
  */
@@ -41,6 +46,7 @@ interface WeekInfo {
   officeDays: number;
   isCompliant: boolean;
   isUnderEvaluation: boolean;
+  status: WeekStatus;
   statusCellElement: HTMLElement | null;
 }
 
@@ -54,13 +60,23 @@ interface ComplianceResult {
 }
 
 /**
+ * Compliance result from validation
+ */
+interface ComplianceResult {
+  isValid: boolean;
+  message: string;
+  overallCompliance: number;
+  evaluatedWeekStarts: number[];
+  invalidWeekStart: number | null;
+  windowStart: number | null;
+}
+
+/**
  * UI Configuration
  */
 interface UIConfig {
   DEBUG: boolean;
 }
-
-// ==================== Configuration ====================
 
 /**
  * RTO validation UI configuration
@@ -186,6 +202,7 @@ function readCalendarData(): WeekInfo[] {
       officeDays: totalOfficeDays,
       isCompliant: totalOfficeDays >= POLICY.minOfficeDaysPerWeek,
       isUnderEvaluation: false, // Will be set during validation
+      status: "ignored",
       statusCellElement: statusCell,
     };
 
@@ -210,8 +227,7 @@ function readCalendarData(): WeekInfo[] {
  * @param weekInfo - Week information with compliance status
  */
 function updateWeekStatusIcon(weekInfo: WeekInfo): void {
-  const { weekStart, isUnderEvaluation, isCompliant, statusCellElement } =
-    weekInfo;
+  const { weekStart, statusCellElement, status } = weekInfo;
 
   if (!statusCellElement) {
     if (CONFIG.DEBUG) {
@@ -238,43 +254,59 @@ function updateWeekStatusIcon(weekInfo: WeekInfo): void {
   statusCellElement.classList.remove("evaluated", "compliant", "non-compliant");
   iconElement.classList.remove("violation", "least-attended");
 
-  // Three states:
-  // 1. In evaluated weeks + compliant: Green checkmark
-  // 2. In evaluated weeks + non-compliant: Red X
-  // 3. Not in evaluated weeks: Grey marker
-  if (isUnderEvaluation) {
-    statusCellElement.classList.add("evaluated");
-
-    if (isCompliant) {
-      statusCellElement.classList.add("compliant");
+  // Four states based on WeekStatus:
+  // 1. "compliant": Green checkmark (valid compliant week in evaluated set)
+  // 2. "invalid": Red X (the invalid week with lowest office days when window is invalid)
+  // 3. "pending": Hourglass (remaining evaluated weeks when window is invalid)
+  // 4. "ignored": Grey (weeks not in the evaluated set)
+  switch (status) {
+    case "compliant":
+      statusCellElement.classList.add("evaluated", "compliant");
       iconElement.textContent = "✓";
       srElement.textContent = "Compliant week";
       if (CONFIG.DEBUG) {
         console.log(
-          `[RTO Validation UI] Week ${weekStart.toISOString().split("T")[0]}: ✓ Compliant (in evaluated weeks)`,
+          `[RTO Validation UI] Week ${weekStart.toISOString().split("T")[0]}: ✓ Compliant`,
         );
       }
-    } else {
-      statusCellElement.classList.add("non-compliant");
+      break;
+
+    case "invalid":
+      statusCellElement.classList.add("evaluated", "non-compliant");
       iconElement.classList.add("violation");
       iconElement.textContent = "✗";
-      srElement.textContent = "Non-compliant week";
+      srElement.textContent =
+        "Invalid week - lowest office days in evaluated set";
       if (CONFIG.DEBUG) {
         console.log(
-          `[RTO Validation UI] Week ${weekStart.toISOString().split("T")[0]}: ✗ Non-compliant (in evaluated weeks)`,
+          `[RTO Validation UI] Week ${weekStart.toISOString().split("T")[0]}: ✗ Invalid (lowest office days)`,
         );
       }
-    }
-  } else {
-    statusCellElement.classList.add("evaluated");
-    iconElement.classList.add("least-attended");
-    iconElement.textContent = "⏳";
-    srElement.textContent = "Excluded from evaluated weeks";
-    if (CONFIG.DEBUG) {
-      console.log(
-        `[RTO Validation UI] Week ${weekStart.toISOString().split("T")[0]}: ⏳ Excluded from evaluated weeks`,
-      );
-    }
+      break;
+
+    case "pending":
+      statusCellElement.classList.add("evaluated");
+      iconElement.classList.add("least-attended");
+      iconElement.textContent = "⏳";
+      srElement.textContent = "Pending evaluation - part of invalid window";
+      if (CONFIG.DEBUG) {
+        console.log(
+          `[RTO Validation UI] Week ${weekStart.toISOString().split("T")[0]}: ⏳ Pending (in invalid window)`,
+        );
+      }
+      break;
+
+    case "ignored":
+    default:
+      // Don't add any status classes or icons for weeks not in the evaluated set
+      iconElement.textContent = "";
+      srElement.textContent = "";
+      if (CONFIG.DEBUG) {
+        console.log(
+          `[RTO Validation UI] Week ${weekStart.toISOString().split("T")[0]}: Ignored (not in evaluated window)`,
+        );
+      }
+      break;
   }
 }
 
@@ -416,61 +448,139 @@ function clearAllValidationHighlightsInternal(): void {
  * 3. Write updates to DOM only when needed
  */
 export function runValidationWithHighlights(): void {
-  let startTime = 0;
-  if (CONFIG.DEBUG) {
-    console.log("[RTO Validation UI] Starting validation with highlights...");
-    startTime = performance.now();
-  }
-
-  // Step 1: Read DOM once into pure data structure
-  weeksData = readCalendarData();
-
-  // Step 2: Clear previous highlights
-  clearAllValidationHighlightsInternal();
-
-  // Step 3: Convert WeekInfo to WeekCompliance for library validation
-  const weeksCompliance: WeekCompliance[] = weeksData.map((week) => ({
-    weekNumber: week.weekNumber,
-    weekStart: week.weekStart,
-    officeDays: week.officeDays,
-    totalDays: POLICY.totalWeekdaysPerWeek,
-    wfhDays: week.wfhCount,
-    isCompliant: week.isCompliant,
-  }));
-
-  // Step 4: Perform calculations using library function
-  const validation = validateSlidingWindow(weeksCompliance, POLICY);
-
-  // Step 5: Update week data with evaluation status
-  const evaluatedTimestamps = new Set(validation.evaluatedWeekStarts);
-  weeksData.forEach((week) => {
-    week.isUnderEvaluation = evaluatedTimestamps.has(week.weekStart.getTime());
-  });
-
-  // Step 6: Update compliance result
-  currentResult = {
-    isValid: validation.isValid,
-    message: validation.message,
-    overallCompliance: validation.overallCompliance,
-  };
-
-  // Step 7: Write updates to DOM only when needed
-  if (CONFIG.DEBUG) {
-    console.log("[RTO Validation UI] Updating status icons for all weeks...");
-  }
-
-  weeksData.forEach((weekInfo) => {
-    updateWeekStatusIcon(weekInfo);
-  });
-
-  updateComplianceIndicator(currentResult);
-
-  if (CONFIG.DEBUG) {
-    const endTime = performance.now();
+  try {
     console.log(
-      `[RTO Validation UI] Validation with highlights completed in ${(endTime - startTime).toFixed(2)}ms`,
+      "[RTO Validation UI] ==================== Validation Started ====================",
     );
-    console.log("[RTO Validation UI] Result:", currentResult);
+    let startTime = 0;
+    if (CONFIG.DEBUG) {
+      startTime = performance.now();
+    }
+
+    // Step 1: Read DOM once into pure data structure
+    console.log(
+      "[RTO Validation UI] Step 1: Reading calendar data from DOM...",
+    );
+    weeksData = readCalendarData();
+    console.log(`[RTO Validation UI]   Found ${weeksData.length} weeks`);
+
+    if (weeksData.length === 0) {
+      console.warn(
+        "[RTO Validation UI] WARNING: No weeks data found in calendar!",
+      );
+      alert(
+        "No weeks found in calendar. Please ensure the calendar is properly rendered.",
+      );
+      return;
+    }
+
+    // Step 2: Clear previous highlights
+    console.log("[RTO Validation UI] Step 2: Clearing previous highlights...");
+    clearAllValidationHighlightsInternal();
+
+    // Step 3: Convert WeekInfo to WeekCompliance for library validation
+    console.log(
+      "[RTO Validation UI] Step 3: Converting data for validation...",
+    );
+    const weeksCompliance: WeekCompliance[] = weeksData.map((week) => ({
+      weekNumber: week.weekNumber,
+      weekStart: week.weekStart,
+      officeDays: week.officeDays,
+      totalDays: POLICY.totalWeekdaysPerWeek,
+      wfhDays: week.wfhCount,
+      isCompliant: week.isCompliant,
+    }));
+
+    // Step 4: Perform calculations using library function
+    console.log(
+      "[RTO Validation UI] Step 4: Running sliding window validation...",
+    );
+    const validation = validateSlidingWindow(weeksCompliance, POLICY);
+    console.log(
+      `[RTO Validation UI]   Validation result: ${validation.isValid ? "VALID" : "INVALID"}`,
+    );
+    console.log(
+      `[RTO Validation UI]   Overall compliance: ${validation.overallCompliance.toFixed(1)}%`,
+    );
+
+    // Step 5: Update week data with evaluation status
+    console.log("[RTO Validation UI] Step 5: Updating week statuses...");
+    const evaluatedTimestamps = new Set(validation.evaluatedWeekStarts);
+    const isInvalid = !validation.isValid;
+    const invalidWeekStart = validation.invalidWeekStart;
+
+    if (invalidWeekStart) {
+      const invalidDate = new Date(invalidWeekStart);
+      console.log(
+        `[RTO Validation UI]   Invalid week starts: ${invalidDate.toISOString().split("T")[0]}`,
+      );
+    }
+
+    weeksData.forEach((week) => {
+      week.isUnderEvaluation = evaluatedTimestamps.has(
+        week.weekStart.getTime(),
+      );
+
+      // Determine week status based on validation result
+      if (!week.isUnderEvaluation) {
+        // Week is not in the evaluated set
+        week.status = "ignored";
+      } else if (!week.isCompliant) {
+        // Individual week violates the 3-office-days minimum
+        week.status = "invalid";
+      } else if (!isInvalid) {
+        // Overall validation is valid and this week meets the 3-day minimum
+        week.status = "compliant";
+      } else if (week.weekStart.getTime() === invalidWeekStart) {
+        // This is the week with lowest office days in evaluated set (when window is invalid)
+        week.status = "invalid";
+      } else {
+        // Remaining evaluated weeks in an invalid window are pending
+        week.status = "pending";
+      }
+    });
+
+    // Count statuses for debugging
+    const statusCounts = weeksData.reduce(
+      (acc, week) => {
+        acc[week.status] = (acc[week.status] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+    console.log(`[RTO Validation UI]   Status distribution:`, statusCounts);
+
+    // Step 6: Update compliance result
+    currentResult = {
+      isValid: validation.isValid,
+      message: validation.message,
+      overallCompliance: validation.overallCompliance,
+      evaluatedWeekStarts: validation.evaluatedWeekStarts,
+      invalidWeekStart: validation.invalidWeekStart,
+      windowStart: validation.windowStart,
+    };
+
+    // Step 7: Write updates to DOM only when needed
+    console.log("[RTO Validation UI] Step 6: Updating UI...");
+    weeksData.forEach((weekInfo) => {
+      updateWeekStatusIcon(weekInfo);
+    });
+
+    console.log("[RTO Validation UI] Step 7: Updating compliance indicator...");
+    updateComplianceIndicator(currentResult);
+
+    if (CONFIG.DEBUG) {
+      const endTime = performance.now();
+      console.log(
+        `[RTO Validation UI] ==================== Validation Completed in ${(endTime - startTime).toFixed(2)}ms ====================`,
+      );
+      console.log("[RTO Validation UI] Result:", currentResult);
+    }
+  } catch (error) {
+    console.error("[RTO Validation UI] ERROR during validation:", error);
+    alert(
+      `Validation failed: ${error instanceof Error ? error.message : String(error)}`,
+    );
   }
 }
 
@@ -497,6 +607,9 @@ export function runValidation(): void {
     isValid: validation.isValid,
     message: validation.message,
     overallCompliance: validation.overallCompliance,
+    evaluatedWeekStarts: validation.evaluatedWeekStarts,
+    invalidWeekStart: validation.invalidWeekStart,
+    windowStart: validation.windowStart,
   };
 
   updateComplianceIndicator(currentResult);
@@ -519,5 +632,154 @@ export function cleanupRTOValidation(): void {
 
   if (CONFIG.DEBUG) {
     console.log("[RTO Validation UI] Cleaned up");
+  }
+}
+
+/**
+ * Initialize RTO validation and set up button handlers
+ * This function should be called when the page loads
+ */
+export function initializeApp(): void {
+  if (CONFIG.DEBUG) {
+    console.log("[RTO Validation UI] Initializing application...");
+  }
+
+  // Initialize validate buttons
+  const validateButtons = document.querySelectorAll('[id^="validate-button-"]');
+  if (CONFIG.DEBUG) {
+    console.log(
+      `[RTO Validation UI] Found ${validateButtons.length} validate button(s)`,
+    );
+  }
+
+  validateButtons.forEach((button) => {
+    const buttonElement = button as HTMLElement;
+    buttonElement.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (CONFIG.DEBUG) {
+        console.log("[RTO Validation UI] Validate button clicked");
+      }
+      try {
+        runValidationWithHighlights();
+      } catch (error) {
+        console.error("[RTO Validation UI] Validation error:", error);
+        alert(
+          `Validation failed: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+      buttonElement.focus();
+    });
+
+    // Add keyboard support
+    buttonElement.addEventListener("keydown", (e) => {
+      const keyboardEvent = e as KeyboardEvent;
+      if (keyboardEvent.key === "Enter" || keyboardEvent.key === " ") {
+        e.preventDefault();
+        buttonElement.click();
+      }
+    });
+  });
+
+  // Initialize clear all buttons
+  const clearAllButtons = document.querySelectorAll(
+    '[id^="clear-all-button-"]',
+  );
+  if (CONFIG.DEBUG) {
+    console.log(
+      `[RTO Validation UI] Found ${clearAllButtons.length} clear all button(s)`,
+    );
+  }
+
+  clearAllButtons.forEach((button) => {
+    const buttonElement = button as HTMLElement;
+    buttonElement.addEventListener("click", (e) => {
+      e.preventDefault();
+
+      const selectedCells = document.querySelectorAll(".calendar-day.selected");
+      if (selectedCells.length === 0) {
+        alert("No selections to clear");
+        return;
+      }
+
+      selectedCells.forEach((cell) => {
+        (cell as HTMLElement).classList.remove("selected");
+        (cell as HTMLElement).removeAttribute("data-selection-type");
+      });
+
+      clearAllValidationHighlights();
+
+      alert(`Cleared ${selectedCells.length} selection(s)`);
+      buttonElement.focus();
+    });
+
+    // Add keyboard support
+    buttonElement.addEventListener("keydown", (e) => {
+      const keyboardEvent = e as KeyboardEvent;
+      if (keyboardEvent.key === "Enter" || keyboardEvent.key === " ") {
+        e.preventDefault();
+        buttonElement.click();
+      }
+    });
+  });
+
+  // Initialize export buttons
+  const exportButtons = document.querySelectorAll('[id^="export-button-"]');
+  if (CONFIG.DEBUG) {
+    console.log(
+      `[RTO Validation UI] Found ${exportButtons.length} export button(s)`,
+    );
+  }
+
+  exportButtons.forEach((button) => {
+    const buttonElement = button as HTMLElement;
+    buttonElement.addEventListener("click", (e) => {
+      e.preventDefault();
+      alert("Export functionality coming soon");
+      buttonElement.focus();
+    });
+
+    // Add keyboard support
+    buttonElement.addEventListener("keydown", (e) => {
+      const keyboardEvent = e as KeyboardEvent;
+      if (keyboardEvent.key === "Enter" || keyboardEvent.key === " ") {
+        e.preventDefault();
+        buttonElement.click();
+      }
+    });
+  });
+
+  if (CONFIG.DEBUG) {
+    console.log("[RTO Validation UI] Application initialized successfully");
+  }
+}
+
+// ==================== Global Exposure ====================
+
+/**
+ * Expose RTO validation functions to window object for use in HTML/inline scripts
+ */
+if (typeof window !== "undefined") {
+  (window as any).RTOValidation = {
+    runValidationWithHighlights,
+    runValidation,
+    updateComplianceIndicator,
+    clearAllValidationHighlights,
+    cleanupRTOValidation,
+    initializeApp,
+    weeksData: [] as WeekInfo[],
+    currentResult: null as ComplianceResult | null,
+    CONFIG: {
+      DEBUG: CONFIG.DEBUG,
+      MIN_OFFICE_DAYS_PER_WEEK: POLICY.minOfficeDaysPerWeek,
+      TOTAL_WEEKDAYS_PER_WEEK: POLICY.totalWeekdaysPerWeek,
+      ROLLING_PERIOD_WEEKS: POLICY.rollingPeriodWeeks,
+      THRESHOLD_PERCENTAGE: POLICY.thresholdPercentage,
+    },
+  };
+
+  if (CONFIG.DEBUG) {
+    console.log(
+      "[RTO Validation UI] Functions exposed to window.RTOValidation",
+    );
   }
 }

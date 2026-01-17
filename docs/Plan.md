@@ -151,7 +151,11 @@ ValidationManager (Context)
 - **Responsibilities**:
   - Read calendar data from DOM elements
   - Calculate rolling compliance with week-by-week evaluation
-  - Update week status icons (✓ compliant, ✗ violation, ⚠ warning)
+  - Update week status icons based on 4-state system:
+    - ✓ **compliant**: Green checkmark (individual week has ≥ 3 office days AND is in evaluated set when overall is valid)
+    - ✗ **invalid**: Red X (two cases: 1) Individual week has < 3 office days regardless of overall result, OR 2) The week with lowest office days in evaluated set when window is invalid)
+    - ⏳ **pending**: Hourglass (remaining evaluated weeks when window is invalid)
+    - **(no icon)**: Ignored - weeks not in the evaluated set
   - Display compliance messages
   - Clear validation highlights
 
@@ -236,9 +240,15 @@ calculateRollingCompliance()
     ▼
 updateWeekStatusIcon()
     │
-    ├─► Violating week: Red ✗
-    ├─► Compliant week: Green ✓
-    └─► Under evaluation: Yellow ⚠
+    ├─► Week not in evaluated set: (no icon) - ignored
+    │
+    ├─► Week in evaluated set AND has < 3 office days: Red ✗ (invalid)
+    │
+    ├─► Week in evaluated set, has ≥ 3 office days, AND overall window is VALID: Green ✓ (compliant)
+    │
+    └─► Week in evaluated set, has ≥ 3 office days, AND overall window is INVALID:
+        ├─► Lowest office days in evaluated set: Red ✗ (invalid)
+        └─► Other weeks in evaluated set: Hourglass ⏳ (pending)
 ```
 
 ## State Management
@@ -278,7 +288,18 @@ interface WeekInfo {
   officeDays: number;
   isCompliant: boolean;
   isUnderEvaluation: boolean;
+  status: "compliant" | "invalid" | "pending" | "ignored";
   statusCellElement: HTMLElement | null;
+}
+
+// Sliding window validation result
+interface SlidingWindowResult {
+  isValid: boolean;
+  message: string;
+  overallCompliance: number;
+  evaluatedWeekStarts: number[];
+  invalidWeekStart: number | null; // The week with lowest office days in evaluated set (when invalid)
+  windowStart: number | null; // The start of the 12-week window that was evaluated
 }
 ```
 

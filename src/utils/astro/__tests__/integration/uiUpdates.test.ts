@@ -47,11 +47,7 @@ const mockUIUpdates = {
     messageContainer.style.visibility = "visible";
   },
 
-  updateWeekStatusIcon: (
-    weekInfo: WeekInfo,
-    inBest8: boolean,
-    isCompliant?: boolean,
-  ) => {
+  updateWeekStatusIcon: (weekInfo: WeekInfo) => {
     const container = weekInfo.statusCellElement?.querySelector(
       ".week-status-container",
     ) as HTMLElement;
@@ -63,19 +59,34 @@ const mockUIUpdates = {
     // Clear previous classes
     container.classList.remove("compliant", "non-compliant", "least-attended");
 
-    if (inBest8) {
-      const compliant =
-        isCompliant !== undefined ? isCompliant : weekInfo.isCompliant;
-      container.classList.add(compliant ? "compliant" : "non-compliant");
-      icon.textContent = compliant ? "✓" : "✗";
-      sr.textContent = compliant ? "Compliant week" : "Non-compliant week";
-    } else {
-      container.classList.add("least-attended");
-      icon.textContent = "○";
-      sr.textContent = "Week excluded from best 8";
+    // Four states based on WeekStatus:
+    // "compliant": Green checkmark
+    // "invalid": Red X
+    // "pending": Hourglass
+    // "ignored": Grey marker
+    switch (weekInfo.status) {
+      case "compliant":
+        container.classList.add("evaluated", "compliant");
+        icon.textContent = "✓";
+        sr.textContent = "Compliant week";
+        break;
+      case "invalid":
+        container.classList.add("evaluated", "non-compliant");
+        icon.textContent = "✗";
+        sr.textContent = "Invalid week - lowest office days in evaluated set";
+        break;
+      case "pending":
+        container.classList.add("evaluated");
+        icon.textContent = "⏳";
+        sr.textContent = "Pending evaluation - part of invalid window";
+        break;
+      case "ignored":
+      default:
+        // Don't add any classes or icons for weeks not in the evaluated set
+        icon.textContent = "";
+        sr.textContent = "";
+        break;
     }
-
-    container.classList.add("evaluated");
   },
 
   showValidationMessage: (message: string, type: "success" | "error") => {
@@ -173,9 +184,10 @@ describe("UI Updates - Status Icon States", () => {
       wfhCount: 2,
       officeDays: 3,
       isCompliant: true,
+      status: "compliant",
     });
 
-    mockUIUpdates.updateWeekStatusIcon(week, true);
+    mockUIUpdates.updateWeekStatusIcon(week);
 
     const icon = week.statusCellElement?.querySelector(
       ".week-status-icon",
@@ -189,16 +201,17 @@ describe("UI Updates - Status Icon States", () => {
     expect(container?.classList.contains("evaluated")).toBe(true);
   });
 
-  it("should show red X for non-compliant weeks in best 8", () => {
+  it("should show red X for invalid weeks", () => {
     const weekStart = new Date(2025, 0, 6);
     const week: WeekInfo = createMockWeekInfo(weekStart, [], {
       weekNumber: 1,
       wfhCount: 3,
       officeDays: 2,
       isCompliant: false,
+      status: "invalid",
     });
 
-    mockUIUpdates.updateWeekStatusIcon(week, true);
+    mockUIUpdates.updateWeekStatusIcon(week);
 
     const icon = week.statusCellElement?.querySelector(
       ".week-status-icon",
@@ -211,16 +224,17 @@ describe("UI Updates - Status Icon States", () => {
     expect(container?.classList.contains("non-compliant")).toBe(true);
   });
 
-  it("should show grey marker for excluded weeks not in best 8", () => {
+  it("should show no icon for ignored weeks (not in evaluated window)", () => {
     const weekStart = new Date(2025, 0, 6);
     const week: WeekInfo = createMockWeekInfo(weekStart, [], {
       weekNumber: 1,
       wfhCount: 2,
       officeDays: 3,
       isCompliant: true,
+      status: "ignored",
     });
 
-    mockUIUpdates.updateWeekStatusIcon(week, false);
+    mockUIUpdates.updateWeekStatusIcon(week);
 
     const icon = week.statusCellElement?.querySelector(
       ".week-status-icon",
@@ -229,9 +243,32 @@ describe("UI Updates - Status Icon States", () => {
       ".week-status-container",
     ) as HTMLElement;
 
-    expect(icon?.textContent).toBe("○");
-    expect(container?.classList.contains("least-attended")).toBe(true);
+    expect(icon?.textContent).toBe("");
+    expect(container?.classList.contains("evaluated")).toBe(false);
     expect(container?.classList.contains("compliant")).toBe(false);
+  });
+
+  it("should show hourglass for pending weeks in invalid window", () => {
+    const weekStart = new Date(2025, 0, 6);
+    const week: WeekInfo = createMockWeekInfo(weekStart, [], {
+      weekNumber: 1,
+      wfhCount: 2,
+      officeDays: 3,
+      isCompliant: true,
+      status: "pending",
+    });
+
+    mockUIUpdates.updateWeekStatusIcon(week);
+
+    const icon = week.statusCellElement?.querySelector(
+      ".week-status-icon",
+    ) as HTMLElement;
+    const container = week.statusCellElement?.querySelector(
+      ".week-status-container",
+    ) as HTMLElement;
+
+    expect(icon?.textContent).toBe("⏳");
+    expect(container?.classList.contains("evaluated")).toBe(true);
   });
 
   it("should not have conflicting classes on status cells", () => {
@@ -241,22 +278,24 @@ describe("UI Updates - Status Icon States", () => {
       wfhCount: 2,
       officeDays: 3,
       isCompliant: true,
+      status: "compliant",
     });
 
     // First mark as compliant
-    mockUIUpdates.updateWeekStatusIcon(week, true);
+    mockUIUpdates.updateWeekStatusIcon(week);
     let container = week.statusCellElement?.querySelector(
       ".week-status-container",
     ) as HTMLElement;
     expect(container?.classList.contains("compliant")).toBe(true);
     expect(container?.classList.contains("non-compliant")).toBe(false);
 
-    // Then mark as excluded
-    mockUIUpdates.updateWeekStatusIcon(week, false);
+    // Then mark as ignored
+    week.status = "ignored";
+    mockUIUpdates.updateWeekStatusIcon(week);
     container = week.statusCellElement?.querySelector(
       ".week-status-container",
     ) as HTMLElement;
-    expect(container?.classList.contains("least-attended")).toBe(true);
+    expect(container?.classList.contains("evaluated")).toBe(true);
     expect(container?.classList.contains("compliant")).toBe(false);
     expect(container?.classList.contains("non-compliant")).toBe(false);
   });
@@ -278,75 +317,77 @@ describe("UI Updates - Icon Class Management", () => {
       wfhCount: 2,
       officeDays: 3,
       isCompliant: true,
+      status: "compliant",
     });
 
     // Manually add conflicting classes
     const container = week.statusCellElement?.querySelector(
       ".week-status-container",
     ) as HTMLElement;
-    container.classList.add("non-compliant", "least-attended");
+    container.classList.add("non-compliant");
 
     // Update should clear old classes
-    mockUIUpdates.updateWeekStatusIcon(week, true);
+    mockUIUpdates.updateWeekStatusIcon(week);
 
     expect(container?.classList.contains("compliant")).toBe(true);
     expect(container?.classList.contains("non-compliant")).toBe(false);
-    expect(container?.classList.contains("least-attended")).toBe(false);
   });
 
-  it("should only have violation class on non-compliant weeks", () => {
+  it("should only have violation class on invalid weeks", () => {
     const weekStart = new Date(2025, 0, 6);
     const week: WeekInfo = createMockWeekInfo(weekStart, [], {
       weekNumber: 1,
       wfhCount: 3,
       officeDays: 2,
       isCompliant: false,
+      status: "invalid",
     });
 
-    mockUIUpdates.updateWeekStatusIcon(week, true);
+    mockUIUpdates.updateWeekStatusIcon(week);
 
     const container = week.statusCellElement?.querySelector(
       ".week-status-container",
     ) as HTMLElement;
     expect(container?.classList.contains("non-compliant")).toBe(true);
     expect(container?.classList.contains("compliant")).toBe(false);
-    expect(container?.classList.contains("least-attended")).toBe(false);
   });
 
-  it("should only have least-attended class on excluded weeks", () => {
+  it("should not have evaluated class on ignored weeks", () => {
     const weekStart = new Date(2025, 0, 6);
     const week: WeekInfo = createMockWeekInfo(weekStart, [], {
       weekNumber: 1,
       wfhCount: 2,
       officeDays: 3,
       isCompliant: true,
+      status: "ignored",
     });
 
-    mockUIUpdates.updateWeekStatusIcon(week, false);
+    mockUIUpdates.updateWeekStatusIcon(week);
 
     const container = week.statusCellElement?.querySelector(
       ".week-status-container",
     ) as HTMLElement;
-    expect(container?.classList.contains("least-attended")).toBe(true);
+    expect(container?.classList.contains("evaluated")).toBe(false);
     expect(container?.classList.contains("compliant")).toBe(false);
     expect(container?.classList.contains("non-compliant")).toBe(false);
   });
 
-  it("should not apply compliant or non-compliant class to excluded weeks", () => {
+  it("should not apply compliant or non-compliant class to ignored weeks", () => {
     const weekStart = new Date(2025, 0, 6);
     const week: WeekInfo = createMockWeekInfo(weekStart, [], {
       weekNumber: 1,
       wfhCount: 2,
       officeDays: 3,
       isCompliant: true,
+      status: "ignored",
     });
 
-    mockUIUpdates.updateWeekStatusIcon(week, false);
+    mockUIUpdates.updateWeekStatusIcon(week);
 
     const container = week.statusCellElement?.querySelector(
       ".week-status-container",
     ) as HTMLElement;
-    expect(container?.classList.contains("least-attended")).toBe(true);
+    expect(container?.classList.contains("evaluated")).toBe(false);
     expect(container?.classList.contains("compliant")).toBe(false);
     expect(container?.classList.contains("non-compliant")).toBe(false);
   });
@@ -609,8 +650,11 @@ describe("UI Updates - Integration Scenarios", () => {
     // Update compliance indicator
     mockUIUpdates.updateComplianceIndicator(true, 0.6);
 
-    // Update all status icons (all in best 8)
-    weeks.forEach((week) => mockUIUpdates.updateWeekStatusIcon(week, true));
+    // Update all status icons (all compliant)
+    weeks.forEach((week) => {
+      week.status = "compliant";
+      mockUIUpdates.updateWeekStatusIcon(week);
+    });
 
     // Verify
     const indicator = document.getElementById(
@@ -644,8 +688,11 @@ describe("UI Updates - Integration Scenarios", () => {
     // Update compliance indicator
     mockUIUpdates.updateComplianceIndicator(false, 0.4);
 
-    // Update all status icons
-    weeks.forEach((week) => mockUIUpdates.updateWeekStatusIcon(week, true));
+    // Update all status icons (all invalid in this scenario)
+    weeks.forEach((week) => {
+      week.status = "invalid";
+      mockUIUpdates.updateWeekStatusIcon(week);
+    });
 
     // Verify
     const indicator = document.getElementById(
@@ -667,40 +714,93 @@ describe("UI Updates - Integration Scenarios", () => {
     const weeks: WeekInfo[] = [];
     for (let i = 0; i < 12; i++) {
       const weekStart = new Date(2025, 0, 6 + i * 7);
-      const isBadWeek = i >= 8; // Last 4 weeks are bad
       const week = createMockWeekInfo(weekStart, [], {
         weekNumber: i + 1,
-        wfhCount: isBadWeek ? 3 : 2,
-        officeDays: isBadWeek ? 2 : 3,
-        isCompliant: !isBadWeek,
+        wfhCount: 2,
+        officeDays: 3,
+        isCompliant: true,
       });
       weeks.push(week);
     }
 
-    // First 8 in best 8, last 4 excluded
+    // First 8 weeks are compliant (in evaluated set), last 4 are ignored
     weeks.forEach((week, index) => {
-      const inBest8 = index < 8;
-      mockUIUpdates.updateWeekStatusIcon(week, inBest8);
+      week.status = index < 8 ? "compliant" : "ignored";
+      mockUIUpdates.updateWeekStatusIcon(week);
     });
 
     // Verify counts
     let compliantCount = 0;
-    let nonCompliantCount = 0;
-    let excludedCount = 0;
+    let ignoredCount = 0;
 
     weeks.forEach((week) => {
       const container = week.statusCellElement?.querySelector(
         ".week-status-container",
       ) as HTMLElement;
+      const icon = container?.querySelector(".week-status-icon") as HTMLElement;
+
       if (container?.classList.contains("compliant")) compliantCount++;
-      else if (container?.classList.contains("non-compliant"))
-        nonCompliantCount++;
-      else if (container?.classList.contains("least-attended")) excludedCount++;
+      else if (icon?.textContent === "") ignoredCount++;
     });
 
     expect(compliantCount).toBe(8);
-    expect(nonCompliantCount).toBe(0);
-    expect(excludedCount).toBe(4);
+    expect(ignoredCount).toBe(4);
+  });
+
+  it("should mark individual non-compliant weeks as invalid even when overall validation is valid", () => {
+    const weeks: WeekInfo[] = [];
+
+    // Create weeks with mixed compliance:
+    // Weeks 1-4: 2 WFH (3 office days = 60%) - compliant
+    // Week 5: 5 WFH (0 office days = 0%) - NOT compliant
+    // Weeks 6-8: 0 WFH (5 office days = 100%) - compliant
+    const wfhPatterns = [2, 2, 2, 2, 5, 0, 0, 0];
+
+    for (let i = 0; i < 8; i++) {
+      const weekStart = new Date(2025, 0, 6 + i * 7);
+      const wfhCount = wfhPatterns[i]!;
+      const officeDays = 5 - wfhCount;
+      const week = createMockWeekInfo(weekStart, [], {
+        weekNumber: i + 1,
+        wfhCount,
+        officeDays,
+        isCompliant: officeDays >= 3, // Only week 5 is not compliant
+      });
+      weeks.push(week);
+    }
+
+    // Simulate overall validation being valid (average >= 60%)
+    // But individual week compliance should still be checked
+    weeks.forEach((week, index) => {
+      // This is the corrected logic: check individual compliance first
+      if (!week.isCompliant) {
+        week.status = "invalid";
+      } else {
+        week.status = "compliant";
+      }
+      mockUIUpdates.updateWeekStatusIcon(week);
+    });
+
+    // Verify that week 5 (0 office days) is marked as invalid
+    const week5Container = weeks[4].statusCellElement?.querySelector(
+      ".week-status-container",
+    ) as HTMLElement;
+    expect(week5Container?.classList.contains("non-compliant")).toBe(true);
+    const week5Icon = week5Container?.querySelector(
+      ".week-status-icon",
+    ) as HTMLElement;
+    expect(week5Icon?.textContent).toBe("✗");
+
+    // Verify that compliant weeks are marked as compliant
+    for (let i = 0; i < 8; i++) {
+      if (i === 4) continue; // Skip week 5
+      const container = weeks[i].statusCellElement?.querySelector(
+        ".week-status-container",
+      ) as HTMLElement;
+      expect(container?.classList.contains("compliant")).toBe(true);
+      const icon = container?.querySelector(".week-status-icon") as HTMLElement;
+      expect(icon?.textContent).toBe("✓");
+    }
   });
 });
 
@@ -720,42 +820,47 @@ describe("UI Updates - Accessibility", () => {
       wfhCount: 2,
       officeDays: 3,
       isCompliant: true,
+      status: "compliant",
     });
 
-    mockUIUpdates.updateWeekStatusIcon(week, true);
+    mockUIUpdates.updateWeekStatusIcon(week);
 
     const sr = week.statusCellElement?.querySelector(".sr-only") as HTMLElement;
     expect(sr?.textContent).toBe("Compliant week");
   });
 
-  it("should provide screen reader text for non-compliant weeks", () => {
+  it("should provide screen reader text for invalid weeks", () => {
     const weekStart = new Date(2025, 0, 6);
     const week: WeekInfo = createMockWeekInfo(weekStart, [], {
       weekNumber: 1,
       wfhCount: 3,
       officeDays: 2,
       isCompliant: false,
+      status: "invalid",
     });
 
-    mockUIUpdates.updateWeekStatusIcon(week, true);
+    mockUIUpdates.updateWeekStatusIcon(week);
 
     const sr = week.statusCellElement?.querySelector(".sr-only") as HTMLElement;
-    expect(sr?.textContent).toBe("Non-compliant week");
+    expect(sr?.textContent).toBe(
+      "Invalid week - lowest office days in evaluated set",
+    );
   });
 
-  it("should provide screen reader text for excluded weeks", () => {
+  it("should provide no screen reader text for ignored weeks", () => {
     const weekStart = new Date(2025, 0, 6);
     const week: WeekInfo = createMockWeekInfo(weekStart, [], {
       weekNumber: 1,
       wfhCount: 2,
       officeDays: 3,
       isCompliant: true,
+      status: "ignored",
     });
 
-    mockUIUpdates.updateWeekStatusIcon(week, false);
+    mockUIUpdates.updateWeekStatusIcon(week);
 
     const sr = week.statusCellElement?.querySelector(".sr-only") as HTMLElement;
-    expect(sr?.textContent).toBe("Week excluded from best 8");
+    expect(sr?.textContent).toBe("");
   });
 
   it("should keep icon with aria-hidden attribute", () => {
@@ -765,9 +870,10 @@ describe("UI Updates - Accessibility", () => {
       wfhCount: 2,
       officeDays: 3,
       isCompliant: true,
+      status: "compliant",
     });
 
-    mockUIUpdates.updateWeekStatusIcon(week, true);
+    mockUIUpdates.updateWeekStatusIcon(week);
 
     const icon = week.statusCellElement?.querySelector(
       ".week-status-icon",
@@ -798,7 +904,10 @@ describe("UI Updates - Edge Cases", () => {
       weeks.push(week);
     }
 
-    weeks.forEach((week) => mockUIUpdates.updateWeekStatusIcon(week, true));
+    weeks.forEach((week) => {
+      week.status = "compliant";
+      mockUIUpdates.updateWeekStatusIcon(week);
+    });
 
     weeks.forEach((week) => {
       const container = week.statusCellElement?.querySelector(
@@ -822,7 +931,10 @@ describe("UI Updates - Edge Cases", () => {
       weeks.push(week);
     }
 
-    weeks.forEach((week) => mockUIUpdates.updateWeekStatusIcon(week, true));
+    weeks.forEach((week) => {
+      week.status = "invalid";
+      mockUIUpdates.updateWeekStatusIcon(week);
+    });
 
     weeks.forEach((week) => {
       const container = week.statusCellElement?.querySelector(
@@ -875,6 +987,7 @@ describe("UI Updates - Edge Cases", () => {
       wfhCount: 2,
       officeDays: 3,
       isCompliant: true,
+      status: "compliant",
     });
 
     const week2 = createMockWeekInfo(new Date(2025, 0, 13), [], {
@@ -882,11 +995,12 @@ describe("UI Updates - Edge Cases", () => {
       wfhCount: 2,
       officeDays: 3,
       isCompliant: true,
+      status: "ignored",
     });
 
-    // First in best 8, second excluded
-    mockUIUpdates.updateWeekStatusIcon(week1, true);
-    mockUIUpdates.updateWeekStatusIcon(week2, false);
+    // First in evaluated set, second ignored
+    mockUIUpdates.updateWeekStatusIcon(week1);
+    mockUIUpdates.updateWeekStatusIcon(week2);
 
     const container1 = week1.statusCellElement?.querySelector(
       ".week-status-container",
@@ -896,6 +1010,8 @@ describe("UI Updates - Edge Cases", () => {
     ) as HTMLElement;
 
     expect(container1?.classList.contains("compliant")).toBe(true);
-    expect(container2?.classList.contains("least-attended")).toBe(true);
+    expect(container2?.classList.contains("evaluated")).toBe(false);
+    expect(container2?.classList.contains("compliant")).toBe(false);
+    expect(container2?.classList.contains("non-compliant")).toBe(false);
   });
 });

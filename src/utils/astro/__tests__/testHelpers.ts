@@ -151,6 +151,7 @@ export function createMockWeekInfo(
     officeDays: totalOfficeDays,
     isCompliant: options.isCompliant ?? totalOfficeDays >= 3,
     isUnderEvaluation: options.isUnderEvaluation ?? false,
+    status: options.status ?? "ignored",
     statusCellElement:
       options.statusCellElement || createMockStatusCell(weekStart),
   };

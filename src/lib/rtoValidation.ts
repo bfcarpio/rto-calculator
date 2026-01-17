@@ -65,6 +65,8 @@ export interface SlidingWindowResult {
   message: string;
   overallCompliance: number;
   evaluatedWeekStarts: number[];
+  invalidWeekStart: number | null; // The week with lowest office days in evaluated set (when invalid)
+  windowStart: number | null; // The start of the 12-week window that was evaluated
 }
 
 // ==================== Configuration ====================
@@ -341,11 +343,20 @@ export function validateSlidingWindow(
     // Return immediately if invalid (break on first invalid window)
     if (!isValid) {
       const evaluatedWeekStarts = bestWeeks.map((w) => w.weekStart.getTime());
+      // Find the week with lowest office days in the evaluated set
+      const invalidWeek = bestWeeks[bestWeeks.length - 1]; // Last one has lowest office days (sorted descending)
+      const invalidWeekStart = invalidWeek?.weekStart.getTime() ?? null;
+      // Get the window start timestamp
+      const windowWeek = weeksData[windowStart];
+      const windowStartTimestamp = windowWeek?.weekStart.getTime() ?? null;
+
       return {
         isValid: false,
         message: `✗ RTO Violation: Best ${weeksToEvaluate} of ${windowSize} weeks average ${averageOfficeDays.toFixed(1)} office days (${averageOfficePercentage.toFixed(0)}%) of ${policy.totalWeekdaysPerWeek} weekdays. Required: ${requiredPercentage.toFixed(0)}%`,
         overallCompliance: averageOfficePercentage,
         evaluatedWeekStarts,
+        invalidWeekStart,
+        windowStart: windowStartTimestamp,
       };
     }
   }
@@ -369,12 +380,16 @@ export function validateSlidingWindow(
     (averageOfficeDays / policy.totalWeekdaysPerWeek) * 100;
   const requiredPercentage = policy.thresholdPercentage * 100;
   const evaluatedWeekStarts = bestWeeks.map((w) => w.weekStart.getTime());
+  const lastWindowWeek = weeksData[lastWindowStart];
+  const windowStartTimestamp = lastWindowWeek?.weekStart.getTime() ?? null;
 
   return {
     isValid: true,
     message: `✓ RTO Compliant: Best ${weeksToEvaluate} of ${windowSize} weeks average ${averageOfficeDays.toFixed(1)} office days (${averageOfficePercentage.toFixed(0)}%) of ${policy.totalWeekdaysPerWeek} weekdays. Required: ${requiredPercentage.toFixed(0)}%`,
     overallCompliance: averageOfficePercentage,
     evaluatedWeekStarts,
+    invalidWeekStart: null,
+    windowStart: windowStartTimestamp,
   };
 }
 
