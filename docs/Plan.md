@@ -32,9 +32,9 @@ An Astro-based web application for tracking Return-to-Office (RTO) compliance. T
 │  ┌──────────────────────────────────────────────────────┐   │
 │  │              Validation System                        │   │
 │  │  ┌──────────────────┐      ┌──────────────────┐     │   │
-│  │  │ ValidationManager│◄────►│RTOValidation.ts   │     │   │
-│  │  │  (Strategy Pattern)│    │  (Rolling Period)│     │   │
-│  │  └────────┬─────────┘      └──────────────────┘     │   │
+│  │  │  UI Integration  │◄────►│  Core Library     │     │   │
+│  │  │  (DOM handling)  │      │  (Pure logic)     │     │   │
+│  │  └──────────────────┘      └──────────────────┘     │   │
 │  │           │                                             │   │
 │  │  ┌────────▼─────────┐    ┌──────────────────┐        │   │
 │  │  │RollingPeriod     │    │  Future:         │        │   │
@@ -143,8 +143,11 @@ ValidationManager (Context)
   4. Identify violating windows with week-level details
 - **Returns**: Compliance result with window-by-window breakdown
 
+#### `rtoValidation.ts` (`lib/rtoValidation.ts`)
+- **Purpose**: Core validation library with pure functions (no DOM dependencies)
+
 #### `rtoValidation.ts` (`scripts/rtoValidation.ts`)
-- **Purpose**: Production validation script integrated with DOM
+- **Purpose**: UI integration layer that handles DOM reading and updates
 - **Responsibilities**:
   - Read calendar data from DOM elements
   - Calculate rolling compliance with week-by-week evaluation
@@ -294,10 +297,9 @@ src/
 ├── pages/
 │   └── index.astro              # Main application page
 ├── scripts/
-│   ├── ValidationManager.js     # Strategy pattern manager
-│   └── rtoValidation.ts         # Production validation logic
-├── strategies/
-│   └── RollingPeriodValidation.js # Rolling period strategy
+│   └── rtoValidation.ts         # UI integration for validation
+├── lib/
+│   └── rtoValidation.ts         # Core validation library
 ├── styles/
 │   ├── global.css               # Global styles
 │   └── pages/index.css          # Page-specific styles
@@ -307,9 +309,8 @@ src/
 │   ├── validation-strategy.d.ts # Strategy interface
 │   └── rto-validation.d.ts       # Validation types
 ├── utils/
-│   ├── astro/
-│   │   ├── calendarFunctions.ts # Astro server utilities
-│   │   └── rtoValidation.ts     # Test validation utilities
+│   └── astro/
+│       └── calendarFunctions.ts # Astro server utilities
 │   ├── dateUtils.ts             # Date manipulation functions
 │   ├── dragSelection.ts         # Drag selection manager
 │   ├── storage.ts               # localStorage utilities

@@ -31,7 +31,7 @@ import {
   DEFAULT_RTO_POLICY,
   type DaySelection,
   type RTOPolicyConfig,
-} from "../../rtoValidation";
+} from "../../../../lib/rtoValidation";
 
 // Import fixtures for scenario testing
 import {
