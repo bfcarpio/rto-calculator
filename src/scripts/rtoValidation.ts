@@ -293,7 +293,7 @@ function calculateRollingCompliance(): ComplianceResult {
       if (CONFIG.DEBUG) {
         console.log("[RTO Validation] Sliding window found invalid period:");
         console.log(
-          `  Window start week: ${windowWeeks[0].weekStart.toISOString().split("T")[0]}`,
+          `  Window start week: ${windowWeeks[0]?.weekStart.toISOString().split("T")[0] || "unknown"}`,
         );
         console.log(
           "  Best 8 weeks:",
