@@ -465,6 +465,176 @@ src/utils/astro/__tests__/
 
 ## Extension Points
 
+### Configurable Validation Parameters
+
+**Current Hard-Coded Values:**
+- Window Size: 12 weeks (rolling period)
+- Evaluation Size: 8 weeks (best weeks to evaluate)
+- Exclusion Size: 4 weeks (12 - 8 = weeks excluded from evaluation)
+- Minimum Office Days: 3 days per week
+- Threshold Percentage: 60% (3/5 days)
+
+**Proposed Configuration Structure:**
+
+```typescript
+interface ValidationConfig {
+  // Window Configuration
+  rollingPeriodWeeks: number;      // Total weeks in evaluation window (default: 12)
+  evaluationWeeks: number;         // Best weeks to evaluate (default: 8)
+  
+  // Week Compliance Requirements
+  minOfficeDaysPerWeek: number;     // Minimum office days per week (default: 3)
+  totalWeekdaysPerWeek: number;     // Weekdays per week (default: 5)
+  thresholdPercentage: number;        // Compliance threshold (default: 0.6)
+  
+  // Behavior Flags
+  allowPartialWeeks: boolean;       // Include partial weeks in validation (default: false)
+  partialWeekThreshold: number;      // Minimum weekdays for partial week (default: 5)
+}
+```
+
+**Implementation Plan:**
+
+1. **Phase 1: UI Controls**
+   - Add "Validation Settings" section to SettingsModal.astro
+   - Create form fields for:
+     - Rolling Period Weeks (input type="number", min: 4, max: 52, default: 12)
+     - Evaluation Weeks (input type="number", min: 1, max: rollingPeriodWeeks-1, default: 8)
+     - Minimum Office Days (input type="number", min: 0, max: totalWeekdaysPerWeek, default: 3)
+     - Compliance Threshold (input type="range", min: 0, max: 1, step: 0.05, default: 0.6)
+
+2. **Phase 2: Storage and Persistence**
+   - Extend UserPreferences type in `src/types/index.ts`:
+     ```typescript
+     interface UserPreferences {
+       defaultPattern: number[] | null;
+       validationConfig: ValidationConfig | null;
+     }
+     ```
+   - Update storage utilities to save/load ValidationConfig
+   - Load config on app initialization
+   - Apply config to validation functions
+
+3. **Phase 3: Validation Logic Updates**
+   - Update `src/lib/rtoValidation.ts`:
+     - Modify `validateSlidingWindow()` to accept custom config
+     - Update `DEFAULT_RTO_POLICY` to be used as defaults
+     - Ensure all validation functions use config values
+   - Update `src/scripts/rtoValidation.ts`:
+     - Pass config to validation functions
+     - Update status display logic to use config-based thresholds
+     - Update debug logging to show active config
+
+4. **Phase 4: UI Feedback**
+   - Display current validation settings in compliance message:
+     ```
+     ✓ Compliant: 8 of 12 weeks (80.5%) - Using 3-day minimum
+     ```
+   - Show settings indicators:
+     - Badge showing current configuration
+     - Visual indicators for different thresholds
+   - Add "Reset to Defaults" button in settings
+
+5. **Phase 5: Validation and Testing**
+   - Create comprehensive test suite for configurable validation:
+     ```typescript
+     describe("Configurable Validation", () => {
+       it("should use custom window size", () => {
+         // Test with 8-week window
+       });
+       it("should use custom evaluation size", () => {
+         // Test with 6 of 8 weeks evaluated
+       });
+       it("should use custom minimum days", () => {
+         // Test with 2-day minimum
+       });
+     });
+     ```
+   - Test edge cases:
+     - Evaluation weeks > rolling period (should error)
+     - Minimum days > total weekdays (should error)
+     - Zero threshold (always compliant)
+     - 100% threshold (all 5 days required)
+
+**Priority Presets:**
+
+```typescript
+const VALIDATION_PRESETS = {
+  standard: {
+    name: "Standard (3 days/week)",
+    rollingPeriodWeeks: 12,
+    evaluationWeeks: 8,
+    minOfficeDaysPerWeek: 3,
+    thresholdPercentage: 0.6,
+  },
+  relaxed: {
+    name: "Relaxed (2 days/week)",
+    rollingPeriodWeeks: 12,
+    evaluationWeeks: 8,
+    minOfficeDaysPerWeek: 2,
+    thresholdPercentage: 0.5,
+  },
+  strict: {
+    name: "Strict (4 days/week)",
+    rollingPeriodWeeks: 12,
+    evaluationWeeks: 8,
+    minOfficeDaysPerWeek: 4,
+    thresholdPercentage: 0.8,
+  },
+  hybrid: {
+    name: "Hybrid Mode (Flexible)",
+    rollingPeriodWeeks: 8,
+    evaluationWeeks: 6,
+    minOfficeDaysPerWeek: 3,
+    thresholdPercentage: 0.7,
+  },
+};
+```
+
+**Migration Path:**
+1. Start with defaults (current behavior)
+2. Add UI controls without auto-apply
+3. User must click "Apply" to activate new settings
+4. Show confirmation dialog with impact preview:
+   ```
+   Warning: Changing to 2-day minimum will affect existing selections.
+   
+   Current: 8 of 12 weeks compliant (67%)
+   New:      9 of 12 weeks compliant (75%)
+   
+   [Cancel] [Apply Changes]
+   ```
+5. Save config to localStorage
+6. Re-validate with new settings
+
+**Validation Rules:**
+```typescript
+function validateConfig(config: ValidationConfig): ValidationResult {
+  const errors: string[] = [];
+  
+  if (config.evaluationWeeks >= config.rollingPeriodWeeks) {
+    errors.push("Evaluation weeks must be less than rolling period");
+  }
+  
+  if (config.minOfficeDaysPerWeek > config.totalWeekdaysPerWeek) {
+    errors.push("Minimum office days cannot exceed total weekdays");
+  }
+  
+  if (config.thresholdPercentage < 0 || config.thresholdPercentage > 1) {
+    errors.push("Threshold must be between 0 and 1");
+  }
+  
+  if (config.rollingPeriodWeeks < 4) {
+    errors.push("Rolling period must be at least 4 weeks");
+  }
+  
+  return {
+    isValid: errors.length === 0,
+    errors,
+  };
+}
+```
+
 ### Adding New Validation Strategies
 
 1. Create new strategy class implementing `ValidationStrategy` interface:
