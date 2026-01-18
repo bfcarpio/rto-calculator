@@ -749,8 +749,11 @@ export function initializeApp(): void {
       }
 
       selectedCells.forEach((cell) => {
-        (cell as HTMLElement).classList.remove("selected");
-        (cell as HTMLElement).removeAttribute("data-selection-type");
+        const cellElement = cell as HTMLElement;
+        cellElement.dataset.selected = "false";
+        cellElement.dataset.selectionType = "";
+        cellElement.classList.remove("selected", "work-from-home", "office");
+        cellElement.ariaSelected = "false";
       });
 
       clearAllValidationHighlights();

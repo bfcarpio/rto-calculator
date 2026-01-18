@@ -143,25 +143,31 @@ const mockUIUpdates = {
 
   applyPatternToCalendar: (
     _pattern: "mwf" | "tt" | "all",
-    officeDays: number[],
+    patternDays: number[],
   ) => {
     const cells = document.querySelectorAll(".calendar-day");
     cells.forEach((cell) => {
       const cellEl = cell as HTMLElement;
-      const year = parseInt(cellEl.dataset.year || "0");
-      const month = parseInt(cellEl.dataset.month || "0");
-      const day = parseInt(cellEl.dataset.day || "0");
-      const date = new Date(year, month, day);
-      const dayOfWeek = date.getDay();
+      const isSelected = cellEl.dataset.selected === "true";
+      const selectionType = cellEl.dataset.selectionType;
 
-      // Clear previous selection
-      cellEl.classList.remove("selected");
-      cellEl.removeAttribute("data-selection-type");
+      // Only apply to unselected days
+      if (!isSelected && !selectionType) {
+        const year = parseInt(cellEl.dataset.year || "0");
+        const month = parseInt(cellEl.dataset.month || "0");
+        const day = parseInt(cellEl.dataset.day || "0");
+        const date = new Date(year, month, day);
+        const dayOfWeek = date.getDay();
 
-      // Apply pattern if weekday matches
-      if (dayOfWeek >= 1 && dayOfWeek <= 5 && officeDays.includes(dayOfWeek)) {
-        cellEl.classList.add("selected");
-        cellEl.setAttribute("data-selection-type", "office");
+        // Only apply pattern to weekdays (1-5 = Mon-Fri)
+        const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
+        if (isWeekday && patternDays.includes(dayOfWeek)) {
+          // Apply work-from-home selection
+          cellEl.dataset.selected = "true";
+          cellEl.dataset.selectionType = "work-from-home";
+          cellEl.classList.add("selected", "work-from-home");
+          cellEl.setAttribute("aria-selected", "true");
+        }
       }
     });
   },
@@ -169,8 +175,10 @@ const mockUIUpdates = {
   clearAllSelections: () => {
     document.querySelectorAll(".calendar-day").forEach((cell) => {
       const cellEl = cell as HTMLElement;
-      cellEl.classList.remove("selected");
-      cellEl.removeAttribute("data-selection-type");
+      cellEl.dataset.selected = "false";
+      cellEl.dataset.selectionType = "";
+      cellEl.classList.remove("selected", "work-from-home", "office");
+      cellEl.ariaSelected = "false";
     });
   },
 };
@@ -524,8 +532,10 @@ describe("UI Updates - Clear and Reset", () => {
       "data-selection-type",
       "work-from-home",
     );
+    (cells[0] as HTMLElement).dataset.selected = "true";
     (cells[1] as HTMLElement).classList.add("selected");
     (cells[1] as HTMLElement).setAttribute("data-selection-type", "office");
+    (cells[1] as HTMLElement).dataset.selected = "true";
 
     // Clear all selections
     mockUIUpdates.clearAllSelections();
@@ -534,7 +544,8 @@ describe("UI Updates - Clear and Reset", () => {
     cells.forEach((cell) => {
       const cellEl = cell as HTMLElement;
       expect(cellEl.classList.contains("selected")).toBe(false);
-      expect(cellEl.getAttribute("data-selection-type")).toBeNull();
+      expect(cellEl.getAttribute("data-selection-type")).toBe("");
+      expect(cellEl.dataset.selected).toBe("false");
     });
   });
 });
@@ -554,22 +565,25 @@ describe("UI Updates - Pattern Application", () => {
     // Jan 6 (Monday) should be selected
     const monday = document.querySelector('[data-day="6"]') as HTMLElement;
     expect(monday?.classList.contains("selected")).toBe(true);
-    expect(monday?.getAttribute("data-selection-type")).toBe("office");
+    expect(monday?.getAttribute("data-selection-type")).toBe("work-from-home");
 
-    // Jan 7 (Tuesday) should not be selected
+    // Jan 7 (Tuesday) should NOT be selected
     const tuesday = document.querySelector('[data-day="7"]') as HTMLElement;
     expect(tuesday?.classList.contains("selected")).toBe(false);
-    expect(tuesday?.getAttribute("data-selection-type")).toBeNull();
+    const selectionType = tuesday?.getAttribute("data-selection-type");
+    expect(selectionType === null || selectionType === "").toBe(true);
 
     // Jan 8 (Wednesday) should be selected
     const wednesday = document.querySelector('[data-day="8"]') as HTMLElement;
     expect(wednesday?.classList.contains("selected")).toBe(true);
-    expect(wednesday?.getAttribute("data-selection-type")).toBe("office");
+    expect(wednesday?.getAttribute("data-selection-type")).toBe(
+      "work-from-home",
+    );
 
     // Jan 10 (Friday) should be selected
     const friday = document.querySelector('[data-day="10"]') as HTMLElement;
     expect(friday?.classList.contains("selected")).toBe(true);
-    expect(friday?.getAttribute("data-selection-type")).toBe("office");
+    expect(friday?.getAttribute("data-selection-type")).toBe("work-from-home");
   });
 
   it("should apply Tue-Thu pattern correctly", () => {
@@ -578,16 +592,20 @@ describe("UI Updates - Pattern Application", () => {
     // Jan 7 (Tuesday) should be selected
     const tuesday = document.querySelector('[data-day="7"]') as HTMLElement;
     expect(tuesday?.classList.contains("selected")).toBe(true);
-    expect(tuesday?.getAttribute("data-selection-type")).toBe("office");
+    expect(tuesday?.getAttribute("data-selection-type")).toBe("work-from-home");
 
     // Jan 9 (Thursday) should be selected
     const thursday = document.querySelector('[data-day="9"]') as HTMLElement;
     expect(thursday?.classList.contains("selected")).toBe(true);
-    expect(thursday?.getAttribute("data-selection-type")).toBe("office");
+    expect(thursday?.getAttribute("data-selection-type")).toBe(
+      "work-from-home",
+    );
 
     // Monday should not be selected
     const monday = document.querySelector('[data-day="6"]') as HTMLElement;
     expect(monday?.classList.contains("selected")).toBe(false);
+    const selectionType = monday?.getAttribute("data-selection-type");
+    expect(selectionType === null || selectionType === "").toBe(true);
   });
 
   it("should apply all weekdays pattern correctly", () => {
@@ -606,7 +624,9 @@ describe("UI Updates - Pattern Application", () => {
 
       if (dayOfWeek >= 1 && dayOfWeek <= 5) {
         expect(cellEl.classList.contains("selected")).toBe(true);
-        expect(cellEl.getAttribute("data-selection-type")).toBe("office");
+        expect(cellEl.getAttribute("data-selection-type")).toBe(
+          "work-from-home",
+        );
         selectedCount++;
       }
     });
@@ -619,17 +639,94 @@ describe("UI Updates - Pattern Application", () => {
     // First select some cells
     const cells = document.querySelectorAll(".calendar-day");
     (cells[0] as HTMLElement).classList.add("selected");
-    (cells[0] as HTMLElement).setAttribute("data-selection-type", "office");
+    (cells[0] as HTMLElement).setAttribute(
+      "data-selection-type",
+      "work-from-home",
+    );
+    (cells[0] as HTMLElement).classList.add("work-from-home");
+    (cells[0] as HTMLElement).dataset.selected = "true";
 
     // Apply empty pattern
     mockUIUpdates.applyPatternToCalendar("mwf", []);
 
-    // All should be cleared
+    // Already-selected cells should remain selected
+    const cellEl0 = cells[0] as HTMLElement;
+    expect(cellEl0.classList.contains("selected")).toBe(true);
+    expect(cellEl0.getAttribute("data-selection-type")).toBe("work-from-home");
+
+    // Other cells should remain unselected
+    for (let i = 1; i < cells.length; i++) {
+      const cellEl = cells[i] as HTMLElement;
+      expect(cellEl.classList.contains("selected")).toBe(false);
+      const selectionType = cellEl.getAttribute("data-selection-type");
+      expect(selectionType === null || selectionType === "").toBe(true);
+    }
+  });
+
+  it("should allow pattern application after clearing all selections", () => {
+    // Setup: Select some cells
+    const cells = document.querySelectorAll(".calendar-day");
+    (cells[0] as HTMLElement).classList.add("selected");
+    (cells[0] as HTMLElement).setAttribute(
+      "data-selection-type",
+      "work-from-home",
+    );
+    (cells[0] as HTMLElement).classList.add("work-from-home");
+    (cells[0] as HTMLElement).dataset.selected = "true";
+    (cells[1] as HTMLElement).classList.add("selected");
+    (cells[1] as HTMLElement).setAttribute(
+      "data-selection-type",
+      "work-from-home",
+    );
+    (cells[1] as HTMLElement).classList.add("work-from-home");
+    (cells[1] as HTMLElement).dataset.selected = "true";
+
+    // Clear all selections
+    mockUIUpdates.clearAllSelections();
+
+    // Verify cells are properly reset
     cells.forEach((cell) => {
       const cellEl = cell as HTMLElement;
       expect(cellEl.classList.contains("selected")).toBe(false);
-      expect(cellEl.getAttribute("data-selection-type")).toBeNull();
+      const selectionType = cellEl.getAttribute("data-selection-type");
+      expect(selectionType === null || selectionType === "").toBe(true);
+      expect(cellEl.dataset.selected).toBe("false");
     });
+
+    // Apply pattern (Mon-Wed-Fri = [1, 3, 5])
+    mockUIUpdates.applyPatternToCalendar("mwf", [1, 3, 5]);
+
+    // Verify pattern was applied to unselected weekday cells
+    let appliedCount = 0;
+    cells.forEach((cell) => {
+      const cellEl = cell as HTMLElement;
+      const year = parseInt(cellEl.getAttribute("data-year") || "0");
+      const month = parseInt(cellEl.getAttribute("data-month") || "0");
+      const day = parseInt(cellEl.getAttribute("data-day") || "0");
+      const date = new Date(year, month, day);
+      const dayOfWeek = date.getDay();
+
+      // Check if this is a weekday in the pattern
+      if (dayOfWeek >= 1 && dayOfWeek <= 5 && [1, 3, 5].includes(dayOfWeek)) {
+        // Should be selected with work-from-home
+        expect(cellEl.classList.contains("selected")).toBe(true);
+        expect(cellEl.classList.contains("work-from-home")).toBe(true);
+        expect(cellEl.getAttribute("data-selection-type")).toBe(
+          "work-from-home",
+        );
+        expect(cellEl.dataset.selected).toBe("true");
+        appliedCount++;
+      } else {
+        // Should remain unselected
+        expect(cellEl.classList.contains("selected")).toBe(false);
+        const selectionType = cellEl.getAttribute("data-selection-type");
+        expect(selectionType === null || selectionType === "").toBe(true);
+        expect(cellEl.dataset.selected).toBe("false");
+      }
+    });
+
+    // Should have applied pattern to weekdays
+    expect(appliedCount).toBeGreaterThan(0);
   });
 });
 
