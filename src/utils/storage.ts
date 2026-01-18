@@ -13,7 +13,7 @@ const STORAGE_KEYS = {
 
 /**
  * Save selected dates to localStorage
- * @param selectedDates - Set of selected date strings (ISO format)
+ * @param selectedDates - Set of selected date strings with selection type (format: "YYYY-MM-DD:type")
  */
 export function saveSelectedDates(selectedDates: Set<string>): void {
   try {
@@ -29,7 +29,7 @@ export function saveSelectedDates(selectedDates: Set<string>): void {
 
 /**
  * Load selected dates from localStorage
- * @returns Set of selected date strings (ISO format)
+ * @returns Set of selected date strings with selection type (format: "YYYY-MM-DD:type")
  */
 export function loadSelectedDates(): Set<string> {
   try {
@@ -80,6 +80,7 @@ export function loadUserPreferences(): UserPreferences {
     language: "en",
     timezone: "UTC",
     firstDayOfWeek: 1,
+    defaultPattern: null,
   };
 }
 
@@ -177,8 +178,19 @@ export function getStorageInfo(): {
  */
 export function exportData(): string {
   try {
+    const selectedDatesSet = loadSelectedDates();
+
+    // Convert Set of "YYYY-MM-DD:type" strings to Map
+    const selectedDatesMap = new Map<string, string>();
+    selectedDatesSet.forEach((item) => {
+      const [date, type] = item.split(":");
+      if (date && type) {
+        selectedDatesMap.set(date, type);
+      }
+    });
+
     const data = {
-      selectedDates: loadSelectedDates(),
+      selectedDates: selectedDatesMap,
       preferences: loadUserPreferences(),
       lastUpdated: getLastUpdated(),
       exportDate: new Date().toISOString(),
@@ -200,10 +212,21 @@ export function importData(jsonData: string): boolean {
     const data = JSON.parse(jsonData);
 
     if (data.selectedDates) {
-      const selectedDates = Array.isArray(data.selectedDates)
-        ? new Set(data.selectedDates as string[])
-        : new Set<string>();
-      saveSelectedDates(selectedDates);
+      // Convert Map back to Set of "YYYY-MM-DD:type" strings
+      const selectedDatesSet = new Set<string>();
+
+      if (data.selectedDates instanceof Map) {
+        data.selectedDates.forEach((type: string, date: string) => {
+          selectedDatesSet.add(`${date}:${type}`);
+        });
+      } else if (typeof data.selectedDates === "object") {
+        // Handle plain object
+        Object.entries(data.selectedDates).forEach(([date, type]) => {
+          selectedDatesSet.add(`${date}:${type}`);
+        });
+      }
+
+      saveSelectedDates(selectedDatesSet);
     }
 
     if (data.preferences) {
