@@ -387,41 +387,26 @@ export function updateComplianceIndicator(result?: ComplianceResult): void {
     return;
   }
 
-  // Update header compliance indicator
-  const indicator = document.getElementById("compliance-indicator");
-  if (indicator) {
-    indicator.classList.remove("compliant", "non-compliant");
-
-    if (complianceResult.isValid) {
-      indicator.classList.add("compliant");
-    } else {
-      indicator.classList.add("non-compliant");
-    }
-
-    const iconElement = document.getElementById("compliance-icon");
-    if (iconElement) {
-      iconElement.textContent = complianceResult.isValid ? "✓" : "✗";
-    }
-
-    const textElement = document.getElementById("compliance-text");
-    if (textElement) {
-      const statusText = complianceResult.isValid ? "Compliant" : "Violation";
-      const newText = `${statusText} (${complianceResult.overallCompliance.toFixed(0)}%)`;
-      textElement.textContent = newText;
-    }
-  }
-
   // Update main validation message
   const messageContainer = document.getElementById("validation-message");
   if (messageContainer) {
     messageContainer.style.display = "block";
     messageContainer.style.visibility = "visible";
     messageContainer.textContent = complianceResult.message;
+
+    // Update message styling based on compliance result
+    messageContainer.classList.remove("success", "error", "warning");
+
+    if (complianceResult.isValid) {
+      messageContainer.classList.add("success");
+    } else {
+      messageContainer.classList.add("error");
+    }
   }
 
   if (CONFIG.DEBUG) {
     console.log(
-      "[RTO Validation UI] Updated compliance indicator:",
+      "[RTO Validation UI] Updated validation message:",
       complianceResult,
     );
   }
@@ -473,12 +458,6 @@ function clearAllValidationHighlightsInternal(): void {
         srElement.textContent = "";
       }
     });
-  }
-
-  // Clear compliance indicator
-  const complianceIndicator = document.getElementById("compliance-indicator");
-  if (complianceIndicator) {
-    complianceIndicator.classList.remove("compliant", "non-compliant");
   }
 
   // Hide validation message
