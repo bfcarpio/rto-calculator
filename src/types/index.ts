@@ -57,7 +57,7 @@ export interface DayInfo {
   element: HTMLElement; // Direct DOM reference - no cache needed
   isWeekday: boolean;
   isSelected: boolean;
-  selectionType: "work-from-home" | "office" | null;
+  selectionType: "out-of-office" | "office" | null;
 }
 
 /**

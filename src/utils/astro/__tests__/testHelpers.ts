@@ -15,14 +15,14 @@ import type { DayInfo, WeekInfo } from "../../../types";
  * @param year - Year (e.g., 2025)
  * @param month - Month (0-11, where 0 = January)
  * @param day - Day of month (1-31)
- * @param selectionType - Type of selection ("work-from-home", "office", or null)
+ * @param selectionType - Type of selection ("out-of-office", "office", or null)
  * @returns HTMLElement representing a day cell
  */
 export function createMockDayElement(
   year: number,
   month: number,
   day: number,
-  selectionType: "work-from-home" | "office" | null = null,
+  selectionType: "out-of-office" | "office" | null = null,
 ): HTMLElement {
   const element = document.createElement("td");
   element.className = "calendar-day";
@@ -98,7 +98,7 @@ export function createMockStatusCell(
  */
 export function createMockDayInfo(
   date: Date,
-  selectionType: "work-from-home" | "office" | null = null,
+  selectionType: "out-of-office" | "office" | null = null,
 ): DayInfo {
   const element = createMockDayElement(
     date.getFullYear(),
@@ -135,11 +135,9 @@ export function createMockWeekInfo(
   const validDays = days || [];
   const weekdays = validDays.filter((d) => d.isWeekday);
   const wfhCount = weekdays.filter(
-    (d) => d.isSelected && d.selectionType === "work-from-home",
+    (d) => d.isSelected && d.selectionType === "out-of-office",
   ).length;
-  const officeCount = weekdays.filter(
-    (d) => d.isSelected && d.selectionType === "office",
-  ).length;
+  const officeCount = 0; // No longer tracking office selections
   const impliedOfficeDays = weekdays.length - wfhCount - officeCount;
   const totalOfficeDays = officeCount + impliedOfficeDays;
 
@@ -177,9 +175,9 @@ export function createWeekWithPattern(
     const currentDate = new Date(weekStart);
     currentDate.setDate(weekStart.getDate() + i);
 
-    let selectionType: "work-from-home" | "office" | null = null;
+    let selectionType: "out-of-office" | "office" | null = null;
     if (wfhDays.includes(i)) {
-      selectionType = "work-from-home";
+      selectionType = "out-of-office";
     } else if (officeDays.includes(i)) {
       selectionType = "office";
     }
@@ -375,7 +373,7 @@ export function verifyElementDataAttributes(dayInfo: DayInfo): boolean {
   const month = parseInt(element.dataset.month || "0");
   const day = parseInt(element.dataset.day || "0");
   const selectionType = element.dataset.selectionType as
-    | "work-from-home"
+    | "out-of-office"
     | "office"
     | null;
   const isSelected = element.dataset.selected === "true";
