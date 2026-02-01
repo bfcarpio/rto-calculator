@@ -9,24 +9,24 @@
  * @returns Week number (1-52)
  */
 export function getISOWeekNumber(date: Date): number {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  // Thursday in current week decides the year
-  d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7));
-  // January 4 is always in week 1
-  const week1 = new Date(d.getFullYear(), 0, 4);
-  // Adjust to Thursday of week 1
-  week1.setDate(week1.getDate() + 3 - ((week1.getDay() + 6) % 7));
-  // Calculate week number
-  const weekNum =
-    1 +
-    Math.round(
-      ((d.getTime() - week1.getTime()) / 86400000 -
-        3 +
-        ((week1.getDay() + 6) % 7)) /
-        7,
-    );
-  return weekNum;
+	const d = new Date(date);
+	d.setHours(0, 0, 0, 0);
+	// Thursday in current week decides the year
+	d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7));
+	// January 4 is always in week 1
+	const week1 = new Date(d.getFullYear(), 0, 4);
+	// Adjust to Thursday of week 1
+	week1.setDate(week1.getDate() + 3 - ((week1.getDay() + 6) % 7));
+	// Calculate week number
+	const weekNum =
+		1 +
+		Math.round(
+			((d.getTime() - week1.getTime()) / 86400000 -
+				3 +
+				((week1.getDay() + 6) % 7)) /
+				7,
+		);
+	return weekNum;
 }
 
 /**
@@ -35,12 +35,12 @@ export function getISOWeekNumber(date: Date): number {
  * @returns Date object representing Monday of that week
  */
 export function getStartOfWeek(date: Date): Date {
-  const d = new Date(date);
-  const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
-  d.setDate(diff);
-  d.setHours(0, 0, 0, 0);
-  return d;
+	const d = new Date(date);
+	const day = d.getDay();
+	const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
+	d.setDate(diff);
+	d.setHours(0, 0, 0, 0);
+	return d;
 }
 
 /**
@@ -49,11 +49,11 @@ export function getStartOfWeek(date: Date): Date {
  * @returns Date object representing Friday of that week
  */
 export function getEndOfWeek(date: Date): Date {
-  const start = getStartOfWeek(date);
-  const end = new Date(start);
-  end.setDate(start.getDate() + 4); // Monday + 4 = Friday
-  end.setHours(23, 59, 59, 999);
-  return end;
+	const start = getStartOfWeek(date);
+	const end = new Date(start);
+	end.setDate(start.getDate() + 4); // Monday + 4 = Friday
+	end.setHours(23, 59, 59, 999);
+	return end;
 }
 
 /**
@@ -62,8 +62,8 @@ export function getEndOfWeek(date: Date): Date {
  * @returns true if the date is a weekend
  */
 export function isWeekend(date: Date): boolean {
-  const day = date.getDay();
-  return day === 0 || day === 6; // 0 = Sunday, 6 = Saturday
+	const day = date.getDay();
+	return day === 0 || day === 6; // 0 = Sunday, 6 = Saturday
 }
 
 /**
@@ -72,7 +72,7 @@ export function isWeekend(date: Date): boolean {
  * @returns true if the date is a weekday
  */
 export function isWeekday(date: Date): boolean {
-  return !isWeekend(date);
+	return !isWeekend(date);
 }
 
 /**
@@ -81,16 +81,16 @@ export function isWeekday(date: Date): boolean {
  * @returns Array of Date objects for Monday-Friday
  */
 export function getWeekDates(date: Date): Date[] {
-  const start = getStartOfWeek(date);
-  const dates: Date[] = [];
+	const start = getStartOfWeek(date);
+	const dates: Date[] = [];
 
-  for (let i = 0; i < 5; i++) {
-    const d = new Date(start);
-    d.setDate(start.getDate() + i);
-    dates.push(d);
-  }
+	for (let i = 0; i < 5; i++) {
+		const d = new Date(start);
+		d.setDate(start.getDate() + i);
+		dates.push(d);
+	}
 
-  return dates;
+	return dates;
 }
 
 /**
@@ -100,18 +100,18 @@ export function getWeekDates(date: Date): Date[] {
  * @returns Array of Date objects for all weekdays in the period
  */
 export function getRollingPeriodDates(startDate: Date, weeks: number): Date[] {
-  const dates: Date[] = [];
-  const start = getStartOfWeek(startDate);
+	const dates: Date[] = [];
+	const start = getStartOfWeek(startDate);
 
-  for (let week = 0; week < weeks; week++) {
-    for (let day = 0; day < 5; day++) {
-      const d = new Date(start);
-      d.setDate(start.getDate() + week * 7 + day);
-      dates.push(d);
-    }
-  }
+	for (let week = 0; week < weeks; week++) {
+		for (let day = 0; day < 5; day++) {
+			const d = new Date(start);
+			d.setDate(start.getDate() + week * 7 + day);
+			dates.push(d);
+		}
+	}
 
-  return dates;
+	return dates;
 }
 
 /**
@@ -120,11 +120,11 @@ export function getRollingPeriodDates(startDate: Date, weeks: number): Date[] {
  * @returns true if the date is before today
  */
 export function isPastDate(date: Date): boolean {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const checkDate = new Date(date);
-  checkDate.setHours(0, 0, 0, 0);
-  return checkDate < today;
+	const today = new Date();
+	today.setHours(0, 0, 0, 0);
+	const checkDate = new Date(date);
+	checkDate.setHours(0, 0, 0, 0);
+	return checkDate < today;
 }
 
 /**
@@ -133,10 +133,10 @@ export function isPastDate(date: Date): boolean {
  * @returns ISO date string
  */
 export function formatDateISO(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+	const year = date.getFullYear();
+	const month = String(date.getMonth() + 1).padStart(2, "0");
+	const day = String(date.getDate()).padStart(2, "0");
+	return `${year}-${month}-${day}`;
 }
 
 /**
@@ -145,11 +145,11 @@ export function formatDateISO(date: Date): string {
  * @returns Date object
  */
 export function parseDateISO(isoString: string): Date {
-  const parts = isoString.split("-").map(Number);
-  const year = parts[0] ?? 0;
-  const month = (parts[1] ?? 1) - 1;
-  const day = parts[2] ?? 1;
-  return new Date(year, month, day);
+	const parts = isoString.split("-").map(Number);
+	const year = parts[0] ?? 0;
+	const month = (parts[1] ?? 1) - 1;
+	const day = parts[2] ?? 1;
+	return new Date(year, month, day);
 }
 
 /**
@@ -158,12 +158,12 @@ export function parseDateISO(isoString: string): Date {
  * @returns Formatted date string
  */
 export function formatDateDisplay(date: Date): string {
-  const options: Intl.DateTimeFormatOptions = {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  };
-  return date.toLocaleDateString("en-US", options);
+	const options: Intl.DateTimeFormatOptions = {
+		year: "numeric",
+		month: "short",
+		day: "numeric",
+	};
+	return date.toLocaleDateString("en-US", options);
 }
 
 /**
@@ -172,13 +172,13 @@ export function formatDateDisplay(date: Date): string {
  * @returns Formatted date string with day of week
  */
 export function formatDateWithDay(date: Date): string {
-  const options: Intl.DateTimeFormatOptions = {
-    weekday: "short",
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  };
-  return date.toLocaleDateString("en-US", options);
+	const options: Intl.DateTimeFormatOptions = {
+		weekday: "short",
+		year: "numeric",
+		month: "short",
+		day: "numeric",
+	};
+	return date.toLocaleDateString("en-US", options);
 }
 
 /**
@@ -187,8 +187,8 @@ export function formatDateWithDay(date: Date): string {
  * @returns Day name (e.g., "Monday")
  */
 export function getDayName(date: Date): string {
-  const options: Intl.DateTimeFormatOptions = { weekday: "long" };
-  return date.toLocaleDateString("en-US", options);
+	const options: Intl.DateTimeFormatOptions = { weekday: "long" };
+	return date.toLocaleDateString("en-US", options);
 }
 
 /**
@@ -197,8 +197,8 @@ export function getDayName(date: Date): string {
  * @returns Short day name (e.g., "Mon")
  */
 export function getDayNameShort(date: Date): string {
-  const options: Intl.DateTimeFormatOptions = { weekday: "short" };
-  return date.toLocaleDateString("en-US", options);
+	const options: Intl.DateTimeFormatOptions = { weekday: "short" };
+	return date.toLocaleDateString("en-US", options);
 }
 
 /**
@@ -208,11 +208,11 @@ export function getDayNameShort(date: Date): string {
  * @returns true if dates are the same day
  */
 export function isSameDay(date1: Date, date2: Date): boolean {
-  return (
-    date1.getFullYear() === date2.getFullYear() &&
-    date1.getMonth() === date2.getMonth() &&
-    date1.getDate() === date2.getDate()
-  );
+	return (
+		date1.getFullYear() === date2.getFullYear() &&
+		date1.getMonth() === date2.getMonth() &&
+		date1.getDate() === date2.getDate()
+	);
 }
 
 /**
@@ -222,9 +222,9 @@ export function isSameDay(date1: Date, date2: Date): boolean {
  * @returns Number of days (absolute value)
  */
 export function getDaysBetween(date1: Date, date2: Date): number {
-  const oneDay = 24 * 60 * 60 * 1000;
-  const diffDays = Math.abs((date1.getTime() - date2.getTime()) / oneDay);
-  return Math.round(diffDays);
+	const oneDay = 24 * 60 * 60 * 1000;
+	const diffDays = Math.abs((date1.getTime() - date2.getTime()) / oneDay);
+	return Math.round(diffDays);
 }
 
 /**
@@ -234,9 +234,9 @@ export function getDaysBetween(date1: Date, date2: Date): number {
  * @returns New date with days added
  */
 export function addDays(date: Date, days: number): Date {
-  const result = new Date(date);
-  result.setDate(result.getDate() + days);
-  return result;
+	const result = new Date(date);
+	result.setDate(result.getDate() + days);
+	return result;
 }
 
 /**
@@ -244,27 +244,27 @@ export function addDays(date: Date, days: number): Date {
  * @returns Array of Date objects for the next 12 months
  */
 export function getCalendarDates(): Date[] {
-  const dates: Date[] = [];
+	const dates: Date[] = [];
 
-  // Start from the first day of the current month
-  const startDate = new Date();
-  startDate.setDate(1); // Set to first day of current month
-  startDate.setHours(0, 0, 0, 0);
+	// Start from the first day of the current month
+	const startDate = new Date();
+	startDate.setDate(1); // Set to first day of current month
+	startDate.setHours(0, 0, 0, 0);
 
-  // End after 12 months
-  const endDate = new Date();
-  endDate.setMonth(endDate.getMonth() + 12); // 12 months from now
-  endDate.setDate(1); // First day of that month
-  endDate.setHours(0, 0, 0, 0);
+	// End after 12 months
+	const endDate = new Date();
+	endDate.setMonth(endDate.getMonth() + 12); // 12 months from now
+	endDate.setDate(1); // First day of that month
+	endDate.setHours(0, 0, 0, 0);
 
-  // Generate all dates from start to end
-  const currentDate = new Date(startDate);
-  while (currentDate < endDate) {
-    dates.push(new Date(currentDate));
-    currentDate.setDate(currentDate.getDate() + 1);
-  }
+	// Generate all dates from start to end
+	const currentDate = new Date(startDate);
+	while (currentDate < endDate) {
+		dates.push(new Date(currentDate));
+		currentDate.setDate(currentDate.getDate() + 1);
+	}
 
-  return dates;
+	return dates;
 }
 
 /**
@@ -273,19 +273,19 @@ export function getCalendarDates(): Date[] {
  * @returns Week number (1-52) relative to the start of the year
  */
 export function getWeekNumber(date: Date): number {
-  const startOfYear = new Date(date.getFullYear(), 0, 1); // January 1st of the year
-  const startOfDay = new Date(
-    date.getFullYear(),
-    date.getMonth(),
-    date.getDate(),
-  ); // Beginning of the given date
+	const startOfYear = new Date(date.getFullYear(), 0, 1); // January 1st of the year
+	const startOfDay = new Date(
+		date.getFullYear(),
+		date.getMonth(),
+		date.getDate(),
+	); // Beginning of the given date
 
-  // Calculate the difference in days between the start of the year and the given date
-  const diffTime = startOfDay.getTime() - startOfYear.getTime();
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+	// Calculate the difference in days between the start of the year and the given date
+	const diffTime = startOfDay.getTime() - startOfYear.getTime();
+	const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
-  // Calculate the week number by dividing by 7 and rounding up
-  return Math.floor(diffDays / 7) + 1;
+	// Calculate the week number by dividing by 7 and rounding up
+	return Math.floor(diffDays / 7) + 1;
 }
 
 /**
@@ -294,8 +294,8 @@ export function getWeekNumber(date: Date): number {
  * @returns Month name (e.g., "January")
  */
 export function getMonthName(date: Date): string {
-  const options: Intl.DateTimeFormatOptions = { month: "long" };
-  return date.toLocaleDateString("en-US", options);
+	const options: Intl.DateTimeFormatOptions = { month: "long" };
+	return date.toLocaleDateString("en-US", options);
 }
 
 /**
@@ -304,6 +304,6 @@ export function getMonthName(date: Date): string {
  * @returns Short month name (e.g., "Jan")
  */
 export function getMonthNameShort(date: Date): string {
-  const options: Intl.DateTimeFormatOptions = { month: "short" };
-  return date.toLocaleDateString("en-US", options);
+	const options: Intl.DateTimeFormatOptions = { month: "short" };
+	return date.toLocaleDateString("en-US", options);
 }

@@ -1,40 +1,40 @@
 ---
-import '/src/styles/utilities.css';
+import "/src/styles/utilities.css";
 
 interface Props {
-    dayNumber: number;
-    year: number;
-    month: number;
-    isSelected?: boolean;
-    selectionType?: string;
+	dayNumber: number;
+	year: number;
+	month: number;
+	isSelected?: boolean;
+	selectionType?: string;
 }
 
 const {
-    dayNumber,
-    year,
-    month,
-    isSelected = false,
-    selectionType = "",
+	dayNumber,
+	year,
+	month,
+	isSelected = false,
+	selectionType = "",
 } = Astro.props;
 
 // Create full date string for this day
 const date = new Date(year, month, dayNumber);
 const dateString = date.toLocaleDateString("en-US", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
+	weekday: "long",
+	year: "numeric",
+	month: "long",
+	day: "numeric",
 });
 
 // Selection type to human-readable label mapping
 const selectionLabels: Record<string, string> = {
-    "out-of-office": "Out of office",
+	"out-of-office": "Out of office",
 };
 
 // Get human-readable label for current selection
 const selectionLabel = selectionType
-    ? selectionLabels[selectionType]
-    : "Unselected";
+	? selectionLabels[selectionType]
+	: "Unselected";
 
 // Create a unique ID for this day cell
 const cellId = `day-cell-${year}-${month}-${dayNumber}`;

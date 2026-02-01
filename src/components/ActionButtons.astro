@@ -1,41 +1,41 @@
 ---
 interface ButtonConfig {
-    id: string;
-    text: string;
-    icon: string;
-    variant: 'primary' | 'secondary' | 'danger';
-    ariaLabel: string;
+	id: string;
+	text: string;
+	icon: string;
+	variant: "primary" | "secondary" | "danger";
+	ariaLabel: string;
 }
 
 interface Props {
-    position: 'top' | 'bottom';
+	position: "top" | "bottom";
 }
 
 const { position } = Astro.props;
 
 // Button configurations
 const buttons: ButtonConfig[] = [
-    {
-        id: `validate-button-${position}`,
-        text: 'Validate',
-        icon: '✓',
-        variant: 'primary',
-        ariaLabel: 'Validate RTO compliance'
-    },
-    {
-        id: `clear-all-button-${position}`,
-        text: 'Clear All',
-        icon: '🗑️',
-        variant: 'danger',
-        ariaLabel: 'Clear all selections'
-    },
-    {
-        id: `export-button-${position}`,
-        text: 'Export',
-        icon: '📥',
-        variant: 'secondary',
-        ariaLabel: 'Export selections'
-    }
+	{
+		id: `validate-button-${position}`,
+		text: "Validate",
+		icon: "✓",
+		variant: "primary",
+		ariaLabel: "Validate RTO compliance",
+	},
+	{
+		id: `clear-all-button-${position}`,
+		text: "Clear All",
+		icon: "🗑️",
+		variant: "danger",
+		ariaLabel: "Clear all selections",
+	},
+	{
+		id: `export-button-${position}`,
+		text: "Export",
+		icon: "📥",
+		variant: "secondary",
+		ariaLabel: "Export selections",
+	},
 ];
 ---
 
