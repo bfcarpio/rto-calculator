@@ -1,4 +1,5 @@
 ---
+import '/src/styles/utilities.css';
 import Day from "./day.astro";
 import { getISOWeekNumber } from "../utils/dateUtils";
 
@@ -355,20 +356,7 @@ const clearButtonId = `clear-${year}-${month}`;
         pointer-events: none;
     }
 
-    /* Screen reader only content */
-    .sr-only {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        padding: 0;
-        margin: -1px;
-        overflow: hidden;
-        clip: rect(0, 0, 0, 0);
-        white-space: nowrap;
-        border-width: 0;
-    }
-
-    /* Reduced motion support */
+/* Reduced motion support */
     @media (prefers-reduced-motion: reduce) {
         .calendar-month,
         .clear-button,

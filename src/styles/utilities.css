@@ -1,0 +1,43 @@
+/* Accessibility Utilities */
+
+/* Screen reader only content - hides visually but remains accessible to screen readers */
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border-width: 0;
+}
+
+/* Focus visible utilities - ensures focus outline only shows when focus is keyboard-triggered */
+.focus-visible-outline {
+	outline: 2px solid #1890ff;
+	outline-offset: 2px;
+}
+
+.focus-reset:focus:not(:focus-visible) {
+	outline: none;
+}
+
+/* Reduced motion support - disables animations for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+	.no-reduced-motion {
+		transition: none;
+	}
+
+	.no-reduced-motion:hover,
+	.no-reduced-motion:active {
+		transform: none;
+	}
+}
+
+/* High contrast mode support - increases border visibility for users with high contrast preferences */
+@media (prefers-contrast: high) {
+	.high-contrast-border {
+		border: 2px solid #000;
+	}
+}
