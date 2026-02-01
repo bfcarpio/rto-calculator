@@ -26,11 +26,11 @@ class NagerDateHolidayDataSource extends HolidayDataSourceStrategy {
 	 * Initialize the Nager.Date API client
 	 * @private
 	 */
-	_initializeApiClient() {
+	async _initializeApiClient() {
 		try {
 			// Import the ApiClient and PublicHolidayApi from nager_date_api_reference
 			// Use dynamic import for ES modules
-			const apiModule = require("nager_date_api_reference");
+			const apiModule = await import("nager_date_api_reference");
 			const { ApiClient, PublicHolidayApi } = apiModule;
 
 			// Configure API client with custom base URL if provided
@@ -68,7 +68,7 @@ class NagerDateHolidayDataSource extends HolidayDataSourceStrategy {
 	async _fetchHolidaysForYear(year, countryCode) {
 		if (!this.publicHolidayApi) {
 			// Try to reinitialize if API client is not available
-			this._initializeApiClient();
+			await this._initializeApiClient();
 			if (!this.publicHolidayApi) {
 				throw new Error("Nager.Date API client not initialized");
 			}
@@ -153,7 +153,7 @@ class NagerDateHolidayDataSource extends HolidayDataSourceStrategy {
 	async isTodayHoliday(countryCode) {
 		if (!this.publicHolidayApi) {
 			// Try to reinitialize if API client is not available
-			this._initializeApiClient();
+			await this._initializeApiClient();
 			if (!this.publicHolidayApi) {
 				return super.isTodayHoliday(countryCode);
 			}
@@ -184,7 +184,7 @@ class NagerDateHolidayDataSource extends HolidayDataSourceStrategy {
 				// If today is a holiday, fetch the holiday details
 				const today = new Date();
 				const year = today.getFullYear();
-				const holidays = await this.getHolidaysForYear(year, countryCode);
+				const holidays = await this.getHolidaysByYear(year, countryCode);
 
 				const dateStr = this._formatDate(today);
 				const matchingHolidays = holidays.filter((holiday) => {
@@ -221,7 +221,7 @@ class NagerDateHolidayDataSource extends HolidayDataSourceStrategy {
 	async getUpcomingHolidays(countryCode, options = {}) {
 		if (!this.publicHolidayApi) {
 			// Try to reinitialize if API client is not available
-			this._initializeApiClient();
+			await this._initializeApiClient();
 			if (!this.publicHolidayApi) {
 				return super.getUpcomingHolidays(countryCode, options);
 			}
@@ -325,7 +325,7 @@ class NagerDateHolidayDataSource extends HolidayDataSourceStrategy {
 		try {
 			// Try to reinitialize if needed
 			if (!this.publicHolidayApi) {
-				this._initializeApiClient();
+				await this._initializeApiClient();
 			}
 
 			// If API client is still not available, return not available
@@ -341,7 +341,7 @@ class NagerDateHolidayDataSource extends HolidayDataSourceStrategy {
 			}
 
 			// Try to fetch version info as a health check
-			const apiModule = require("nager_date_api_reference");
+			const apiModule = await import("nager_date_api_reference");
 			const { VersionApi } = apiModule;
 			const versionApi = new VersionApi(this.apiClient);
 
