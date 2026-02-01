@@ -1,5 +1,5 @@
 /**
- * Fixture data for weekly WFH patterns
+ * Fixture data for weekly OOF patterns
  * Makes tests clearer and easier to edit by providing reusable patterns
  */
 
@@ -7,11 +7,11 @@ import type { DaySelection } from "../../../../lib/rtoValidation";
 import { createDaySelection } from "../../../../lib/rtoValidation";
 
 /**
- * Weekly WFH pattern types
+ * Weekly OOF pattern types
  */
 export type WeeklyPattern = {
-  wfhDays: number; // Number of WFH days (0-5)
-  officeDays: number; // Number of office days (5 - wfhDays)
+  oofDays: number; // Number of OOF days (0-5)
+  officeDays: number; // Number of office days (5 - oofDays)
   isCompliant: boolean; // Whether this week meets 3+ office day requirement
   description: string;
 };
@@ -22,48 +22,48 @@ export type WeeklyPattern = {
 export const WEEKLY_PATTERNS: Record<string, WeeklyPattern> = {
   // Compliant patterns (3+ office days)
   PERFECT: {
-    wfhDays: 0,
+    oofDays: 0,
     officeDays: 5,
     isCompliant: true,
-    description: "0 WFH, 5 office days (100%)",
+    description: "0 OOF,5 office days (100%)",
   },
   EXCELLENT: {
-    wfhDays: 1,
+    oofDays: 1,
     officeDays: 4,
     isCompliant: true,
-    description: "1 WFH, 4 office days (80%)",
+    description: "1 OOF,4 office days (80%)",
   },
   GOOD: {
-    wfhDays: 2,
+    oofDays: 2,
     officeDays: 3,
     isCompliant: true,
-    description: "2 WFH, 3 office days (60%)",
+    description: "2 OOF,3 office days (60%)",
   },
   MARGINALLY_COMPLIANT: {
-    wfhDays: 2,
+    oofDays: 2,
     officeDays: 3,
     isCompliant: true,
-    description: "2 WFH, 3 office days (60%)",
+    description: "2 OOF,3 office days (60%)",
   },
 
   // Non-compliant patterns (<3 office days)
   POOR: {
-    wfhDays: 3,
+    oofDays: 3,
     officeDays: 2,
     isCompliant: false,
-    description: "3 WFH, 2 office days (40%)",
+    description: "3 OOF,2 office days (40%)",
   },
   BAD: {
-    wfhDays: 4,
+    oofDays: 4,
     officeDays: 1,
     isCompliant: false,
-    description: "4 WFH, 1 office day (20%)",
+    description: "4 OOF,1 office day (20%)",
   },
   TERRIBLE: {
-    wfhDays: 5,
+    oofDays: 5,
     officeDays: 0,
     isCompliant: false,
-    description: "5 WFH, 0 office days (0%)",
+    description: "5 OOF,0 office days (0%)",
   },
 };
 
@@ -84,12 +84,12 @@ export function createWeekWithPattern(
   const pattern = WEEKLY_PATTERNS[patternName];
   const selections: DaySelection[] = [];
 
-  // Add WFH days for Monday, Tuesday, etc. based on pattern
+  // Add OOF days for Monday, Tuesday, etc. based on pattern
   if (!pattern) return selections;
 
-  for (let i = 0; i < pattern.wfhDays; i++) {
+  for (let i = 0; i < pattern.oofDays; i++) {
     selections.push(
-      createDaySelection(year, month, dayOfMonth + i, "work-from-home"),
+      createDaySelection(year, month, dayOfMonth + i, "out-of-office"),
     );
   }
 
