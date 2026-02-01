@@ -1,0 +1,10 @@
+{
+  "html": {
+    "experimentalFullSupportEnabled": true
+  },
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  }
+}
