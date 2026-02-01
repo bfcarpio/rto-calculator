@@ -1,4 +1,15 @@
 /**
+ * Check if debug mode is enabled
+ */
+function isDebugEnabled(): boolean {
+	if (typeof window === "undefined") return false;
+	return (
+		localStorage.getItem("rto-debug") === "true" ||
+		(window as any).__RTO_DEBUG__ === true
+	);
+}
+
+/**
  * Countries supported by Nager.Date API with flag emojis
  *
  * This list includes only the specified countries available in the Nager.Date public API.
@@ -153,13 +164,15 @@ export function getCountryByName(name: string): Country | undefined {
  * Sort countries alphabetically by name
  */
 export function sortCountriesByName(): Country[] {
-	console.log(
-		`[Countries] sortCountriesByName: COUNTRIES array length = ${COUNTRIES.length}`,
-	);
+	if (isDebugEnabled()) {
+		console.log(
+			`[Countries] sortCountriesByName: COUNTRIES array length = ${COUNTRIES.length}`,
+		);
+	}
 
 	if (COUNTRIES.length === 0) {
 		console.error("[Countries] sortCountriesByName: COUNTRIES array is empty!");
-	} else {
+	} else if (isDebugEnabled()) {
 		console.log(
 			`[Countries] First 3 countries: ${COUNTRIES.slice(0, 3)
 				.map((c) => `${c.flag} ${c.name}`)
@@ -173,8 +186,10 @@ export function sortCountriesByName(): Country[] {
 	}
 
 	const sorted = [...COUNTRIES].sort((a, b) => a.name.localeCompare(b.name));
-	console.log(
-		`[Countries] sortCountriesByName: Returning ${sorted.length} sorted countries`,
-	);
+	if (isDebugEnabled()) {
+		console.log(
+			`[Countries] sortCountriesByName: Returning ${sorted.length} sorted countries`,
+		);
+	}
 	return sorted;
 }
