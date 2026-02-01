@@ -1,6 +1,9 @@
 import { initializeHolidayIntegration } from "../lib/calendar-holiday-integration";
 import { initHolidayDataLoader } from "../lib/holiday-data-loader";
-import { initializeCalendarEvents } from "../scripts/calendar-events";
+import {
+	type CalendarEventManager,
+	initializeCalendarEvents,
+} from "../scripts/calendar-events";
 import { initializeLocalStorage } from "../scripts/localStorage";
 import {
 	displayInitialPrompt,
@@ -20,6 +23,7 @@ declare global {
 			updateConfig(config: { minOfficeDaysPerWeek: number }): void;
 			getConfig(): { minOfficeDaysPerWeek?: number };
 		};
+		__calendarEventManager?: CalendarEventManager;
 	}
 }
 
@@ -73,5 +77,20 @@ export function initializeIndex() {
 
 	if (isDebugEnabled) {
 		debugLog("[Index] Calendar initialized.");
+	}
+}
+
+/**
+ * Cleanup calendar event manager and other resources
+ * Useful for testing or future SPA navigation
+ */
+export function cleanupIndex(): void {
+	const manager = (window as any).__calendarEventManager as
+		| CalendarEventManager
+		| undefined;
+	if (manager) {
+		manager.destroy();
+		delete (window as any).__calendarEventManager;
+		debugLog("[Index] Cleaned up calendar event manager");
 	}
 }
