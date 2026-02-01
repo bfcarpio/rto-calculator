@@ -8,7 +8,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 
 describe("SettingsModal - Pattern Selector Structure", () => {
-  let modal: HTMLDialogElement;
   let patternSelector: HTMLElement;
   let clearPatternButton: HTMLElement;
   let patternStatus: HTMLElement;
@@ -65,7 +64,6 @@ describe("SettingsModal - Pattern Selector Structure", () => {
     document.body.innerHTML = modalHtml;
 
     // Get references
-    modal = document.getElementById("settings-modal") as HTMLDialogElement;
     patternSelector = document.getElementById(
       "pattern-selector",
     ) as HTMLElement;

@@ -14,7 +14,7 @@ export interface DateRange {
 /**
  * Individual day selection type
  */
-export type DaySelectionType = "work-from-home" | "office" | "unselected";
+export type DaySelectionType = "out-of-office" | "none";
 
 /**
  * Selected day information

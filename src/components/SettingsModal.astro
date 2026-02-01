@@ -30,169 +30,165 @@ const { id = "settings-modal" } = Astro.props;
         </p>
 
         <div class="modal-body">
-            <div class="setting-item">
-                <div class="setting-info">
-                    <label for="debug-toggle" class="setting-label">
-                        Debug Mode
-                    </label>
-                    <p class="setting-description">
-                        Enable console logging for validation and debugging
-                    </p>
-                </div>
-                <div class="setting-control">
-                    <button
-                        id="debug-toggle"
-                        type="button"
-                        role="switch"
-                        aria-checked="false"
-                        aria-label="Toggle debug mode"
-                        class="toggle-button"
-                    >
-                        <span class="toggle-slider"></span>
-                    </button>
-                </div>
-            </div>
-
-            <div class="setting-item">
-                <div class="setting-info">
-                    <label for="validation-strategy" class="setting-label">
-                        Validation Strategy
-                    </label>
-                    <p class="setting-description">
-                        Choose which validation algorithm to use
-                    </p>
-                </div>
-                <div class="setting-control">
-                    <select
-                        id="validation-strategy"
-                        class="setting-select"
-                        aria-label="Select validation strategy"
-                    >
-                        <option value="rolling-period">Rolling Period</option>
-                        <option value="monthly">Monthly Average</option>
-                        <option value="quarterly">Quarterly Period</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="setting-item">
-                <div class="setting-info">
-                    <label for="min-office-days" class="setting-label">
-                        Minimum Office Days per Week
-                    </label>
-                    <p class="setting-description">
-                        Required office days to be compliant
-                    </p>
-                </div>
-                <div class="setting-control">
-                    <input
-                        type="number"
-                        id="min-office-days"
-                        class="setting-input"
-                        min="0"
-                        max="5"
-                        step="1"
-                        value="3"
-                        aria-label="Minimum office days per week"
-                    />
-                </div>
-            </div>
-
-            <div class="setting-item">
-                <div class="setting-info">
-                    <label class="setting-label">
-                        Default Selection Pattern
-                    </label>
-                    <p class="setting-description">
-                        Select days to always apply to unselected calendar days
-                    </p>
-                </div>
-                <div class="setting-control pattern-selector-container">
-                    <div class="pattern-selector" id="pattern-selector" role="toolbar" aria-label="Default pattern selector">
-                        <div class="pattern-header">
-                            <span class="sr-only">Select default pattern days</span>
+            <details class="settings-group" open>
+                <summary class="group-toggle">
+                    <span>Validation Settings</span>
+                    <span class="toggle-icon">▼</span>
+                </summary>
+                <div class="group-content">
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <label for="validation-strategy" class="setting-label">
+                                Validation Strategy
+                            </label>
+                            <p class="setting-description">
+                                Choose which validation algorithm to use
+                            </p>
                         </div>
-                        <div class="pattern-days-row">
-                            <button
-                                type="button"
-                                class="pattern-day"
-                                data-day="0"
-                                aria-label="Sunday"
-                                aria-pressed="false"
+                        <div class="setting-control">
+                            <select
+                                id="validation-strategy"
+                                class="setting-select"
+                                aria-label="Select validation strategy"
                             >
-                                Sun
-                            </button>
-                            <button
-                                type="button"
-                                class="pattern-day"
-                                data-day="1"
-                                aria-label="Monday"
-                                aria-pressed="false"
-                            >
-                                Mon
-                            </button>
-                            <button
-                                type="button"
-                                class="pattern-day"
-                                data-day="2"
-                                aria-label="Tuesday"
-                                aria-pressed="false"
-                            >
-                                Tue
-                            </button>
-                            <button
-                                type="button"
-                                class="pattern-day"
-                                data-day="3"
-                                aria-label="Wednesday"
-                                aria-pressed="false"
-                            >
-                                Wed
-                            </button>
-                            <button
-                                type="button"
-                                class="pattern-day"
-                                data-day="4"
-                                aria-label="Thursday"
-                                aria-pressed="false"
-                            >
-                                Thu
-                            </button>
-                            <button
-                                type="button"
-                                class="pattern-day"
-                                data-day="5"
-                                aria-label="Friday"
-                                aria-pressed="false"
-                            >
-                                Fri
-                            </button>
-                            <button
-                                type="button"
-                                class="pattern-day"
-                                data-day="6"
-                                aria-label="Saturday"
-                                aria-pressed="false"
-                            >
-                                Sat
-                            </button>
+                                <option value="rolling-period">Rolling Period</option>
+                                <option value="monthly">Monthly Average</option>
+                                <option value="quarterly">Quarterly Period</option>
+                            </select>
                         </div>
-                        <div class="pattern-actions">
-                            <button
-                                type="button"
-                                id="clear-pattern-button"
-                                class="button button-secondary"
-                                aria-label="Clear pattern selection"
-                            >
-                                Clear
-                            </button>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <label for="min-office-days" class="setting-label">
+                                Minimum Office Days per Week
+                            </label>
+                            <p class="setting-description">
+                                Required office days to be compliant
+                            </p>
                         </div>
-                        <div class="pattern-status" id="pattern-status" role="status" aria-live="polite">
-                            No pattern selected
+                        <div class="setting-control">
+                            <input
+                                type="number"
+                                id="min-office-days"
+                                class="setting-input"
+                                min="0"
+                                max="5"
+                                step="1"
+                                value="3"
+                                aria-label="Minimum office days per week"
+                            />
                         </div>
                     </div>
                 </div>
-            </div>
+            </details>
+
+            <details class="settings-group">
+                <summary class="group-toggle">
+                    <span>Pattern Settings</span>
+                    <span class="toggle-icon">▼</span>
+                </summary>
+                <div class="group-content">
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <label class="setting-label">
+                                Default Selection Pattern
+                            </label>
+                            <p class="setting-description">
+                                Select days to always apply to unselected calendar days
+                            </p>
+                        </div>
+                        <div class="setting-control pattern-selector-container">
+                            <div class="pattern-selector" id="pattern-selector" role="toolbar" aria-label="Default pattern selector">
+                                <div class="pattern-header">
+                                    <span class="sr-only">Select default pattern days</span>
+                                </div>
+                                <div class="pattern-days-row">
+                                    <button type="button" class="pattern-day" data-day="0" aria-label="Sunday" aria-pressed="false">Sun</button>
+                                    <button type="button" class="pattern-day" data-day="1" aria-label="Monday" aria-pressed="false">Mon</button>
+                                    <button type="button" class="pattern-day" data-day="2" aria-label="Tuesday" aria-pressed="false">Tue</button>
+                                    <button type="button" class="pattern-day" data-day="3" aria-label="Wednesday" aria-pressed="false">Wed</button>
+                                    <button type="button" class="pattern-day" data-day="4" aria-label="Thursday" aria-pressed="false">Thu</button>
+                                    <button type="button" class="pattern-day" data-day="5" aria-label="Friday" aria-pressed="false">Fri</button>
+                                    <button type="button" class="pattern-day" data-day="6" aria-label="Saturday" aria-pressed="false">Sat</button>
+                                </div>
+                                <div class="pattern-actions">
+                                    <button type="button" id="clear-pattern-button" class="button button-secondary" aria-label="Clear pattern selection">
+                                        Clear Pattern
+                                    </button>
+                                </div>
+                                <div class="pattern-status" id="pattern-status" role="status" aria-live="polite">
+                                    No pattern selected
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </details>
+
+            <details class="settings-group">
+                <summary class="group-toggle">
+                    <span>Holiday Settings</span>
+                    <span class="toggle-icon">▼</span>
+                </summary>
+                <div class="group-content">
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <label for="country-select" class="setting-label">
+                                Country Holidays
+                            </label>
+                            <p class="setting-description">
+                                Select a country to mark public holidays as non-office days.
+                            </p>
+                        </div>
+                        <div class="setting-control">
+                            <select id="country-select" class="setting-select" aria-label="Select country for holidays">
+                                <option value="">None</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </details>
+
+            <details class="settings-group">
+                <summary class="group-toggle">
+                    <span>System Settings</span>
+                    <span class="toggle-icon">▼</span>
+                </summary>
+                <div class="group-content">
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <label for="save-data-toggle" class="setting-label">
+                                Save Data to LocalStorage
+                            </label>
+                            <p class="setting-description">
+                                Automatically save and restore all calendar selections, settings, and holidays
+                            </p>
+                        </div>
+                        <div class="setting-control">
+                            <button id="save-data-toggle" type="button" role="switch" aria-checked="false" aria-label="Toggle data saving" class="toggle-button">
+                                <span class="toggle-slider"></span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <label for="debug-toggle" class="setting-label">
+                                Debug Mode
+                            </label>
+                            <p class="setting-description">
+                                Enable console logging for validation and debugging
+                            </p>
+                        </div>
+                        <div class="setting-control">
+                            <button id="debug-toggle" type="button" role="switch" aria-checked="false" aria-label="Toggle debug mode" class="toggle-button">
+                                <span class="toggle-slider"></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </details>
         </div>
 
         <footer class="modal-footer">
@@ -282,6 +278,66 @@ const { id = "settings-modal" } = Astro.props;
         padding: 1.5rem;
         max-height: 60vh;
         overflow-y: auto;
+    }
+
+    .settings-group {
+        margin-bottom: 1rem;
+        border: 1px solid #e8e8e8;
+        border-radius: 4px;
+    }
+
+    .group-toggle {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        background-color: #fafafa;
+        border: none;
+        border-bottom: 1px solid #e8e8e8;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #333;
+        transition: background-color 0.2s ease;
+        width: 100%;
+        text-align: left;
+    }
+
+    .group-toggle:hover {
+        background-color: #f0f0f0;
+    }
+
+    .group-toggle:focus {
+        outline: 2px solid #1890ff;
+        outline-offset: -2px;
+    }
+
+    .group-toggle span:first-child {
+        text-align: left;
+    }
+
+    .toggle-icon {
+        font-size: 0.75rem;
+        transition: transform 0.3s ease;
+        display: inline-block;
+    }
+
+    .toggle-icon.collapsed {
+        transform: rotate(-90deg);
+    }
+
+    .group-content {
+        overflow: hidden;
+        background-color: #fff;
+        padding: 0 1rem;
+    }
+
+    .group-content .setting-item:first-child {
+        border-top: none;
+    }
+
+    .group-content .setting-item:last-child {
+        border-bottom: none;
     }
 
     .setting-item {
@@ -658,12 +714,19 @@ const { id = "settings-modal" } = Astro.props;
         const debugToggle = document.getElementById(
             "debug-toggle",
         ) as HTMLButtonElement | null;
+        const saveDataToggle = document.getElementById(
+            "save-data-toggle",
+        ) as HTMLButtonElement | null;
         const strategySelect = document.getElementById(
             "validation-strategy",
         ) as HTMLSelectElement | null;
         const minOfficeDaysInput = document.getElementById(
             "min-office-days",
         ) as HTMLInputElement | null;
+        const countrySelect = document.getElementById(
+            "country-select",
+        ) as HTMLSelectElement | null;
+
         const patternSelector = document.getElementById("pattern-selector");
         const clearPatternButton = document.getElementById("clear-pattern-button");
         const patternStatus = document.getElementById("pattern-status");
@@ -674,6 +737,8 @@ const { id = "settings-modal" } = Astro.props;
         // Open modal
         if (settingsButton) {
             settingsButton.addEventListener("click", () => {
+                // Populate country dropdown on first click
+                populateCountryDropdown();
                 if (modal) modal.showModal();
                 // Sync current settings to UI
                 syncSettings();
@@ -723,6 +788,27 @@ const { id = "settings-modal" } = Astro.props;
 
                 console.log(
                     `[Settings] Debug mode ${newState ? "enabled" : "disabled"}`,
+                );
+            });
+        }
+
+        // Save data toggle functionality
+        if (saveDataToggle) {
+            saveDataToggle.addEventListener("click", () => {
+                if (!saveDataToggle) return;
+                const isChecked =
+                    saveDataToggle.getAttribute("aria-checked") === "true";
+                const newState = !isChecked;
+                saveDataToggle.setAttribute("aria-checked", newState.toString());
+
+                // Update localStorage integration
+                const storageManager = (window as any).storageManager;
+                if (storageManager) {
+                    storageManager.setDataSavingEnabled(newState);
+                }
+
+                console.log(
+                    `[Settings] Data saving ${newState ? "enabled" : "disabled"}`,
                 );
             });
         }
@@ -792,8 +878,78 @@ const { id = "settings-modal" } = Astro.props;
             });
         }
 
+        // Holiday settings
+        console.log("[SettingsModal] Initializing holiday settings...");
+        console.log(`[SettingsModal] Window.__holidayCountries exists: ${!!(window as any).__holidayCountries}`);
+        initializeHolidaySettings();
+
         // Load saved settings on page load
         loadSettingsFromLocalStorage();
+
+        /**
+         * Initialize holiday settings
+         */
+        function initializeHolidaySettings(): void {
+            console.log("[SettingsModal] initializeHolidaySettings() called");
+            console.log(`[SettingsModal] Window.__holidayCountries exists: ${!!(window as any).__holidayCountries}`);
+
+            // Country selection change handler
+            if (countrySelect) {
+                countrySelect.addEventListener("change", (e) => {
+                const countryCode = (e.target as HTMLSelectElement).value;
+                console.log(`[Settings] Country changed to: ${countryCode}`);
+
+                // Dispatch settings-changed event for holiday integration
+                const settingsEvent = new CustomEvent("settings-changed", {
+                    bubbles: true,
+                    detail: {
+                        holidays: {
+                            countryCode: countryCode || null,
+                        },
+                    },
+                });
+                document.dispatchEvent(settingsEvent);
+            });
+            }
+        }
+
+        /**
+         * Populate country dropdown
+         */
+        function populateCountryDropdown(): void {
+            console.log("[SettingsModal] populateCountryDropdown() called on settings button click");
+
+            const countries = (window as any).__holidayCountries;
+
+            if (!countries) {
+                console.warn("[Settings] Holiday countries not available yet, skipping dropdown population");
+                return;
+            }
+
+            console.log(`[SettingsModal] Found ${countries.length} countries`);
+
+            // Clear existing options (keep "None")
+            if (countrySelect) {
+                countrySelect.innerHTML = '<option value="">None</option>';
+            }
+
+            // Sort countries alphabetically
+            const sorted = countries.sort((a: any, b: any) =>
+                a.name.localeCompare(b.name)
+            );
+
+            console.log(`[SettingsModal] Sorted ${sorted.length} countries, first is "${sorted[0]?.name}", last is "${sorted[sorted.length - 1]?.name}"`);
+
+            // Add countries
+            sorted.forEach((country: any) => {
+                const option = document.createElement("option");
+                option.value = country.code;
+                option.textContent = `${country.flag} ${country.name} (${country.code})`;
+                if (countrySelect) {
+                    countrySelect.appendChild(option);
+                }
+            });
+        }
 
         /**
          * Sync current settings to modal UI
@@ -830,20 +986,12 @@ const { id = "settings-modal" } = Astro.props;
 
         /**
          * Sync pattern selector with current pattern
+         * Default pattern starts empty - user must manually select days
          */
         function syncPatternSelector(): void {
-            try {
-                const saved = localStorage.getItem("rto-calculator-settings");
-                if (saved) {
-                    const settings = JSON.parse(saved);
-                    if (settings.defaultPattern && Array.isArray(settings.defaultPattern)) {
-                        selectedPattern = settings.defaultPattern;
-                        updatePatternSelectorUI();
-                    }
-                }
-            } catch (error) {
-                console.error("Error loading pattern settings:", error);
-            }
+            // Pattern starts empty by default - do not load from localStorage
+            selectedPattern = [];
+            updatePatternSelectorUI();
         }
 
         /**
@@ -914,16 +1062,16 @@ const { id = "settings-modal" } = Astro.props;
                     // Only apply pattern to weekdays (1-5 = Mon-Fri)
                     const isWeekday = dayIndex >= 1 && dayIndex <= 5;
                     if (isWeekday && selectedPattern.includes(dayIndex)) {
-                        // Apply work-from-home selection
+                        // Apply out-of-office selection
                         cellElement.dataset.selected = "true";
-                        cellElement.dataset.selectionType = "work-from-home";
-                        cellElement.classList.add("selected", "work-from-home");
+                        cellElement.dataset.selectionType = "out-of-office";
+                        cellElement.classList.add("selected", "out-of-office");
                         cellElement.setAttribute("aria-selected", "true");
 
                         // Update aria-label
                         const dateStr = cellElement.getAttribute('aria-label') || "";
                         const newLabel = dateStr.replace(/\.[^.]*$/, ""); // Remove existing selection
-                        cellElement.setAttribute("aria-label", `${newLabel}. Work from home`);
+                        cellElement.setAttribute("aria-label", `${newLabel}. Out of office`);
 
                         // Dispatch custom event to trigger validation
                         const selectionEvent = new CustomEvent("rto-selection-changed", {
@@ -950,6 +1098,12 @@ const { id = "settings-modal" } = Astro.props;
             selectedPattern = [];
             updatePatternSelectorUI();
             announceToScreenReader("Pattern selection cleared");
+
+            // Also clear the pattern status message
+            if (patternStatus) {
+                patternStatus.textContent = "No pattern selected";
+                patternStatus.className = "pattern-status";
+            }
         }
 
         /**
@@ -960,6 +1114,9 @@ const { id = "settings-modal" } = Astro.props;
                 debug: debugToggle
                     ? debugToggle.getAttribute("aria-checked") === "true"
                     : false,
+                saveData: saveDataToggle
+                    ? saveDataToggle.getAttribute("aria-checked") === "true"
+                    : false,
                 strategy: strategySelect
                     ? strategySelect.value
                     : "rolling-period",
@@ -967,6 +1124,9 @@ const { id = "settings-modal" } = Astro.props;
                     ? parseInt(minOfficeDaysInput.value)
                     : 3,
                 defaultPattern: selectedPattern.length > 0 ? [...selectedPattern] : null,
+                holidays: {
+                    countryCode: countrySelect ? countrySelect.value : null,
+                },
             };
 
             localStorage.setItem(
@@ -1001,6 +1161,17 @@ const { id = "settings-modal" } = Astro.props;
             });
         }
 
+        // Add keyboard support for pattern days
+        if (patternSelector) {
+            patternSelector.addEventListener('keydown', (e) => {
+                const target = e.target as HTMLElement;
+                if (target.classList.contains('pattern-day') && (e.key === ' ' || e.key === 'Enter')) {
+                    e.preventDefault();
+                    target.click();
+                }
+            });
+        }
+
         /**
          * Load settings from localStorage
          */
@@ -1009,6 +1180,12 @@ const { id = "settings-modal" } = Astro.props;
                 const saved = localStorage.getItem("rto-calculator-settings");
                 if (saved) {
                     const settings = JSON.parse(saved);
+
+                    // Only load settings if saveData is enabled
+                    if (settings.saveData !== true) {
+                        console.log("[Settings] Data saving disabled, using default settings");
+                        return;
+                    }
 
                     // Apply debug mode
                     if (settings.debug !== undefined && debugToggle) {
@@ -1020,6 +1197,18 @@ const { id = "settings-modal" } = Astro.props;
                             .validationManager;
                         if (validationManager) {
                             validationManager.setDebugMode(settings.debug);
+                        }
+                    }
+
+                    // Apply save data setting
+                    if (settings.saveData !== undefined && saveDataToggle) {
+                        saveDataToggle.setAttribute(
+                            "aria-checked",
+                            settings.saveData.toString(),
+                        );
+                        const storageManager = (window as any).storageManager;
+                        if (storageManager) {
+                            storageManager.setDataSavingEnabled(settings.saveData);
                         }
                     }
 
@@ -1058,6 +1247,11 @@ const { id = "settings-modal" } = Astro.props;
                     } else {
                         selectedPattern = [];
                         updatePatternSelectorUI();
+                    }
+
+                    // Apply holiday settings
+                    if (settings.holidays && countrySelect) {
+                        countrySelect.value = settings.holidays.countryCode || "";
                     }
 
                     console.log(
@@ -1103,6 +1297,11 @@ const { id = "settings-modal" } = Astro.props;
             selectedPattern = [];
             updatePatternSelectorUI();
 
+            // Clear holiday settings
+            if (countrySelect) {
+                countrySelect.value = "";
+            }
+
             // Clear localStorage
             localStorage.removeItem("rto-calculator-settings");
             console.log("[Settings] Settings reset to defaults");
@@ -1112,16 +1311,14 @@ const { id = "settings-modal" } = Astro.props;
          * Announce message to screen readers
          * @param {string} message - Message to announce
          */
-        function announceToScreenReader(message: string): void {
+        function announceToScreenReader(message: string) {
             const announcement = document.createElement("div");
             announcement.setAttribute("role", "status");
             announcement.setAttribute("aria-live", "polite");
             announcement.setAttribute("aria-atomic", "true");
             announcement.className = "sr-only calendar-announcement";
-
             announcement.textContent = message;
             document.body.appendChild(announcement);
-
             setTimeout(() => {
                 document.body.removeChild(announcement);
             }, 1000);
