@@ -82,6 +82,27 @@ const { id = "settings-modal" } = Astro.props;
                             />
                         </div>
                     </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <label class="setting-label">
+                                Validation Mode
+                            </label>
+                            <p class="setting-description">
+                                Strict Mode: Each week must meet the minimum office day requirement. Average Mode: Top weeks in the period are averaged for compliance.
+                            </p>
+                        </div>
+                        <div class="setting-control">
+                            <div class="segmented-control" role="radiogroup" aria-label="Select validation mode">
+                                <button type="button" id="validation-mode-strict" class="segmented-button segmented-button-active focus-visible-outline focus-reset no-reduced-motion" role="radio" aria-checked="true" aria-label="Strict Mode">
+                                    Strict Mode
+                                </button>
+                                <button type="button" id="validation-mode-average" class="segmented-button focus-visible-outline focus-reset no-reduced-motion" role="radio" aria-checked="false" aria-label="Average Mode">
+                                    Average Mode
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </details>
 
@@ -128,7 +149,7 @@ const { id = "settings-modal" } = Astro.props;
                 </div>
             </details>
 
-            <details class="settings-group">
+            <details class="settings-group" open>
                 <summary class="group-toggle">
                     <span>Holiday Settings</span>
                     <span class="toggle-icon">▼</span>
@@ -147,6 +168,22 @@ const { id = "settings-modal" } = Astro.props;
                             <select id="country-select" class="setting-select focus-visible-outline focus-reset no-reduced-motion" aria-label="Select country for holidays">
                                 <option value="">None</option>
                             </select>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <label for="holiday-oof-toggle" class="setting-label">
+                                Count holidays as days out of office
+                            </label>
+                            <p class="setting-description">
+                                When enabled, holidays will count as out-of-office days in compliance calculations
+                            </p>
+                        </div>
+                        <div class="setting-control">
+                            <button id="holiday-oof-toggle" type="button" role="switch" aria-checked="true" aria-label="Toggle counting holidays as out-of-office days" class="toggle-button focus-visible-outline focus-reset no-reduced-motion">
+                                <span class="toggle-slider"></span>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -407,6 +444,52 @@ const { id = "settings-modal" } = Astro.props;
 
     .toggle-button[aria-checked="true"] .toggle-slider {
         transform: translateX(22px);
+    }
+
+    /* Segmented Control */
+    .segmented-control {
+        display: flex;
+        border: 1px solid #d9d9d9;
+        border-radius: 4px;
+        overflow: hidden;
+        background-color: white;
+    }
+
+    .segmented-button {
+        flex: 1;
+        padding: 0.5rem 1rem;
+        border: none;
+        background-color: white;
+        color: #666;
+        font-size: 0.85rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+
+    .segmented-button:first-child {
+        border-right: 1px solid #d9d9d9;
+    }
+
+    .segmented-button:hover {
+        background-color: #f0f0f0;
+        color: #333;
+    }
+
+    .segmented-button.segmented-button-active {
+        background-color: #1890ff;
+        color: white;
+        font-weight: 600;
+    }
+
+    .segmented-button.segmented-button-active:hover {
+        background-color: #40a9ff;
+    }
+
+    .segmented-button:focus-visible {
+        outline: 2px solid #1890ff;
+        outline-offset: -2px;
     }
 
     /* Select dropdown */
