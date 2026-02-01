@@ -13,7 +13,7 @@ import {
 	getHolidayDataSource,
 	HolidayDataSourceFactory,
 	registerHolidayDataSource,
-} from "../strategies/holiday-data-sources/index.js";
+} from "../lib/holiday-data-sources/index.js";
 
 // Helper function to pretty-print results
 function printResult(title, data) {
