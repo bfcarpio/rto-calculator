@@ -35,7 +35,7 @@ class HolidayDataSourceStrategy {
 		try {
 			// Attempt to fetch a simple test query
 			const currentYear = new Date().getFullYear();
-			const holidays = await this.getHolidaysForYear(
+			const holidays = await this.getHolidaysByYear(
 				currentYear,
 				this.config.defaultCountryCode,
 			);
@@ -65,7 +65,7 @@ class HolidayDataSourceStrategy {
 	 * @param {string} countryCode - ISO 3166-1 alpha-2 country code
 	 * @returns {Promise<Array<Holiday>>} Array of holidays
 	 */
-	async getHolidaysForYear(year, countryCode) {
+	async getHolidaysByYear(year, countryCode) {
 		const cacheKey = `${countryCode}-${year}`;
 
 		if (this.config.enableCache) {
@@ -107,7 +107,7 @@ class HolidayDataSourceStrategy {
 		// Fetch holidays for all years in range
 		const holidays = [];
 		for (let year = startYear; year <= endYear; year++) {
-			const yearHolidays = await this.getHolidaysForYear(year, countryCode);
+			const yearHolidays = await this.getHolidaysByYear(year, countryCode);
 			holidays.push(...yearHolidays);
 		}
 
@@ -146,7 +146,7 @@ class HolidayDataSourceStrategy {
 	 */
 	async isHoliday(date, countryCode) {
 		const year = date.getFullYear();
-		const holidays = await this.getHolidaysForYear(year, countryCode);
+		const holidays = await this.getHolidaysByYear(year, countryCode);
 
 		const dateStr = this._formatDate(date);
 		const matchingHolidays = holidays.filter((holiday) => {
@@ -198,11 +198,11 @@ class HolidayDataSourceStrategy {
 		if (dateRange) {
 			holidays = await this.getHolidaysForDateRange(dateRange, countryCode);
 		} else if (year) {
-			holidays = await this.getHolidaysForYear(year, countryCode);
+			holidays = await this.getHolidaysByYear(year, countryCode);
 		} else {
 			// Default to current year
 			const currentYear = new Date().getFullYear();
-			holidays = await this.getHolidaysForYear(currentYear, countryCode);
+			holidays = await this.getHolidaysByYear(currentYear, countryCode);
 		}
 
 		// Apply filters
