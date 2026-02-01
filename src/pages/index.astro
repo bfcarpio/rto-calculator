@@ -3,6 +3,7 @@ import Month from "../components/month.astro";
 import ActionButtons from "../components/ActionButtons.astro";
 import SettingsButton from "../components/SettingsButton.astro";
 import SettingsModal from "../components/SettingsModal.astro";
+import Layout from "../layouts/Layout.astro";
 import "../styles/global.css";
 import "../styles/pages/index.css"
 
@@ -26,16 +27,7 @@ const months = Array.from({ length: 12 }, (_, index) => {
 });
 ---
 
-<!doctype html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <meta name="description" content={description} />
-        <title>{title}</title>
-        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    </head>
-    <body>
+<Layout title={title} description={description}>
         <a href="#calendar" class="skip-link">Skip to calendar</a>
 
         <header class="calendar-header">
@@ -73,9 +65,8 @@ const months = Array.from({ length: 12 }, (_, index) => {
                     ))
                 }
             </div>
-        </div>
 
-        <ActionButtons position="bottom" />
+            <ActionButtons position="bottom" />
     </main>
 
     <footer>
@@ -90,98 +81,9 @@ const months = Array.from({ length: 12 }, (_, index) => {
     <SettingsModal />
 
     <script>
-            // Import holiday data loader
-            import { initHolidayDataLoader } from '../lib/holiday-data-loader';
-
-            // Import localStorage integration
-            import { initializeLocalStorage } from '../scripts/localStorage';
-
-            // Import calendar event listeners (Clear All, Export buttons)
-            import { setupEventListeners } from '../utils/astro/calendarFunctions';
-
-            // Import calendar holiday integration
-            import { initializeHolidayIntegration } from '../lib/calendar-holiday-integration';
-
-            // Import new calendar events module (event delegation)
-            import { initializeCalendarEvents } from '../scripts/calendar-events';
-
-            // Extend Window interface for validation display function
-            declare global {
-                interface Window {
-                    displayValidationResults?: (validationResult: any) => void;
-                }
-            }
-
-            // Import validation display utility
-            import { displayValidationResults, displayInitialPrompt } from '../scripts/validation-result-display';
-
-            // Import RTO validation (attaches validate button event listeners)
-            import '../scripts/rtoValidation';
-
-            // Initialize holiday data loader (loads countries and holiday manager globally)
-            // This must be called before SettingsModal initializes to populate the country dropdown
-            initHolidayDataLoader();
-
-            // Initialize localStorage integration (auto-save/load selections)
-            initializeLocalStorage();
-
-            // Setup event listeners for Clear All and Export buttons
-            // Wait for DOM to be ready
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', setupEventListeners);
-            } else {
-                setupEventListeners();
-            }
-
-            // Initialize calendar holiday integration
-            initializeHolidayIntegration();
-
-            // Initialize new calendar events module with event delegation
-            // This replaces inline scripts in day.astro and month.astro
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', initializeCalendarEvents);
-            } else {
-                initializeCalendarEvents();
-            }
-
-            // Make validation results accessible for testing
-            window.displayValidationResults = function(validationResult: any) {
-                displayValidationResults(validationResult);
-            };
-
-            // Display initial prompt to guide users
-            displayInitialPrompt();
-
-            console.log('[Index] Calendar initialized.');
-
-            // Dispatch calendar-loaded event to notify holiday integration that calendar is ready
-            // This triggers holiday application based on saved settings
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', () => {
-                    const event = new CustomEvent('calendar-loaded', {
-                        bubbles: true,
-                        detail: {
-                            timestamp: Date.now(),
-                            monthsCount: 12
-                        }
-                    });
-                    document.dispatchEvent(event);
-                    console.log('[Index] Dispatched calendar-loaded event');
-                });
-            } else {
-                const event = new CustomEvent('calendar-loaded', {
-                    bubbles: true,
-                    detail: {
-                        timestamp: Date.now(),
-                        monthsCount: 12
-                    }
-                });
-                document.dispatchEvent(event);
-                console.log('[Index] Dispatched calendar-loaded event');
-            }
-
-            console.log('[Index] Calendar initialized.');
-   </script>
+        import { initializeIndex } from '../scripts/index-init';
+        initializeIndex();
+    </script>
 
    <style>
             .calendar-container {
@@ -283,5 +185,4 @@ const months = Array.from({ length: 12 }, (_, index) => {
 
             /* Evaluation and violation indicators are in status column only - no day highlighting */
         </style>
-    </body>
-</html>
+</Layout>
