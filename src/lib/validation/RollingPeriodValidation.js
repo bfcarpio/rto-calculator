@@ -23,9 +23,10 @@ class RollingPeriodValidation {
 	/**
 	 * Validate selections according to rolling period rules
 	 * @param {ValidationContext} context - Validation context
+	 * @param {string} validationMode - Validation mode: 'strict' (default) or 'average'
 	 * @returns {ValidationResult} Validation result
 	 */
-	validate(context) {
+	validate(context, validationMode = "strict") {
 		if (!context.selectedDays || context.selectedDays.length === 0) {
 			return {
 				isValid: true,
@@ -34,6 +35,7 @@ class RollingPeriodValidation {
 				windowResults: [],
 				violatingWindows: [],
 				compliantWindows: [],
+				validationMode,
 			};
 		}
 
@@ -46,6 +48,93 @@ class RollingPeriodValidation {
 			this.weekStart,
 		);
 
+		// Strict mode: validate each week individually
+		if (validationMode === "strict") {
+			return this._validateStrictMode(context, config, weeksByWFH);
+		}
+
+		// Average mode: validate using rolling window compliance
+		return this._validateAverageMode(
+			context,
+			config,
+			weeksByWFH,
+			validationMode,
+		);
+	}
+
+	/**
+	 * Validate using strict mode - each week must meet minimum requirement
+	 * @param {ValidationContext} context - Validation context
+	 * @param {Object} config - Merged configuration
+	 * @param {Map} weeksByWFH - Map of week start to WFH count
+	 * @returns {ValidationResult} Validation result
+	 * @private
+	 */
+	_validateStrictMode(context, config, weeksByWFH) {
+		const totalWeeksInCalendar = this._getTotalWeeks(context);
+		const violatingWindows = [];
+		const compliantWindows = [];
+		const weekResults = [];
+
+		for (let weekIndex = 0; weekIndex < totalWeeksInCalendar; weekIndex++) {
+			const weekStart = new Date(this.weekStart);
+			weekStart.setDate(this.weekStart.getDate() + weekIndex * 7);
+
+			const weekCompliance = this.getWeekCompliance(weekStart, {
+				...context,
+				weeksByWFH,
+			});
+
+			weekResults.push(weekCompliance);
+
+			if (!weekCompliance.isCompliant) {
+				violatingWindows.push(weekCompliance);
+				// Fail fast: return immediately on first violation
+				return {
+					isValid: false,
+					message: `Week starting ${weekStart.toDateString()} has only ${weekCompliance.officeDays} office days, required: ${config.minOfficeDaysPerWeek}`,
+					overallCompliance: weekCompliance.percentage,
+					windowResults: weekResults,
+					violatingWindows,
+					compliantWindows,
+					validationMode: "strict",
+					invalidWeek: weekCompliance,
+				};
+			}
+
+			compliantWindows.push(weekCompliance);
+		}
+
+		const allCompliant = violatingWindows.length === 0;
+		const overallCompliance =
+			weekResults.length > 0
+				? weekResults.reduce((sum, w) => sum + w.percentage, 0) /
+					weekResults.length
+				: 100;
+
+		return {
+			isValid: allCompliant,
+			message: allCompliant
+				? `All weeks meet the minimum office day requirement (${config.minOfficeDaysPerWeek} days)`
+				: `RTO Violation: Some weeks have fewer than ${config.minOfficeDaysPerWeek} office days`,
+			overallCompliance,
+			windowResults: weekResults,
+			violatingWindows,
+			compliantWindows,
+			validationMode: "strict",
+		};
+	}
+
+	/**
+	 * Validate using average mode - rolling window compliance
+	 * @param {ValidationContext} context - Validation context
+	 * @param {Object} config - Merged configuration
+	 * @param {Map} weeksByWFH - Map of week start to WFH count
+	 * @param {string} validationMode - The validation mode being used
+	 * @returns {ValidationResult} Validation result
+	 * @private
+	 */
+	_validateAverageMode(context, config, weeksByWFH, validationMode) {
 		// Calculate total windows to validate
 		const totalWeeksInCalendar = this._getTotalWeeks(context);
 		const totalWindows = totalWeeksInCalendar - config.rollingPeriodWeeks;
@@ -102,6 +191,7 @@ class RollingPeriodValidation {
 			windowResults,
 			violatingWindows,
 			compliantWindows,
+			validationMode,
 		};
 	}
 
