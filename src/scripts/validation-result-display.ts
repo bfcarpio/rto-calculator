@@ -7,7 +7,8 @@
  * validation message container.
  */
 
-import type { RTOPolicyConfig } from "../lib/rtoValidation";
+import type { RTOPolicyConfig } from "../lib/validation/rto-core";
+import type { ValidationResult } from "../types/validation-strategy";
 
 /**
  * Validation result display configuration
@@ -46,15 +47,7 @@ export function displayInitialPrompt(): void {
  * Display validation results to user
  * @param validation - The validation result to display
  */
-export function displayValidationResults(validation: {
-	isValid: boolean;
-	overallCompliance: number;
-	message?: string;
-	evaluatedWeekStarts: number[];
-	windowWeekStarts: number[];
-	invalidWeekStart: number | null;
-	windowStart: number | null;
-}): void {
+export function displayValidationResults(validation: ValidationResult): void {
 	const messageContainer = document.getElementById("validation-message");
 	if (!messageContainer) {
 		console.warn("[ValidationDisplay] Validation message container not found");
