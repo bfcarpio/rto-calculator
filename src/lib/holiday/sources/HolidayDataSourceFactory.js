@@ -94,7 +94,7 @@ class HolidayDataSourceFactory {
 
 		this.dataSources.set(dataSource.name, dataSource);
 
-		if (dataSource.config && dataSource.config.debug) {
+		if (dataSource.config?.debug) {
 			console.log(
 				`[HolidayDataSourceFactory] Registered data source: ${dataSource.name}`,
 			);

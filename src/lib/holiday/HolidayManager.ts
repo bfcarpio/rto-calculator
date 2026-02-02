@@ -8,10 +8,22 @@
  * @module holiday-manager
  */
 
-import companyFilters from "./holiday-data/company-filters.json";
-import { HolidayDataSourceFactory } from "./holiday-data-sources";
-import type { HolidayDataSource } from "./holiday-data-sources/types";
-import type { Holiday } from "./types/holiday-data-source";
+import type { Holiday } from "../types/holiday-data-source";
+import companyFilters from "./data/company-filters.json";
+import { HolidayDataSourceFactory } from "./sources";
+import type { HolidayDataSource } from "./sources/types";
+
+/**
+ * Type for company filters JSON structure
+ */
+interface CompanyFilters {
+	[countryCode: string]: {
+		name: string;
+		companies: {
+			[companyName: string]: string[];
+		};
+	};
+}
 
 /**
  * Holiday filter configuration
@@ -107,17 +119,6 @@ export class HolidayManager {
 	}
 
 	/**
-	 * Ensure the manager is initialized before accessing data source
-	 * @private
-	 */
-	private ensureInitialized(): HolidayDataSource {
-		if (!this.initialized || !this.dataSource) {
-			throw new Error("HolidayManager not initialized");
-		}
-		return this.dataSource;
-	}
-
-	/**
 	 * Get the current holiday filter configuration
 	 */
 	public getConfig(): HolidayFilterConfig {
@@ -173,7 +174,8 @@ export class HolidayManager {
 		countryCode: string,
 		companyName: string,
 	): Set<string> | null {
-		const countryData = (companyFilters as any)[countryCode];
+		const filters = companyFilters as CompanyFilters;
+		const countryData = filters[countryCode];
 		if (!countryData || !countryData.companies) {
 			return null;
 		}
@@ -206,6 +208,14 @@ export class HolidayManager {
 		}
 
 		try {
+			// Fail fast if data source is not initialized
+			if (!this.dataSource) {
+				throw new Error(
+					"HolidayManager data source not initialized. " +
+						"Call initialize() before fetching holidays.",
+				);
+			}
+
 			// Fetch holidays for all years
 			const allHolidays: Holiday[] = [];
 			for (const year of years) {
@@ -461,7 +471,8 @@ export class HolidayManager {
 	 * Get available companies for a country
 	 */
 	public getAvailableCompanies(countryCode: string): string[] {
-		const countryData = (companyFilters as any)[countryCode];
+		const filters = companyFilters as CompanyFilters;
+		const countryData = filters[countryCode];
 		if (!countryData || !countryData.companies) {
 			return [];
 		}
@@ -473,7 +484,8 @@ export class HolidayManager {
 	 * Check if a country has company filters available
 	 */
 	public hasCompanyFilters(countryCode: string): boolean {
-		const countryData = (companyFilters as any)[countryCode];
+		const filters = companyFilters as CompanyFilters;
+		const countryData = filters[countryCode];
 		return !!countryData && !!countryData.companies;
 	}
 }

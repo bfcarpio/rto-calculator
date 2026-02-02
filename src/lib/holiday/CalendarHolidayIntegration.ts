@@ -8,7 +8,7 @@
  * @module calendar-holiday-integration
  */
 
-import { getHolidayManager } from "./holiday-manager";
+import { getHolidayManager } from "./HolidayManager";
 
 /**
  * Check if debug mode is enabled
@@ -18,7 +18,7 @@ function isDebugEnabled(): boolean {
 	if (typeof window === "undefined") return false;
 	return (
 		localStorage.getItem("rto-debug") === "true" ||
-		(window as any).__RTO_DEBUG__ === true
+		(window as { __RTO_DEBUG__?: boolean }).__RTO_DEBUG__ === true
 	);
 }
 
@@ -73,7 +73,7 @@ export function getCalendarYears(): number[] {
 		// Extract year from month-id like "month-2024-0"
 		if (typeof monthId === "string") {
 			const match = monthId.match(/month-(\d+)-\d+/);
-			if (match && match[1]) {
+			if (match?.[1]) {
 				yearsSet.add(parseInt(match[1], 10));
 			}
 		}
@@ -302,12 +302,18 @@ export async function getHolidayDatesForValidation(): Promise<Set<Date>> {
 			return new Set();
 		}
 
+		// Extract country code after null check to satisfy TypeScript
+		const countryCode = holidayConfig.countryCode;
+		if (!countryCode) {
+			return new Set();
+		}
+
 		const manager = await getHolidayManager();
 		const calendarYears = getCalendarYears();
 
 		// Get only weekday holidays (weekend holidays don't affect office day calculations)
 		const holidayDates = await manager.getHolidayDates(
-			holidayConfig.countryCode!,
+			countryCode,
 			holidayConfig.companyName ?? null,
 			calendarYears,
 			true, // only weekdays

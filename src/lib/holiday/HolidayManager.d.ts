@@ -54,7 +54,7 @@ export interface FetchHolidaysOptions {
  */
 export declare class HolidayManager {
 	private static instance: HolidayManager | null;
-	private dataSource: any;
+	private dataSource: unknown;
 	private cache: Map<string, HolidayResult>;
 	private currentConfig: HolidayFilterConfig;
 

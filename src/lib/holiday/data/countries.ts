@@ -5,7 +5,7 @@ function isDebugEnabled(): boolean {
 	if (typeof window === "undefined") return false;
 	return (
 		localStorage.getItem("rto-debug") === "true" ||
-		(window as any).__RTO_DEBUG__ === true
+		(window as { __RTO_DEBUG__?: boolean }).__RTO_DEBUG__ === true
 	);
 }
 

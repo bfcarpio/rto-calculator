@@ -81,7 +81,7 @@ class NagerDateHolidayDataSource extends HolidayDataSourceStrategy {
 				this.publicHolidayApi.apiV3PublicHolidaysYearCountryCodeGet(
 					year,
 					countryCode,
-					(error, data, response) => {
+					(error, data, _response) => {
 						if (error) {
 							reject(error);
 						} else {
@@ -103,7 +103,7 @@ class NagerDateHolidayDataSource extends HolidayDataSourceStrategy {
 			);
 
 			// Handle various error types
-			if (error.response && error.response.status) {
+			if (error.response?.status) {
 				if (error.response.status === 404) {
 					throw new Error(
 						`Country '${countryCode}' not found or no holiday data available for year ${year}`,
@@ -134,7 +134,7 @@ class NagerDateHolidayDataSource extends HolidayDataSourceStrategy {
 			}
 
 			// Handle generic network errors
-			if (error.message && error.message.includes("fetch failed")) {
+			if (error.message?.includes("fetch failed")) {
 				throw new Error(
 					"Failed to connect to Nager.Date API. Please check your internet connection.",
 				);
@@ -167,11 +167,11 @@ class NagerDateHolidayDataSource extends HolidayDataSourceStrategy {
 				this.publicHolidayApi.apiV3IsTodayPublicHolidayCountryCodeGet(
 					countryCode,
 					{},
-					(error, data, response) => {
+					(error, _data, response) => {
 						if (error) {
 							reject(error);
 						} else {
-							resolve(response && response.status ? response.status : 200);
+							resolve(response?.status ? response.status : 200);
 						}
 					},
 				);
@@ -240,7 +240,7 @@ class NagerDateHolidayDataSource extends HolidayDataSourceStrategy {
 			const holidays = await new Promise((resolve, reject) => {
 				this.publicHolidayApi.apiV3NextPublicHolidaysCountryCodeGet(
 					countryCode,
-					(error, data, response) => {
+					(error, data, _response) => {
 						if (error) {
 							reject(error);
 						} else {
@@ -346,7 +346,7 @@ class NagerDateHolidayDataSource extends HolidayDataSourceStrategy {
 			const versionApi = new VersionApi(this.apiClient);
 
 			await new Promise((resolve, reject) => {
-				versionApi.apiV3VersionGet((error, data, response) => {
+				versionApi.apiV3VersionGet((error, data, _response) => {
 					if (error) {
 						reject(error);
 					} else {
@@ -364,7 +364,7 @@ class NagerDateHolidayDataSource extends HolidayDataSourceStrategy {
 				responseTime,
 			};
 		} catch (error) {
-			const responseTime = Date.now() - startTime;
+			const _responseTime = Date.now() - startTime;
 			this._debug(`Health check failed: ${error.message}`);
 
 			// Fall back to the parent's availability check

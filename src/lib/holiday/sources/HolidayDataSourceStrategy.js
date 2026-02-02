@@ -35,7 +35,7 @@ class HolidayDataSourceStrategy {
 		try {
 			// Attempt to fetch a simple test query
 			const currentYear = new Date().getFullYear();
-			const holidays = await this.getHolidaysByYear(
+			const _holidays = await this.getHolidaysByYear(
 				currentYear,
 				this.config.defaultCountryCode,
 			);
@@ -286,7 +286,7 @@ class HolidayDataSourceStrategy {
 	 * @returns {Promise<Array<Holiday>>} Array of holidays
 	 * @protected
 	 */
-	async _fetchHolidaysForYear(year, countryCode) {
+	async _fetchHolidaysForYear(_year, _countryCode) {
 		throw new Error(`_fetchHolidaysForYear must be implemented by subclass`);
 	}
 
