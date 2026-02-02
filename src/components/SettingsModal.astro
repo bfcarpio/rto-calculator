@@ -18,7 +18,7 @@ const { id = "settings-modal" } = Astro.props;
         <header class="modal-header">
             <h2 id={`${id}-title`} class="modal-title">Settings</h2>
             <button
-                class="close-button focus-visible-outline focus-reset no-reduced-motion"
+                class="close-button focus-reset no-reduced-motion"
                 type="button"
                 aria-label="Close settings"
                 id={`${id}-close`}
@@ -33,7 +33,7 @@ const { id = "settings-modal" } = Astro.props;
 
         <div class="modal-body">
                 <details class="settings-group" open>
-                <summary class="group-toggle focus-visible-outline focus-reset no-reduced-motion">
+                <summary class="group-toggle focus-reset no-reduced-motion">
                     <span>Validation Settings</span>
                     <span class="toggle-icon">▼</span>
                 </summary>
@@ -50,7 +50,7 @@ const { id = "settings-modal" } = Astro.props;
                         <div class="setting-control">
                             <select
                                 id="validation-strategy"
-                                class="setting-select focus-visible-outline focus-reset no-reduced-motion"
+class="setting-select focus-reset no-reduced-motion"
                                 aria-label="Select validation strategy"
                             >
                                 <option value="rolling-period">Rolling Period</option>
@@ -73,7 +73,7 @@ const { id = "settings-modal" } = Astro.props;
                             <input
                                 type="number"
                                 id="min-office-days"
-                                class="setting-input focus-visible-outline focus-reset no-reduced-motion"
+                                class="setting-input focus-reset no-reduced-motion"
                                 min="0"
                                 max="5"
                                 step="1"
@@ -94,10 +94,10 @@ const { id = "settings-modal" } = Astro.props;
                         </div>
                         <div class="setting-control">
                             <div class="segmented-control" role="radiogroup" aria-label="Select validation mode">
-                                <button type="button" id="validation-mode-strict" class="segmented-button segmented-button-active focus-visible-outline focus-reset no-reduced-motion" role="radio" aria-checked="true" aria-label="Strict Mode">
+                                <button type="button" id="validation-mode-strict" class="segmented-button segmented-button-active focus-reset no-reduced-motion" role="radio" aria-checked="true" aria-label="Strict Mode">
                                     Strict Mode
                                 </button>
-                                <button type="button" id="validation-mode-average" class="segmented-button focus-visible-outline focus-reset no-reduced-motion" role="radio" aria-checked="false" aria-label="Average Mode">
+                                <button type="button" id="validation-mode-average" class="segmented-button focus-reset no-reduced-motion" role="radio" aria-checked="false" aria-label="Average Mode">
                                     Average Mode
                                 </button>
                             </div>
@@ -127,16 +127,16 @@ const { id = "settings-modal" } = Astro.props;
                                     <span class="sr-only">Select default pattern days</span>
                                 </div>
                                 <div class="pattern-days-row">
-                                    <button type="button" class="pattern-day focus-visible-outline focus-reset no-reduced-motion" data-day="0" aria-label="Sunday" aria-pressed="false">Sun</button>
-                                    <button type="button" class="pattern-day focus-visible-outline focus-reset no-reduced-motion" data-day="1" aria-label="Monday" aria-pressed="false">Mon</button>
-                                    <button type="button" class="pattern-day focus-visible-outline focus-reset no-reduced-motion" data-day="2" aria-label="Tuesday" aria-pressed="false">Tue</button>
-                                    <button type="button" class="pattern-day focus-visible-outline focus-reset no-reduced-motion" data-day="3" aria-label="Wednesday" aria-pressed="false">Wed</button>
-                                    <button type="button" class="pattern-day focus-visible-outline focus-reset no-reduced-motion" data-day="4" aria-label="Thursday" aria-pressed="false">Thu</button>
-                                    <button type="button" class="pattern-day focus-visible-outline focus-reset no-reduced-motion" data-day="5" aria-label="Friday" aria-pressed="false">Fri</button>
-                                    <button type="button" class="pattern-day focus-visible-outline focus-reset no-reduced-motion" data-day="6" aria-label="Saturday" aria-pressed="false">Sat</button>
+                                    <button type="button" class="pattern-day focus-reset no-reduced-motion" data-day="0" aria-label="Sunday" aria-pressed="false">Sun</button>
+                                    <button type="button" class="pattern-day focus-reset no-reduced-motion" data-day="1" aria-label="Monday" aria-pressed="false">Mon</button>
+                                    <button type="button" class="pattern-day focus-reset no-reduced-motion" data-day="2" aria-label="Tuesday" aria-pressed="false">Tue</button>
+                                    <button type="button" class="pattern-day focus-reset no-reduced-motion" data-day="3" aria-label="Wednesday" aria-pressed="false">Wed</button>
+                                    <button type="button" class="pattern-day focus-reset no-reduced-motion" data-day="4" aria-label="Thursday" aria-pressed="false">Thu</button>
+                                    <button type="button" class="pattern-day focus-reset no-reduced-motion" data-day="5" aria-label="Friday" aria-pressed="false">Fri</button>
+                                    <button type="button" class="pattern-day focus-reset no-reduced-motion" data-day="6" aria-label="Saturday" aria-pressed="false">Sat</button>
                                 </div>
                                 <div class="pattern-actions">
-                                    <button type="button" id="clear-pattern-button" class="button button-secondary focus-visible-outline focus-reset no-reduced-motion" aria-label="Clear pattern selection">
+                                    <button type="button" id="clear-pattern-button" class="button button-secondary focus-reset no-reduced-motion" aria-label="Clear pattern selection">
                                         Clear Pattern
                                     </button>
                                 </div>
@@ -165,7 +165,7 @@ const { id = "settings-modal" } = Astro.props;
                             </p>
                         </div>
                         <div class="setting-control">
-                            <select id="country-select" class="setting-select focus-visible-outline focus-reset no-reduced-motion" aria-label="Select country for holidays">
+                            <select id="country-select" class="setting-select focus-reset no-reduced-motion" aria-label="Select country for holidays">
                                 <option value="">None</option>
                             </select>
                         </div>
@@ -181,7 +181,7 @@ const { id = "settings-modal" } = Astro.props;
                             </p>
                         </div>
                         <div class="setting-control">
-                            <button id="holiday-oof-toggle" type="button" role="switch" aria-checked="true" aria-label="Toggle counting holidays as out-of-office days" class="toggle-button focus-visible-outline focus-reset no-reduced-motion">
+                            <button id="holiday-oof-toggle" type="button" role="switch" aria-checked="true" aria-label="Toggle counting holidays as out-of-office days" class="toggle-button focus-reset no-reduced-motion">
                                 <span class="toggle-slider"></span>
                             </button>
                         </div>
@@ -205,7 +205,7 @@ const { id = "settings-modal" } = Astro.props;
                             </p>
                         </div>
                         <div class="setting-control">
-                            <button id="save-data-toggle" type="button" role="switch" aria-checked="false" aria-label="Toggle data saving" class="toggle-button focus-visible-outline focus-reset no-reduced-motion">
+                            <button id="save-data-toggle" type="button" role="switch" aria-checked="false" aria-label="Toggle data saving" class="toggle-button focus-reset no-reduced-motion">
                             <span class="toggle-slider"></span>
                         </button>
                     </div>
@@ -221,7 +221,7 @@ const { id = "settings-modal" } = Astro.props;
                             </p>
                         </div>
                         <div class="setting-control">
-                            <button id="debug-toggle" type="button" role="switch" aria-checked="false" aria-label="Toggle debug mode" class="toggle-button focus-visible-outline focus-reset no-reduced-motion">
+                            <button id="debug-toggle" type="button" role="switch" aria-checked="false" aria-label="Toggle debug mode" class="toggle-button focus-reset no-reduced-motion">
                                 <span class="toggle-slider"></span>
                             </button>
                         </div>
@@ -234,14 +234,14 @@ const { id = "settings-modal" } = Astro.props;
             <button
                 type="button"
                 id={`${id}-reset`}
-                class="button button-secondary focus-visible-outline focus-reset no-reduced-motion"
+class="button button-secondary focus-reset no-reduced-motion"
             >
                 Reset to Defaults
             </button>
             <button
                 type="button"
                 id={`${id}-save`}
-                class="button button-primary focus-visible-outline focus-reset no-reduced-motion"
+                class="button button-primary focus-reset no-reduced-motion"
             >
                 Save Changes
             </button>
@@ -487,10 +487,7 @@ const { id = "settings-modal" } = Astro.props;
         background-color: #40a9ff;
     }
 
-    .segmented-button:focus-visible {
-        outline: 2px solid #1890ff;
-        outline-offset: -2px;
-    }
+
 
     /* Select dropdown */
     .setting-select {
