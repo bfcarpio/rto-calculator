@@ -11,6 +11,7 @@
 import type { CalendarDataResult, WeekInfo } from "./calendar-data-reader";
 import { DEFAULT_POLICY, RTO_CONFIG } from "./rto-config";
 import type { RTOPolicyConfig, WeekCompliance } from "./validation/rto-core";
+import { getStartOfWeek } from "./validation/rto-core";
 import {
 	type OrchestratedValidationResult,
 	orchestrateValidation,
@@ -175,20 +176,6 @@ function calculateCurrentWeekDays(
 	);
 
 	return currentWeek?.officeDays ?? 0;
-}
-
-/**
- * Get the start of the week (Monday) for a given date
- * @param date - The reference date
- * @returns Date object representing Monday of that week
- */
-function getStartOfWeek(date: Date): Date {
-	const d = new Date(date.getTime());
-	const day = d.getDay();
-	const daysToSubtract = day === 0 ? 6 : day - 1;
-	d.setDate(d.getDate() - daysToSubtract);
-	d.setHours(0, 0, 0, 0);
-	return d;
 }
 
 /**
