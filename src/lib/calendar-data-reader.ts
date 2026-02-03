@@ -7,9 +7,9 @@
  * @module calendar-data-reader
  */
 
-import { getHolidayDatesForValidation } from "./calendar-holiday-integration";
+import { getHolidayDatesForValidation } from "./holiday/CalendarHolidayIntegration";
 import { RTO_CONFIG } from "./rto-config";
-import { getStartOfWeek, isWeekday } from "./rtoValidation";
+import { getStartOfWeek, isWeekday } from "./validation/rto-core";
 
 /** Number of weekdays in a standard work week */
 const WEEKDAY_COUNT = 5;
@@ -143,9 +143,9 @@ export async function readCalendarData(
 
 	cells.forEach((cell) => {
 		const element = cell as HTMLElement;
-		const year = parseInt(element.dataset.year || "0");
-		const month = parseInt(element.dataset.month || "0");
-		const day = parseInt(element.dataset.day || "0");
+		const year = parseInt(element.dataset.year || "0", 10);
+		const month = parseInt(element.dataset.month || "0", 10);
+		const day = parseInt(element.dataset.day || "0", 10);
 		const date = new Date(year, month, day);
 
 		// Check if this is a weekday using library function
@@ -179,8 +179,14 @@ export async function readCalendarData(
 			weekMap.set(weekKey, new Array<DayInfo>(WEEKDAY_COUNT));
 			dayCountPerWeek.set(weekKey, 0);
 		}
-		const weekDays = weekMap.get(weekKey)!;
-		const currentCount = dayCountPerWeek.get(weekKey)!;
+		const weekDays = weekMap.get(weekKey);
+		const currentCount = dayCountPerWeek.get(weekKey);
+		if (!weekDays || currentCount === undefined) {
+			throw new Error(
+				`Week data not found for week key: ${weekKey}. ` +
+					"This should never happen after initialization.",
+			);
+		}
 		weekDays[currentCount] = dayInfo;
 		dayCountPerWeek.set(weekKey, currentCount + 1);
 	});
@@ -194,8 +200,15 @@ export async function readCalendarData(
 
 	for (const weekStartTimestamp of sortedWeekStarts) {
 		const weekStart = new Date(weekStartTimestamp);
-		const weekDays = weekMap.get(weekStartTimestamp)!;
-		const actualDayCount = dayCountPerWeek.get(weekStartTimestamp)!;
+		const weekDays = weekMap.get(weekStartTimestamp);
+		const actualDayCount = dayCountPerWeek.get(weekStartTimestamp);
+
+		if (!weekDays || actualDayCount === undefined) {
+			throw new Error(
+				`Week data not found for timestamp: ${weekStartTimestamp}. ` +
+					"This should never happen for a sorted week key.",
+			);
+		}
 
 		// Trim to actual day count (handles partial weeks)
 		const days = weekDays.slice(0, actualDayCount);
