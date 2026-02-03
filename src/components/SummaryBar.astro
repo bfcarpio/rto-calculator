@@ -1,0 +1,157 @@
+---
+// SummaryBar.astro - Display compliance metrics + integrated quick actions
+// Placeholder data - real data integration comes in later phases
+
+const _averageDays = 3.2;
+const _weeksTracked = 8;
+const _totalWeeks = 12;
+const _workingDays = 45;
+const _oofDays = 12;
+const _holidayDays = 4;
+const _progressPercent = (_weeksTracked / _totalWeeks) * 100;
+
+interface ActionButton {
+	id: string;
+	text: string;
+	variant: "primary" | "danger" | "info";
+	icon: string;
+}
+
+const _quickActions: ActionButton[] = [
+	{ id: "mark-oof-this", text: "Mark This Week as OOF", variant: "primary", icon: "📅" },
+	{ id: "mark-available-next", text: "Mark Next Week Available", variant: "info", icon: "✓" },
+	{ id: "clear-oof", text: "Clear All OOF Days", variant: "danger", icon: "🗑️" },
+	{ id: "import-calendar", text: "Import from Calendar", variant: "primary", icon: "📥" },
+];
+---
+
+<section class="hero is-light summary-bar" aria-labelledby="summary-heading">
+	<div class="hero-body">
+		<div class="columns is-mobile is-vcentered">
+			<!-- Left Column: Compliance Status -->
+			<div class="column">
+				<h2 id="summary-heading" class="title is-5 mb-2">
+					Average In-Office: <span class="has-text-weight-bold has-text-primary">{_averageDays}</span>/5 days
+				</h2>
+				<p class="subtitle is-7 mb-3">
+					Based on your tracked attendance
+				</p>
+
+				<!-- Progress Bar for Weeks Tracked -->
+				<div class="weeks-progress mb-3">
+					<div class="is-flex is-justify-content-space-between is-size-7 mb-1">
+						<span>Weeks tracked:</span>
+						<span class="has-text-weight-semibold">{_weeksTracked}/{_totalWeeks}</span>
+					</div>
+					<progress
+						class="progress is-primary"
+						value={_weeksTracked}
+						max={_totalWeeks}
+						aria-label={`Weeks tracked: ${_weeksTracked} of ${_totalWeeks}`}
+					>
+						{_progressPercent}%
+					</progress>
+				</div>
+
+				<!-- Quick Action Buttons -->
+				<div class="buttons are-small is-flex-wrap-wrap">
+					{_quickActions.map((action) => (
+						<button
+							type="button"
+							id={action.id}
+							class={`button is-${action.variant} quick-action-btn`}
+							aria-label={action.text}
+						>
+							<span class="icon" aria-hidden="true">{action.icon}</span>
+							<span>{action.text}</span>
+						</button>
+					))}
+				</div>
+			</div>
+
+			<!-- Right Column: Day Count Tags -->
+			<div class="column is-narrow">
+				<div class="tags has-addons is-flex-direction-column is-align-items-flex-end">
+					<div class="tag is-info is-light mb-2">
+						<span class="has-text-weight-semibold">Working:</span>&nbsp;{_workingDays} days
+					</div>
+					<div class="tag is-warning is-light mb-2">
+						<span class="has-text-weight-semibold">OOF:</span>&nbsp;{_oofDays} days
+					</div>
+					<div class="tag is-light">
+						<span class="has-text-weight-semibold">Holiday:</span>&nbsp;{_holidayDays} days
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>
+
+<style>
+	.summary-bar {
+		border-radius: 6px;
+		margin-bottom: 1.5rem;
+	}
+
+	.summary-bar .hero-body {
+		padding: 1.5rem;
+	}
+
+	.weeks-progress {
+		max-width: 300px;
+	}
+
+	.weeks-progress .progress {
+		height: 0.75rem;
+	}
+
+	.quick-action-btn {
+		transition: transform 0.2s ease;
+	}
+
+	.quick-action-btn:hover {
+		transform: translateY(-2px);
+	}
+
+	.quick-action-btn:active {
+		transform: scale(0.98);
+	}
+
+	/* Mobile adjustments */
+	@media (max-width: 768px) {
+		.summary-bar .hero-body {
+			padding: 1rem;
+		}
+
+		.summary-bar .columns {
+			flex-direction: column;
+		}
+
+		.summary-bar .column.is-narrow {
+			margin-top: 1rem;
+			align-items: flex-start !important;
+		}
+
+		.tags.is-flex-direction-column {
+			flex-direction: row !important;
+			flex-wrap: wrap;
+		}
+
+		.tags.is-flex-direction-column .tag {
+			margin-right: 0.5rem;
+			margin-bottom: 0.5rem;
+		}
+	}
+</style>
+
+<script>
+	// Quick action button handlers - will be integrated with real functionality in later phases
+	document.querySelectorAll('.quick-action-btn').forEach((button) => {
+		button.addEventListener('click', (e) => {
+			const btn = e.currentTarget as HTMLButtonElement;
+			const actionId = btn.id;
+			console.log(`Quick action triggered: ${actionId}`);
+			// Placeholder for future integration
+		});
+	});
+</script>

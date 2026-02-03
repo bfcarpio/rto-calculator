@@ -1,0 +1,176 @@
+---
+// PanelToggle.astro - Collapsible panel for mobile with snap behavior
+// Uses native HTML <details> element for accessibility and Bulma styling
+
+const {
+	title = "Panel Title",
+	open = false,
+	id: _id = `panel-toggle-${Math.random().toString(36).substr(2, 9)}`,
+} = Astro.props;
+---
+
+<details
+	class="panel-toggle is-hidden-tablet"
+	id={_id}
+	{open}
+	aria-labelledby={`${_id}-heading`}
+>
+	<summary class="panel-heading" id={`${_id}-heading`}>
+		<div class="is-flex is-justify-content-space-between is-align-items-center">
+			<span class="has-text-weight-semibold">{title}</span>
+			<span class="toggle-indicator" aria-hidden="true">
+				<svg
+					class="chevron-icon"
+					width="16"
+					height="16"
+					viewBox="0 0 16 16"
+					fill="currentColor"
+					xmlns="http://www.w3.org/2000/svg"
+				>
+					<path
+						d="M4.646 6.646a.5.5 0 0 1 .708 0L8 9.293l2.646-2.647a.5.5 0 0 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-3-3a.5.5 0 0 1 0-.708z"
+					/>
+				</svg>
+			</span>
+		</div>
+</summary>
+
+	<div class="panel-block">
+		<slot />
+	</div>
+</details>
+
+<!-- Desktop version - always visible -->
+<div class="panel-desktop is-hidden-mobile" aria-labelledby={`${_id}-heading-desktop`}>
+	<div class="panel-heading" id={`${_id}-heading-desktop`}>
+		<span class="has-text-weight-semibold">{title}</span>
+	</div>
+	<div class="panel-block">
+		<slot />
+	</div>
+</div>
+
+<style>
+	.panel-toggle {
+		border: 1px solid #dbdbdb;
+		border-radius: 6px;
+		margin-bottom: 1rem;
+		overflow: hidden;
+		/* Enable snap behavior on mobile */
+		scroll-margin-top: 1rem;
+	}
+
+	.panel-toggle summary {
+		cursor: pointer;
+		list-style: none;
+		user-select: none;
+	}
+
+	/* Hide default marker */
+	.panel-toggle summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.panel-toggle summary::marker {
+		display: none;
+	}
+
+	.panel-toggle[open] summary {
+		border-bottom: 1px solid #dbdbdb;
+	}
+
+	.panel-toggle .panel-heading {
+		padding: 0.75em 1em;
+		background-color: #f5f5f5;
+		transition: background-color 0.2s ease;
+	}
+
+	.panel-toggle summary:hover .panel-heading {
+		background-color: #ededed;
+	}
+
+	.panel-toggle .panel-block {
+		padding: 1rem;
+		background-color: white;
+	}
+
+	/* Chevron animation */
+	.toggle-indicator {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: transform 0.3s ease;
+	}
+
+	.chevron-icon {
+		display: block;
+	}
+
+	.panel-toggle[open] .toggle-indicator {
+		transform: rotate(180deg);
+	}
+
+	/* Desktop version styling */
+	.panel-desktop {
+		border: 1px solid #dbdbdb;
+		border-radius: 6px;
+		margin-bottom: 1rem;
+	}
+
+	.panel-desktop .panel-heading {
+		padding: 0.75em 1em;
+		background-color: #f5f5f5;
+		border-bottom: 1px solid #dbdbdb;
+		border-radius: 6px 6px 0 0;
+	}
+
+	.panel-desktop .panel-block {
+		padding: 1rem;
+		background-color: white;
+		border-radius: 0 0 6px 6px;
+	}
+
+	/* Focus styles for accessibility */
+	.panel-toggle summary:focus-visible {
+		outline: 2px solid #485fc7;
+		outline-offset: -2px;
+	}
+
+	/* Smooth scroll snap for mobile */
+	@media (max-width: 768px) {
+		.panel-toggle[open] {
+			scroll-snap-align: start;
+		}
+
+		/* Add smooth animation for content reveal */
+		.panel-toggle .panel-block {
+			animation: panel-slide-down 0.3s ease-out;
+		}
+	}
+
+	@keyframes panel-slide-down {
+		from {
+			opacity: 0;
+			transform: translateY(-10px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+</style>
+
+<script>
+	// Add scroll-into-view behavior when panel opens on mobile
+	document.querySelectorAll('.panel-toggle').forEach((panel) => {
+		panel.addEventListener('toggle', (e) => {
+			const details = e.target as HTMLDetailsElement;
+			if (details.open && window.innerWidth <= 768) {
+				// Small delay to allow animation to start
+				setTimeout(() => {
+					details.scrollIntoView({ behavior: 'smooth', block: 'start' });
+				}, 100);
+			}
+		});
+	});
+</script>
