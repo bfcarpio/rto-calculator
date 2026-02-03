@@ -23,30 +23,72 @@ An Astro-based web application for tracking Return-to-Office (RTO) compliance. T
 │  │  │   Day   │  │  Month  │  │  Settings│  │   Action  │  │    │
 │  │  │ .astro  │  │ .astro  │  │  Button  │  │  Buttons  │  │    │
 │  │  └────┬────┘  └────┬────┘  │  Modal   │  │  .astro   │  │    │
-│  └───────┼───────────┼─────────└──────────┘  └───────────┘  │    │
-│          │           │                                        │    │
-└──────────┼───────────┼────────────────────────────────────────┘
-           │           │
-┌──────────▼───────────▼────────────────────────────────────────┐
-│                    Business Logic Layer                       │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │              Validation System                        │   │
-│  │  ┌──────────────────┐      ┌──────────────────┐     │   │
-│  │  │  UI Integration  │◄────►│  Core Library     │     │   │
-│  │  │  (DOM handling)  │      │  (Pure logic)     │     │   │
-│  │  └──────────────────┘      └──────────────────┘     │   │
-│  │           │                                             │   │
-│  │  ┌────────▼─────────┐    ┌──────────────────┐        │   │
-│  │  │RollingPeriod     │    │  Future:         │        │   │
-│  │  │Validation.js     │    │  CustomStrategies│        │   │
-│  │  └──────────────────┘    └──────────────────┘        │   │
-│  └──────────────────────────────────────────────────────┘   │
-│                                                              │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │              Utility Functions                        │   │
-│  │  dateUtils.ts | validation.ts | storage.ts            │   │
-│  │  dragSelection.ts                                      │   │
-│  └──────────────────────────────────────────────────────┘   │
+│  │       │            │       └──────────┘  └───────────┘  │    │
+│  └───────┼────────────┼──────────────────────────────────────┘    │
+└──────────┼────────────┼────────────────────────────────────────────┘
+           │            │
+┌──────────▼────────────▼────────────────────────────────────────┐
+│                    3-Layer Validation Flow                       │
+│                                                                  │
+│  ┌────────────────────────────────────────────────────────────┐ │
+│  │ Layer 1: UI Controller (src/scripts/rto-ui-controller.ts)│ │
+│  │                                                            │ │
+│  │ - Event handlers for "Validate" button                     │ │
+│  │ - Orchestrates validation workflow                         │ │
+│  │ - Displays results to user                                 │ │
+│  │ - NO validation logic - pure coordination                  │ │
+│  └───────────────────────┬────────────────────────────────────┘ │
+│                          │                                       │
+│                          ▼                                       │
+│  ┌────────────────────────────────────────────────────────────┐ │
+│  │ Layer 2: Data Reader (src/lib/calendar-data-reader.ts)     │ │
+│  │                                                            │ │
+│  │ - SINGLE DOM query to read calendar state                  │ │
+│  │ - Extracts selections, holidays, week data                 │ │
+│  │ - Returns typed WeekInfo[] and DayInfo[]                   │ │
+│  │ - ONLY layer with DOM access                               │ │
+│  └───────────────────────┬────────────────────────────────────┘ │
+│                          │                                       │
+│                          ▼                                       │
+│  ┌────────────────────────────────────────────────────────────┐ │
+│  │ Layer 3: Orchestrator (src/lib/validation/               │ │
+│  │          ValidationOrchestrator.ts)                        │ │
+│  │                                                            │ │
+│  │ - Coordinates validation workflow                          │ │
+│  │ - Uses Strategy Pattern for validation modes               │ │
+│  │ - Updates week status objects                              │ │
+│  │ - NO DOM dependencies - pure data transformation         │ │
+│  └────────────────────────────────────────────────────────────┘ │
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│                    Strategy Pattern Layer                      │
+│  ┌──────────────────────────────────────────────────────────┐ │
+│  │              ValidationStrategy (Abstract)               │ │
+│  │  - Base class for all validators                       │ │
+│  │  - Shared utilities (caching, date math)             │ │
+│  │  - Abstract methods: validate(), getWeekCompliance()   │ │
+│  └───────────────────────┬───────────────────────────────────┘ │
+│                          │                                     │
+│          ┌───────────────┴───────────────┐                     │
+│          │                               │                     │
+│          ▼                               ▼                     │
+│  ┌───────────────┐           ┌──────────────────┐             │
+│  │ StrictDayCount│           │ AverageWindow    │             │
+│  │ Validator     │           │ Validator        │             │
+│  │               │           │                  │             │
+│  │ Each week     │           │ 12-week rolling  │             │
+│  │ individually  │           │ window averages  │             │
+│  └───────────────┘           └──────────────────┘             │
+│                          ▲                                     │
+│                          │                                     │
+│  ┌───────────────────────┴──────────────────────────┐         │
+│  │            ValidationFactory                     │         │
+│  │  Creates appropriate validator by mode:          │         │
+│  │  - "strict" → StrictDayCountValidator           │         │
+│  │  - "average" → AverageWindowValidator           │         │
+│  └──────────────────────────────────────────────────┘         │
 └──────────────────────────────────────────────────────────────┘
 
 ┌──────────────────────────────────────────────────────────────┐
@@ -59,6 +101,227 @@ An Astro-based web application for tracking Return-to-Office (RTO) compliance. T
 │  └──────────────────────────────────────────────────────┘   │
 └──────────────────────────────────────────────────────────────┘
 ```
+
+## 3-Layer Validation Flow
+
+### Layer 1: UI Controller
+
+**File:** `src/scripts/rto-ui-controller.ts`
+
+**Responsibilities:**
+- Handle user click events on the "Validate" button
+- Trigger the validation workflow
+- Display validation results to users
+- Clear validation highlights when requested
+
+**Key Functions:**
+```typescript
+export async function runValidationWithHighlights(): Promise<void> {
+  // Step 1: Read calendar data from DOM
+  const calendarData = await readCalendarData({ DEBUG: CONFIG.DEBUG });
+  
+  // Step 2: Clear previous highlights
+  clearAllValidationHighlights();
+  
+  // Step 3: Orchestrate validation (no DOM access)
+  const result = orchestrateValidation(calendarData, ORCHESTRATOR_CONFIG);
+  
+  // Step 4: Update week status cells in DOM
+  updateWeekStatusCells(result.evaluatedWeeks);
+  
+  // Step 5: Display results to user
+  displayValidationResults(result);
+}
+```
+
+**Design Principle:** The UI Controller knows NOTHING about validation logic. It only coordinates the flow and updates the UI.
+
+---
+
+### Layer 2: Data Reader
+
+**File:** `src/lib/calendar-data-reader.ts`
+
+**Responsibilities:**
+- Single DOM query to extract all calendar data
+- Query status cells and build lookup maps
+- Group cells by week
+- Return typed data structures (`WeekInfo[]`, `DayInfo[]`)
+- Integrate holiday data for validation
+
+**Key Interface:**
+```typescript
+export interface CalendarDataResult {
+  weeks: WeekInfo[];
+  totalWeeks: number;
+  totalHolidayDays: number;
+  readTimeMs: number;
+}
+
+export interface WeekInfo {
+  weekStart: Date;
+  weekNumber: number;
+  days: DayInfo[];
+  oofCount: number;
+  officeDays: number;
+  isCompliant: boolean;
+  status: WeekStatus;
+  statusCellElement: HTMLElement | null; // DOM reference for UI updates
+}
+```
+
+**Design Principle:** This is the ONLY file that accesses the DOM. All other layers work with pure data.
+
+---
+
+### Layer 3: Orchestrator
+
+**File:** `src/lib/validation/ValidationOrchestrator.ts`
+
+**Responsibilities:**
+- Coordinate the validation workflow
+- Convert `WeekInfo` data to `WeekCompliance` format
+- Run sliding window validation using `rto-core.ts`
+- Update week status objects based on validation results
+- NO DOM dependencies - pure data transformation
+
+**Key Interface:**
+```typescript
+export interface OrchestratedValidationResult {
+  slidingWindowResult: SlidingWindowResult;
+  evaluatedWeeks: WeekInfo[];
+  totalWeeksEvaluated: number;
+  compliancePercentage: number;
+  isValid: boolean;
+  message: string;
+}
+
+export function orchestrateValidation(
+  calendarData: CalendarDataResult,
+  config: Partial<RTOOrchestratorConfig> = {},
+): OrchestratedValidationResult
+```
+
+**Design Principle:** The orchestrator transforms data but never touches the DOM. Status updates are applied to `WeekInfo` objects, which the UI layer then uses to update the DOM.
+
+---
+
+## Strategy Pattern Implementation
+
+### The Abstract Base Class
+
+**File:** `src/lib/validation/ValidationStrategy.ts`
+
+```typescript
+export abstract class ValidationStrategy {
+  abstract readonly name: string;
+  abstract readonly description: string;
+  readonly defaultConfig: ValidationConfig = DEFAULT_CONFIG;
+  
+  // Abstract methods that concrete strategies must implement
+  abstract validate(context: ValidatorContext): ValidationResult;
+  abstract getWeekCompliance(weekStart: Date, context: ValidatorContext): WeekCompliance;
+  abstract getWindowCompliance(windowStart: number, windowSize: number, context: ValidatorContext): WindowCompliance;
+  
+  // Shared utilities available to all strategies
+  protected _getStartOfWeek(date: Date | SelectedDay): Date;
+  protected _groupDaysByWeek(days: SelectedDay[], _weekStart: Date): Map<number, number>;
+  protected _selectBestWeeks(weeks: WeekCompliance[], count: number): WeekCompliance[];
+  protected _calculateComplianceStatus(officeDays: number, totalDays: number, thresholdPercentage: number): { percentage: number; isCompliant: boolean };
+}
+```
+
+### Concrete Strategy: StrictDayCountValidator
+
+**File:** `src/lib/validation/StrictDayCountValidator.ts`
+
+Validates that **each week individually** meets the minimum office day requirement (3 days). Fails fast on the first violating week.
+
+```typescript
+export class StrictDayCountValidator extends ValidationStrategy {
+  readonly name = "strict-day-count";
+  readonly description = "Validates RTO compliance by checking each week individually";
+  
+  validate(context: ValidatorContext): ValidationResult {
+    // Fail-fast: first violating week causes immediate failure
+    for (let weekIndex = 0; weekIndex < totalWeeks; weekIndex++) {
+      const windowCompliance = this.getWindowCompliance(weekIndex, 1, context);
+      if (!windowCompliance.isCompliant) {
+        return {
+          isValid: false,
+          message: `Week starting ${weekStart} has only ${officeDays} office days`,
+          // ...
+        };
+      }
+    }
+    return { isValid: true, message: "All weeks meet minimum" };
+  }
+}
+```
+
+### Concrete Strategy: AverageWindowValidator
+
+**File:** `src/lib/validation/AverageWindowValidator.ts`
+
+Validates using **12-week rolling window averages**. Takes the best 8 weeks from each 12-week window and calculates average compliance.
+
+```typescript
+export class AverageWindowValidator extends ValidationStrategy {
+  readonly name = "average-window";
+  readonly description = "Validates RTO compliance using rolling 12-week window averages";
+  
+  validate(context: ValidatorContext): ValidationResult {
+    // Slide through 12-week windows
+    for (let windowStart = 0; windowStart <= totalWindows; windowStart++) {
+      const windowCompliance = this.getWindowCompliance(
+        windowStart,
+        config.rollingPeriodWeeks,
+        context
+      );
+      // Check compliance...
+    }
+  }
+}
+```
+
+### Factory Pattern: ValidationFactory
+
+**File:** `src/lib/validation/ValidationFactory.ts`
+
+```typescript
+export type ValidationMode = "strict" | "average";
+
+export class ValidationFactory {
+  private static validatorCache: Map<ValidationMode, ValidationStrategy> = new Map();
+  
+  static createValidator(mode: ValidationMode): ValidationStrategy {
+    // Check cache first
+    const cached = ValidationFactory.validatorCache.get(mode);
+    if (cached) {
+      cached.reset();
+      return cached;
+    }
+    
+    // Create new validator
+    const validator = ValidationFactory._instantiateValidator(mode);
+    ValidationFactory.validatorCache.set(mode, validator);
+    return validator;
+  }
+  
+  private static _instantiateValidator(mode: ValidationMode): ValidationStrategy {
+    switch (mode) {
+      case "strict":
+        return new StrictDayCountValidator();
+      case "average":
+        return new AverageWindowValidator();
+      default:
+        throw new Error(`Unsupported mode: ${mode}`);
+    }
+  }
+}
+```
+
+---
 
 ## Component Architecture
 
@@ -76,11 +339,10 @@ An Astro-based web application for tracking Return-to-Office (RTO) compliance. T
 - **Responsibility**: Renders individual month with day grid and week status
 - **Key Features**:
   - 6-row x 7-column grid (Mon-Sun + week number)
-  - Week status column with 5-state compliance indicators:
+  - Week status column with 4-state compliance indicators:
     - ✓ Green checkmark (compliant): Week has ≥ 3 office days AND is in evaluated set when overall is valid
     - ✗ Red X (invalid): Week has < 3 office days, OR is the lowest-attendance week when window is invalid
     - ⏳ Hourglass (pending): Week is in evaluated set when overall window is invalid (but not the lowest)
-    - ○ Grey circle (excluded): Week is in 12-week evaluation window but NOT in evaluated set (the "worst 4 weeks")
     - (empty) (ignored): Week is NOT in the 12-week evaluation window
   - Week number column displaying ISO 8601 week numbers (1-52)
   - Month-level clear button
@@ -97,197 +359,77 @@ An Astro-based web application for tracking Return-to-Office (RTO) compliance. T
   - Screen reader announcements via aria-live regions
   - Toggle logic (clicking same selection clears it)
 
-#### `components/ActionButtons.astro`
-- **Responsibility**: Global action buttons (Validate, Clear All, Export)
-- **Key Features**:
-  - Rendered at top and bottom of calendar
-  - Primary/secondary/danger variants
-  - Keyboard accessible with focus management
+---
 
-#### `components/SettingsButton.astro` & `components/SettingsModal.astro`
-- **Responsibility**: User configuration interface
-- **Key Features**:
-  - Modal dialog with ARIA attributes
-  - Debug mode toggle
-  - Validation strategy selection
-  - Minimum office days configuration
-  - Week pattern quick select (MWF, MTW, etc.)
-
-## Validation System Architecture
-
-### Strategy Pattern Implementation
-
-```
-ValidationStrategy (Interface)
-    ▲
-    │ implements
-    │
-RollingPeriodValidation (Concrete Strategy)
-    │
-    │ uses
-    ▼
-ValidationManager (Context)
-```
-
-### Key Classes
-
-#### `ValidationManager` (`scripts/ValidationManager.js`)
-- **Purpose**: Manages validation strategies and provides unified interface
-- **Responsibilities**:
-  - Register and retrieve validation strategies
-  - Route validation requests to active strategy
-  - Manage configuration (minOfficeDays, rollingPeriodWeeks, etc.)
-  - Observer pattern for event notifications
-  - Debug mode support
-
-#### `RollingPeriodValidation` (`strategies/RollingPeriodValidation.js`)
-- **Purpose**: Validates 12-week rolling period compliance
-- **Algorithm**:
-  1. Group selections by week start date
-  2. For each 12-week window, calculate average office days
-  3. Check if 8 out of 12 weeks have ≥3 office days (60% threshold)
-  4. Identify violating windows with week-level details
-- **Returns**: Compliance result with window-by-window breakdown
-
-#### `rtoValidation.ts` (`lib/rtoValidation.ts`)
-- **Purpose**: Core validation library with pure functions (no DOM dependencies)
-
-#### `rtoValidation.ts` (`scripts/rtoValidation.ts`)
-- **Purpose**: UI integration layer that handles DOM reading and updates
-- **Responsibilities**:
-  - Read calendar data from DOM elements
-  - Calculate rolling compliance with week-by-week evaluation
-  - Update week status icons based on 5-state system:
-    - ✓ **compliant**: Green checkmark (individual week has ≥ 3 office days AND is in evaluated set when overall is valid)
-      - CSS classes: .evaluated .compliant
-      - Screen reader: "Compliant week"
-    - ✗ **invalid**: Red X (two cases: 1) Individual week has < 3 office days regardless of overall result, OR 2) The week with lowest office days in evaluated set when window is invalid)
-      - CSS classes: .evaluated .non-compliant
-      - Screen reader: "Invalid week - lowest office days in evaluated set"
-    - ⏳ **pending**: Hourglass (remaining evaluated weeks when window is invalid)
-      - CSS classes: .evaluated .least-attended
-      - Screen reader: "Pending evaluation - part of invalid window"
-    - ○ **excluded**: Grey circle (weeks in 12-week window but not in evaluated set - the "worst 4 weeks")
-      - CSS classes: .evaluated .excluded
-      - Screen reader: "Excluded - in evaluation window but not evaluated (worst 4 weeks)"
-    - (empty) **ignored**: Empty status (weeks NOT in the 12-week evaluation window)
-      - No CSS classes
-      - Screen reader: (empty)
-  - Display compliance messages
-  - Clear validation highlights
-
-### Validation Flow
+## Validation Flow
 
 ```
 User clicks "Validate" button
-      │
-      ▼
-ValidationManager.validate() called
-      │
-      ▼
-RollingPeriodValidation.execute()
-      │
-      ├─► Group days by week
-      ├─► Calculate weekly office counts
-      ├─► Evaluate 12-week windows
-      └─► Identify violations
-      │
-      ▼
-Update UI:
-  - Week status icons
-  - Compliance indicator
-  - Validation message
-
-Note: Validation is NOT automatic. It only runs when user explicitly clicks the Validate button.
+       │
+       ▼
+rto-ui-controller.ts
+runValidationWithHighlights()
+       │
+       ├─► Step 1: readCalendarData()
+       │   │   - Single DOM query
+       │   │   - Extract selections
+       │   │   - Build WeekInfo[]
+       │   └─► Returns CalendarDataResult
+       │
+       ├─► Step 2: clearAllValidationHighlights()
+       │   │   - Clear previous status icons
+       │
+       ├─► Step 3: orchestrateValidation()
+       │   │   - Convert WeekInfo[] → WeekCompliance[]
+       │   │   - Run validateSlidingWindow()
+       │   │   - Update week statuses
+       │   └─► Returns OrchestratedValidationResult
+       │
+       ├─► Step 4: updateWeekStatusCells()
+       │   │   - Update DOM status cells
+       │   │   - Set icons (✓, ✗, ⏳, empty)
+       │
+       └─► Step 5: displayValidationResults()
+           │   - Show compliance message
+           │   - Update overall indicator
 ```
 
-## Data Flow
+---
 
-### Selection Flow
+## Data Structures
 
-```
-User Action (click/drag)
-        │
-        ▼
-day.astro handleMouseDown()
-        │
-        ├─► Update dataset attributes
-        │   - data-selected: "true"/"false"
-        │   - data-selection-type: "work-from-home"/"office"/""
-        │
-        ├─► Update CSS classes
-        │   - .selected
-        │   - .work-from-home / .office
-        │
-        └─► Update ARIA attributes
-            │   - ariaSelected: "true"/"false"
-            │   - ariaLabel: "Day X. Work from home"
+### WeekInfo (Data Reader Output)
 
-Note: Selection changes do NOT trigger automatic validation.
-Validation only occurs when user clicks the "Validate" button.
+```typescript
+interface WeekInfo {
+  weekStart: Date;                    // Monday at midnight
+  weekNumber: number;                 // Sequential (1, 2, 3...)
+  days: DayInfo[];                   // Days in this week
+  oofCount: number;                  // Out-of-office days
+  officeDays: number;                // Calculated office days
+  totalDays: number;                 // Effective weekdays (excluding holidays)
+  isCompliant: boolean;              // Meets 3-day minimum?
+  isUnderEvaluation: boolean;        // In 12-week window?
+  status: WeekStatus;                // "compliant" | "invalid" | "pending" | "excluded" | "ignored"
+  statusCellElement: HTMLElement | null;  // DOM reference for UI updates
+}
 ```
 
-### Validation Flow
+### SlidingWindowResult (Core Validation)
 
+```typescript
+interface SlidingWindowResult {
+  isValid: boolean;
+  message: string;
+  overallCompliance: number;         // Average compliance percentage
+  evaluatedWeekStarts: number[];     // Best 8 weeks (timestamps)
+  windowWeekStarts: number[];        // All 12 weeks in window
+  invalidWeekStart: number | null;  // Lowest attendance week when invalid
+  windowStart: number | null;       // Start of evaluated window
+}
 ```
-User clicks "Validate" button
-        │
-        ▼
-ValidationManager.validate() called
-        │
-        ▼
-DOM Read
-    │
-    ▼
-readCalendarData()
-    │
-    ├─► Query all .calendar-day.selected
-    ├─► Extract year, month, day, selectionType
-    ├─► Group by week start date
-    └─► Calculate WFH/office counts
-    │
-    ▼
-calculateRollingCompliance()
-    │
-    ├─► For each 12-week window:
-    │   ├─► Sort weeks by office days
-    │   ├─► Select best 8 weeks
-    │   ├─► Calculate average office days
-    │   └─► Check threshold (≥60%)
-    │
-    ▼
-updateWeekStatusIcon()
-    │
-    ├─► Week NOT in 12-week evaluation window: Empty (ignored)
-    │   - No CSS classes
-    │   - Screen reader: (empty)
-    │
-    ├─► Week in 12-week window:
-    │   ├─► Week has < 3 office days: Red ✗ (invalid)
-    │   │   - CSS classes: .evaluated .non-compliant
-    │   │   - Screen reader: "Invalid week - lowest office days in evaluated set"
-    │   │
-    │   ├─► Week in evaluated set AND overall window is VALID:
-    │   │   ├─► Best 8 weeks: Green ✓ (compliant)
-    │   │   │   - CSS classes: .evaluated .compliant
-    │   │   │   - Screen reader: "Compliant week"
-    │   │   └─► Other 4 weeks in window: Grey circle ○ (excluded)
-    │   │       - CSS classes: .evaluated .excluded
-    │   │       - Screen reader: "Excluded - in evaluation window but not evaluated (worst 4 weeks)"
-    │   │
-    │   └─► Week in evaluated set AND overall window is INVALID:
-    │       ├─► Lowest office days in evaluated set: Red ✗ (invalid)
-    │       │   - CSS classes: .evaluated .non-compliant
-    │       │   - Screen reader: "Invalid week - lowest office days in evaluated set"
-    │       ├─► Best 7 weeks: Green ✓ (compliant)
-    │       │   - CSS classes: .evaluated .compliant
-    │       │   - Screen reader: "Compliant week"
-    │       └─► Other 4 weeks in window: Grey circle ○ (excluded)
-    │           - CSS classes: .evaluated .excluded
-    │           - Screen reader: "Excluded - in evaluation window but not evaluated (worst 4 weeks)"
 
-Note: Validation is NOT automatic. It only runs when user explicitly clicks the Validate button.
-```
+---
 
 ## State Management
 
@@ -305,362 +447,145 @@ Note: Validation is NOT automatic. It only runs when user explicitly clicks the 
 3. **localStorage State** (Persistence)
    - `rto-calculator-selected-dates`: JSON array of ISO date strings
    - `rto-calculator-user-preferences`: Theme, color scheme, etc.
-   - Auto-save on selection changes (planned)
+   - Auto-save on selection changes
 
-### Data Structures
+---
 
-```typescript
-// Day selection stored in DOM
-data-selected="true"
-data-selection-type="work-from-home"
-data-year="2025"
-data-month="0"
-data-day="15"
+## Design Patterns
 
-// Week compliance data
-interface WeekInfo {
-  weekStart: Date;
-  weekNumber: number;
-  days: DayInfo[];
-  wfhCount: number;
-  officeDays: number;
-  isCompliant: boolean;
-  isUnderEvaluation: boolean;
-  status: WeekStatus; // "compliant" | "invalid" | "pending" | "excluded" | "ignored"
-  statusCellElement: HTMLElement | null;
-}
+### 1. Strategy Pattern
+- **Location:** `ValidationStrategy` + concrete implementations
+- **Purpose:** Allow pluggable validation algorithms
+- **Benefit:** Easy to add new validation strategies (fixed period, custom rules)
 
-// Sliding window validation result
-interface SlidingWindowResult {
-  isValid: boolean;
-  message: string;
-  overallCompliance: number;
-  evaluatedWeekStarts: number[];
-  windowWeekStarts: number[]; // All weeks in the 12-week evaluation window
-  invalidWeekStart: number | null; // The week with lowest office days in evaluated set (when invalid)
-  windowStart: number | null; // The start of the 12-week window that was evaluated
-}
-```
+### 2. Factory Pattern
+- **Location:** `ValidationFactory`
+- **Purpose:** Centralized validator creation
+- **Benefit:** Single point for instantiating correct validator by mode
+
+### 3. 3-Layer Architecture
+- **Location:** UI Controller → Data Reader → Orchestrator
+- **Purpose:** Clear separation of concerns
+- **Benefit:** Testable, maintainable, pure business logic
+
+### 4. Pure Functions
+- **Location:** `src/lib/validation/rto-core.ts`
+- **Purpose:** Predictable, testable validation logic
+- **Benefit:** No side effects, same input = same output
+
+---
 
 ## Directory Structure
 
 ```
 src/
-├── components/
-│   ├── ActionButtons.astro      # Global action buttons
-│   ├── SettingsButton.astro     # Settings modal trigger
-│   ├── SettingsModal.astro      # Configuration dialog
-│   ├── day.astro                # Individual day cell
-│   ├── month.astro              # Month grid with status column
-│   ├── Calendar/                # Calendar-specific subcomponents
-│   └── scripts/                 # Component scripts
-├── pages/
-│   └── index.astro              # Main application page
-├── scripts/
-│   └── rtoValidation.ts         # UI integration for validation
-├── lib/
-│   └── rtoValidation.ts         # Core validation library
-├── styles/
-│   ├── global.css               # Global styles
-│   └── pages/index.css          # Page-specific styles
-├── types/
-│   ├── index.ts                 # Core type definitions
-│   ├── calendar-types.d.ts      # Calendar-specific types
-│   ├── validation-strategy.d.ts # Strategy interface
-│   └── rto-validation.d.ts       # Validation types
-├── utils/
+├── components/           # Astro UI components
+│   ├── ActionButtons.astro
+│   ├── SettingsButton.astro
+│   ├── SettingsModal.astro
+│   ├── day.astro
+│   ├── month.astro
+│   └── __tests__/
+│
+├── lib/                  # Core business logic
+│   ├── validation/       # Validation domain with Strategy Pattern
+│   │   ├── ValidationStrategy.ts
+│   │   ├── StrictDayCountValidator.ts
+│   │   ├── AverageWindowValidator.ts
+│   │   ├── ValidationFactory.ts
+│   │   ├── ValidationOrchestrator.ts
+│   │   ├── rto-core.ts
+│   │   ├── RollingPeriodValidation.ts
+│   │   └── index.ts
+│   │
+│   ├── holiday/          # Holiday management
+│   │   ├── HolidayManager.ts
+│   │   ├── HolidayDataLoader.ts
+│   │   ├── CalendarHolidayIntegration.ts
+│   │   ├── data/
+│   │   └── sources/
+│   │
+│   ├── calendar-data-reader.ts
+│   └── rto-config.ts
+│
+├── scripts/              # Client-side DOM integration
+│   ├── rto-ui-controller.ts
+│   ├── validation-result-display.ts
+│   ├── validation-display.ts
+│   ├── calendar-events.ts
+│   ├── settings-modal.ts
+│   ├── localStorage.ts
+│   └── debug.ts
+│
+├── types/                # TypeScript definitions
+│   ├── validation-strategy.d.ts
+│   ├── calendar-types.d.ts
+│   ├── rto-validation.d.ts
+│   └── holiday-data-source.ts
+│
+├── utils/                # Utility functions
+│   ├── dateUtils.ts
+│   ├── dragSelection.ts
+│   ├── storage.ts
+│   ├── validation.ts
 │   └── astro/
-│       └── calendarFunctions.ts # Astro server utilities
-│   ├── dateUtils.ts             # Date manipulation functions
-│   ├── dragSelection.ts         # Drag selection manager
-│   ├── storage.ts               # localStorage utilities
-│   └── validation.ts            # Pure validation logic
-├── layouts/
-│   └── Layout.astro             # Base layout
-└── assets/                      # Static assets
+│       ├── calendarFunctions.ts
+│       └── __tests__/
+│
+└── pages/
+    └── index.astro
 ```
 
-## Design Patterns
+---
 
-### 1. Strategy Pattern
-- **Location**: `ValidationManager` + `RollingPeriodValidation`
-- **Purpose**: Allow pluggable validation algorithms
-- **Benefit**: Easy to add new validation strategies (fixed period, custom rules)
+## Extension Points
 
-### 2. Observer Pattern
-- **Location**: `ValidationManager`
-- **Purpose**: Notify subscribers of validation events
-- **Benefit**: Decouple validation logic from UI updates
+### Adding New Validation Strategies
 
-### 3. Component Pattern
-- **Location**: All Astro components
-- **Purpose**: Encapsulate UI logic and presentation
-- **Benefit**: Reusability, maintainability
+1. Create new strategy class extending `ValidationStrategy`:
 
-### 4. Utility Pattern
-- **Location**: `utils/` directory
-- **Purpose**: Pure functions for common operations
-- **Benefit**: Testability, no side effects
-
-## Accessibility Features
-
-### Keyboard Navigation
-- Arrow keys: Navigate between days
-- Enter/Space: Toggle selection
-- Escape: Clear selection
-- Tab: Navigate between months and buttons
-
-### Screen Reader Support
-- ARIA labels on all interactive elements
-- aria-live regions for dynamic announcements
-- Semantic HTML structure (proper headings, landmarks)
-- aria-selected for selection state
-- aria-describedby for additional context
-
-### Visual Accessibility
-- High contrast mode support (@media (prefers-contrast: high))
-- Reduced motion support (@media (prefers-reduced-motion))
-- Focus indicators with focus-visible
-- Color + font weight for selection states (not just color)
-
-## Performance Considerations
-
-### Current Optimizations
-- Direct DOM manipulation (no framework overhead)
-- Event delegation where possible
-- CSS transitions instead of JS animations
-- Lazy component initialization
-
-### Potential Improvements
-- Virtual scrolling for long calendars
-- Debounced validation on rapid selections
-- Optimized DOM queries (cache selectors)
-- RequestAnimationFrame for UI updates
-
-## Testing Strategy
-
-### Test Structure
-```
-src/utils/astro/__tests__/
-└── [Test files for Astro utilities]
+```typescript
+class CustomValidator extends ValidationStrategy {
+  readonly name = "custom";
+  readonly description = "My custom validation logic";
+  
+  validate(context: ValidatorContext): ValidationResult {
+    // Implementation
+  }
+  
+  getWeekCompliance(weekStart: Date, context: ValidatorContext): WeekCompliance {
+    // Implementation
+  }
+  
+  getWindowCompliance(windowStart: number, windowSize: number, context: ValidatorContext): WindowCompliance {
+    // Implementation
+  }
+}
 ```
 
-### Test Coverage Areas
-- Date manipulation functions (`dateUtils.ts`)
-- Pure validation logic (`validation.ts`)
-- Drag selection state management
-- localStorage utilities
+2. Register with ValidationFactory:
+
+```typescript
+// In ValidationFactory._instantiateValidator()
+case "custom":
+  return new CustomValidator();
+```
+
+---
 
 ## Technical Stack
 
 | Layer | Technology |
 |-------|------------|
 | Framework | Astro (v4+) |
-| Language | TypeScript, JavaScript |
+| Language | TypeScript |
 | Styling | Scoped CSS with Custom Properties |
 | Build | Astro CLI / Vite |
 | Accessibility | ARIA, Semantic HTML |
 | State | DOM + localStorage |
-| Validation | Strategy Pattern |
+| Validation | Strategy Pattern + Factory Pattern |
 
-## Extension Points
-
-### Configurable Validation Parameters
-
-**Current Hard-Coded Values:**
-- Window Size: 12 weeks (rolling period)
-- Evaluation Size: 8 weeks (best weeks to evaluate)
-- Exclusion Size: 4 weeks (12 - 8 = weeks excluded from evaluation)
-- Minimum Office Days: 3 days per week
-- Threshold Percentage: 60% (3/5 days)
-
-**Proposed Configuration Structure:**
-
-```typescript
-interface ValidationConfig {
-  // Window Configuration
-  rollingPeriodWeeks: number;      // Total weeks in evaluation window (default: 12)
-  evaluationWeeks: number;         // Best weeks to evaluate (default: 8)
-  
-  // Week Compliance Requirements
-  minOfficeDaysPerWeek: number;     // Minimum office days per week (default: 3)
-  totalWeekdaysPerWeek: number;     // Weekdays per week (default: 5)
-  thresholdPercentage: number;        // Compliance threshold (default: 0.6)
-  
-  // Behavior Flags
-  allowPartialWeeks: boolean;       // Include partial weeks in validation (default: false)
-  partialWeekThreshold: number;      // Minimum weekdays for partial week (default: 5)
-}
-```
-
-**Implementation Plan:**
-
-1. **Phase 1: UI Controls**
-   - Add "Validation Settings" section to SettingsModal.astro
-   - Create form fields for:
-     - Rolling Period Weeks (input type="number", min: 4, max: 52, default: 12)
-     - Evaluation Weeks (input type="number", min: 1, max: rollingPeriodWeeks-1, default: 8)
-     - Minimum Office Days (input type="number", min: 0, max: totalWeekdaysPerWeek, default: 3)
-     - Compliance Threshold (input type="range", min: 0, max: 1, step: 0.05, default: 0.6)
-
-2. **Phase 2: Storage and Persistence**
-   - Extend UserPreferences type in `src/types/index.ts`:
-     ```typescript
-     interface UserPreferences {
-       defaultPattern: number[] | null;
-       validationConfig: ValidationConfig | null;
-     }
-     ```
-   - Update storage utilities to save/load ValidationConfig
-   - Load config on app initialization
-   - Apply config to validation functions
-
-3. **Phase 3: Validation Logic Updates**
-   - Update `src/lib/rtoValidation.ts`:
-     - Modify `validateSlidingWindow()` to accept custom config
-     - Update `DEFAULT_RTO_POLICY` to be used as defaults
-     - Ensure all validation functions use config values
-   - Update `src/scripts/rtoValidation.ts`:
-     - Pass config to validation functions
-     - Update status display logic to use config-based thresholds
-     - Update debug logging to show active config
-
-4. **Phase 4: UI Feedback**
-   - Display current validation settings in compliance message:
-     ```
-     ✓ Compliant: 8 of 12 weeks (80.5%) - Using 3-day minimum
-     ```
-   - Show settings indicators:
-     - Badge showing current configuration
-     - Visual indicators for different thresholds
-   - Add "Reset to Defaults" button in settings
-
-5. **Phase 5: Validation and Testing**
-   - Create comprehensive test suite for configurable validation:
-     ```typescript
-     describe("Configurable Validation", () => {
-       it("should use custom window size", () => {
-         // Test with 8-week window
-       });
-       it("should use custom evaluation size", () => {
-         // Test with 6 of 8 weeks evaluated
-       });
-       it("should use custom minimum days", () => {
-         // Test with 2-day minimum
-       });
-     });
-     ```
-   - Test edge cases:
-     - Evaluation weeks > rolling period (should error)
-     - Minimum days > total weekdays (should error)
-     - Zero threshold (always compliant)
-     - 100% threshold (all 5 days required)
-
-**Priority Presets:**
-
-```typescript
-const VALIDATION_PRESETS = {
-  standard: {
-    name: "Standard (3 days/week)",
-    rollingPeriodWeeks: 12,
-    evaluationWeeks: 8,
-    minOfficeDaysPerWeek: 3,
-    thresholdPercentage: 0.6,
-  },
-  relaxed: {
-    name: "Relaxed (2 days/week)",
-    rollingPeriodWeeks: 12,
-    evaluationWeeks: 8,
-    minOfficeDaysPerWeek: 2,
-    thresholdPercentage: 0.5,
-  },
-  strict: {
-    name: "Strict (4 days/week)",
-    rollingPeriodWeeks: 12,
-    evaluationWeeks: 8,
-    minOfficeDaysPerWeek: 4,
-    thresholdPercentage: 0.8,
-  },
-  hybrid: {
-    name: "Hybrid Mode (Flexible)",
-    rollingPeriodWeeks: 8,
-    evaluationWeeks: 6,
-    minOfficeDaysPerWeek: 3,
-    thresholdPercentage: 0.7,
-  },
-};
-```
-
-**Migration Path:**
-1. Start with defaults (current behavior)
-2. Add UI controls without auto-apply
-3. User must click "Apply" to activate new settings
-4. Show confirmation dialog with impact preview:
-   ```
-   Warning: Changing to 2-day minimum will affect existing selections.
-   
-   Current: 8 of 12 weeks compliant (67%)
-   New:      9 of 12 weeks compliant (75%)
-   
-   [Cancel] [Apply Changes]
-   ```
-5. Save config to localStorage
-6. Re-validate with new settings
-
-**Validation Rules:**
-```typescript
-function validateConfig(config: ValidationConfig): ValidationResult {
-  const errors: string[] = [];
-  
-  if (config.evaluationWeeks >= config.rollingPeriodWeeks) {
-    errors.push("Evaluation weeks must be less than rolling period");
-  }
-  
-  if (config.minOfficeDaysPerWeek > config.totalWeekdaysPerWeek) {
-    errors.push("Minimum office days cannot exceed total weekdays");
-  }
-  
-  if (config.thresholdPercentage < 0 || config.thresholdPercentage > 1) {
-    errors.push("Threshold must be between 0 and 1");
-  }
-  
-  if (config.rollingPeriodWeeks < 4) {
-    errors.push("Rolling period must be at least 4 weeks");
-  }
-  
-  return {
-    isValid: errors.length === 0,
-    errors,
-  };
-}
-```
-
-### Adding New Validation Strategies
-
-1. Create new strategy class implementing `ValidationStrategy` interface:
-```javascript
-class MyCustomValidation {
-  name = "my-custom";
-  description = "My custom validation logic";
-  
-  validate(context) {
-    // Implementation
-  }
-  
-  // ... other required methods
-}
-```
-
-2. Register with ValidationManager:
-```javascript
-validationManager.registerValidator(new MyCustomValidation());
-```
-
-### Adding New Selection Types
-
-1. Extend `selectionLabels` in `day.astro`
-2. Add CSS classes for new selection type
-3. Update validation logic to handle new type
+---
 
 ## Known Limitations
 
@@ -670,44 +595,7 @@ validationManager.registerValidator(new MyCustomValidation());
 4. **No Collaboration**: Single-user design
 5. **Fixed 12-Month View**: Cannot navigate to different years
 
-## Bug Fixes
-
-### Partial Weeks Filtering (January 2025)
-
-**Issue:** 
-The first week of January 2025 was incorrectly marked as invalid (red X) when it contained only 3 weekdays (Wed Jan 1, Thu Jan 2, Fri Jan 3). This occurred because the calendar grid doesn't include days from the previous month in the same row, resulting in partial weeks with incomplete weekday data.
-
-**Root Cause:**
-The `readCalendarData()` function in `src/scripts/rtoValidation.ts` was including all weeks that had calendar cells, even if they contained fewer than 5 weekdays. When these partial weeks had insufficient office days (e.g., only 0-1 office days when minimum is 3), they were marked as invalid.
-
-**Solution:**
-Added filtering logic in `readCalendarData()` to exclude weeks with fewer than `POLICY.totalWeekdaysPerWeek` (5) weekdays from validation. This ensures that partial weeks at the start/end of the calendar (which don't include days from previous/next months) are not evaluated for compliance.
-
-**Code Changes:**
-```typescript
-// Filter out partial weeks (weeks with fewer than the required weekdays)
-// These occur at the start/end of calendar when the grid doesn't include
-// days from previous/next months. Partial weeks should not be evaluated.
-const completeWeeks = weeks.filter(
-  (week) =>
-    week.days.filter((d) => d.isWeekday).length >=
-    POLICY.totalWeekdaysPerWeek,
-);
-```
-
-**Impact:**
-- Partial weeks now show empty status (ignored) instead of invalid
-- Users no longer see red X on weeks with incomplete data
-- Validation only evaluates complete weeks with all 5 weekdays
-
-**⚠️ TODO: Evaluate in Run Phase**
-This fix filters partial weeks based on weekday count, but there may be edge cases to verify:
-1. Does this work correctly for calendars that span year boundaries?
-2. Are there scenarios where weeks should be evaluated even with fewer weekdays?
-3. Should partial weeks be configurable (e.g., allow 4-day weeks)?
-4. Test with actual calendar UI to confirm partial weeks are properly ignored
-
-**Status:** ✅ Implemented | 🔍 Needs Testing in Run Phase
+---
 
 ## Future Enhancements
 
@@ -718,8 +606,8 @@ This fix filters partial weeks based on weekday count, but there may be edge cas
 - Add date validation (past dates, holidays)
 
 ### Medium-Term
-- Multiple validation strategies
-- Customizable RTO policies
+- Multiple validation strategies with UI toggle
+- Customizable RTO policies via settings
 - ICS calendar export
 - Dark mode theme
 
