@@ -1,171 +1,111 @@
 ---
-import "../styles/global.css";
-import "/src/styles/utilities.css";
-import "../styles/pages/index.css";
+import Layout from '../layouts/Layout.astro';
+import SummaryBar from '../components/SummaryBar.astro';
+import Month from '../components/month.astro';
+import StatusDetails from '../components/StatusDetails.astro';
+import PanelToggle from '../components/PanelToggle.astro';
+import MobileMenu from '../components/MobileMenu.astro';
+import SettingsModal from '../components/SettingsModal.astro';
 
 // Page metadata
-const _title = "RTO Calculator - Plan Your Time Off";
-const _description =
-	"Plan your vacation for the next 365 days while ensuring compliance with RTO policies";
+const title = "RTO Calculator - Plan Your Time Off";
+const description = "Plan your vacation for the next 365 days while ensuring compliance with RTO policies";
 
-// Get current date to determine starting month
+// Get current date for single month display
 const now = new Date();
-const startMonth = now.getMonth(); // 0-11
-const startYear = now.getFullYear();
-
-// Generate 12 months starting from current month
-const _months = Array.from({ length: 12 }, (_, index) => {
-	const monthOffset = index;
-	const month = (startMonth + monthOffset) % 12;
-	const year = startYear + Math.floor((startMonth + monthOffset) / 12);
-
-	return { month, year };
-});
+const currentMonth = now.getMonth();
+const currentYear = now.getFullYear();
 ---
 
 <Layout title={title} description={description}>
-        <a href="#calendar" class="skip-link">Skip to calendar</a>
+	<header class="hero is-small is-primary">
+		<div class="hero-body">
+			<div class="container">
+				<h1 class="title is-4">RTO Compliance Tracker</h1>
+				<p class="subtitle is-6">
+					Plan your time off while staying compliant with office attendance policies
+				</p>
+			</div>
+		</div>
+	</header>
 
-        <header class="calendar-header">
-            <h1>RTO Calculator</h1>
-            <p>
-                Plan your time off while staying compliant with office
-                attendance policies
-            </p>
+	<!-- Summary Bar with Quick Actions -->
+	<div class="container">
+		<SummaryBar />
+	</div>
 
-        </header>
+	<!-- Desktop: Two-column layout -->
+	<div class="container is-hidden-mobile">
+		<div class="columns is-desktop">
+			<div class="column is-three-fifths">
+				<!-- Calendar Section -->
+				<section class="section py-4">
+					<div class="box">
+						<Month month={currentMonth} year={currentYear} />
+					</div>
+				</section>
+			</div>
 
-        <main id="calendar-container" class="calendar-container">
-            <div
-                id="validation-message"
-                class="validation-message prominent-message"
-                role="status"
-                aria-live="polite"
-                style="display: none;"
-            >
-            </div>
+			<div class="column is-two-fifths">
+				<!-- Status Details -->
+				<section class="section py-4">
+					<StatusDetails />
+				</section>
+			</div>
+		</div>
+	</div>
 
+	<!-- Mobile: Collapsible Panels -->
+	<div class="container is-hidden-tablet is-hidden-desktop">
+		<PanelToggle title="📊 Summary" open={true}>
+			<StatusDetails />
+		</PanelToggle>
 
+		<PanelToggle title="📅 Calendar" open={false}>
+			<div class="box">
+				<Month month={currentMonth} year={currentYear} />
+			</div>
+		</PanelToggle>
+	</div>
 
-            <ActionButtons position="top" />
-            <SettingsButton />
+	<footer class="footer mt-6">
+		<div class="content has-text-centered">
+			<p>RTO Calculator - Plan your time off while staying compliant</p>
+			<p class="is-size-7">
+				<small>Left-click for work from home, right-click for office day</small>
+			</p>
+		</div>
+	</footer>
 
-            <div
-                class="months-grid"
-                role="region"
-                aria-label="12-month calendar"
-            >
-                {
-                    months.map(({ month, year }) => (
-                        <Month month={month} year={year} />
-                    ))
-                }
-            </div>
-
-            <ActionButtons position="bottom" />
-    </main>
-
-    <footer>
-            <p>
-                <small>
-                    RTO Calculator - Left-click for work from home, right-click
-                    for office day
-                </small>
-            </p>
-    </footer>
-
-    <SettingsModal />
-
-    <script>
-        import { initializeIndex } from '../scripts/index-init';
-        initializeIndex();
-    </script>
-
-   <style>
-            .calendar-container {
-                max-width: 1400px;
-                margin: 0 auto;
-                padding: 0 1rem;
-            }
-
-            body {
-                max-width: 1400px;
-                margin: 0 auto;
-                padding: 0 1rem;
-            }
-
-            .calendar-container {
-                max-width: 1200px;
-                margin: 0 auto;
-            }
-
-            .months-grid {
-                display: grid;
-                grid-template-columns: repeat(4, 1fr);
-                gap: 0.75rem;
-                padding: 1rem 0;
-                justify-items: center;
-            }
-
-            /* Wide monitors - 4 columns */
-
-            /* Responsive layout for smaller screens */
-            @media (max-width: 1024px) {
-                .months-grid {
-                    grid-template-columns: repeat(2, 1fr);
-                    gap: 0.5rem;
-                }
-            }
-
-            @media (max-width: 480px) {
-                .months-grid {
-                    grid-template-columns: 1fr;
-                    gap: 0.25rem;
-                }
-            }
-
-    /* Legend color styles */
-    .legend-color.out-of-office {
-        background-color: #1890ff;
-    }
-
-            .legend-color.office {
-                background-color: #f5222d;
-            }
-
-            /* Validation message centered styling */
-            .validation-message.centered-message {
-                max-width: 800px;
-                margin: 1rem auto;
-                padding: 1rem;
-                font-size: 1.1rem;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-                display: flex;
-                align-items: center;
-                gap: 0.75rem;
-            }
-
-            .validation-message.centered-message::before {
-                content: "";
-                width: 4px;
-                height: 100%;
-                position: absolute;
-                left: 0;
-                top: 0;
-            }
-
-            .validation-message.centered-message.success {
-                border-left: 4px solid #52c41a;
-                background-color: #f6ffed;
-                color: #389e0d;
-            }
-
-            .validation-message.centered-message.error {
-                border-left: 4px solid #ff4d4f;
-                background-color: #fff2f0;
-                color: #cf1322;
-            }
-
-            /* Evaluation and violation indicators are in status column only - no day highlighting */
-        </style>
+	<MobileMenu />
+	<SettingsModal />
 </Layout>
+
+<style>
+	/* Custom styles for the Bulma redesign */
+	.hero.is-small .hero-body {
+		padding: 1.5rem 1rem;
+	}
+
+	/* Ensure footer stays at bottom */
+	.footer {
+		background-color: #fafafa;
+		padding: 2rem 1.5rem;
+	}
+
+	/* Mobile-specific adjustments */
+	@media (max-width: 768px) {
+		.hero-body {
+			padding: 1rem;
+		}
+
+		.section.py-4 {
+			padding-top: 1rem;
+			padding-bottom: 1rem;
+		}
+
+		.footer {
+			padding: 1.5rem 1rem;
+		}
+	}
+</style>
