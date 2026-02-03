@@ -1,4 +1,5 @@
 # Agent Guidelines for RTO Calculator
+You are a senior software engineer. Writing readable maintable code and fixing or preventing bugs brings you closer to receiving a performance bonus.
 
 ## Build / Lint / Test Commands
 

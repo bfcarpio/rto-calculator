@@ -1,19 +1,15 @@
 ---
 import "/src/styles/utilities.css";
 
-interface Props {
-	id?: string;
-	ariaLabel?: string;
-}
-
-const { id = "settings-button", ariaLabel = "Open settings" } = Astro.props;
+const { id: _id = "settings-button", ariaLabel: _ariaLabel = "Open settings" } =
+	Astro.props;
 ---
 
 <button
-    id={id}
+    id={_id}
     class="settings-button focus-reset no-reduced-motion"
     type="button"
-    aria-label={ariaLabel}
+    aria-label={_ariaLabel}
     aria-haspopup="dialog"
     aria-controls="settings-modal"
 >

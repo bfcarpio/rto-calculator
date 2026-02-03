@@ -1,5 +1,6 @@
 ---
-const { title = "RTO Calculator", description = "" } = Astro.props;
+const { title: _title = "RTO Calculator", description: _description = "" } =
+	Astro.props;
 ---
 <!doctype html>
 <html lang="en">
@@ -8,20 +9,20 @@ const { title = "RTO Calculator", description = "" } = Astro.props;
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="generator" content={Astro.generator} />
-		<meta name="description" content={description} />
-		<title>{title}</title>
+		<meta name="description" content={_description} />
+		<title>{_title}</title>
 		
 		<!-- OpenGraph Meta Tags -->
 		<meta property="og:type" content="website" />
-		<meta property="og:title" content={title} />
-		<meta property="og:description" content={description} />
+		<meta property="og:title" content={_title} />
+		<meta property="og:description" content={_description} />
 		<meta property="og:site_name" content="RTO Calculator" />
 		<meta property="og:url" content="https://bfcarpio.github.io/rto-calculator" />
 		
 		<!-- Twitter Card Meta Tags -->
 		<meta name="twitter:card" content="summary" />
-		<meta name="twitter:title" content={title} />
-		<meta name="twitter:description" content={description} />
+		<meta name="twitter:title" content={_title} />
+		<meta name="twitter:description" content={_description} />
 		<meta name="twitter:url" content="https://bfcarpio.github.io/rto-calculator" />
 	</head>
 	<body>

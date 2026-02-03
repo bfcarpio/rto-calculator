@@ -1,16 +1,11 @@
 ---
-import ActionButtons from "../components/ActionButtons.astro";
-import Month from "../components/month.astro";
-import SettingsButton from "../components/SettingsButton.astro";
-import SettingsModal from "../components/SettingsModal.astro";
-import Layout from "../layouts/Layout.astro";
 import "../styles/global.css";
 import "/src/styles/utilities.css";
 import "../styles/pages/index.css";
 
 // Page metadata
-const title = "RTO Calculator - Plan Your Time Off";
-const description =
+const _title = "RTO Calculator - Plan Your Time Off";
+const _description =
 	"Plan your vacation for the next 365 days while ensuring compliance with RTO policies";
 
 // Get current date to determine starting month
@@ -19,7 +14,7 @@ const startMonth = now.getMonth(); // 0-11
 const startYear = now.getFullYear();
 
 // Generate 12 months starting from current month
-const months = Array.from({ length: 12 }, (_, index) => {
+const _months = Array.from({ length: 12 }, (_, index) => {
 	const monthOffset = index;
 	const month = (startMonth + monthOffset) % 12;
 	const year = startYear + Math.floor((startMonth + monthOffset) / 12);

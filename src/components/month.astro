@@ -1,21 +1,14 @@
 ---
 import "/src/styles/utilities.css";
-import { getISOWeekNumber } from "../utils/dateUtils";
-import Day from "./day.astro";
-
-interface Props {
-	month: number; // 0-11 (January-December)
-	year: number;
-}
 
 const { month, year } = Astro.props;
 
 // Calculate days in month and offset using JavaScript standard library
 const date = new Date(year, month, 1);
-const daysInMonth = new Date(year, month + 1, 0).getDate();
-const offset = date.getDay(); // 0-6 (Sunday-Saturday)
+const _daysInMonth = new Date(year, month + 1, 0).getDate();
+const _offset = date.getDay(); // 0-6 (Sunday-Saturday)
 
-const monthNames = [
+const _monthNames = [
 	"January",
 	"February",
 	"March",
@@ -30,7 +23,7 @@ const monthNames = [
 	"December",
 ];
 
-const shortDayNames = [
+const _shortDayNames = [
 	{ abbr: "Sun", full: "Sunday" },
 	{ abbr: "Mon", full: "Monday" },
 	{ abbr: "Tue", full: "Tuesday" },
@@ -41,29 +34,29 @@ const shortDayNames = [
 ];
 
 // Fixed 5 rows and 7 columns
-const rows = 5;
-const cols = 7;
+const _rows = 5;
+const _cols = 7;
 
 // Create unique IDs for this month
-const monthId = `month-${year}-${month}`;
-const clearButtonId = `clear-${year}-${month}`;
+const _monthId = `month-${year}-${month}`;
+const _clearButtonId = `clear-${year}-${month}`;
 ---
 
 <section
     class="calendar-month"
-    id={monthId}
-    aria-labelledby={`${monthId}-heading`}
+    id={_monthId}
+    aria-labelledby={`${_monthId}-heading`}
 >
     <header class="month-header">
-        <h2 id={`${monthId}-heading`} class="month-year">
-            {monthNames[month]}
+        <h2 id={`${_monthId}-heading`} class="month-year">
+            {_monthNames[month]}
             {year}
         </h2>
         <button
-            id={clearButtonId}
+            id={_clearButtonId}
             class="clear-button"
-            aria-label={`Clear all selections for ${monthNames[month]} ${year}`}
-            aria-controls={monthId}
+            aria-label={`Clear all selections for ${_monthNames[month]} ${year}`}
+            aria-controls={_monthId}
             type="button"
         >
             <span aria-hidden="true">×</span>
@@ -74,7 +67,7 @@ const clearButtonId = `clear-${year}-${month}`;
     <table
         class="calendar-table"
         role="grid"
-        aria-label={`${monthNames[month]} ${year} calendar`}
+        aria-label={`${_monthNames[month]} ${year} calendar`}
     >
         <thead>
             <tr role="row">
@@ -87,7 +80,7 @@ const clearButtonId = `clear-${year}-${month}`;
                     <span aria-hidden="true" class="status-icon"></span>
                 </th>
                 {
-                    shortDayNames.map((day) => (
+                    _shortDayNames.map((day) => (
                         <th
                             scope="col"
                             role="columnheader"
@@ -110,15 +103,15 @@ const clearButtonId = `clear-${year}-${month}`;
         </thead>
         <tbody role="rowgroup">
             {
-                Array.from({ length: rows })
+                Array.from({ length: _rows })
                     .filter((_, rowIndex) => {
                         // Check if this row has any valid days
-                        for (let colIndex = 0; colIndex < cols; colIndex++) {
-                            const cellIndex = rowIndex * cols + colIndex;
+                        for (let colIndex = 0; colIndex < _cols; colIndex++) {
+                            const cellIndex = rowIndex * _cols + colIndex;
 
                             if (
-                                cellIndex >= offset &&
-                                cellIndex < offset + daysInMonth
+                                cellIndex >= _offset &&
+                                cellIndex < _offset + _daysInMonth
                             ) {
                                 return true;
                             }
@@ -133,7 +126,7 @@ const clearButtonId = `clear-${year}-${month}`;
                         // Each row represents exactly one week (Sunday-Saturday) in the calendar grid
                         // The first day of this row is at column offset + rowIndex * cols
                         // We need to map this to the Monday-Friday week used by validation
-                        const firstDayOfRow = 1 - offset + rowIndex * cols;
+                        const firstDayOfRow = 1 - _offset + rowIndex * _cols;
                         const firstDateOfRow = new Date(year, month, firstDayOfRow);
 
                         // The firstDateOfRow is always a Sunday (column 0 of the calendar grid)
@@ -163,14 +156,14 @@ const clearButtonId = `clear-${year}-${month}`;
                                     <span class="sr-only">Week status</span>
                                 </div>
                             </td>
-                            {Array.from({ length: cols }).map((_, colIndex) => {
-                                const cellIndex = rowIndex * cols + colIndex;
-                                const dayNumber = cellIndex - offset + 1;
+                            {Array.from({ length: _cols }).map((_, colIndex) => {
+                                const cellIndex = rowIndex * _cols + colIndex;
+                                const dayNumber = cellIndex - _offset + 1;
 
                                 // Check if this cell should contain a day number
                                 if (
-                                    cellIndex >= offset &&
-                                    cellIndex < offset + daysInMonth
+                                    cellIndex >= _offset &&
+                                    cellIndex < _offset + _daysInMonth
                                 ) {
                                     return (
                                         <Day
@@ -192,14 +185,14 @@ const clearButtonId = `clear-${year}-${month}`;
                             <td
                                 class="week-number-cell"
                                 role="gridcell"
-                                aria-label={`Week ${weekStartStr ? getISOWeekNumber(new Date(parseInt(weekStartStr))) : ""}`}
+                                aria-label={`Week ${weekStartStr ? _getISOWeekNumber(new Date(parseInt(weekStartStr))) : ""}`}
                             >
                                 <span
                                     aria-hidden="true"
                                     class="week-number-content"
                                 >
                                     {weekStartStr
-                                        ? `${getISOWeekNumber(new Date(parseInt(weekStartStr)))}`
+                                        ? `${_getISOWeekNumber(new Date(parseInt(weekStartStr)))}`
                                         : ""}
                                 </span>
                             </td>

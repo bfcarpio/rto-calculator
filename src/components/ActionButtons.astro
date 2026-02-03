@@ -7,14 +7,10 @@ interface ButtonConfig {
 	ariaLabel: string;
 }
 
-interface Props {
-	position: "top" | "bottom";
-}
-
 const { position } = Astro.props;
 
 // Button configurations
-const buttons: ButtonConfig[] = [
+const _buttons: ButtonConfig[] = [
 	{
 		id: `validate-button-${position}`,
 		text: "Validate",
@@ -40,7 +36,7 @@ const buttons: ButtonConfig[] = [
 ---
 
 <div class="action-buttons" data-position={position}>
-    {buttons.map((button) => (
+    {_buttons.map((button) => (
         <button
             id={button.id}
             class={`button button-${button.variant}`}

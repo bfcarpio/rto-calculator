@@ -179,7 +179,7 @@ export function createDayCell(
 		cell.classList.add("selected");
 		cell.setAttribute(
 			"aria-label",
-			cell.getAttribute("aria-label") + " (Selected)",
+			`${cell.getAttribute("aria-label")} (Selected)`,
 		);
 	}
 
@@ -494,7 +494,7 @@ export function updateDayCell(cell: HTMLElement, dateStr: string): void {
 
 	if (isSelected) {
 		cell.classList.add("selected");
-		cell.setAttribute("aria-label", formatDateDisplay(date) + " (Selected)");
+		cell.setAttribute("aria-label", `${formatDateDisplay(date)} (Selected)`);
 	} else {
 		cell.classList.remove("selected");
 		cell.setAttribute("aria-label", formatDateDisplay(date));

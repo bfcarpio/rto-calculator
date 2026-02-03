@@ -1,25 +1,17 @@
 ---
 import "/src/styles/utilities.css";
 
-interface Props {
-	dayNumber: number;
-	year: number;
-	month: number;
-	isSelected?: boolean;
-	selectionType?: string;
-}
-
 const {
 	dayNumber,
 	year,
 	month,
-	isSelected = false,
+	isSelected: _isSelected = false,
 	selectionType = "",
 } = Astro.props;
 
 // Create full date string for this day
 const date = new Date(year, month, dayNumber);
-const dateString = date.toLocaleDateString("en-US", {
+const _dateString = date.toLocaleDateString("en-US", {
 	weekday: "long",
 	year: "numeric",
 	month: "long",
@@ -32,29 +24,29 @@ const selectionLabels: Record<string, string> = {
 };
 
 // Get human-readable label for current selection
-const selectionLabel = selectionType
+const _selectionLabel = selectionType
 	? selectionLabels[selectionType]
 	: "Unselected";
 
 // Create a unique ID for this day cell
-const cellId = `day-cell-${year}-${month}-${dayNumber}`;
+const _cellId = `day-cell-${year}-${month}-${dayNumber}`;
 ---
 
 <td
-    id={cellId}
+    id={_cellId}
     class="calendar-day no-reduced-motion"
     role="gridcell"
-    aria-label={`${dateString}. ${selectionLabel}`}
-    aria-selected={isSelected ? "true" : "false"}
+    aria-label={`${_dateString}. ${_selectionLabel}`}
+    aria-selected={_isSelected ? "true" : "false"}
     data-day={dayNumber}
     data-year={year}
     data-month={month}
-    data-selected={isSelected}
+    data-selected={_isSelected}
     data-selection-type={selectionType}
     tabindex="0"
 >
     <span class="day-number" aria-hidden="true">{dayNumber}</span>
-    <span class="sr-only">{dateString}</span>
+    <span class="sr-only">{_dateString}</span>
 </td>
 
 <style>

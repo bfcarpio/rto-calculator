@@ -3,8 +3,8 @@
  * Makes tests clearer and easier to edit by providing reusable patterns
  */
 
-import type { DaySelection } from "../../../../lib/rtoValidation";
-import { createDaySelection } from "../../../../lib/rtoValidation";
+import type { DaySelection } from "../../../../lib/validation/rto-core";
+import { createDaySelection } from "../../../../lib/validation/rto-core";
 
 /**
  * Weekly OOF pattern types

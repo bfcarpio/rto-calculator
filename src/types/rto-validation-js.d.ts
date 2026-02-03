@@ -14,7 +14,9 @@ interface ComplianceResult {
 
 /**
  * Week information for tracking
+ * @deprecated Use WeekInfo from calendar-data-reader instead
  */
+// biome-ignore lint/correctness/noUnusedVariables: Type definition for external JS compatibility
 interface WeekInfo {
 	week: Date;
 	weekNumber: number;
