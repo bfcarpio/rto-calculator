@@ -1,0 +1,137 @@
+---
+---
+
+<div class="status-legend" id="status-legend">
+  <button class="legend-item" data-mode="working" data-testid="mode-working">
+    <span class="dot is-working"></span>
+    <span class="label">Working: <strong id="count-working">0</strong></span>
+  </button>
+  <button class="legend-item" data-mode="oof" data-testid="mode-oof">
+    <span class="dot is-oof"></span>
+    <span class="label">OOF: <strong id="count-oof">0</strong></span>
+  </button>
+  <button class="legend-item" data-mode="holiday" data-testid="mode-holiday">
+    <span class="dot is-holiday"></span>
+    <span class="label">Holiday: <strong id="count-holiday">0</strong></span>
+  </button>
+</div>
+
+<style>
+  .status-legend {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    padding: 0.5rem;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+    color: var(--color-text);
+  }
+
+  .legend-item:hover {
+    border-color: var(--color-complementary);
+    background: #f8fafc;
+  }
+
+  .legend-item.is-active {
+    border-color: var(--color-complementary);
+    background: #f1f5f9;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  body.dark-mode .legend-item {
+    background: #1e293b;
+    color: var(--color-bg-alt);
+  }
+
+  body.dark-mode .legend-item:hover {
+    border-color: #64748b;
+    background: #334155;
+  }
+
+  body.dark-mode .legend-item.is-active {
+    border-color: #64748b;
+    background: #334155;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .dot.is-working {
+    background-color: var(--color-compliant);
+  }
+
+  .dot.is-oof {
+    background-color: var(--color-violation);
+  }
+
+  .dot.is-holiday {
+    background-color: var(--color-holiday);
+  }
+
+  .label strong {
+    color: var(--color-complementary);
+  }
+</style>
+
+<script>
+  import { 
+    getDateStore, 
+    setMarkingMode, 
+    type MarkingMode 
+  } from '../lib/dateStore';
+
+  const store = getDateStore();
+  const legend = document.getElementById('status-legend');
+
+  if (legend) {
+    // Subscribe to store updates
+    store.subscribe((state, stats) => {
+      // Update counts
+      const workingCount = document.getElementById('count-working');
+      const oofCount = document.getElementById('count-oof');
+      const holidayCount = document.getElementById('count-holiday');
+
+      if (workingCount) workingCount.textContent = String(stats.workingDays);
+      if (oofCount) oofCount.textContent = String(stats.oofDays);
+      if (holidayCount) holidayCount.textContent = String(stats.holidayDays);
+
+      // Update active state
+      const currentMode = state.markingMode;
+      legend.querySelectorAll('.legend-item').forEach((item) => {
+        const mode = item.getAttribute('data-mode') as MarkingMode;
+        if (mode === currentMode) {
+          item.classList.add('is-active');
+        } else {
+          item.classList.remove('is-active');
+        }
+      });
+    });
+
+    // Handle click events
+    legend.querySelectorAll('.legend-item').forEach((item) => {
+      item.addEventListener('click', () => {
+        const mode = item.getAttribute('data-mode') as MarkingMode;
+        if (mode) {
+          setMarkingMode(mode);
+        }
+      });
+    });
+  }
+</script>
