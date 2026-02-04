@@ -19,7 +19,7 @@ import {
 
 test.describe("Calendar Interactions", () => {
 	test.beforeEach(async ({ page }) => {
-		await page.goto("/");
+		await page.goto("/rto-calculator/");
 		await waitForCalendarReady(page);
 	});
 	test.describe("Day Selection", () => {

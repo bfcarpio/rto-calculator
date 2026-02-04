@@ -15,7 +15,7 @@ test.describe("Navigation", () => {
 	test.describe("Page Load", () => {
 		test("should load the main page successfully", async ({ page }) => {
 			// Navigate to the main page
-			const response = await page.goto("/");
+			const response = await page.goto("/rto-calculator/");
 
 			// Verify page loaded successfully
 			expect(response?.status()).toBe(200);
@@ -23,7 +23,7 @@ test.describe("Navigation", () => {
 
 		test("should have correct page title", async ({ page }) => {
 			// Navigate to main page
-			await page.goto("/");
+			await page.goto("/rto-calculator/");
 
 			// Verify title contains 'RTO Calculator'
 			await expect(page).toHaveTitle(/RTO Calculator/i);
@@ -31,7 +31,7 @@ test.describe("Navigation", () => {
 
 		test("should display main heading", async ({ page }) => {
 			// Navigate to main page
-			await page.goto("/");
+			await page.goto("/rto-calculator/");
 
 			// Verify main heading is visible
 			const heading = page.locator('h1:has-text("RTO")');
@@ -40,7 +40,7 @@ test.describe("Navigation", () => {
 
 		test("should have correct meta description", async ({ page }) => {
 			// Navigate to main page
-			await page.goto("/");
+			await page.goto("/rto-calculator/");
 
 			// Get meta description
 			const metaDescription = page.locator('meta[name="description"]');
@@ -54,7 +54,7 @@ test.describe("Navigation", () => {
 	test.describe("URL Routing", () => {
 		test("should handle root URL", async ({ page }) => {
 			// Test root URL
-			await page.goto("/");
+			await page.goto("/rto-calculator/");
 
 			// Verify page loaded
 			await expect(page.locator("body")).toBeVisible();
@@ -70,7 +70,7 @@ test.describe("Navigation", () => {
 
 		test("should maintain URL after page load", async ({ page }) => {
 			// Navigate to page
-			await page.goto("/");
+			await page.goto("/rto-calculator/");
 
 			// Verify URL is correct
 			const url = page.url();
@@ -79,7 +79,7 @@ test.describe("Navigation", () => {
 	});
 	test.describe("Page Structure", () => {
 		test("should have header section", async ({ page }) => {
-			await page.goto("/");
+			await page.goto("/rto-calculator/");
 			await waitForCalendarReady(page);
 
 			// Verify header exists
@@ -88,7 +88,7 @@ test.describe("Navigation", () => {
 		});
 
 		test("should have calendar section", async ({ page }) => {
-			await page.goto("/");
+			await page.goto("/rto-calculator/");
 			await waitForCalendarReady(page);
 
 			// Verify calendar section exists
@@ -97,7 +97,7 @@ test.describe("Navigation", () => {
 		});
 
 		test("should have status/details section", async ({ page }) => {
-			await page.goto("/");
+			await page.goto("/rto-calculator/");
 			await waitForCalendarReady(page);
 
 			// Verify status section exists
@@ -106,7 +106,7 @@ test.describe("Navigation", () => {
 		});
 
 		test("should have footer section", async ({ page }) => {
-			await page.goto("/");
+			await page.goto("/rto-calculator/");
 			await waitForCalendarReady(page);
 
 			// Verify footer exists
@@ -115,7 +115,7 @@ test.describe("Navigation", () => {
 		});
 
 		test("should have action buttons section", async ({ page }) => {
-			await page.goto("/");
+			await page.goto("/rto-calculator/");
 			await waitForCalendarReady(page);
 
 			// Verify action buttons exist
@@ -127,7 +127,7 @@ test.describe("Navigation", () => {
 		test("desktop should show two-column layout", async ({ page }) => {
 			// Set desktop viewport
 			await page.setViewportSize({ width: 1920, height: 1080 });
-			await page.goto("/");
+			await page.goto("/rto-calculator/");
 			await waitForCalendarReady(page);
 
 			// Verify desktop layout is visible
@@ -138,7 +138,7 @@ test.describe("Navigation", () => {
 		test("mobile should show mobile layout", async ({ page }) => {
 			// Set mobile viewport
 			await page.setViewportSize({ width: 375, height: 667 });
-			await page.goto("/");
+			await page.goto("/rto-calculator/");
 			await waitForCalendarReady(page);
 
 			// Verify mobile layout is visible

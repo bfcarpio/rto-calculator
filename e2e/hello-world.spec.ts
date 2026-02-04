@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
 
 test("hello-world: page loads successfully", async ({ page }) => {
-	// Navigate to app (baseURL configured in playwright.config.ts includes subdirectory)
-	await page.goto("/");
+	// Navigate to app with explicit path
+	await page.goto("/rto-calculator/");
 
 	// Verify page title contains RTO
 	await expect(page).toHaveTitle(/RTO/);
