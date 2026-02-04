@@ -8,12 +8,11 @@
  */
 import { defineConfig, devices } from "@playwright/test";
 
-// Base URL for the application
+// Base URL for the application (hostname only, path is handled in tests)
 const BASE_URL = process.env.PLAYWRIGHT_BASE_URL || "http://localhost:4321";
 
 // Timeout configurations
 const TEST_TIMEOUT = 30000;
-const EXPECT_TIMEOUT = 5000;
 const ACTION_TIMEOUT = 5000;
 const NAVIGATION_TIMEOUT = 10000;
 
@@ -42,9 +41,6 @@ export default defineConfig({
 
 	// Retry on CI only
 	retries: process.env.CI ? 2 : 1,
-
-	// Opt out of parallel tests on CI
-	workers: process.env.CI ? 1 : undefined,
 
 	// Reporter to use
 	reporter: [
@@ -76,17 +72,19 @@ export default defineConfig({
 		// Navigation timeout
 		navigationTimeout: NAVIGATION_TIMEOUT,
 
-		// Expect timeout
-		expect: {
-			timeout: EXPECT_TIMEOUT,
-		},
-
 		// Viewport defaults (overridden by project-specific settings)
 		viewport: { width: 1920, height: 1080 },
 	},
 
 	// Configure projects for major browsers and viewports
 	projects: [
+		{
+			name: "firefox-desktop",
+			use: {
+				...devices["Desktop Firefox"],
+				viewport: { width: 1920, height: 1080 },
+			},
+		},
 		{
 			name: "chromium-desktop",
 			use: {
@@ -99,13 +97,6 @@ export default defineConfig({
 			use: {
 				...devices["iPhone 12"],
 				viewport: { width: 390, height: 844 },
-			},
-		},
-		{
-			name: "firefox-desktop",
-			use: {
-				...devices["Desktop Firefox"],
-				viewport: { width: 1920, height: 1080 },
 			},
 		},
 		{
@@ -124,13 +115,18 @@ export default defineConfig({
 		},
 	],
 
-	// Run local dev server before starting tests
-	webServer: {
-		command: "npm run preview",
-		url: BASE_URL,
-		reuseExistingServer: !process.env.CI,
-		timeout: 120000,
-	},
+	// Web server is managed via npm scripts for better control
+	// Use `npm run test:e2e` which starts the server before running tests
+	// Or manually start with `npm run test:e2e:server`
+	//
+	// WebServer auto-start is disabled by default - prefer npm scripts
+	// Uncomment below to enable auto-start as a fallback:
+	// webServer: {
+	// 	command: "npm run preview",
+	// 	url: BASE_URL,
+	// 	reuseExistingServer: true,
+	// 	timeout: 120000,
+	// },
 
 	// Global setup and teardown (optional)
 	// globalSetup: require.resolve('./e2e/global-setup.ts'),
