@@ -43,6 +43,13 @@ const _buttons: ButtonConfig[] = [
             type="button"
             aria-label={button.ariaLabel}
             data-button-type={button.variant}
+            data-testid={button.id.includes("validate")
+                ? "validate-button"
+                : button.id.includes("clear-all")
+                    ? "clear-all-button"
+                    : button.id.includes("export")
+                        ? "export-button"
+                        : undefined}
         >
             <span class="button-icon" aria-hidden="true">{button.icon}</span>
             <span class="button-text">{button.text}</span>
