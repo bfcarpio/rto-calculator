@@ -5,7 +5,7 @@ Write code that follows the conventions of the project's tool stack.
 
 Write brief and consise text with minimal code output in the chat.
 
-Before making commits make sure that the changes pass lints, checks, and tests to ensure there are no regressions and continual code quality.
+Before making commits make sure that the changes pass lints, checks, and tests to ensure there are no regressions and continual code quality. Update tests as needed if the new result is the intended one.
 
 ## Build / Lint / Test Commands
 
@@ -15,11 +15,22 @@ npm run dev              # Start dev server
 npm run build           # Build for production (runs type check + build)
 npm run preview         # Preview production build
 
-# Testing
+# Testing (Unit)
 npm test                # Run tests in watch mode
 npm run test:run        # Run tests once (CI)
 npm run test:ui         # Run tests with UI
 # Run single test: npm test -- src/lib/__tests__/specific.test.ts
+
+# E2E Testing (Playwright)
+npm run test:e2e              # Run all E2E tests (Firefox desktop)
+npm run test:e2e:ui           # Open Playwright UI mode for debugging
+npm run test:e2e:debug        # Run with step-through debugger
+npm run test:e2e:raw         # Run without server management
+npm run test:e2e:server       # Start preview server only
+npm run test:e2e:mobile       # Run mobile viewport tests
+npm run test:e2e:desktop      # Run desktop viewport tests
+npm run test:e2e:report      # Open HTML test report
+# See docs/PlaywrightTesting.md for detailed guide
 
 # Linting & Formatting
 npm run lint            # Check linting
