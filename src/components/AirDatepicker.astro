@@ -12,11 +12,33 @@
     align-items: center;
     padding: 1rem;
     width: 100%;
+    min-height: 300px;
+  }
+
+  :global(.air-datepicker) {
+    width: 100% !important;
+    max-width: 340px;
+    font-family: inherit;
+  }
+
+  :global(.air-datepicker.-inline-) {
+    position: static;
+    width: 100% !important;
+    max-width: 340px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
 
   :global(.air-datepicker-inline) {
-    width: 100%;
+    width: 100% !important;
     max-width: 340px;
+  }
+
+  /* Ensure date cells have proper size */
+  :global(.air-datepicker-cell) {
+    height: 40px !important;
+    width: 40px !important;
+    font-size: 14px;
   }
 
   /* State color classes - applied to individual date cells */
@@ -41,15 +63,16 @@
     cursor: not-allowed;
   }
 
-  /* Add data-testid for week rows - targeting the row element */
   :global(.air-datepicker-body--day-cells) {
     display: flex;
     flex-wrap: wrap;
+    justify-content: flex-start;
   }
 
   :global(.air-datepicker-body--cells.-days-) {
     display: flex;
     flex-wrap: wrap;
+    justify-content: flex-start;
   }
 
   /* Selected date styling */
@@ -90,8 +113,17 @@
   }
 
   @media (min-width: 768px) {
-    :global(.air-datepicker-inline) {
+    :global(.air-datepicker) {
       max-width: 400px;
+    }
+    
+    :global(.air-datepicker.-inline-) {
+      max-width: 400px;
+    }
+
+    :global(.air-datepicker-cell) {
+      height: 44px !important;
+      width: 44px !important;
     }
   }
 </style>
