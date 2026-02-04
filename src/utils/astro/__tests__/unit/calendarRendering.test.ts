@@ -161,7 +161,7 @@ describe("Calendar Rendering Functions", () => {
 
 			// Verify consecutive days
 			for (let i = 1; i < dates.length; i++) {
-				const diff = dates[i]?.getTime() - dates[i - 1]?.getTime();
+				const diff = dates[i]!.getTime() - dates[i - 1]!.getTime();
 				expect(diff).toBe(24 * 60 * 60 * 1000); // 1 day
 			}
 		});

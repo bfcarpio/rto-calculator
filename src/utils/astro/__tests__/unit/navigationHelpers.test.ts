@@ -11,7 +11,7 @@
  * Aligns with E2E navigation tests for consistent behavior.
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 // ============================================================================
 // Navigation State Types

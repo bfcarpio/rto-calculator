@@ -12,7 +12,7 @@
  * Aligns with E2E desktop interaction tests.
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createMockDayElement } from "../testHelpers";
 
 // ============================================================================
@@ -580,7 +580,7 @@ describe("Desktop Interactions - Mouse Movement Tracker", () => {
 
 describe("Desktop Interactions - Keyboard Shortcut Handler", () => {
 	let handler: KeyboardShortcutHandler;
-	let mockHandler: ReturnType<typeof vi.fn>;
+	let mockHandler: any;
 
 	beforeEach(() => {
 		handler = new KeyboardShortcutHandler();
@@ -715,7 +715,7 @@ describe("Desktop Interactions - Keyboard Shortcut Handler", () => {
 
 describe("Desktop Interactions - Rapid Click Debouncer", () => {
 	let debouncer: RapidClickDebouncer;
-	let mockHandler: ReturnType<typeof vi.fn>;
+	let mockHandler: any;
 
 	beforeEach(() => {
 		debouncer = new RapidClickDebouncer();
@@ -802,18 +802,18 @@ describe("Desktop Interactions - Multi-Cell Selection Manager", () => {
 
 	describe("single selection", () => {
 		it("should select single cell", () => {
-			manager.selectCell(cells[0], cells);
+			manager.selectCell(cells[0]!, cells);
 
-			expect(manager.isCellSelected(cells[0])).toBe(true);
+			expect(manager.isCellSelected(cells[0]!)).toBe(true);
 			expect(manager.getSelectedCount()).toBe(1);
 		});
 
 		it("should clear previous selection on single select", () => {
-			manager.selectCell(cells[0], cells);
-			manager.selectCell(cells[1], cells);
+			manager.selectCell(cells[0]!, cells);
+			manager.selectCell(cells[1]!, cells);
 
-			expect(manager.isCellSelected(cells[0])).toBe(false);
-			expect(manager.isCellSelected(cells[1])).toBe(true);
+			expect(manager.isCellSelected(cells[0]!)).toBe(false);
+			expect(manager.isCellSelected(cells[1]!)).toBe(true);
 			expect(manager.getSelectedCount()).toBe(1);
 		});
 	});
@@ -823,22 +823,22 @@ describe("Desktop Interactions - Multi-Cell Selection Manager", () => {
 			const ctrlEvent = new KeyboardEvent("keydown", { key: "Control" });
 			manager.onKeyDown(ctrlEvent);
 
-			manager.selectCell(cells[0], cells);
-			manager.selectCell(cells[1], cells);
+			manager.selectCell(cells[0]!, cells);
+			manager.selectCell(cells[1]!, cells);
 
 			expect(manager.getSelectedCount()).toBe(2);
-			expect(manager.isCellSelected(cells[0])).toBe(true);
-			expect(manager.isCellSelected(cells[1])).toBe(true);
+			expect(manager.isCellSelected(cells[0]!)).toBe(true);
+			expect(manager.isCellSelected(cells[1]!)).toBe(true);
 		});
 
 		it("should toggle selection with ctrl pressed", () => {
 			const ctrlEvent = new KeyboardEvent("keydown", { key: "Control" });
 			manager.onKeyDown(ctrlEvent);
 
-			manager.selectCell(cells[0], cells);
-			manager.selectCell(cells[0], cells); // Toggle off
+			manager.selectCell(cells[0]!, cells);
+			manager.selectCell(cells[0]!, cells); // Toggle off
 
-			expect(manager.isCellSelected(cells[0])).toBe(false);
+			expect(manager.isCellSelected(cells[0]!)).toBe(false);
 			expect(manager.getSelectedCount()).toBe(0);
 		});
 
@@ -847,40 +847,40 @@ describe("Desktop Interactions - Multi-Cell Selection Manager", () => {
 			const ctrlUpEvent = new KeyboardEvent("keyup", { key: "Control" });
 
 			manager.onKeyDown(ctrlDownEvent);
-			manager.selectCell(cells[0], cells);
+			manager.selectCell(cells[0]!, cells);
 			manager.onKeyUp(ctrlUpEvent);
-			manager.selectCell(cells[1], cells);
+			manager.selectCell(cells[1]!, cells);
 
 			// Second selection should clear first (no longer ctrl mode)
-			expect(manager.isCellSelected(cells[0])).toBe(false);
-			expect(manager.isCellSelected(cells[1])).toBe(true);
+			expect(manager.isCellSelected(cells[0]!)).toBe(false);
+			expect(manager.isCellSelected(cells[1]!)).toBe(true);
 		});
 	});
 
 	describe("shift + click range selection", () => {
 		it("should select range with shift pressed", () => {
 			// First select without shift
-			manager.selectCell(cells[0], cells);
+			manager.selectCell(cells[0]!, cells);
 
 			// Then shift+click another cell
 			const shiftEvent = new KeyboardEvent("keydown", { key: "Shift" });
 			manager.onKeyDown(shiftEvent);
-			manager.selectCell(cells[3], cells);
+			manager.selectCell(cells[3]!, cells);
 
 			// Should select cells 0-3
 			expect(manager.getSelectedCount()).toBe(4);
-			expect(manager.isCellSelected(cells[0])).toBe(true);
-			expect(manager.isCellSelected(cells[1])).toBe(true);
-			expect(manager.isCellSelected(cells[2])).toBe(true);
-			expect(manager.isCellSelected(cells[3])).toBe(true);
+			expect(manager.isCellSelected(cells[0]!)).toBe(true);
+			expect(manager.isCellSelected(cells[1]!)).toBe(true);
+			expect(manager.isCellSelected(cells[2]!)).toBe(true);
+			expect(manager.isCellSelected(cells[3]!)).toBe(true);
 		});
 
 		it("should handle reverse range selection", () => {
-			manager.selectCell(cells[4], cells);
+			manager.selectCell(cells[4]!, cells);
 
 			const shiftEvent = new KeyboardEvent("keydown", { key: "Shift" });
 			manager.onKeyDown(shiftEvent);
-			manager.selectCell(cells[1], cells);
+			manager.selectCell(cells[1]!, cells);
 
 			// Should select cells 1-4
 			expect(manager.getSelectedCount()).toBe(4);
@@ -889,13 +889,13 @@ describe("Desktop Interactions - Multi-Cell Selection Manager", () => {
 
 	describe("clearSelection", () => {
 		it("should clear all selected cells", () => {
-			manager.selectCell(cells[0], cells);
-			manager.selectCell(cells[1], cells);
+			manager.selectCell(cells[0]!, cells);
+			manager.selectCell(cells[1]!, cells);
 			manager.clearSelection();
 
 			expect(manager.getSelectedCount()).toBe(0);
-			expect(cells[0].classList.contains("selected")).toBe(false);
-			expect(cells[1].classList.contains("selected")).toBe(false);
+			expect(cells[0]!.classList.contains("selected")).toBe(false);
+			expect(cells[1]!.classList.contains("selected")).toBe(false);
 		});
 	});
 });
