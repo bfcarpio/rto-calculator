@@ -6,8 +6,17 @@ import { expect, type Page } from "@playwright/test";
 
 export type MarkingMode = "working" | "oof" | "holiday";
 
+/**
+ * Get the main StatusLegend (first one, not panel toggle copies)
+ */
+function getMainLegend(page: Page) {
+	// The main legend is the first one in the calendar section
+	return page.locator("#status-legend").first();
+}
+
 export async function selectMode(page: Page, mode: MarkingMode): Promise<void> {
-	const button = page.getByTestId(`mode-${mode}`);
+	const legend = getMainLegend(page);
+	const button = legend.locator(`[data-testid="mode-${mode}"]`);
 	await button.click();
 }
 
@@ -15,7 +24,8 @@ export async function expectModeActive(
 	page: Page,
 	mode: MarkingMode,
 ): Promise<void> {
-	const button = page.getByTestId(`mode-${mode}`);
+	const legend = getMainLegend(page);
+	const button = legend.locator(`[data-testid="mode-${mode}"]`);
 	await expect(button).toHaveClass(/is-active/);
 }
 
@@ -24,8 +34,9 @@ export async function getModeCounts(page: Page): Promise<{
 	oof: number;
 	holiday: number;
 }> {
-	const oofText = await page.getByTestId("mode-oof").textContent();
-	const holidayText = await page.getByTestId("mode-holiday").textContent();
+	const legend = getMainLegend(page);
+	const oofText = await legend.getByTestId("mode-oof").textContent();
+	const holidayText = await legend.getByTestId("mode-holiday").textContent();
 
 	// Extract numbers from text like "OOF: 3"
 	const extractCount = (text: string | null): number => {

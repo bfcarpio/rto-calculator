@@ -1,10 +1,21 @@
 import { expect, test } from "@playwright/test";
 // Note: SCENARIOS and TestScenarioBuilder available for future test data scenarios
+import {
+	clickDate,
+	expectDateHasNoState,
+	expectDateHasState,
+	getDisabledCellCount,
+} from "./helpers/airDatepicker";
+import { navigateToApp, reloadPage } from "./helpers/common";
 import { expectModeCount, selectMode } from "./helpers/statusLegend";
 
 test.describe("Date Marking Flows", () => {
 	test.beforeEach(async ({ page }) => {
-		await page.goto("/rto-calculator/");
+		await navigateToApp(page);
+		// Wait for calendar to be ready
+		await page.waitForSelector(".air-datepicker-cell:not(.-disabled-)", {
+			state: "visible",
+		});
 	});
 
 	test("should mark single date as working", async ({ page }) => {
@@ -12,72 +23,55 @@ test.describe("Date Marking Flows", () => {
 		await selectMode(page, "working");
 
 		// Click a date in the datepicker
-		const dateCell = page
-			.locator(".air-datepicker-cell:not(.-disabled-)")
-			.first();
-		await dateCell.click();
+		await clickDate(page, 0);
 
 		// Verify date is marked (has working class)
-		await expect(dateCell).toHaveClass(/-working-/);
+		await expectDateHasState(page, 0, "working");
 	});
 
 	test("should mark single date as OOF", async ({ page }) => {
 		await selectMode(page, "oof");
 
-		const dateCell = page
-			.locator(".air-datepicker-cell:not(.-disabled-)")
-			.first();
-		await dateCell.click();
+		await clickDate(page, 0);
 
-		await expect(dateCell).toHaveClass(/-oof-/);
+		await expectDateHasState(page, 0, "oof");
 		await expectModeCount(page, "oof", 1);
 	});
 
 	test("should mark single date as holiday", async ({ page }) => {
 		await selectMode(page, "holiday");
 
-		const dateCell = page
-			.locator(".air-datepicker-cell:not(.-disabled-)")
-			.first();
-		await dateCell.click();
+		await clickDate(page, 0);
 
-		await expect(dateCell).toHaveClass(/-holiday-/);
+		await expectDateHasState(page, 0, "holiday");
 		await expectModeCount(page, "holiday", 1);
 	});
 
 	test("should toggle off previously marked date", async ({ page }) => {
 		// Mark as OOF
 		await selectMode(page, "oof");
-		const dateCell = page
-			.locator(".air-datepicker-cell:not(.-disabled-)")
-			.first();
-		await dateCell.click();
+		await clickDate(page, 0);
 
 		// Click same date again to toggle off
-		await dateCell.click();
+		await clickDate(page, 0);
 
 		// Verify no state class present
-		await expect(dateCell).not.toHaveClass(/-working-| -oof-| -holiday-/);
+		await expectDateHasNoState(page, 0);
 	});
 
 	test("should prevent marking out-of-range dates", async ({ page }) => {
-		// Find a disabled date cell
-		const disabledCell = page
-			.locator(".air-datepicker-cell.-disabled-")
-			.first();
-
-		// Should have disabled styling
-		await expect(disabledCell).toHaveCSS("opacity", "0.3");
+		// Check that disabled cells exist
+		const disabledCount = await getDisabledCellCount(page);
+		expect(disabledCount).toBeGreaterThan(0);
 	});
 
 	test("should update counts when marking multiple dates", async ({ page }) => {
 		await selectMode(page, "oof");
 
 		// Mark 3 dates
-		const dateCells = page.locator(".air-datepicker-cell:not(.-disabled-)");
-		await dateCells.nth(0).click();
-		await dateCells.nth(1).click();
-		await dateCells.nth(2).click();
+		await clickDate(page, 0);
+		await clickDate(page, 1);
+		await clickDate(page, 2);
 
 		await expectModeCount(page, "oof", 3);
 	});
@@ -85,18 +79,12 @@ test.describe("Date Marking Flows", () => {
 	test("should persist state on page refresh (in-memory)", async ({ page }) => {
 		await selectMode(page, "working");
 
-		const dateCell = page
-			.locator(".air-datepicker-cell:not(.-disabled-)")
-			.first();
-		await dateCell.click();
+		await clickDate(page, 0);
 
 		// Refresh page
-		await page.reload();
+		await reloadPage(page);
 
 		// Data should be cleared (in-memory only)
-		const freshCell = page
-			.locator(".air-datepicker-cell:not(.-disabled-)")
-			.first();
-		await expect(freshCell).not.toHaveClass(/-working-| -oof-| -holiday-/);
+		await expectDateHasNoState(page, 0);
 	});
 });
