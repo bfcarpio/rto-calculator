@@ -152,13 +152,12 @@
 </style>
 
 <script>
-  import { getNagerDateClient } from '../lib/holiday/NagerDateClient';
-  import { getDateStore, type DateState } from '../lib/dateStore';
+  import { getHolidayManager } from '../lib/holiday/HolidayManager';
+  import { getDateStore } from '../lib/dateStore';
 
   const countrySelect = document.getElementById('country-select') as HTMLSelectElement;
   const addButton = document.getElementById('add-holidays-button') as HTMLButtonElement;
   const statusDiv = document.getElementById('holiday-status');
-  const nagerClient = getNagerDateClient();
   const dateStore = getDateStore();
 
   async function loadCountries() {
@@ -168,7 +167,9 @@
         statusDiv.textContent = 'Loading countries...';
       }
 
-      const countries = await nagerClient.getAvailableCountries();
+      // Use HolidayManager (strategy pattern) to get countries
+      const manager = await getHolidayManager();
+      const countries = await manager.getAvailableCountries();
       
       // Populate dropdown
       countrySelect.innerHTML = '<option value="">Select a country...</option>';
@@ -212,28 +213,25 @@
       const currentYear = new Date().getFullYear();
       const nextYear = currentYear + 1;
 
-      const [currentYearHolidays, nextYearHolidays] = await Promise.all([
-        nagerClient.getHolidaysForYear(currentYear, countryCode),
-        nagerClient.getHolidaysForYear(nextYear, countryCode),
-      ]);
-
-      const allHolidays = [...currentYearHolidays, ...nextYearHolidays];
+      // Use HolidayManager (strategy pattern) to fetch holidays
+      const manager = await getHolidayManager();
+      const result = await manager.fetchHolidays({
+        countryCode,
+        years: [currentYear, nextYear],
+      });
 
       // Mark holidays in the store
       let addedCount = 0;
-      const dateRange = dateStore.getDateRange();
       
-      for (const holiday of allHolidays) {
-        const holidayDate = new Date(holiday.date);
+      for (const holiday of result.holidays) {
+        // Check if date is in valid range (already filtered by API, but double-check)
+        const holidayDate = holiday.date;
         
-        // Check if date is in valid range
-        if (holidayDate >= dateRange.startDate && holidayDate <= dateRange.endDate) {
-          // Only add if not already marked (holidays have highest priority)
-          const existingState = dateStore.getDateState(holidayDate);
-          if (!existingState || existingState !== 'holiday') {
-            dateStore.markDate(holidayDate, 'holiday' as DateState, true); // Force override
-            addedCount++;
-          }
+        // Only add if not already marked as holiday
+        const existingState = dateStore.getDateState(holidayDate);
+        if (!existingState || existingState !== 'holiday') {
+          dateStore.markDate(holidayDate, 'holiday', true); // Force override
+          addedCount++;
         }
       }
 
