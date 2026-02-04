@@ -1,0 +1,268 @@
+---
+// Holiday Country Selector Component
+---
+
+<div class="holiday-selector" id="holiday-selector">
+  <div class="selector-header">
+    <h3 class="selector-title">🗓️ Add Public Holidays</h3>
+    <p class="selector-description">
+      Select a country to automatically mark public holidays
+    </p>
+  </div>
+  
+  <div class="selector-controls">
+    <select 
+      id="country-select" 
+      class="country-select"
+      disabled
+    >
+      <option value="">Loading countries...</option>
+    </select>
+    
+    <button 
+      id="add-holidays-button" 
+      class="add-holidays-button"
+      disabled
+    >
+      Add Holidays
+    </button>
+  </div>
+  
+  <div id="holiday-status" class="holiday-status"></div>
+</div>
+
+<style>
+  .holiday-selector {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .selector-header {
+    margin-bottom: 0.75rem;
+  }
+
+  .selector-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #334155;
+    margin: 0 0 0.25rem 0;
+  }
+
+  .selector-description {
+    font-size: 0.875rem;
+    color: #64748b;
+    margin: 0;
+  }
+
+  .selector-controls {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .country-select {
+    flex: 1;
+    padding: 0.5rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    background: white;
+  }
+
+  .country-select:disabled {
+    background: #f1f5f9;
+    color: #94a3b8;
+  }
+
+  .add-holidays-button {
+    padding: 0.5rem 1rem;
+    background: #475569;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    white-space: nowrap;
+  }
+
+  .add-holidays-button:hover:not(:disabled) {
+    background: #334155;
+  }
+
+  .add-holidays-button:disabled {
+    background: #cbd5e1;
+    cursor: not-allowed;
+  }
+
+  .holiday-status {
+    margin-top: 0.75rem;
+    font-size: 0.875rem;
+  }
+
+  .holiday-status.success {
+    color: #059669;
+  }
+
+  .holiday-status.error {
+    color: #dc2626;
+  }
+
+  .holiday-status.loading {
+    color: #475569;
+  }
+
+  :global(body.dark-mode) .holiday-selector {
+    background: #1e293b;
+    border-color: #334155;
+  }
+
+  :global(body.dark-mode) .selector-title {
+    color: #e2e8f0;
+  }
+
+  :global(body.dark-mode) .selector-description {
+    color: #94a3b8;
+  }
+
+  :global(body.dark-mode) .country-select {
+    background: #1e293b;
+    border-color: #334155;
+    color: #e2e8f0;
+  }
+
+  :global(body.dark-mode) .country-select:disabled {
+    background: #334155;
+    color: #64748b;
+  }
+
+  @media (max-width: 768px) {
+    .selector-controls {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .add-holidays-button {
+      width: 100%;
+    }
+  }
+</style>
+
+<script>
+  import { getNagerDateClient } from '../lib/holiday/NagerDateClient';
+  import { getDateStore, type DateState } from '../lib/dateStore';
+
+  const countrySelect = document.getElementById('country-select') as HTMLSelectElement;
+  const addButton = document.getElementById('add-holidays-button') as HTMLButtonElement;
+  const statusDiv = document.getElementById('holiday-status');
+  const nagerClient = getNagerDateClient();
+  const dateStore = getDateStore();
+
+  async function loadCountries() {
+    try {
+      if (statusDiv) {
+        statusDiv.className = 'holiday-status loading';
+        statusDiv.textContent = 'Loading countries...';
+      }
+
+      const countries = await nagerClient.getAvailableCountries();
+      
+      // Populate dropdown
+      countrySelect.innerHTML = '<option value="">Select a country...</option>';
+      countries.forEach((country) => {
+        const option = document.createElement('option');
+        option.value = country.code;
+        option.textContent = country.name;
+        countrySelect.appendChild(option);
+      });
+      
+      countrySelect.disabled = false;
+      
+      if (statusDiv) {
+        statusDiv.textContent = '';
+      }
+    } catch (error) {
+      console.error('Failed to load countries:', error);
+      if (statusDiv) {
+        statusDiv.className = 'holiday-status error';
+        statusDiv.textContent = 'Failed to load countries. Please try again.';
+      }
+    }
+  }
+
+  function updateButtonState() {
+    addButton.disabled = !countrySelect.value;
+  }
+
+  async function addHolidays() {
+    const countryCode = countrySelect.value;
+    if (!countryCode) return;
+
+    try {
+      if (statusDiv) {
+        statusDiv.className = 'holiday-status loading';
+        statusDiv.textContent = 'Fetching holidays...';
+      }
+      addButton.disabled = true;
+
+      // Get current year and next year to cover the date range
+      const currentYear = new Date().getFullYear();
+      const nextYear = currentYear + 1;
+
+      const [currentYearHolidays, nextYearHolidays] = await Promise.all([
+        nagerClient.getHolidaysForYear(currentYear, countryCode),
+        nagerClient.getHolidaysForYear(nextYear, countryCode),
+      ]);
+
+      const allHolidays = [...currentYearHolidays, ...nextYearHolidays];
+
+      // Mark holidays in the store
+      let addedCount = 0;
+      const dateRange = dateStore.getDateRange();
+      
+      for (const holiday of allHolidays) {
+        const holidayDate = new Date(holiday.date);
+        
+        // Check if date is in valid range
+        if (holidayDate >= dateRange.startDate && holidayDate <= dateRange.endDate) {
+          // Only add if not already marked (holidays have highest priority)
+          const existingState = dateStore.getDateState(holidayDate);
+          if (!existingState || existingState !== 'holiday') {
+            dateStore.markDate(holidayDate, 'holiday' as DateState, true); // Force override
+            addedCount++;
+          }
+        }
+      }
+
+      if (statusDiv) {
+        statusDiv.className = 'holiday-status success';
+        statusDiv.textContent = `Added ${addedCount} holidays!`;
+      }
+
+      // Clear status after 3 seconds
+      setTimeout(() => {
+        if (statusDiv) {
+          statusDiv.textContent = '';
+        }
+      }, 3000);
+    } catch (error) {
+      console.error('Failed to add holidays:', error);
+      if (statusDiv) {
+        statusDiv.className = 'holiday-status error';
+        statusDiv.textContent = 'Failed to fetch holidays. Please try again.';
+      }
+    } finally {
+      updateButtonState();
+    }
+  }
+
+  // Initialize
+  loadCountries();
+
+  // Event listeners
+  countrySelect.addEventListener('change', updateButtonState);
+  addButton.addEventListener('click', addHolidays);
+</script>

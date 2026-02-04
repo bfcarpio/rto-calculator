@@ -1,5 +1,6 @@
 ---
 import AirDatepicker from "../components/AirDatepicker.astro";
+import HolidayCountrySelector from "../components/HolidayCountrySelector.astro";
 import MobileMenu from "../components/MobileMenu.astro";
 import PanelToggle from "../components/PanelToggle.astro";
 import SettingsModal from "../components/SettingsModal.astro";
@@ -74,6 +75,7 @@ const description =
 				<section class="section py-4" id="calendar-container">
 					<div class="box">
 						<AirDatepicker />
+						<HolidayCountrySelector />
 						<div class="mt-4">
 							<StatusLegend />
 						</div>
@@ -99,6 +101,7 @@ const description =
 		<PanelToggle title="📅 Calendar" open={false}>
 			<div class="box" id="calendar-container-mobile">
 				<AirDatepicker />
+				<HolidayCountrySelector />
 				<div class="mt-4">
 					<StatusLegend />
 				</div>
