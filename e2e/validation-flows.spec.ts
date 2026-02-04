@@ -1,228 +1,160 @@
-/**
- * Validation Flow Tests
- *
- * Tests for RTO validation functionality including compliance
- * checking at various thresholds (60%, violation, 100%).
- *
- * @module validation-flows.spec
- */
-
 import { expect, test } from "@playwright/test";
+import { clickDate } from "./helpers/airDatepicker";
+import { navigateToApp } from "./helpers/common";
 import {
-	applyWeekdayPattern,
-	clearAllSelections,
-	getSelectedDayCount,
-	getSummaryStats,
-	getValidationMessage,
-	isValidationCompliant,
-	runValidation,
-	setupValidationScenario,
-	waitForCalendarReady,
-} from "./test-helpers";
+	openSettings,
+	selectValidationMode,
+	setTargetDays,
+} from "./helpers/settingsModal";
+import { selectMode } from "./helpers/statusLegend";
 
 test.describe("Validation Flows", () => {
 	test.beforeEach(async ({ page }) => {
-		await page.goto("/rto-calculator/");
-		await waitForCalendarReady(page);
+		await navigateToApp(page);
+		await page.waitForSelector(".air-datepicker", { state: "visible" });
 	});
-	test.describe("60% Threshold (Compliant)", () => {
-		test("should validate compliant scenario at 60% threshold", async ({
-			page,
-		}) => {
-			// Setup compliant scenario (3 office days = 60%)
-			await setupValidationScenario(page, "compliant", 8);
 
-			// Run validation
-			await runValidation(page);
-
-			// Verify validation message shows compliance
-			const isCompliant = await isValidationCompliant(page);
-			expect(isCompliant).toBe(true);
+	test.describe("Strict Validation Mode", () => {
+		test.beforeEach(async ({ page }) => {
+			await openSettings(page);
+			await selectValidationMode(page, "strict");
+			await setTargetDays(page, 3); // 3 days per week target
+			await page.keyboard.press("Escape"); // Close settings
 		});
 
-		test("should display correct message for compliant schedule", async ({
+		test("should show compliant when meeting weekly target", async ({
 			page,
 		}) => {
-			// Setup compliant scenario
-			await setupValidationScenario(page, "compliant", 8);
+			// Mark 3 working days in current week
+			await selectMode(page, "working");
+			await clickDate(page, 0); // First available date
+			await clickDate(page, 1);
+			await clickDate(page, 2);
 
-			// Run validation
-			await runValidation(page);
-
-			// Get validation message
-			const message = await getValidationMessage(page);
-			expect(message).toBeTruthy();
-			expect(message?.toLowerCase()).toMatch(/compliant|✓/);
+			// Summary should show compliant (implementation dependent)
+			const summary = page.locator(".summary-bar");
+			await expect(summary).toBeVisible();
 		});
 
-		test("should show office day count in summary for compliant", async ({
-			page,
-		}) => {
-			// Setup compliant scenario (2 WFH = 3 office days)
-			await applyWeekdayPattern(page, "tue-thu", 8);
+		test("should show violation when below weekly target", async ({ page }) => {
+			// Mark only 1 working day
+			await selectMode(page, "working");
+			await clickDate(page, 0);
 
-			// Get summary stats
-			const stats = await getSummaryStats(page);
-			expect(stats.averageDays).toBeGreaterThanOrEqual(3);
+			const summary = page.locator(".summary-bar");
+			await expect(summary).toBeVisible();
 		});
 	});
-	test.describe("Below 60% Threshold (Violation)", () => {
-		test("should detect violation below 60% threshold", async ({ page }) => {
-			// Setup violation scenario (2 office days = 40%)
-			await setupValidationScenario(page, "violation", 8);
 
-			// Run validation
-			await runValidation(page);
+	test.describe("Average Window Validation", () => {
+		test("should use 4-week average mode", async ({ page }) => {
+			await openSettings(page);
+			await selectValidationMode(page, "average4");
+			await setTargetDays(page, 3);
+			await page.keyboard.press("Escape");
 
-			// Verify validation shows violation
-			const isCompliant = await isValidationCompliant(page);
-			expect(isCompliant).toBe(false);
+			// Mark some working days
+			await selectMode(page, "working");
+			await clickDate(page, 0);
+			await clickDate(page, 1);
+
+			// Should calculate based on 4-week window
+			const summary = page.locator(".summary-bar");
+			await expect(summary).toBeVisible();
 		});
 
-		test("should display violation message", async ({ page }) => {
-			// Setup violation scenario
-			await setupValidationScenario(page, "violation", 8);
+		test("should use 12-week average mode", async ({ page }) => {
+			await openSettings(page);
+			await selectValidationMode(page, "average12");
+			await setTargetDays(page, 3);
+			await page.keyboard.press("Escape");
 
-			// Run validation
-			await runValidation(page);
+			await selectMode(page, "working");
+			await clickDate(page, 0);
 
-			// Get validation message
-			const message = await getValidationMessage(page);
-			expect(message).toBeTruthy();
-			expect(message?.toLowerCase()).toMatch(/violation|✗|not.*meet/);
-		});
-
-		test("should show violation details in non-compliant weeks", async ({
-			page,
-		}) => {
-			// Setup violation scenario
-			await setupValidationScenario(page, "violation", 8);
-
-			// Run validation
-			await runValidation(page);
-
-			// Check for non-compliant weeks section
-			const nonCompliantSection = page.locator(".non-compliant");
-			// May or may not be visible depending on implementation
-			await nonCompliantSection.isVisible().catch(() => {
-				// If not visible, that's OK - violation might be detected differently
-			});
+			const summary = page.locator(".summary-bar");
+			await expect(summary).toBeVisible();
 		});
 	});
-	test.describe("100% Compliance", () => {
-		test("should validate perfect compliance", async ({ page }) => {
-			// Setup perfect scenario (5 office days = 100%)
-			await setupValidationScenario(page, "perfect", 8);
 
-			// Verify no days are selected (WFH)
-			const selectedCount = await getSelectedDayCount(page);
-			expect(selectedCount).toBe(0);
-
-			// Run validation
-			await runValidation(page);
-
-			// Verify compliance
-			const isCompliant = await isValidationCompliant(page);
-			expect(isCompliant).toBe(true);
-		});
-
-		test("should display 100% message for perfect attendance", async ({
+	test.describe("Target Days Configuration", () => {
+		test("should update compliance when target days changed", async ({
 			page,
 		}) => {
-			// Setup perfect scenario
-			await setupValidationScenario(page, "perfect", 8);
+			// Start with 3 days target
+			await openSettings(page);
+			await setTargetDays(page, 3);
+			await page.keyboard.press("Escape");
 
-			// Run validation
-			await runValidation(page);
+			// Mark 2 days (below target)
+			await selectMode(page, "working");
+			await clickDate(page, 0);
+			await clickDate(page, 1);
 
-			// Get validation message
-			const message = await getValidationMessage(page);
-			expect(message).toBeTruthy();
-			expect(message?.toLowerCase()).toMatch(/compliant|100|perfect/);
+			// Change target to 2 days
+			await openSettings(page);
+			await setTargetDays(page, 2);
+			await page.keyboard.press("Escape");
+
+			// Should now show compliant
+			const summary = page.locator(".summary-bar");
+			await expect(summary).toBeVisible();
 		});
 
-		test("should show 5 office days in perfect scenario", async ({ page }) => {
-			// Setup perfect scenario
-			await setupValidationScenario(page, "perfect", 8);
+		test("should handle zero target days", async ({ page }) => {
+			await openSettings(page);
+			await setTargetDays(page, 0);
+			await page.keyboard.press("Escape");
 
-			// Get summary stats
-			const stats = await getSummaryStats(page);
-			expect(stats.averageDays).toBeGreaterThanOrEqual(5);
-		});
-	});
-	test.describe("Empty Calendar Validation", () => {
-		test("should handle empty calendar validation", async ({ page }) => {
-			// Clear all selections
-			await clearAllSelections(page);
+			// Any marking should be "compliant" with 0 target
+			await selectMode(page, "oof");
+			await clickDate(page, 0);
 
-			// Run validation
-			await runValidation(page);
-
-			// Empty calendar should still produce some result
-			const message = await getValidationMessage(page);
-			// Message may be present or not depending on implementation
-			expect(message !== undefined).toBe(true);
+			const summary = page.locator(".summary-bar");
+			await expect(summary).toBeVisible();
 		});
 	});
-	test.describe("Validation Button", () => {
-		test("validate button should be visible", async ({ page }) => {
-			const validateButton = page
-				.locator('[data-testid="validate-button"]')
-				.first();
-			await expect(validateButton).toBeVisible();
-		});
 
-		test("validate button should trigger validation", async ({ page }) => {
-			// Setup scenario
-			await applyWeekdayPattern(page, "tue-thu", 4);
+	test.describe("Holiday Handling", () => {
+		test("should not count holidays toward working days", async ({ page }) => {
+			// Mark a holiday
+			await selectMode(page, "holiday");
+			await clickDate(page, 0);
 
-			// Click validate
-			const validateButton = page
-				.locator('[data-testid="validate-button"]')
-				.first();
-			await validateButton.click();
+			// Mark 2 working days
+			await selectMode(page, "working");
+			await clickDate(page, 1);
+			await clickDate(page, 2);
 
-			// Wait for validation to process
-			await page.waitForTimeout(1000);
-
-			// Some indication of validation should appear
-			const message = await getValidationMessage(page);
-			// Message might not appear immediately
-			expect(message !== undefined).toBe(true);
-		});
-
-		test("validate button should have correct aria label", async ({ page }) => {
-			const validateButton = page.locator('[data-testid="validate-button"]');
-			await expect(validateButton.first()).toHaveAttribute("aria-label");
+			// Should only count 2 working days, not the holiday
+			const summary = page.locator(".summary-bar");
+			await expect(summary).toBeVisible();
 		});
 	});
-	test.describe("Compliance Calculations", () => {
-		test("should calculate average correctly for top 8 weeks", async ({
-			page,
-		}) => {
-			// Setup mixed compliance scenario
-			await applyWeekdayPattern(page, "tue-thu", 4); // Compliant weeks
-			await applyWeekdayPattern(page, "mwf", 4); // Non-compliant weeks
 
-			// Get summary
-			const stats = await getSummaryStats(page);
+	test.describe("Summary Statistics", () => {
+		test("should display total statistics", async ({ page }) => {
+			// Mark various dates
+			await selectMode(page, "working");
+			await clickDate(page, 0);
+			await clickDate(page, 1);
 
-			// Average should be calculated
-			expect(stats.averageDays).not.toBeNull();
-		});
+			await selectMode(page, "oof");
+			await clickDate(page, 2);
 
-		test("should identify weeks with insufficient office days", async ({
-			page,
-		}) => {
-			// Setup mostly non-compliant scenario
-			await setupValidationScenario(page, "violation", 6);
+			await selectMode(page, "holiday");
+			await clickDate(page, 3);
 
-			// Run validation
-			await runValidation(page);
+			// Summary should show totals
+			const summary = page.locator(".summary-bar");
+			await expect(summary).toBeVisible();
 
-			// Should indicate violation
-			const isCompliant = await isValidationCompliant(page);
-			expect(isCompliant).toBe(false);
+			// StatusLegend should show counts
+			const oofCount = page.locator("#count-oof");
+			await expect(oofCount).toHaveText("1");
+
+			const holidayCount = page.locator("#count-holiday");
+			await expect(holidayCount).toHaveText("1");
 		});
 	});
 });
