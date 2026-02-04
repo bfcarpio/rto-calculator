@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
 
 test("hello-world: page loads successfully", async ({ page }) => {
-	// Navigate to app at base path (configured in astro.config.mjs)
-	await page.goto("/rto-calculator/");
+	// Navigate to app (baseURL configured in playwright.config.ts includes subdirectory)
+	await page.goto("/");
 
 	// Verify page title contains RTO
 	await expect(page).toHaveTitle(/RTO/);

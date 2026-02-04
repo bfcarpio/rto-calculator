@@ -30,6 +30,9 @@ const _selectionLabel = selectionType
 
 // Create a unique ID for this day cell
 const _cellId = `day-cell-${year}-${month}-${dayNumber}`;
+
+// Create ISO date string for data-date attribute (YYYY-MM-DD format)
+const _isoDate = `${year}-${String(month + 1).padStart(2, "0")}-${String(dayNumber).padStart(2, "0")}`;
 ---
 
 <td
@@ -41,6 +44,7 @@ const _cellId = `day-cell-${year}-${month}-${dayNumber}`;
     data-day={dayNumber}
     data-year={year}
     data-month={month}
+    data-date={_isoDate}
     data-selected={_isSelected}
     data-selection-type={selectionType}
     data-testid="calendar-day"

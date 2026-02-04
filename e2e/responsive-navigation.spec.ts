@@ -8,7 +8,7 @@
  */
 
 import { expect, test } from "@playwright/test";
-import { isMobileViewport, waitForCalendarReady } from "./test-helpers";
+import { waitForCalendarReady } from "./test-helpers";
 
 test.describe("Responsive Navigation", () => {
 	test.beforeEach(async ({ page }) => {

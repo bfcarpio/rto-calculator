@@ -10,9 +10,7 @@
 import { expect, test } from "@playwright/test";
 import {
 	applyWeekdayPattern,
-	clearAllSelections,
 	dragSelectDays,
-	getCalendarDayByDate,
 	getSelectedDayCount,
 	waitForCalendarReady,
 } from "./test-helpers";
@@ -42,12 +40,11 @@ test.describe("Desktop Edge Cases", () => {
 		});
 
 		test("should handle rapid clicks on multiple cells", async ({ page }) => {
-			const dayCells = page.locator("[data-testid='calendar-day']").slice(0, 5);
-
-			// Rapidly click each cell twice
+			// Rapidly click first 5 cells twice each
 			for (let i = 0; i < 5; i++) {
-				await dayCells.nth(i).click();
-				await dayCells.nth(i).click();
+				const cell = page.locator("[data-testid='calendar-day']").nth(i);
+				await cell.click();
+				await cell.click();
 			}
 
 			// Page should remain functional
@@ -88,10 +85,9 @@ test.describe("Desktop Edge Cases", () => {
 	});
 	test.describe("Multi-Cell Drag Selection", () => {
 		test("should select multiple cells with drag", async ({ page }) => {
-			// Get day cells for drag
-			const dayCells = page.locator("[data-testid='calendar-day']").slice(0, 5);
-			const startCell = dayCells.nth(0);
-			const endCell = dayCells.nth(4);
+			// Get first and fifth day cells for drag
+			const startCell = page.locator("[data-testid='calendar-day']").nth(0);
+			const endCell = page.locator("[data-testid='calendar-day']").nth(4);
 
 			// Perform drag selection
 			await dragSelectDays(page, startCell, endCell);
@@ -124,11 +120,9 @@ test.describe("Desktop Edge Cases", () => {
 		});
 
 		test("should handle drag with very fast movement", async ({ page }) => {
-			const dayCells = page
-				.locator("[data-testid='calendar-day']")
-				.slice(0, 10);
-			const startCell = dayCells.nth(0);
-			const endCell = dayCells.nth(9);
+			// Get first and tenth day cells for drag
+			const startCell = page.locator("[data-testid='calendar-day']").nth(0);
+			const endCell = page.locator("[data-testid='calendar-day']").nth(9);
 
 			const startBox = await startCell.boundingBox();
 			const endBox = await endCell.boundingBox();

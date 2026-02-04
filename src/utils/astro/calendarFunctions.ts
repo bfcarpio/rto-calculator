@@ -179,7 +179,7 @@ export function createDayCell(
 	const isToday = isSameDay(date, new Date());
 
 	const cell = document.createElement("button");
-	cell.className = "day-cell";
+	cell.className = "calendar-day";
 	cell.setAttribute("data-date", isoDate);
 	cell.setAttribute("tabindex", "0");
 	cell.setAttribute("role", "button");
@@ -331,7 +331,7 @@ export function validateAndUpdateCalendar(
 	const calendarContainer = document.getElementById("calendar-container");
 	if (!calendarContainer) return;
 
-	const dayCells = calendarContainer.querySelectorAll(".day-cell");
+	const dayCells = calendarContainer.querySelectorAll(".calendar-day");
 	const weeksMap = new Map<string, WeekData>();
 
 	// Process each day cell to determine week data
@@ -396,7 +396,7 @@ export function validateAndUpdateCalendar(
  */
 export function handleDayClick(event: Event): void {
 	const target = event.target as HTMLElement;
-	if (!target.classList.contains("day-cell")) return;
+	if (!target.classList.contains("calendar-day")) return;
 
 	const dateStr = target.getAttribute("data-date");
 	if (!dateStr) return;
@@ -446,7 +446,7 @@ export function handleDayMouseDown(event: Event): void {
 	console.log("handleDayMouseDown triggered");
 	const target = event.target as HTMLElement;
 	console.log("Target class:", target.className);
-	if (!target.classList.contains("day-cell")) return;
+	if (!target.classList.contains("calendar-day")) return;
 
 	const dateStr = target.getAttribute("data-date");
 	if (!dateStr) return;
@@ -466,7 +466,7 @@ export function handleDayMouseDown(event: Event): void {
  */
 export function handleDayMouseOver(event: Event): void {
 	const target = event.target as HTMLElement;
-	if (!target.classList.contains("day-cell")) return;
+	if (!target.classList.contains("calendar-day")) return;
 
 	const dateStr = target.getAttribute("data-date");
 	if (!dateStr) return;
@@ -503,11 +503,15 @@ export function updateDayCell(cell: HTMLElement, dateStr: string): void {
 	const date = new Date(dateStr);
 
 	if (isSelected) {
-		cell.classList.add("selected");
+		cell.classList.add("selected", "out-of-office");
 		cell.setAttribute("aria-label", `${formatDateDisplay(date)} (Selected)`);
+		cell.setAttribute("data-selected", "true");
+		cell.setAttribute("data-selection-type", "out-of-office");
 	} else {
-		cell.classList.remove("selected");
+		cell.classList.remove("selected", "out-of-office");
 		cell.setAttribute("aria-label", formatDateDisplay(date));
+		cell.setAttribute("data-selected", "false");
+		cell.setAttribute("data-selection-type", "");
 	}
 }
 

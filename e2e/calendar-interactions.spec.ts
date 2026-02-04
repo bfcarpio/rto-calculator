@@ -49,21 +49,18 @@ test.describe("Calendar Interactions", () => {
 			await expect(dayCell).not.toHaveClass(/selected/);
 		});
 
-		test("should update data attributes on selection", async ({ page }) => {
+		test("should update classes on selection", async ({ page }) => {
 			const dayCell = page.locator("[data-testid='calendar-day']").first();
 
-			// Initially not selected
-			await expect(dayCell).toHaveAttribute("data-selected", "false");
+			// Initially not selected (no selected class)
+			await expect(dayCell).not.toHaveClass(/selected/);
 
 			// Click to select
 			await dayCell.click();
 
-			// Verify attributes updated
-			await expect(dayCell).toHaveAttribute("data-selected", "true");
-			await expect(dayCell).toHaveAttribute(
-				"data-selection-type",
-				"out-of-office",
-			);
+			// Verify classes updated
+			await expect(dayCell).toHaveClass(/selected/);
+			await expect(dayCell).toHaveClass(/out-of-office/);
 		});
 
 		test("should select day by specific date", async ({ page }) => {
@@ -172,12 +169,9 @@ test.describe("Calendar Interactions", () => {
 	});
 	test.describe("Drag Selection", () => {
 		test("should support drag selection", async ({ page }) => {
-			// Get first two day cells for drag
-			const dayCells = page.locator("[data-testid='calendar-day']").slice(0, 5);
-
-			// Get bounding boxes
-			const firstCell = dayCells.nth(0);
-			const lastCell = dayCells.nth(4);
+			// Get first and fifth day cells for drag
+			const firstCell = page.locator("[data-testid='calendar-day']").nth(0);
+			const lastCell = page.locator("[data-testid='calendar-day']").nth(4);
 
 			const firstBox = await firstCell.boundingBox();
 			const lastBox = await lastCell.boundingBox();
