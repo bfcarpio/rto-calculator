@@ -1,4 +1,5 @@
 import { debugLog } from "./debug";
+import { initializeIndex } from "./index-init";
 
 type HolidayCountry = { code: string; name: string; flag: string };
 
@@ -48,6 +49,9 @@ class SettingsModal {
 	private validationModeAverageButton: HTMLButtonElement | null = null;
 
 	constructor() {
+		// Initialize holiday data loader first to ensure country data is available
+		initializeIndex();
+
 		this.bindElements();
 		this.initializeEventListeners();
 		this.initializeHolidaySettings();
