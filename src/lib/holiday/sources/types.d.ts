@@ -232,12 +232,6 @@ export interface HolidayDataSource {
 	 * @param config - New configuration options (merged with existing)
 	 */
 	updateConfig(config: Partial<HolidayDataSourceConfig>): void;
-
-	/**
-	 * Get list of available countries supported by this data source
-	 * @returns Promise that resolves to array of country codes and names
-	 */
-	getAvailableCountries(): Promise<Array<{ code: string; name: string }>>;
 }
 
 /**
