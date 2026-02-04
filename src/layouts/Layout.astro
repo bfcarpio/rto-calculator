@@ -1,7 +1,6 @@
 ---
 import "bulma/css/bulma.min.css";
 import "../styles/global.css";
-import HeaderActions from "../components/HeaderActions.astro";
 
 const { title: _title = "RTO Calculator", description: _description = "" } =
 	Astro.props;
@@ -30,7 +29,6 @@ const { title: _title = "RTO Calculator", description: _description = "" } =
 		<meta name="twitter:url" content="https://bfcarpio.github.io/rto-calculator" />
 	</head>
 	<body>
-		<HeaderActions />
 		<slot />
 	</body>
 </html>
