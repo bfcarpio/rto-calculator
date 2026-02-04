@@ -4,6 +4,7 @@
  */
 
 import { clearSavedSelections } from "../../scripts/localStorage";
+import type { WeekData } from "../../types";
 import type {
 	DateString,
 	IDragSelectionManager,
@@ -24,6 +25,15 @@ export type WeekStart = "sunday" | "monday";
 
 export const DEFAULT_WEEK_START: WeekStart = "sunday";
 
+/**
+ * Extended Window interface for RTO Validation access
+ */
+interface WindowWithRTOValidation extends Window {
+	rtoValidation?: {
+		clearAllValidationHighlights: () => void;
+	};
+}
+
 export function getLocaleWeekStart(): WeekStart {
 	// For now, default to Sunday start
 	// In a real implementation, this would detect based on locale
@@ -36,7 +46,7 @@ import { DEFAULT_POLICY, validateSelection, validateWeek } from "../validation";
 // State management
 let selectedDates: Set<DateString> = new Set<DateString>();
 const weekStart: WeekStart = DEFAULT_WEEK_START;
-let weekDataMap = new Map<string, any>();
+let weekDataMap: Map<string, WeekData> = new Map<string, WeekData>();
 let dragSelectionManager: IDragSelectionManager | null = null;
 const today = new Date();
 today.setHours(0, 0, 0, 0);
@@ -107,7 +117,7 @@ export function getWeeksForMonth(
 	if (!firstDate) return [];
 	const firstDay = firstDate.getDay();
 
-	let daysToAdd;
+	let daysToAdd: number;
 	if (weekStart === "sunday") {
 		// Sunday start: 0 = Sunday, 1 = Monday, ..., 6 = Saturday
 		daysToAdd = firstDay;
@@ -322,7 +332,7 @@ export function validateAndUpdateCalendar(
 	if (!calendarContainer) return;
 
 	const dayCells = calendarContainer.querySelectorAll(".day-cell");
-	const weeksMap = new Map<string, any>();
+	const weeksMap = new Map<string, WeekData>();
 
 	// Process each day cell to determine week data
 	dayCells.forEach((dayCell) => {
@@ -369,7 +379,7 @@ export function validateAndUpdateCalendar(
 
 		// Update cell styles based on week data
 		if (weekData && !isWeekend(date) && !isPastDate(date)) {
-			if (weekData.compliant) {
+			if (weekData.compliance >= 60) {
 				(dayCell as HTMLElement).classList.remove("violation");
 				(dayCell as HTMLElement).classList.add("compliant");
 			} else {
@@ -553,8 +563,11 @@ export function clearAllSelections(): void {
 	});
 
 	// Clear all validation highlights
-	if (typeof window !== "undefined" && (window as any).rtoValidation) {
-		(window as any).rtoValidation.clearAllValidationHighlights();
+	if (typeof window !== "undefined") {
+		const rtoValidation = (window as WindowWithRTOValidation).rtoValidation;
+		if (rtoValidation) {
+			rtoValidation.clearAllValidationHighlights();
+		}
 	}
 
 	validateAndUpdateCalendar(weekStart);
@@ -651,7 +664,7 @@ export function getSelectedDates(): Set<string> {
 	return selectedDates;
 }
 
-export function getWeekDataMap(): Map<string, any> {
+export function getWeekDataMap(): Map<string, WeekData> {
 	return weekDataMap;
 }
 
@@ -664,7 +677,7 @@ export function setSelectedDates(newSelectedDates: Set<string>): void {
 	selectedDates = new Set(newSelectedDates) as Set<DateString>;
 }
 
-export function setWeekDataMap(newWeekDataMap: Map<string, any>): void {
+export function setWeekDataMap(newWeekDataMap: Map<string, WeekData>): void {
 	weekDataMap = newWeekDataMap;
 }
 

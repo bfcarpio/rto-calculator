@@ -14,7 +14,7 @@ import type {
 	WeekCompliance,
 	WindowCompliance,
 } from "../../types/validation-strategy";
-import { ValidationFactory } from "./ValidationFactory";
+import { createValidator } from "./ValidationFactory";
 
 /**
  * Default validation configuration
@@ -61,7 +61,7 @@ export class RollingPeriodValidation {
 		}
 
 		// Get validator for the requested mode
-		const validator = ValidationFactory.createValidator(validationMode);
+		const validator = createValidator(validationMode);
 
 		// Merge config with defaults
 		const mergedContext: ValidatorContext = {
@@ -87,7 +87,7 @@ export class RollingPeriodValidation {
 		validationMode: "strict" | "average" = "strict",
 	): WeekCompliance {
 		// Get validator for the requested mode
-		const validator = ValidationFactory.createValidator(validationMode);
+		const validator = createValidator(validationMode);
 
 		// Merge config with defaults
 		const mergedContext: ValidatorContext = {
@@ -114,7 +114,7 @@ export class RollingPeriodValidation {
 		validationMode: "strict" | "average" = "average",
 	): WindowCompliance {
 		// Get validator for the requested mode
-		const validator = ValidationFactory.createValidator(validationMode);
+		const validator = createValidator(validationMode);
 
 		// Merge config with defaults
 		const mergedContext: ValidatorContext = {

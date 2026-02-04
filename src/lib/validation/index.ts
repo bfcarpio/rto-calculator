@@ -11,7 +11,12 @@ export { validateSlidingWindow } from "./rto-core";
 export { StrictDayCountValidator } from "./StrictDayCountValidator";
 // Re-export types
 export type { ValidationMode } from "./ValidationFactory";
-export { ValidationFactory } from "./ValidationFactory";
+export {
+	clearValidatorCache,
+	createValidator,
+	getAvailableModes,
+	isValidMode,
+} from "./ValidationFactory";
 export {
 	clearAllValidationHighlights,
 	orchestrateValidation,
