@@ -1,5 +1,6 @@
 ---
 import "/src/styles/utilities.css";
+import { COUNTRIES } from "../lib/holiday/data/countries";
 
 const { id: _id = "settings-modal" } = Astro.props;
 ---
@@ -163,6 +164,11 @@ class="setting-select focus-reset no-reduced-motion"
                         <div class="setting-control">
                             <select id="country-select" class="setting-select focus-reset no-reduced-motion" aria-label="Select country for holidays">
                                 <option value="">None</option>
+                                {COUNTRIES.map((country) => (
+                                    <option value={country.code}>
+                                        {country.flag} {country.name} ({country.code})
+                                    </option>
+                                ))}
                             </select>
                         </div>
                     </div>

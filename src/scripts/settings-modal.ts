@@ -1,8 +1,6 @@
 import { debugLog } from "./debug";
 import { initializeIndex } from "./index-init";
 
-type HolidayCountry = { code: string; name: string; flag: string };
-
 interface Settings {
 	debug: boolean;
 	saveData: boolean;
@@ -15,7 +13,6 @@ interface Settings {
 
 declare global {
 	interface Window {
-		__holidayCountries?: HolidayCountry[];
 		validationManager?: {
 			setDebugMode(enabled: boolean): void;
 			getDebugMode(): boolean;
@@ -49,12 +46,10 @@ class SettingsModal {
 	private validationModeAverageButton: HTMLButtonElement | null = null;
 
 	constructor() {
-		// Initialize holiday data loader first to ensure country data is available
 		initializeIndex();
 
 		this.bindElements();
 		this.initializeEventListeners();
-		this.initializeHolidaySettings();
 		this.loadSettingsFromLocalStorage();
 	}
 
@@ -97,7 +92,6 @@ class SettingsModal {
 
 	private initializeEventListeners(): void {
 		this.settingsButton?.addEventListener("click", () => {
-			this.populateCountryDropdown();
 			this.modal?.showModal();
 			this.syncSettings();
 		});
@@ -566,36 +560,6 @@ class SettingsModal {
 		} catch (error) {
 			console.error("[Settings] Error loading settings:", error);
 		}
-	}
-
-	private populateCountryDropdown(): void {
-		const countries = window.__holidayCountries;
-		if (!countries) {
-			console.warn(
-				"[Settings] Holiday countries not available yet, skipping dropdown population",
-			);
-			return;
-		}
-
-		if (!this.countrySelect) return;
-
-		this.countrySelect.innerHTML = '<option value="">None</option>';
-
-		const sorted = [...countries].sort((a, b) => a.name.localeCompare(b.name));
-
-		sorted.forEach((country) => {
-			const option = document.createElement("option");
-			option.value = country.code;
-			option.textContent = `${country.flag} ${country.name} (${country.code})`;
-			this.countrySelect?.appendChild(option);
-		});
-	}
-
-	private initializeHolidaySettings(): void {
-		debugLog("[SettingsModal] Initializing holiday settings...");
-		debugLog(
-			`[SettingsModal] Window.__holidayCountries exists: ${!!window.__holidayCountries}`,
-		);
 	}
 
 	private announceToScreenReader(message: string): void {

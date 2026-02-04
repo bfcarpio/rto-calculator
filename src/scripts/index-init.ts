@@ -1,5 +1,4 @@
 import { initializeHolidayIntegration } from "../lib/holiday/CalendarHolidayIntegration";
-import { initHolidayDataLoader } from "../lib/holiday/HolidayDataLoader";
 import {
 	type CalendarEventManager,
 	initializeCalendarEvents,
@@ -49,7 +48,6 @@ function dispatchCalendarLoadedEvent() {
  * and validation display functionality
  */
 export function initializeIndex() {
-	initHolidayDataLoader();
 	initializeLocalStorage();
 
 	if (document.readyState === "loading") {
