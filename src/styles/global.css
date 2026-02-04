@@ -3,47 +3,46 @@
  * Contains only truly global styles, variables, and utilities
  */
 
-/* Import mvp.css for base styling */
-@import "mvp.css";
+/* Base styling provided by Bulma CSS framework */
 
-/* CSS Custom Properties (Variables) */
+/* CSS Custom Properties (Variables) - Neutral Slate Palette (Color Blind Friendly) */
 :root {
-	/* Colors - Compliance */
-	--color-compliant: #389e0d;
-	--color-compliant-bg: #f6ffed;
+	/* Colors - Status Indicators (using slate grays, not red/green) */
+	--color-compliant: #475569; /* Slate-600 - main indicator */
+	--color-compliant-bg: #f8fafc; /* Slate-50 */
 
 	/* Colors - Calendar Day States */
-	--calendar-day-out-of-office: #1890ff;
-	--calendar-day-focus-outline: #3b82f6;
-	--calendar-day-hover-border: #40a9ff;
+	--calendar-day-out-of-office: #64748b; /* Slate-500 */
+	--calendar-day-focus-outline: #475569; /* Slate-600 */
+	--calendar-day-hover-border: #94a3b8; /* Slate-400 */
 
-	/* Colors - Violation */
-	--color-violation: #cf1322;
-	--color-violation-bg: #fff2f0;
+	/* Colors - Violation Status (using darker slate, not red) */
+	--color-violation: #334155; /* Slate-700 - indicates issue */
+	--color-violation-bg: #f1f5f9; /* Slate-100 */
 
-	/* Colors - Warning */
-	--color-warning: #d48806;
-	--color-warning-bg: #fffbe6;
+	/* Colors - Warning (using slate, not orange) */
+	--color-warning: #94a3b8; /* Slate-400 */
+	--color-warning-bg: #f8fafc; /* Slate-50 */
 
-	/* Colors - Selected */
-	--color-selected: #1890ff;
-	--color-selected-bg: #e6f7ff;
+	/* Colors - Selected State */
+	--color-selected: #475569; /* Slate-600 */
+	--color-selected-bg: #e2e8f0; /* Slate-200 */
 
 	/* Colors - Text */
-	--color-text: #374151;
-	--color-muted: #6b7280;
+	--color-text: #1e293b; /* Slate-800 */
+	--color-muted: #64748b; /* Slate-500 */
 
 	/* Colors - Background */
-	--color-bg-alt: #f5f5f5;
-	--color-border: #d1d5db;
-	--color-weekend: #e5e7eb;
-	--color-past: #9ca3af;
+	--color-bg-alt: #f8fafc; /* Slate-50 */
+	--color-border: #e2e8f0; /* Slate-200 */
+	--color-weekend: #f1f5f9; /* Slate-100 */
+	--color-past: #94a3b8; /* Slate-400 */
 
-	/* Colors - Holidays */
-	--color-holiday: #fa8c16;
-	--color-holiday-bg: #fff7e6;
-	--color-holiday-border: #ffd591;
-	--color-holiday-text: #873800;
+	/* Colors - Holidays (keeping orange as it's distinct from slate) */
+	--color-holiday: #d97706; /* Amber-600 */
+	--color-holiday-bg: #fffbeb; /* Amber-50 */
+	--color-holiday-border: #fcd34d; /* Amber-300 */
+	--color-holiday-text: #92400e; /* Amber-800 */
 
 	/* Dimensions */
 	--border-radius: 6px;
@@ -81,11 +80,218 @@ body {
 
 /* Focus styles for keyboard navigation */
 :focus-visible {
-	outline: 2px solid #3b82f6;
+	outline: 2px solid #475569; /* Slate-600 */
 	outline-offset: 2px;
 }
 
 button:focus-visible,
 [role="button"]:focus-visible {
-	outline: 0 0 0 3px rgba(59, 130, 246, 0.5);
+	outline: 0 0 0 3px rgba(71, 85, 105, 0.3); /* Slate-600 with opacity */
+}
+
+/* Dark Mode Support */
+body.dark-mode {
+	background-color: #0f172a;
+	color: #f1f5f9;
+}
+
+body.dark-mode .hero.is-small {
+	background-color: #1e293b;
+}
+
+body.dark-mode .title,
+body.dark-mode .subtitle {
+	color: #f1f5f9;
+}
+
+body.dark-mode .has-text-primary {
+	color: #94a3b8;
+}
+
+body.dark-mode .hero-body {
+	background-color: #1e293b;
+}
+
+body.dark-mode .column {
+	color: #f1f5f9;
+}
+
+body.dark-mode .button {
+	background-color: #334155;
+	color: #f1f5f9;
+	border-color: #475569;
+}
+
+body.dark-mode .button:hover {
+	background-color: #475569;
+}
+
+body.dark-mode .box {
+	background-color: #1e293b;
+	color: #f1f5f9;
+	border-color: #475569;
+}
+
+body.dark-mode .tag {
+	color: #f1f5f9;
+	border-color: #475569;
+}
+
+body.dark-mode .tag.is-light {
+	background-color: #334155;
+}
+
+/* Dark mode - Calendar */
+body.dark-mode .flatpickr-calendar {
+	background-color: #1e293b;
+	color: #f1f5f9;
+}
+
+body.dark-mode .flatpickr-day {
+	color: #f1f5f9;
+	border-color: #475569;
+}
+
+body.dark-mode .flatpickr-day:not(.flatpickr-disabled):hover {
+	background-color: #334155;
+}
+
+body.dark-mode .flatpickr-month {
+	background-color: #1e293b;
+}
+
+body.dark-mode .flatpickr-weekday {
+	color: #94a3b8;
+}
+
+body.dark-mode .flatpickr-current-month,
+body.dark-mode .flatpickr-current-month span.cur-month,
+body.dark-mode .flatpickr-current-month span.cur-year {
+	color: #f1f5f9;
+}
+
+body.dark-mode .calendar-help {
+	background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+	border-color: #475569;
+}
+
+body.dark-mode .calendar-help .help {
+	color: #cbd5e1;
+}
+
+/* Dark mode - Settings Modal */
+body.dark-mode .settings-modal {
+	background-color: #1e293b;
+	color: #f1f5f9;
+}
+
+body.dark-mode .modal-header,
+body.dark-mode .modal-footer {
+	background-color: #1e293b;
+	border-color: #475569;
+}
+
+body.dark-mode .modal-title {
+	color: #f1f5f9;
+}
+
+body.dark-mode .close-button {
+	color: #cbd5e1;
+}
+
+body.dark-mode .close-button:hover {
+	background-color: #334155;
+	color: #f1f5f9;
+}
+
+body.dark-mode .group-toggle {
+	background-color: #334155;
+	color: #f1f5f9;
+	border-color: #475569;
+}
+
+body.dark-mode .group-toggle:hover {
+	background-color: #475569;
+}
+
+body.dark-mode .group-content {
+	background-color: #1e293b;
+}
+
+body.dark-mode .setting-label {
+	color: #f1f5f9;
+}
+
+body.dark-mode .setting-description {
+	color: #94a3b8;
+}
+
+body.dark-mode .setting-input,
+body.dark-mode .setting-select {
+	background-color: #334155;
+	color: #f1f5f9;
+	border-color: #475569;
+}
+
+body.dark-mode .setting-input:hover,
+body.dark-mode .setting-select:hover {
+	border-color: #94a3b8;
+}
+
+body.dark-mode .pattern-selector {
+	background-color: #334155;
+	border-color: #475569;
+}
+
+body.dark-mode .pattern-day {
+	background-color: #334155;
+	color: #f1f5f9;
+	border-color: #475569;
+}
+
+body.dark-mode .pattern-day:hover {
+	background-color: #475569;
+	border-color: #94a3b8;
+}
+
+body.dark-mode .pattern-header {
+	color: #f1f5f9;
+}
+
+body.dark-mode .button-primary {
+	background-color: #475569;
+	color: #f1f5f9;
+}
+
+body.dark-mode .button-primary:hover {
+	background-color: #64748b;
+}
+
+body.dark-mode .button-secondary {
+	background-color: #334155;
+	color: #f1f5f9;
+	border-color: #475569;
+}
+
+body.dark-mode .button-secondary:hover {
+	background-color: #475569;
+	border-color: #94a3b8;
+}
+
+body.dark-mode .segmented-button {
+	background-color: #334155;
+	color: #f1f5f9;
+}
+
+body.dark-mode .segmented-button.segmented-button-active {
+	background-color: #475569;
+	color: #f1f5f9;
+}
+
+body.dark-mode .toggle-button {
+	background-color: #334155;
+}
+
+body.dark-mode .toggle-button[aria-checked="true"] {
+	background-color: #475569;
 }
