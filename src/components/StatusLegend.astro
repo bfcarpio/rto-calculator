@@ -4,7 +4,7 @@
 <div class="status-legend" id="status-legend">
   <button class="legend-item" data-mode="working" data-testid="mode-working">
     <span class="dot is-working"></span>
-    <span class="label">Working: <strong id="count-working">0</strong></span>
+    <span class="label">Working</span>
   </button>
   <button class="legend-item" data-mode="oof" data-testid="mode-oof">
     <span class="dot is-oof"></span>
@@ -104,11 +104,9 @@
     // Subscribe to store updates
     store.subscribe((state, stats) => {
       // Update counts
-      const workingCount = document.getElementById('count-working');
       const oofCount = document.getElementById('count-oof');
       const holidayCount = document.getElementById('count-holiday');
 
-      if (workingCount) workingCount.textContent = String(stats.workingDays);
       if (oofCount) oofCount.textContent = String(stats.oofDays);
       if (holidayCount) holidayCount.textContent = String(stats.holidayDays);
 
