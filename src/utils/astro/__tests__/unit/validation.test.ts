@@ -131,7 +131,7 @@ describe("getWeekDates", () => {
 		const dates = getWeekDates(weekStart);
 
 		for (let i = 1; i < dates.length; i++) {
-			const diff = dates[i]!.getTime() - dates[i - 1]!.getTime();
+			const diff = dates[i]?.getTime() - dates[i - 1]?.getTime();
 			expect(diff).toBe(24 * 60 * 60 * 1000); // 1 day in milliseconds
 		}
 	});
@@ -490,8 +490,8 @@ describe("elementToDaySelection", () => {
 		const result = elementToDaySelection(mockElement);
 
 		expect(result).not.toBeNull();
-		expect(result!.date).toEqual(new Date(2025, 0, 6));
-		expect(result!.selectionType).toBe("out-of-office");
+		expect(result?.date).toEqual(new Date(2025, 0, 6));
+		expect(result?.selectionType).toBe("out-of-office");
 	});
 
 	it("should return null for element without year", () => {
@@ -929,8 +929,8 @@ describe("validateTop8Weeks - Integration Tests", () => {
 		// validateTop8Weeks always returns top 8 weeks (the rolling period)
 		expect(result.weeksData).toHaveLength(8);
 		// First 2 weeks should have selections and be compliant
-		expect(result.weeksData[0]!.isCompliant).toBe(true);
-		expect(result.weeksData[1]!.isCompliant).toBe(true);
+		expect(result.weeksData[0]?.isCompliant).toBe(true);
+		expect(result.weeksData[1]?.isCompliant).toBe(true);
 	});
 });
 
@@ -988,8 +988,8 @@ describe("Partial Weeks Filtering - Edge Cases", () => {
 		expect(result.weeksData.length).toBeGreaterThan(0);
 		// First week (starting Dec 30, 2024) has 3 WFH days
 		// With new behavior, oofDays = wfhDays + holidays = 3 + 0 = 3
-		expect(result.weeksData[0]!.oofDays).toBe(3);
-		expect(result.weeksData[0]!.wfhDays).toBe(3);
+		expect(result.weeksData[0]?.oofDays).toBe(3);
+		expect(result.weeksData[0]?.wfhDays).toBe(3);
 	});
 
 	it("should handle weeks with varying numbers of selections", () => {
@@ -1054,7 +1054,7 @@ describe("Partial Weeks Filtering - Edge Cases", () => {
 
 		// Week with exactly 5 weekdays should be included
 		expect(result.weeksData.length).toBeGreaterThan(0);
-		expect(result.weeksData[0]!.weekStart.getTime()).toBe(weekStart.getTime());
+		expect(result.weeksData[0]?.weekStart.getTime()).toBe(weekStart.getTime());
 	});
 
 	it("should handle weeks with varying WFH counts", () => {
@@ -1080,9 +1080,9 @@ describe("Partial Weeks Filtering - Edge Cases", () => {
 		// First week has 3 WFH days out of 5
 		// With new behavior: oofDays = 3 (wfhDays), officeDays = 2, not compliant (<3)
 		expect(result.weeksData.length).toBeGreaterThanOrEqual(1);
-		expect(result.weeksData[0]!.oofDays).toBe(3);
-		expect(result.weeksData[0]!.wfhDays).toBe(3);
-		expect(result.weeksData[0]!.isCompliant).toBe(false);
+		expect(result.weeksData[0]?.oofDays).toBe(3);
+		expect(result.weeksData[0]?.wfhDays).toBe(3);
+		expect(result.weeksData[0]?.isCompliant).toBe(false);
 	});
 
 	it("should handle weeks with different WFH patterns", () => {
@@ -1117,13 +1117,13 @@ describe("Partial Weeks Filtering - Edge Cases", () => {
 
 		// First week: 3 WFH out of 5 weekdays
 		// With new behavior: oofDays = 3 (wfhDays)
-		expect(result.weeksData[0]!.oofDays).toBe(3);
-		expect(result.weeksData[0]!.wfhDays).toBe(3);
-		expect(result.weeksData[0]!.isCompliant).toBe(false);
+		expect(result.weeksData[0]?.oofDays).toBe(3);
+		expect(result.weeksData[0]?.wfhDays).toBe(3);
+		expect(result.weeksData[0]?.isCompliant).toBe(false);
 		// Complete weeks: 3 WFH out of 5 weekdays
-		expect(result.weeksData[1]!.oofDays).toBe(3);
-		expect(result.weeksData[1]!.wfhDays).toBe(3);
-		expect(result.weeksData[1]!.isCompliant).toBe(false);
+		expect(result.weeksData[1]?.oofDays).toBe(3);
+		expect(result.weeksData[1]?.wfhDays).toBe(3);
+		expect(result.weeksData[1]?.isCompliant).toBe(false);
 	});
 });
 

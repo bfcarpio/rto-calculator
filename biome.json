@@ -1,5 +1,5 @@
 {
-	"$schema": "https://biomejs.dev/schemas/1.9.4/source.json",
+	"$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
 	"vcs": {
 		"enabled": true,
 		"clientKind": "git",
@@ -21,5 +21,55 @@
 				"useImportType": "warn"
 			}
 		}
-	}
+	},
+	"overrides": [
+		{
+			"includes": ["**/*.svelte", "**/*.astro", "**/*.vue"],
+			"linter": {
+				"rules": {
+					"style": {
+						"useConst": "off",
+						"useImportType": "off"
+					},
+					"correctness": {
+						"noUnusedVariables": "off",
+						"noUnusedImports": "off"
+					}
+				}
+			}
+		},
+		{
+			"includes": [
+				"**/__tests__/**",
+				"**/*.test.ts",
+				"**/*.test.tsx",
+				"**/*.test.js",
+				"**/*.test.jsx",
+				"**/*.spec.ts",
+				"**/*.spec.tsx",
+				"**/*.spec.js",
+				"**/*.spec.jsx"
+			],
+			"linter": {
+				"rules": {
+					"suspicious": {
+						"noExplicitAny": "off"
+					},
+					"style": {
+						"noNonNullAssertion": "off"
+					}
+				}
+			}
+		},
+		{
+			"includes": ["**/__tests__/**"],
+			"linter": {
+				"rules": {
+					"suspicious": {
+						"useIterableCallbackReturn": "off"
+					}
+				}
+			}
+		}
+	]
 }
