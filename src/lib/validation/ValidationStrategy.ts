@@ -16,16 +16,25 @@ import type {
 	WeekCompliance,
 	WindowCompliance,
 } from "../../types/validation-strategy";
+import { logger } from "../../utils/logger";
+import {
+	BEST_WEEKS_COUNT,
+	COMPLIANCE_THRESHOLD,
+	MINIMUM_COMPLIANT_DAYS,
+	ROLLING_WINDOW_WEEKS,
+	TOTAL_WEEK_DAYS,
+} from "./constants";
 
 /**
  * Default validation configuration
  */
 const DEFAULT_CONFIG: ValidationConfig = {
-	minOfficeDaysPerWeek: 3,
-	totalWeekdaysPerWeek: 5,
-	rollingPeriodWeeks: 12,
-	thresholdPercentage: 0.6, // 3/5 = 60%
+	minOfficeDaysPerWeek: MINIMUM_COMPLIANT_DAYS,
+	totalWeekdaysPerWeek: TOTAL_WEEK_DAYS,
+	rollingPeriodWeeks: ROLLING_WINDOW_WEEKS,
+	thresholdPercentage: COMPLIANCE_THRESHOLD,
 	debug: false,
+	bestWeeksCount: BEST_WEEKS_COUNT,
 };
 
 /**
@@ -66,10 +75,42 @@ export abstract class ValidationStrategy {
 	 * @returns Week compliance information
 	 * @abstract
 	 */
-	abstract getWeekCompliance(
+	getWeekCompliance(
 		weekStart: Date,
 		context: ValidatorContext,
-	): WeekCompliance;
+	): WeekCompliance {
+		const normalizedWeekStart = this._getStartOfWeek(weekStart);
+		const config = this._mergeConfig(context);
+		const cacheKey = `week_${normalizedWeekStart.getTime()}`;
+
+		const cached = this._getCachedResult<WeekCompliance>(cacheKey);
+		if (cached) return cached;
+
+		const weeksByWFH =
+			this._extractWeeksMap(context) ??
+			this._groupDaysByWeek(context.selectedDays ?? [], normalizedWeekStart);
+
+		const wfhDays = weeksByWFH.get(normalizedWeekStart.getTime()) ?? 0;
+		const officeDays = config.totalWeekdaysPerWeek - wfhDays;
+		const { percentage, isCompliant } = this._calculateComplianceStatus(
+			officeDays,
+			config.totalWeekdaysPerWeek,
+			config.thresholdPercentage,
+		);
+
+		const result: WeekCompliance = {
+			weekStart: new Date(normalizedWeekStart),
+			weekNumber: this._getWeekNumber(normalizedWeekStart),
+			totalDays: config.totalWeekdaysPerWeek,
+			workFromHomeDays: wfhDays,
+			officeDays,
+			isCompliant,
+			percentage,
+		};
+
+		this._setCachedResult(cacheKey, result);
+		return result;
+	}
 
 	/**
 	 * Get compliance status for a multi-week window
@@ -80,11 +121,64 @@ export abstract class ValidationStrategy {
 	 * @returns Window compliance information
 	 * @abstract
 	 */
-	abstract getWindowCompliance(
+	getWindowCompliance(
 		windowStart: number,
 		windowSize: number,
 		context: ValidatorContext,
-	): WindowCompliance;
+	): WindowCompliance {
+		const config = this._mergeConfig(context);
+		const cacheKey = `window_${windowStart}_${windowSize}`;
+		const cached = this._getCachedResult<WindowCompliance>(cacheKey);
+		if (cached) return cached;
+
+		const weeksByWFH =
+			this._extractWeeksMap(context) ??
+			this._groupDaysByWeek(
+				context.selectedDays ?? [],
+				this._getStartOfWeek(context.selectedDays?.[0]),
+			);
+
+		this._ensureWeekStartInitialized(context, weeksByWFH);
+		const weeks: WeekCompliance[] = [];
+
+		for (let i = windowStart; i < windowStart + windowSize; i++) {
+			const currentWeekStart = this._calculateWeekStart(i, context, weeksByWFH);
+			const weekCompliance = this.getWeekCompliance(currentWeekStart, {
+				...context,
+				weeksByWFH,
+			});
+			weeks.push(weekCompliance);
+		}
+
+		const weeksToEvaluate = this._getWeeksForEvaluation(
+			weeks,
+			config,
+			windowSize,
+		);
+
+		const {
+			totalOfficeDays,
+			totalWeekdays,
+			averageOfficeDaysPerWeek,
+			compliancePercentage,
+		} = this._summarizeWindow(weeksToEvaluate, windowSize);
+
+		const result: WindowCompliance = {
+			windowStart,
+			windowEnd: windowStart + windowSize - 1,
+			weeks,
+			totalOfficeDays,
+			totalWeekdays,
+			averageOfficeDaysPerWeek,
+			compliancePercentage,
+			isCompliant: compliancePercentage >= config.thresholdPercentage * 100,
+			requiredOfficeDays: config.minOfficeDaysPerWeek,
+			requiredPercentage: config.thresholdPercentage * 100,
+		};
+
+		this._setCachedResult(cacheKey, result);
+		return result;
+	}
 
 	/**
 	 * Check if this strategy is applicable to current selections
@@ -291,6 +385,136 @@ export abstract class ValidationStrategy {
 	}
 
 	/**
+	 * Calculate week start using the stored reference or derive from context.
+	 *
+	 * @param weekIndex - Index offset from the reference week
+	 * @param context - Validation context
+	 * @param weeksByWFH - Optional map of weeks already grouped
+	 * @returns Week start date
+	 * @protected
+	 */
+	protected _calculateWeekStart(
+		weekIndex: number,
+		context?: ValidatorContext,
+		weeksByWFH?: Map<number, number>,
+	): Date {
+		this._ensureWeekStartInitialized(context, weeksByWFH);
+
+		if (!this.weekStart) {
+			throw new Error("Week start not initialized. Call validate() first.");
+		}
+
+		const weekStart = new Date(this.weekStart);
+		weekStart.setDate(this.weekStart.getDate() + weekIndex * 7);
+		return weekStart;
+	}
+
+	/**
+	 * Extract weeks map from context when precomputed.
+	 *
+	 * @param context - Validation context
+	 * @returns Map of week start to WFH counts when provided
+	 * @protected
+	 */
+	protected _extractWeeksMap(
+		context: ValidatorContext,
+	): Map<number, number> | undefined {
+		if ("weeksByWFH" in context && context.weeksByWFH instanceof Map) {
+			return context.weeksByWFH;
+		}
+		return undefined;
+	}
+
+	/**
+	 * Determine which weeks should be evaluated based on configuration.
+	 *
+	 * @param allWeeks - All weeks within the window
+	 * @param config - Validation configuration
+	 * @param windowSize - Window size for validation
+	 * @returns Filtered weeks to evaluate
+	 * @protected
+	 */
+	protected _getWeeksForEvaluation(
+		allWeeks: WeekCompliance[],
+		config: ValidationConfig,
+		windowSize: number,
+	): WeekCompliance[] {
+		if (!config.evaluateBestWeeksOnly) {
+			return allWeeks;
+		}
+
+		const bestWeeksCount = config.bestWeeksCount ?? windowSize;
+		if (bestWeeksCount >= windowSize) {
+			return allWeeks;
+		}
+
+		return this._selectBestWeeks(allWeeks, bestWeeksCount);
+	}
+
+	/**
+	 * Summarize window compliance metrics.
+	 *
+	 * @param weeks - Weeks selected for evaluation
+	 * @param config - Validation configuration
+	 * @param windowSize - Window size
+	 * @returns Aggregate window metrics
+	 * @protected
+	 */
+	protected _summarizeWindow(
+		weeks: WeekCompliance[],
+		windowSize: number,
+	): {
+		totalOfficeDays: number;
+		totalWeekdays: number;
+		averageOfficeDaysPerWeek: number;
+		compliancePercentage: number;
+	} {
+		const totalOfficeDays = weeks.reduce(
+			(sum, week) => sum + week.officeDays,
+			0,
+		);
+		const totalWeekdays = weeks.reduce((sum, week) => sum + week.totalDays, 0);
+		const divisor = weeks.length || windowSize || 1;
+		const averageOfficeDaysPerWeek = totalOfficeDays / divisor;
+		const compliancePercentage =
+			totalWeekdays > 0 ? (totalOfficeDays / totalWeekdays) * 100 : 100;
+
+		return {
+			totalOfficeDays,
+			totalWeekdays,
+			averageOfficeDaysPerWeek,
+			compliancePercentage,
+		};
+	}
+
+	/**
+	 * Ensure reference week start is available using context or cached data.
+	 *
+	 * @param context - Validation context
+	 * @param weeksByWFH - Precomputed weeks map
+	 * @protected
+	 */
+	protected _ensureWeekStartInitialized(
+		context?: ValidatorContext,
+		weeksByWFH?: Map<number, number>,
+	): void {
+		if (this.weekStart) return;
+
+		const selectedDay = context?.selectedDays?.[0];
+		if (selectedDay) {
+			this.weekStart = this._getStartOfWeek(selectedDay);
+			return;
+		}
+
+		if (weeksByWFH && weeksByWFH.size > 0) {
+			const firstWeek = weeksByWFH.keys().next();
+			if (!firstWeek.done) {
+				this.weekStart = new Date(firstWeek.value);
+			}
+		}
+	}
+
+	/**
 	 * Log debug message if debug mode enabled
 	 *
 	 * @param config - Validation configuration
@@ -299,7 +523,7 @@ export abstract class ValidationStrategy {
 	 */
 	protected _logDebug(config: ValidationConfig, message: string): void {
 		if (config.debug) {
-			console.log(`[${this.name}] ${message}`);
+			logger.debug(`[${this.name}] ${message}`);
 		}
 	}
 

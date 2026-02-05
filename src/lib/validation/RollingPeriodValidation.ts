@@ -14,16 +14,24 @@ import type {
 	WeekCompliance,
 	WindowCompliance,
 } from "../../types/validation-strategy";
+import {
+	BEST_WEEKS_COUNT,
+	COMPLIANCE_THRESHOLD,
+	MINIMUM_COMPLIANT_DAYS,
+	ROLLING_WINDOW_WEEKS,
+	TOTAL_WEEK_DAYS,
+} from "./constants";
 import { createValidator } from "./ValidationFactory";
 
 /**
  * Default validation configuration
  */
 const DEFAULT_CONFIG: ValidationConfig = {
-	minOfficeDaysPerWeek: 3,
-	totalWeekdaysPerWeek: 5,
-	rollingPeriodWeeks: 12,
-	thresholdPercentage: 0.6,
+	minOfficeDaysPerWeek: MINIMUM_COMPLIANT_DAYS,
+	totalWeekdaysPerWeek: TOTAL_WEEK_DAYS,
+	rollingPeriodWeeks: ROLLING_WINDOW_WEEKS,
+	thresholdPercentage: COMPLIANCE_THRESHOLD,
+	bestWeeksCount: BEST_WEEKS_COUNT,
 	debug: false,
 };
 
@@ -159,6 +167,11 @@ export class RollingPeriodValidation {
 			validationMode,
 		};
 	}
+
+	/**
+	 * Reset cached state. RollingPeriodValidation is stateless but provided for interface parity.
+	 */
+	reset(): void {}
 }
 
 export default RollingPeriodValidation;

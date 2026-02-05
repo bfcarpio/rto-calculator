@@ -8,6 +8,7 @@
  * @module ValidationOrchestrator
  */
 
+import { logger } from "../../utils/logger";
 import {
 	type CalendarDataResult,
 	convertWeeksToCompliance,
@@ -126,12 +127,12 @@ export function orchestrateValidation(
 	};
 
 	if (mergedConfig.DEBUG) {
-		console.log("[RTO Orchestrator] Validation orchestrated successfully");
-		console.log(`[RTO Orchestrator]   Valid: ${result.isValid}`);
-		console.log(
+		logger.debug("[RTO Orchestrator] Validation orchestrated successfully");
+		logger.debug(`[RTO Orchestrator]   Valid: ${result.isValid}`);
+		logger.debug(
 			`[RTO Orchestrator]   Compliance: ${result.compliancePercentage.toFixed(1)}%`,
 		);
-		console.log(
+		logger.debug(
 			`[RTO Orchestrator]   Weeks evaluated: ${result.totalWeeksEvaluated}`,
 		);
 	}

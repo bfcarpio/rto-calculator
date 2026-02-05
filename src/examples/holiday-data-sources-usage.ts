@@ -1,62 +1,58 @@
-/**
- * Holiday Data Sources Usage Examples
- *
- * This file demonstrates how to use the holiday data source strategy pattern
- * to fetch and work with holiday data from various sources.
- *
- * Run with: node src/examples/holiday-data-sources-usage.js
- */
+import process from "process";
 
-import {
-	getDefaultHolidayDataSource,
-	HolidayDataSourceFactory,
-} from "../lib/holiday/sources/index.js";
+import { HolidayDataSourceFactory } from "../lib/holiday/sources";
+import type { HolidayDataSource } from "../lib/holiday/sources/types";
 
-// Helper function to pretty-print results
-function printResult(title, data) {
+type ExtendedDataSource = HolidayDataSource & {
+	getConfig?: () => HolidayDataSource["config"];
+	updateConfig?: (config: Partial<HolidayDataSource["config"]>) => void;
+	reset?: () => Promise<void> | void;
+	clearCache?: () => void;
+};
+
+function printResult(title: string, data: unknown): void {
 	console.log(`\n${title}`);
 	console.log("=".repeat(title.length));
 	console.log(JSON.stringify(data, null, 2));
 }
 
-// Helper function to print error
-function printError(error) {
-	console.error(`\n❌ Error: ${error.message}`);
-	if (error.stack && error.config?.debug) {
-		console.error(error.stack);
+function printError(error: unknown): void {
+	if (error instanceof Error) {
+		console.error(`\n❌ Error: ${error.message}`);
+		return;
 	}
+	console.error("\n❌ Error", error);
 }
 
-/**
- * Example 1: Get the default holiday data source
- */
-async function example1_getDefaultDataSource() {
+async function getDefaultDataSource(): Promise<ExtendedDataSource> {
+	const factory = await HolidayDataSourceFactory.getInstance();
+	return factory.getDefaultDataSource() as ExtendedDataSource;
+}
+
+async function example1_getDefaultDataSource(): Promise<void> {
 	console.log(`\n${"=".repeat(60)}`);
 	console.log("Example 1: Get Default Holiday Data Source");
 	console.log("=".repeat(60));
 
 	try {
-		const dataSource = getDefaultHolidayDataSource();
+		const dataSource = await getDefaultDataSource();
 		printResult("Default Data Source Info", {
 			name: dataSource.name,
 			description: dataSource.description,
-			config: dataSource.getConfig(),
+			config: dataSource.getConfig?.(),
 		});
 	} catch (error) {
 		printError(error);
 	}
 }
 
-/**
- * Example 2: Check data source availability
- */
-async function example2_checkAvailability() {
+async function example2_checkAvailability(): Promise<void> {
 	console.log(`\n${"=".repeat(60)}`);
 	console.log("Example 2: Check Data Source Availability");
 	console.log("=".repeat(60));
 
 	try {
-		const dataSource = getDefaultHolidayDataSource();
+		const dataSource = await getDefaultDataSource();
 		const status = await dataSource.checkAvailability();
 		printResult("Data Source Status", status);
 	} catch (error) {
@@ -64,48 +60,41 @@ async function example2_checkAvailability() {
 	}
 }
 
-/**
- * Example 3: Get holidays for a specific year and country
- */
-async function example3_getHolidaysForYear() {
+async function example3_getHolidaysForYear(): Promise<void> {
 	console.log(`\n${"=".repeat(60)}`);
 	console.log("Example 3: Get Holidays for a Year");
 	console.log("=".repeat(60));
 
 	try {
-		const dataSource = getDefaultHolidayDataSource();
+		const dataSource = await getDefaultDataSource();
 		const year = 2024;
 		const countryCode = "US";
 
 		console.log(`Fetching holidays for ${countryCode} in ${year}...`);
 
-		const holidays = await dataSource.getHolidaysForYear(year, countryCode);
+		const holidays = await dataSource.getHolidaysByYear(year, countryCode);
 
 		printResult("Holidays Found", {
 			year,
 			countryCode,
 			count: holidays.length,
-			holidays: holidays.slice(0, 5), // Show first 5 holidays
+			holidays: holidays.slice(0, 5),
 		});
 	} catch (error) {
 		printError(error);
 	}
 }
 
-/**
- * Example 4: Check if a specific date is a holiday
- */
-async function example4_checkIfHoliday() {
+async function example4_checkIfHoliday(): Promise<void> {
 	console.log(`\n${"=".repeat(60)}`);
 	console.log("Example 4: Check If a Date Is a Holiday");
 	console.log("=".repeat(60));
 
 	try {
-		const dataSource = getDefaultHolidayDataSource();
+		const dataSource = await getDefaultDataSource();
 		const countryCode = "US";
 
-		// Check July 4th (Independence Day in US)
-		const independenceDay = new Date(2024, 6, 4); // July 4, 2024
+		const independenceDay = new Date(2024, 6, 4);
 		const result1 = await dataSource.isHoliday(independenceDay, countryCode);
 
 		printResult("July 4, 2024", {
@@ -114,8 +103,7 @@ async function example4_checkIfHoliday() {
 			holiday: result1.holiday,
 		});
 
-		// Check a non-holiday date
-		const regularDay = new Date(2024, 6, 15); // July 15, 2024
+		const regularDay = new Date(2024, 6, 15);
 		const result2 = await dataSource.isHoliday(regularDay, countryCode);
 
 		printResult("July 15, 2024", {
@@ -128,16 +116,13 @@ async function example4_checkIfHoliday() {
 	}
 }
 
-/**
- * Example 5: Check if today is a holiday
- */
-async function example5_checkTodayHoliday() {
+async function example5_checkTodayHoliday(): Promise<void> {
 	console.log(`\n${"=".repeat(60)}`);
 	console.log("Example 5: Check If Today Is a Holiday");
 	console.log("=".repeat(60));
 
 	try {
-		const dataSource = getDefaultHolidayDataSource();
+		const dataSource = await getDefaultDataSource();
 		const countryCode = "US";
 
 		console.log(
@@ -156,16 +141,13 @@ async function example5_checkTodayHoliday() {
 	}
 }
 
-/**
- * Example 6: Get upcoming holidays
- */
-async function example6_getUpcomingHolidays() {
+async function example6_getUpcomingHolidays(): Promise<void> {
 	console.log(`\n${"=".repeat(60)}`);
 	console.log("Example 6: Get Upcoming Holidays");
 	console.log("=".repeat(60));
 
 	try {
-		const dataSource = getDefaultHolidayDataSource();
+		const dataSource = await getDefaultDataSource();
 		const countryCode = "US";
 
 		console.log("Fetching next 10 upcoming holidays...");
@@ -187,20 +169,17 @@ async function example6_getUpcomingHolidays() {
 	}
 }
 
-/**
- * Example 7: Get holidays for a date range
- */
-async function example7_getHolidaysForDateRange() {
+async function example7_getHolidaysForDateRange(): Promise<void> {
 	console.log(`\n${"=".repeat(60)}`);
 	console.log("Example 7: Get Holidays for Date Range");
 	console.log("=".repeat(60));
 
 	try {
-		const dataSource = getDefaultHolidayDataSource();
+		const dataSource = await getDefaultDataSource();
 		const countryCode = "US";
 
-		const startDate = new Date(2024, 11, 1); // December 1, 2024
-		const endDate = new Date(2024, 11, 31); // December 31, 2024
+		const startDate = new Date(2024, 11, 1);
+		const endDate = new Date(2024, 11, 31);
 
 		console.log(
 			`Fetching holidays from ${startDate.toDateString()} to ${endDate.toDateString()}...`,
@@ -227,18 +206,14 @@ async function example7_getHolidaysForDateRange() {
 	}
 }
 
-/**
- * Example 8: Query holidays with custom options
- */
-async function example8_queryWithOptions() {
+async function example8_queryWithOptions(): Promise<void> {
 	console.log(`\n${"=".repeat(60)}`);
 	console.log("Example 8: Query Holidays with Custom Options");
 	console.log("=".repeat(60));
 
 	try {
-		const dataSource = getDefaultHolidayDataSource();
+		const dataSource = await getDefaultDataSource();
 
-		// Query only global holidays
 		const result1 = await dataSource.queryHolidays({
 			countryCode: "US",
 			year: 2024,
@@ -246,7 +221,7 @@ async function example8_queryWithOptions() {
 		});
 
 		printResult("Global Holidays Only (US 2024)", {
-			count: result1.total,
+			count: result1.totalCount,
 			holidays: result1.holidays.map((h) => ({
 				date: new Date(h.date).toDateString(),
 				name: h.name,
@@ -254,7 +229,6 @@ async function example8_queryWithOptions() {
 			})),
 		});
 
-		// Query holidays by type
 		const result2 = await dataSource.queryHolidays({
 			countryCode: "US",
 			year: 2024,
@@ -262,7 +236,7 @@ async function example8_queryWithOptions() {
 		});
 
 		printResult("Public Holidays Only (US 2024)", {
-			count: result2.total,
+			count: result2.totalCount,
 			holidays: result2.holidays.map((h) => ({
 				date: new Date(h.date).toDateString(),
 				name: h.name,
@@ -274,33 +248,28 @@ async function example8_queryWithOptions() {
 	}
 }
 
-/**
- * Example 9: Use the factory to manage data sources
- */
-async function example9_useFactory() {
+async function example9_useFactory(): Promise<void> {
 	console.log(`\n${"=".repeat(60)}`);
 	console.log("Example 9: Use Factory to Manage Data Sources");
 	console.log("=".repeat(60));
 
 	try {
-		const factory = HolidayDataSourceFactory.getInstance();
+		const factory = await HolidayDataSourceFactory.getInstance();
 
-		// Get all available data sources
 		const availableSources = factory.getDataSourceNames();
 		printResult("Available Data Sources", { sources: availableSources });
 
-		// Get a specific data source
 		const nagerDataSource = factory.getDataSource("nager-date");
-		printResult("Nager.Date Data Source", {
-			name: nagerDataSource.name,
-			description: nagerDataSource.description,
-		});
+		if (nagerDataSource) {
+			printResult("Nager.Date Data Source", {
+				name: nagerDataSource.name,
+				description: nagerDataSource.description,
+			});
+		}
 
-		// Check if a data source exists
 		const exists = factory.hasDataSource("nager-date");
 		printResult("Data Source Exists Check", { exists });
 
-		// Get statistics
 		const stats = factory.getStatistics();
 		printResult("Data Source Statistics", stats);
 	} catch (error) {
@@ -308,46 +277,43 @@ async function example9_useFactory() {
 	}
 }
 
-/**
- * Example 10: Caching and performance
- */
-async function example10_caching() {
+async function example10_caching(): Promise<void> {
 	console.log(`\n${"=".repeat(60)}`);
 	console.log("Example 10: Caching and Performance");
 	console.log("=".repeat(60));
 
 	try {
-		const dataSource = getDefaultHolidayDataSource();
+		const dataSource = await getDefaultDataSource();
 		const countryCode = "US";
 		const year = 2024;
 
-		// Enable debug mode and caching
-		dataSource.updateConfig({ debug: true, enableCache: true });
+		dataSource.updateConfig?.({ debug: true, enableCache: true });
 
 		console.log("First fetch (not cached)...");
 		const start1 = Date.now();
-		await dataSource.getHolidaysForYear(year, countryCode);
+		await dataSource.getHolidaysByYear(year, countryCode);
 		const time1 = Date.now() - start1;
 
 		console.log("Second fetch (should be cached)...");
 		const start2 = Date.now();
-		await dataSource.getHolidaysForYear(year, countryCode);
+		await dataSource.getHolidaysByYear(year, countryCode);
 		const time2 = Date.now() - start2;
 
 		printResult("Cache Performance", {
 			firstFetchTime: `${time1}ms`,
 			secondFetchTime: `${time2}ms`,
-			speedup: ` ${(time1 / time2).toFixed(2)}x`,
-			cacheEnabled: dataSource.getConfig().enableCache,
+			speedup: `${(time1 / Math.max(time2, 1)).toFixed(2)}x`,
+			cacheEnabled: dataSource.getConfig?.().enableCache,
 		});
 
-		// Clear cache
-		console.log("Clearing cache...");
-		await dataSource.clearCache();
+		if (dataSource.clearCache) {
+			console.log("Clearing cache...");
+			dataSource.clearCache();
+		}
 
 		console.log("Fetch after cache clear...");
 		const start3 = Date.now();
-		await dataSource.getHolidaysForYear(year, countryCode);
+		await dataSource.getHolidaysByYear(year, countryCode);
 		const time3 = Date.now() - start3;
 
 		printResult("After Cache Clear", {
@@ -359,22 +325,18 @@ async function example10_caching() {
 	}
 }
 
-/**
- * Example 11: Check all data sources health
- */
-async function example11_checkAllDataSources() {
+async function example11_checkAllDataSources(): Promise<void> {
 	console.log(`\n${"=".repeat(60)}`);
 	console.log("Example 11: Check All Data Sources Health");
 	console.log("=".repeat(60));
 
 	try {
-		const factory = HolidayDataSourceFactory.getInstance();
+		const factory = await HolidayDataSourceFactory.getInstance();
 
 		console.log("Checking health of all registered data sources...");
 
 		const statusMap = await factory.checkAllDataSources();
-
-		const results = {};
+		const results: Record<string, unknown> = {};
 		for (const [name, status] of statusMap.entries()) {
 			results[name] = {
 				available: status.isAvailable,
@@ -389,40 +351,35 @@ async function example11_checkAllDataSources() {
 	}
 }
 
-/**
- * Example 12: Error handling
- */
-async function example12_errorHandling() {
+async function example12_errorHandling(): Promise<void> {
 	console.log(`\n${"=".repeat(60)}`);
 	console.log("Example 12: Error Handling");
 	console.log("=".repeat(60));
 
 	try {
-		const dataSource = getDefaultHolidayDataSource();
+		const dataSource = await getDefaultDataSource();
 
-		// Try with invalid country code
 		console.log("Attempting to fetch holidays for invalid country code...");
 		try {
-			await dataSource.getHolidaysForYear(2024, "INVALID");
+			await dataSource.getHolidaysByYear(2024, "INVALID");
 		} catch (error) {
 			printResult("Invalid Country Code Error", {
-				message: error.message,
-				type: error.name,
+				message: error instanceof Error ? error.message : String(error),
+				type: error instanceof Error ? error.name : "Error",
 			});
 		}
 
-		// Try with future year (may not have data yet)
 		console.log("\nAttempting to fetch holidays for a very future year...");
 		try {
 			const futureYear = new Date().getFullYear() + 10;
-			const holidays = await dataSource.getHolidaysForYear(futureYear, "US");
+			const holidays = await dataSource.getHolidaysByYear(futureYear, "US");
 			printResult("Future Year Result", {
 				year: futureYear,
 				found: holidays.length,
 			});
 		} catch (error) {
 			printResult("Future Year Error", {
-				message: error.message,
+				message: error instanceof Error ? error.message : String(error),
 			});
 		}
 	} catch (error) {
@@ -430,16 +387,13 @@ async function example12_errorHandling() {
 	}
 }
 
-/**
- * Example 13: Working with multiple countries
- */
-async function example13_multipleCountries() {
+async function example13_multipleCountries(): Promise<void> {
 	console.log(`\n${"=".repeat(60)}`);
 	console.log("Example 13: Working with Multiple Countries");
 	console.log("=".repeat(60));
 
 	try {
-		const dataSource = getDefaultHolidayDataSource();
+		const dataSource = await getDefaultDataSource();
 		const year = 2024;
 		const countries = ["US", "GB", "CA", "DE"];
 
@@ -447,10 +401,10 @@ async function example13_multipleCountries() {
 			`Fetching holidays for ${countries.length} countries in ${year}...`,
 		);
 
-		const results = {};
+		const results: Record<string, unknown> = {};
 		for (const countryCode of countries) {
 			try {
-				const holidays = await dataSource.getHolidaysForYear(year, countryCode);
+				const holidays = await dataSource.getHolidaysByYear(year, countryCode);
 				results[countryCode] = {
 					success: true,
 					holidayCount: holidays.length,
@@ -464,7 +418,7 @@ async function example13_multipleCountries() {
 			} catch (error) {
 				results[countryCode] = {
 					success: false,
-					error: error.message,
+					error: error instanceof Error ? error.message : String(error),
 				};
 			}
 		}
@@ -475,47 +429,42 @@ async function example13_multipleCountries() {
 	}
 }
 
-/**
- * Example 14: Reset and reconfigure data source
- */
-async function example14_resetAndReconfigure() {
+async function example14_resetAndReconfigure(): Promise<void> {
 	console.log(`\n${"=".repeat(60)}`);
 	console.log("Example 14: Reset and Reconfigure Data Source");
 	console.log("=".repeat(60));
 
 	try {
-		const dataSource = getDefaultHolidayDataSource();
+		const dataSource = await getDefaultDataSource();
 
-		// Get initial config
-		const initialConfig = dataSource.getConfig();
-		printResult("Initial Configuration", initialConfig);
+		const initialConfig = dataSource.getConfig?.();
+		printResult("Initial Configuration", initialConfig ?? {});
 
-		// Update configuration
 		console.log("\nUpdating configuration...");
-		dataSource.updateConfig({
-			defaultCountryCode: "GB",
-			cacheDuration: 7200000, // 2 hours
-			timeout: 15000, // 15 seconds
-		});
+		if (dataSource.updateConfig) {
+			dataSource.updateConfig({
+				defaultCountryCode: "GB",
+				cacheDuration: 7_200_000,
+				timeout: 15_000,
+			});
+		}
 
-		const updatedConfig = dataSource.getConfig();
-		printResult("Updated Configuration", updatedConfig);
+		const updatedConfig = dataSource.getConfig?.();
+		printResult("Updated Configuration", updatedConfig ?? {});
 
-		// Reset data source
-		console.log("\nResetting data source...");
-		await dataSource.reset();
+		if (dataSource.reset) {
+			console.log("\nResetting data source...");
+			await dataSource.reset();
+		}
 
-		const resetConfig = dataSource.getConfig();
-		printResult("Configuration After Reset", resetConfig);
+		const resetConfig = dataSource.getConfig?.();
+		printResult("Configuration After Reset", resetConfig ?? {});
 	} catch (error) {
 		printError(error);
 	}
 }
 
-/**
- * Run all examples
- */
-async function runAllExamples() {
+async function runAllExamples(): Promise<void> {
 	console.log(`\n${"=".repeat(60)}`);
 	console.log("Holiday Data Sources - Usage Examples");
 	console.log("=".repeat(60));
@@ -550,12 +499,10 @@ async function runAllExamples() {
 	}
 }
 
-// Run the examples if this file is executed directly
 if (import.meta.url === `file://${process.argv[1]}`) {
-	runAllExamples();
+	void runAllExamples();
 }
 
-// Export individual examples for use in other modules
 export {
 	example1_getDefaultDataSource,
 	example2_checkAvailability,

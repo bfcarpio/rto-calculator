@@ -80,11 +80,11 @@ export interface SlidingWindowResult {
  * Default RTO policy configuration
  */
 export const DEFAULT_RTO_POLICY: RTOPolicyConfig = {
-	minOfficeDaysPerWeek: 3,
-	totalWeekdaysPerWeek: 5,
-	thresholdPercentage: 0.6, // 3/5 = 60%
-	rollingPeriodWeeks: 12,
-	topWeeksToCheck: 8,
+	minOfficeDaysPerWeek: MINIMUM_COMPLIANT_DAYS,
+	totalWeekdaysPerWeek: TOTAL_WEEK_DAYS,
+	thresholdPercentage: COMPLIANCE_THRESHOLD, // 3/5 = 60%
+	rollingPeriodWeeks: ROLLING_WINDOW_WEEKS,
+	topWeeksToCheck: BEST_WEEKS_COUNT,
 };
 
 // ==================== Date Utilities ====================
@@ -128,7 +128,7 @@ export function getFirstWeekStart(date: Date): Date {
  */
 export function getWeekDates(weekStart: Date): Date[] {
 	const dates: Date[] = [];
-	for (let i = 0; i < 5; i++) {
+	for (let i = 0; i < TOTAL_WEEK_DAYS; i++) {
 		const d = new Date(weekStart);
 		d.setDate(weekStart.getDate() + i);
 		dates.push(d);
@@ -143,7 +143,7 @@ export function getWeekDates(weekStart: Date): Date[] {
  */
 export function isWeekday(date: Date): boolean {
 	const day = date.getDay();
-	return day >= 1 && day <= 5; // 1 = Monday, 5 = Friday
+	return day >= 1 && day <= TOTAL_WEEK_DAYS; // 1 = Monday, 5 = Friday
 }
 
 // ==================== Data Processing ====================
@@ -541,3 +541,11 @@ export function elementToDaySelection(
 		(selectionType as "out-of-office" | "none") || "none",
 	);
 }
+
+import {
+	BEST_WEEKS_COUNT,
+	COMPLIANCE_THRESHOLD,
+	MINIMUM_COMPLIANT_DAYS,
+	ROLLING_WINDOW_WEEKS,
+	TOTAL_WEEK_DAYS,
+} from "./constants";
