@@ -155,6 +155,8 @@ export interface HolidayDataSource {
 	description: string;
 	/** Configuration options */
 	config: HolidayDataSourceConfig;
+	/** Optional accessor for current configuration */
+	getConfig?: () => HolidayDataSourceConfig;
 
 	/**
 	 * Check if the data source is available and operational
@@ -235,6 +237,11 @@ export interface HolidayDataSource {
 	 * @param config - New configuration options (merged with existing)
 	 */
 	updateConfig(config: Partial<HolidayDataSourceConfig>): void;
+
+	/**
+	 * Reset the data source to its initial state
+	 */
+	reset?: () => Promise<void> | void;
 }
 
 /**
