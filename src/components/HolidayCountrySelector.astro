@@ -18,9 +18,8 @@
       <select 
         id="country-select" 
         class="country-select"
-        disabled
       >
-        <option value="">Loading countries...</option>
+        <option value="">Select a country...</option>
       </select>
       
       <button 
@@ -84,6 +83,7 @@
     max-height: 200px;
     opacity: 1;
     margin-top: 0.75rem;
+    overflow: visible;
   }
 
   .selector-title {
@@ -104,6 +104,8 @@
     gap: 0.5rem;
     align-items: center;
     margin-bottom: 0.5rem;
+    position: relative;
+    z-index: 1;
   }
 
   .country-select {
@@ -113,6 +115,14 @@
     border-radius: 6px;
     font-size: 0.875rem;
     background: white;
+    position: relative;
+    z-index: 100;
+    appearance: auto;
+    -webkit-appearance: menulist;
+    -moz-appearance: menulist;
+    min-height: 40px;
+    opacity: 1;
+    cursor: pointer;
   }
 
   .country-select:disabled {
@@ -200,126 +210,263 @@
 <script>
   import { getDateStore } from '../lib/dateStore';
 
-  const countrySelect = document.getElementById('country-select') as HTMLSelectElement;
-  const addButton = document.getElementById('add-holidays-button') as HTMLButtonElement;
-  const statusDiv = document.getElementById('holiday-status');
-  const toggleButton = document.getElementById('selector-toggle') as HTMLButtonElement;
-  const drawer = document.getElementById('selector-drawer');
-  const dateStore = getDateStore();
+  interface Country {
+    countryCode: string;
+    name: string;
+  }
 
-  // Toggle drawer open/closed
-  if (toggleButton && drawer) {
+  interface Holiday {
+    date: Date;
+    name: string;
+  }
+
+  const COUNTRIES: Country[] = [
+    { countryCode: "", name: "Select a country..." },
+    { countryCode: "AD", name: "Andorra" },
+    { countryCode: "AL", name: "Albania" },
+    { countryCode: "AM", name: "Armenia" },
+    { countryCode: "AR", name: "Argentina" },
+    { countryCode: "AT", name: "Austria" },
+    { countryCode: "AU", name: "Australia" },
+    { countryCode: "AX", name: "Åland Islands" },
+    { countryCode: "BA", name: "Bosnia and Herzegovina" },
+    { countryCode: "BB", name: "Barbados" },
+    { countryCode: "BE", name: "Belgium" },
+    { countryCode: "BG", name: "Bulgaria" },
+    { countryCode: "BJ", name: "Benin" },
+    { countryCode: "BO", name: "Bolivia" },
+    { countryCode: "BR", name: "Brazil" },
+    { countryCode: "BS", name: "Bahamas" },
+    { countryCode: "BW", name: "Botswana" },
+    { countryCode: "BY", name: "Belarus" },
+    { countryCode: "BZ", name: "Belize" },
+    { countryCode: "CA", name: "Canada" },
+    { countryCode: "CD", name: "DR Congo" },
+    { countryCode: "CG", name: "Congo" },
+    { countryCode: "CH", name: "Switzerland" },
+    { countryCode: "CL", name: "Chile" },
+    { countryCode: "CN", name: "China" },
+    { countryCode: "CO", name: "Colombia" },
+    { countryCode: "CR", name: "Costa Rica" },
+    { countryCode: "CU", name: "Cuba" },
+    { countryCode: "CY", name: "Cyprus" },
+    { countryCode: "CZ", name: "Czechia" },
+    { countryCode: "DE", name: "Germany" },
+    { countryCode: "DK", name: "Denmark" },
+    { countryCode: "DO", name: "Dominican Republic" },
+    { countryCode: "EC", name: "Ecuador" },
+    { countryCode: "EE", name: "Estonia" },
+    { countryCode: "EG", name: "Egypt" },
+    { countryCode: "ES", name: "Spain" },
+    { countryCode: "FI", name: "Finland" },
+    { countryCode: "FO", name: "Faroe Islands" },
+    { countryCode: "FR", name: "France" },
+    { countryCode: "GA", name: "Gabon" },
+    { countryCode: "GB", name: "United Kingdom" },
+    { countryCode: "GD", name: "Grenada" },
+    { countryCode: "GE", name: "Georgia" },
+    { countryCode: "GG", name: "Guernsey" },
+    { countryCode: "GH", name: "Ghana" },
+    { countryCode: "GI", name: "Gibraltar" },
+    { countryCode: "GL", name: "Greenland" },
+    { countryCode: "GM", name: "Gambia" },
+    { countryCode: "GR", name: "Greece" },
+    { countryCode: "GT", name: "Guatemala" },
+    { countryCode: "GY", name: "Guyana" },
+    { countryCode: "HK", name: "Hong Kong" },
+    { countryCode: "HN", name: "Honduras" },
+    { countryCode: "HR", name: "Croatia" },
+    { countryCode: "HT", name: "Haiti" },
+    { countryCode: "HU", name: "Hungary" },
+    { countryCode: "ID", name: "Indonesia" },
+    { countryCode: "IE", name: "Ireland" },
+    { countryCode: "IM", name: "Isle of Man" },
+    { countryCode: "IS", name: "Iceland" },
+    { countryCode: "IT", name: "Italy" },
+    { countryCode: "JE", name: "Jersey" },
+    { countryCode: "JM", name: "Jamaica" },
+    { countryCode: "JP", name: "Japan" },
+    { countryCode: "KE", name: "Kenya" },
+    { countryCode: "KR", name: "South Korea" },
+    { countryCode: "KZ", name: "Kazakhstan" },
+    { countryCode: "LI", name: "Liechtenstein" },
+    { countryCode: "LS", name: "Lesotho" },
+    { countryCode: "LT", name: "Lithuania" },
+    { countryCode: "LU", name: "Luxembourg" },
+    { countryCode: "LV", name: "Latvia" },
+    { countryCode: "MA", name: "Morocco" },
+    { countryCode: "MC", name: "Monaco" },
+    { countryCode: "MD", name: "Moldova" },
+    { countryCode: "ME", name: "Montenegro" },
+    { countryCode: "MG", name: "Madagascar" },
+    { countryCode: "MK", name: "North Macedonia" },
+    { countryCode: "MN", name: "Mongolia" },
+    { countryCode: "MS", name: "Montserrat" },
+    { countryCode: "MT", name: "Malta" },
+    { countryCode: "MX", name: "Mexico" },
+    { countryCode: "MZ", name: "Mozambique" },
+    { countryCode: "NA", name: "Namibia" },
+    { countryCode: "NE", name: "Niger" },
+    { countryCode: "NG", name: "Nigeria" },
+    { countryCode: "NI", name: "Nicaragua" },
+    { countryCode: "NL", name: "Netherlands" },
+    { countryCode: "NO", name: "Norway" },
+    { countryCode: "NZ", name: "New Zealand" },
+    { countryCode: "PA", name: "Panama" },
+    { countryCode: "PE", name: "Peru" },
+    { countryCode: "PG", name: "Papua New Guinea" },
+    { countryCode: "PH", name: "Philippines" },
+    { countryCode: "PL", name: "Poland" },
+    { countryCode: "PR", name: "Puerto Rico" },
+    { countryCode: "PT", name: "Portugal" },
+    { countryCode: "PY", name: "Paraguay" },
+    { countryCode: "RO", name: "Romania" },
+    { countryCode: "RS", name: "Serbia" },
+    { countryCode: "RU", name: "Russia" },
+    { countryCode: "SE", name: "Sweden" },
+    { countryCode: "SG", name: "Singapore" },
+    { countryCode: "SI", name: "Slovenia" },
+    { countryCode: "SJ", name: "Svalbard and Jan Mayen" },
+    { countryCode: "SK", name: "Slovakia" },
+    { countryCode: "SM", name: "San Marino" },
+    { countryCode: "SR", name: "Suriname" },
+    { countryCode: "SV", name: "El Salvador" },
+    { countryCode: "TN", name: "Tunisia" },
+    { countryCode: "TR", name: "Türkiye" },
+    { countryCode: "UA", name: "Ukraine" },
+    { countryCode: "US", name: "United States" },
+    { countryCode: "UY", name: "Uruguay" },
+    { countryCode: "VA", name: "Vatican City" },
+    { countryCode: "VE", name: "Venezuela" },
+    { countryCode: "VN", name: "Vietnam" },
+    { countryCode: "ZA", name: "South Africa" },
+    { countryCode: "ZW", name: "Zimbabwe" }
+  ];
+
+  const BASE_URL = 'https://date.nager.at';
+
+  // Convert country code to flag emoji (e.g., "US" → "🇺🇸")
+  function getFlagEmoji(countryCode: string): string {
+    const codePoints = countryCode
+      .toUpperCase()
+      .split('')
+      .map(char => 127397 + char.charCodeAt(0));
+    return String.fromCodePoint(...codePoints);
+  }
+
+  function loadCountries(countrySelect: HTMLSelectElement): void {
+    // Clear existing options
+    countrySelect.innerHTML = '';
+
+    // Populate dropdown from hardcoded countries
+    COUNTRIES.forEach((country) => {
+      const option = document.createElement('option');
+      option.value = country.countryCode;
+      if (country.countryCode) {
+        const flag = getFlagEmoji(country.countryCode);
+        option.textContent = `${flag} ${country.name}`;
+      } else {
+        option.textContent = country.name;
+      }
+      countrySelect.appendChild(option);
+    });
+  }
+
+  function initializeComponent(): void {
+    const countrySelect = document.getElementById('country-select') as HTMLSelectElement | null;
+    const addButton = document.getElementById('add-holidays-button') as HTMLButtonElement | null;
+    const statusDiv = document.getElementById('holiday-status');
+    const toggleButton = document.getElementById('selector-toggle') as HTMLButtonElement | null;
+    const drawer = document.getElementById('selector-drawer');
+
+    if (!countrySelect || !addButton || !toggleButton || !drawer) {
+      console.error('[HolidayCountrySelector] Required elements not found');
+      return;
+    }
+
+    const dateStore = getDateStore();
+
+    // Toggle drawer open/closed
     toggleButton.addEventListener('click', () => {
       const isExpanded = toggleButton.getAttribute('aria-expanded') === 'true';
       toggleButton.setAttribute('aria-expanded', String(!isExpanded));
       drawer.classList.toggle('open', !isExpanded);
     });
-  }
 
-  const BASE_URL = 'https://date.nager.at';
-
-  async function loadCountries() {
-    try {
-      if (statusDiv) {
-        statusDiv.className = 'holiday-status loading';
-        statusDiv.textContent = 'Loading countries...';
-      }
-
-      // Dynamic import like NagerDateHolidayDataSource uses
-      const { Configuration, CountryApi } = await import('nager_date_api_reference');
-
-      const config = new Configuration({ basePath: BASE_URL });
-      const countryApi = new CountryApi(config);
-
-      const countries = await countryApi.apiV3AvailableCountriesGet();
-
-      // Populate dropdown
-      countrySelect.innerHTML = '<option value="">Select a country...</option>';
-      countries
-        .sort((a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name))
-        .forEach((country: { countryCode: string; name: string }) => {
-          const option = document.createElement('option');
-          option.value = country.countryCode;
-          option.textContent = country.name;
-          countrySelect.appendChild(option);
-        });
-      
-      countrySelect.disabled = false;
-      
-      if (statusDiv) {
-        statusDiv.textContent = '';
-      }
-    } catch (error) {
-      console.error('Failed to load countries:', error);
-      if (statusDiv) {
-        statusDiv.className = 'holiday-status error';
-        statusDiv.textContent = 'Failed to load countries. Please try again.';
-      }
+    function updateButtonState(): void {
+      addButton!.disabled = !countrySelect!.value;
     }
-  }
 
-  function updateButtonState() {
-    addButton.disabled = !countrySelect.value;
-  }
+    async function addHolidays(): Promise<void> {
+      const countryCode = countrySelect!.value;
+      if (!countryCode) return;
 
-  async function addHolidays() {
-    const countryCode = countrySelect.value;
-    if (!countryCode) return;
+      try {
+        if (statusDiv) {
+          statusDiv.className = 'holiday-status loading';
+          statusDiv.textContent = 'Fetching holidays...';
+        }
+        addButton!.disabled = true;
 
-    try {
-      if (statusDiv) {
-        statusDiv.className = 'holiday-status loading';
-        statusDiv.textContent = 'Fetching holidays...';
-      }
-      addButton.disabled = true;
-
-      const currentYear = new Date().getFullYear();
-      
-      // Dynamic import
-      const { Configuration, PublicHolidayApi } = await import('nager_date_api_reference');
-
-      const config = new Configuration({ basePath: BASE_URL });
-      const holidayApi = new PublicHolidayApi(config);
-
-      const holidays = (await holidayApi.apiV3PublicHolidaysYearCountryCodeGet({ year: currentYear, countryCode })) as unknown as Array<{ date: string; name: string }>;
-
-      const dateRange = dateStore.getDateRange();
-      let addedCount = 0;
-
-      for (const holiday of holidays) {
-        const holidayDate = new Date(holiday.date);
+        const currentYear = new Date().getFullYear();
         
-        if (holidayDate >= dateRange.startDate && holidayDate <= dateRange.endDate) {
-          const existingState = dateStore.getDateState(holidayDate);
-          if (!existingState || existingState !== 'holiday') {
-            dateStore.markDate(holidayDate, 'holiday', true);
-            addedCount++;
+        // Dynamic import
+        const { Configuration, PublicHolidayApi } = await import('nager_date_api_reference');
+
+        const config = new Configuration({ basePath: BASE_URL });
+        const holidayApi = new PublicHolidayApi(config);
+
+        const holidays = await holidayApi.apiV3PublicHolidaysYearCountryCodeGet({ 
+          year: currentYear, 
+          countryCode 
+        }) as Holiday[];
+
+        const dateRange = dateStore.getDateRange();
+        let addedCount = 0;
+
+        for (const holiday of holidays) {
+          const holidayDate = holiday.date;
+          
+          if (holidayDate >= dateRange.startDate && holidayDate <= dateRange.endDate) {
+            const existingState = dateStore.getDateState(holidayDate);
+            if (!existingState || existingState !== 'holiday') {
+              dateStore.markDate(holidayDate, 'holiday', true);
+              addedCount++;
+            }
           }
         }
-      }
 
-      if (statusDiv) {
-        statusDiv.className = 'holiday-status success';
-        statusDiv.textContent = `Added ${addedCount} holidays!`;
-      }
-
-      setTimeout(() => {
         if (statusDiv) {
-          statusDiv.textContent = '';
+          statusDiv.className = 'holiday-status success';
+          statusDiv.textContent = `Added ${addedCount} holidays!`;
         }
-      }, 3000);
-    } catch (error) {
-      console.error('Failed to add holidays:', error);
-      if (statusDiv) {
-        statusDiv.className = 'holiday-status error';
-        statusDiv.textContent = 'Failed to fetch holidays. Please try again.';
+
+        setTimeout(() => {
+          if (statusDiv) {
+            statusDiv.textContent = '';
+          }
+        }, 3000);
+      } catch (error) {
+        console.error('Failed to add holidays:', error);
+        if (statusDiv) {
+          statusDiv.className = 'holiday-status error';
+          statusDiv.textContent = 'Failed to fetch holidays. Please try again.';
+        }
+      } finally {
+        updateButtonState();
       }
-    } finally {
-      updateButtonState();
     }
+
+    // Initialize
+    loadCountries(countrySelect);
+    countrySelect.addEventListener('change', updateButtonState);
+    addButton.addEventListener('click', addHolidays);
   }
 
-  loadCountries();
-  countrySelect.addEventListener('change', updateButtonState);
-  addButton.addEventListener('click', addHolidays);
+  // Wait for DOM to be ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeComponent);
+  } else {
+    initializeComponent();
+  }
 </script>
