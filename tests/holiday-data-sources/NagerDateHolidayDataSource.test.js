@@ -5,7 +5,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import NagerDateHolidayDataSource from "../../src/lib/holiday/sources/NagerDateHolidayDataSource.js";
+import NagerDateHolidayDataSource from "../../src/lib/holiday/sources/NagerDateHolidayDataSource";
 
 describe("NagerDateHolidayDataSource", () => {
 	let dataSource;

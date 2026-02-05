@@ -12,7 +12,7 @@ export { default as HolidayDataSourceFactory } from "./HolidayDataSourceFactory.
 // Export the base strategy class
 export { default as HolidayDataSourceStrategy } from "./HolidayDataSourceStrategy.js";
 // Export the Nager.Date implementation
-export { default as NagerDateHolidayDataSource } from "./NagerDateHolidayDataSource.js";
+export { default as NagerDateHolidayDataSource } from "./NagerDateHolidayDataSource";
 
 // Export a convenience function to get the default data source
 export function getDefaultHolidayDataSource() {

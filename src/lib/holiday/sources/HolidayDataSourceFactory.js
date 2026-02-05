@@ -39,7 +39,7 @@ class HolidayDataSourceFactory {
 		try {
 			// Dynamically import and register NagerDateHolidayDataSource
 			const { default: NagerDateHolidayDataSource } = await import(
-				"./NagerDateHolidayDataSource.js"
+				"./NagerDateHolidayDataSource"
 			);
 			const nagerDataSource = new NagerDateHolidayDataSource();
 			this.registerDataSource(nagerDataSource);
@@ -269,7 +269,7 @@ class HolidayDataSourceFactory {
 
 			if (name === "nager-date") {
 				const { default: NagerDateHolidayDataSource } = await import(
-					"./NagerDateHolidayDataSource.js"
+					"./NagerDateHolidayDataSource"
 				);
 				newDataSource = new NagerDateHolidayDataSource(config);
 			} else {
