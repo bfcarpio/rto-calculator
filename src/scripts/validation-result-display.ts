@@ -9,6 +9,7 @@
 
 import type { RTOPolicyConfig } from "../lib/validation/rto-core";
 import type { ValidationResult } from "../types/validation-strategy";
+import { logger } from "../utils/logger";
 
 /**
  * Validation result display configuration
@@ -28,7 +29,7 @@ const VALIDATION_CONFIG: RTOPolicyConfig = {
 export function displayInitialPrompt(): void {
 	const messageContainer = document.getElementById("validation-message");
 	if (!messageContainer) {
-		console.warn("[ValidationDisplay] Validation message container not found");
+		logger.warn("[ValidationDisplay] Validation message container not found");
 		return;
 	}
 
@@ -40,7 +41,7 @@ export function displayInitialPrompt(): void {
 	messageContainer.style.display = "block";
 	messageContainer.style.visibility = "visible";
 
-	console.log("[ValidationDisplay] Displayed initial prompt");
+	logger.info("[ValidationDisplay] Displayed initial prompt");
 }
 
 /**
@@ -50,7 +51,7 @@ export function displayInitialPrompt(): void {
 export function displayValidationResults(validation: ValidationResult): void {
 	const messageContainer = document.getElementById("validation-message");
 	if (!messageContainer) {
-		console.warn("[ValidationDisplay] Validation message container not found");
+		logger.warn("[ValidationDisplay] Validation message container not found");
 		return;
 	}
 
@@ -79,7 +80,7 @@ export function displayValidationResults(validation: ValidationResult): void {
 	messageContainer.style.display = "block";
 	messageContainer.style.visibility = "visible";
 
-	console.log(
+	logger.info(
 		`[ValidationDisplay] Displayed ${messageType} message:`,
 		displayMessage,
 	);
@@ -95,6 +96,6 @@ export function clearValidationMessage(): void {
 	if (messageContainer) {
 		messageContainer.style.display = "none";
 		messageContainer.style.visibility = "hidden";
-		console.log("[ValidationDisplay] Cleared validation message");
+		logger.debug("[ValidationDisplay] Cleared validation message");
 	}
 }

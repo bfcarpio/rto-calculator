@@ -8,6 +8,7 @@
  * @module holiday-manager
  */
 
+import { logger } from "../../utils/logger";
 import type { Holiday } from "../types/holiday-data-source";
 import companyFilters from "./data/company-filters.json";
 import { HolidayDataSourceFactory } from "./sources";
@@ -275,7 +276,7 @@ export class HolidayManager {
 
 			return result;
 		} catch (error) {
-			console.error("Error fetching holidays:", error);
+			logger.error("Error fetching holidays:", error);
 			// Return empty result on error
 			return {
 				holidays: [],

@@ -3,6 +3,8 @@
  * In-memory only - theme resets on page refresh (matches data behavior)
  */
 
+import { logger } from "../utils/logger";
+
 export type ThemeMode = "system" | "light" | "dark";
 
 interface ThemeManagerState {
@@ -128,7 +130,7 @@ export class ThemeManager {
 			try {
 				callback(stateSnapshot);
 			} catch (error) {
-				console.error("ThemeManager listener error:", error);
+				logger.error("ThemeManager listener error:", error);
 			}
 		});
 	}

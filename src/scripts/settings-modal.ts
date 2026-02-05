@@ -1,3 +1,4 @@
+import { logger } from "../utils/logger";
 import { debugLog } from "./debug";
 import { initializeIndex } from "./index-init";
 
@@ -565,7 +566,7 @@ class SettingsModal {
 
 			debugLog("[Settings] Settings loaded from localStorage:", settings);
 		} catch (error) {
-			console.error("[Settings] Error loading settings:", error);
+			logger.error("[Settings] Error loading settings:", error);
 		}
 	}
 

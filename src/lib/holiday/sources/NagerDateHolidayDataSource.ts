@@ -67,7 +67,7 @@ class NagerDateHolidayDataSource extends HolidayDataSourceStrategy {
 			this.publicHolidayApi = new PublicHolidayApi(this.configuration);
 
 			this._debug("Nager.Date API client initialized successfully");
-		} catch (error) {
+		} catch (error: unknown) {
 			const errorMessage =
 				error instanceof Error ? error.message : String(error);
 			this._debug(

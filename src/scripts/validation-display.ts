@@ -8,6 +8,8 @@
  * @module validation-display
  */
 
+import { logger } from "../utils/logger";
+
 /**
  * Display validation results to user
  * @param validation - The validation result to display
@@ -23,7 +25,7 @@ export function displayValidationResults(validation: {
 }): void {
 	const messageContainer = document.getElementById("validation-message");
 	if (!messageContainer) {
-		console.warn("[ValidationDisplay] Validation message container not found");
+		logger.warn("[ValidationDisplay] Validation message container not found");
 		return;
 	}
 
@@ -52,14 +54,14 @@ export function displayValidationResults(validation: {
 	messageContainer.style.display = "block";
 	messageContainer.style.visibility = "visible";
 
-	console.log(`[ValidationDisplay] Displayed ${messageType} message:`, message);
+	logger.info(`[ValidationDisplay] Displayed ${messageType} message:`, message);
 
 	// Auto-hide success messages after 5 seconds
 	if (messageType === "success") {
 		setTimeout(() => {
 			messageContainer.style.display = "none";
 			messageContainer.style.visibility = "hidden";
-			console.log("[ValidationDisplay] Auto-hid success message");
+			logger.debug("[ValidationDisplay] Auto-hid success message");
 		}, 5000);
 	}
 }
@@ -72,6 +74,6 @@ export function clearValidationMessage(): void {
 	if (messageContainer) {
 		messageContainer.style.display = "none";
 		messageContainer.style.visibility = "hidden";
-		console.log("[ValidationDisplay] Cleared validation message");
+		logger.debug("[ValidationDisplay] Cleared validation message");
 	}
 }

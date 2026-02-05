@@ -3,6 +3,7 @@
  * Handles auto-saving and loading of calendar selections
  */
 
+import { logger } from "../utils/logger";
 import {
 	clearSelectedDates,
 	loadSelectedDates,
@@ -48,7 +49,7 @@ function getSelectedDatesFromDOM(): Map<string, string> {
 	});
 
 	if (STORAGE_DEBUG) {
-		console.log(
+		logger.debug(
 			"[LocalStorage] Found selections:",
 			selectedDates.size,
 			"dates",
@@ -104,7 +105,7 @@ function applySelectionsToDOM(savedDates: Map<string, string>): void {
 				}
 
 				if (STORAGE_DEBUG) {
-					console.log(
+					logger.debug(
 						`[LocalStorage] Restored ${isoString} as ${selectionType}`,
 					);
 				}
@@ -119,7 +120,7 @@ function applySelectionsToDOM(savedDates: Map<string, string>): void {
 function saveSelections(): void {
 	if (!dataSavingEnabled) {
 		if (STORAGE_DEBUG) {
-			console.log("[LocalStorage] Data saving disabled, skipping save");
+			logger.debug("[LocalStorage] Data saving disabled, skipping save");
 		}
 		return;
 	}
@@ -136,7 +137,7 @@ function saveSelections(): void {
 	saveSelectedDates(dateSet);
 
 	if (STORAGE_DEBUG) {
-		console.log("[LocalStorage] Saved", dateSet.size, "selections");
+		logger.debug("[LocalStorage] Saved", dateSet.size, "selections");
 	}
 }
 
@@ -146,7 +147,7 @@ function saveSelections(): void {
 function loadSelections(): void {
 	if (!dataSavingEnabled) {
 		if (STORAGE_DEBUG) {
-			console.log("[LocalStorage] Data saving disabled, skipping load");
+			logger.debug("[LocalStorage] Data saving disabled, skipping load");
 		}
 		return;
 	}
@@ -155,7 +156,7 @@ function loadSelections(): void {
 
 	if (savedDates.size === 0) {
 		if (STORAGE_DEBUG) {
-			console.log("[LocalStorage] No saved selections found");
+			logger.debug("[LocalStorage] No saved selections found");
 		}
 		return;
 	}
@@ -171,7 +172,7 @@ function loadSelections(): void {
 	});
 
 	if (STORAGE_DEBUG) {
-		console.log("[LocalStorage] Loaded", savedMap.size, "saved selections");
+		logger.debug("[LocalStorage] Loaded", savedMap.size, "saved selections");
 	}
 
 	applySelectionsToDOM(savedMap);
@@ -183,7 +184,7 @@ function loadSelections(): void {
 export function clearSavedSelections(): void {
 	clearSelectedDates();
 	if (STORAGE_DEBUG) {
-		console.log("[LocalStorage] Cleared saved selections");
+		logger.debug("[LocalStorage] Cleared saved selections");
 	}
 }
 
@@ -217,7 +218,10 @@ const debouncedSave = debounce(saveSelections, 500);
 export function setDataSavingEnabled(enabled: boolean): void {
 	dataSavingEnabled = enabled;
 	if (STORAGE_DEBUG) {
-		console.log("[LocalStorage] Data saving", enabled ? "enabled" : "disabled");
+		logger.debug(
+			"[LocalStorage] Data saving",
+			enabled ? "enabled" : "disabled",
+		);
 	}
 }
 
@@ -228,7 +232,7 @@ function handleSelectionChange(event: Event): void {
 	const customEvent = event as CustomEvent;
 	if (customEvent.detail) {
 		if (STORAGE_DEBUG) {
-			console.log("[LocalStorage] Selection changed:", customEvent.detail);
+			logger.debug("[LocalStorage] Selection changed:", customEvent.detail);
 		}
 		debouncedSave();
 	}
@@ -243,7 +247,7 @@ function handleSelectionChange(event: Event): void {
  */
 export function initializeLocalStorage(): void {
 	if (STORAGE_DEBUG) {
-		console.log("[LocalStorage] Initializing localStorage integration...");
+		logger.debug("[LocalStorage] Initializing localStorage integration...");
 	}
 
 	// Expose storage manager to window for settings modal
@@ -262,7 +266,7 @@ export function initializeLocalStorage(): void {
 			loadSelections();
 
 			if (STORAGE_DEBUG) {
-				console.log("[LocalStorage] Integration initialized");
+				logger.debug("[LocalStorage] Integration initialized");
 			}
 		}, 100);
 	};
@@ -293,6 +297,6 @@ export function cleanupLocalStorage(): void {
 	});
 
 	if (STORAGE_DEBUG) {
-		console.log("[LocalStorage] Integration cleaned up");
+		logger.debug("[LocalStorage] Integration cleaned up");
 	}
 }

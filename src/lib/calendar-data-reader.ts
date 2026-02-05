@@ -7,6 +7,7 @@
  * @module calendar-data-reader
  */
 
+import { logger } from "../utils/logger";
 import { getHolidayDatesForValidation } from "./holiday/CalendarHolidayIntegration";
 import { RTO_CONFIG } from "./rto-config";
 import { getStartOfWeek, isWeekday } from "./validation/rto-core";
@@ -117,7 +118,7 @@ export async function readCalendarData(
 		const weekStartAttr = element.dataset.weekStart;
 		if (!weekStartAttr) {
 			if (mergedConfig.DEBUG) {
-				console.debug(
+				logger.debug(
 					"[Calendar Data Reader] Skipping status cell without week-start attribute",
 				);
 			}
@@ -127,7 +128,7 @@ export async function readCalendarData(
 		const weekStartTimestamp = parseInt(weekStartAttr, 10);
 		if (Number.isNaN(weekStartTimestamp)) {
 			if (mergedConfig.DEBUG) {
-				console.debug(
+				logger.debug(
 					"[Calendar Data Reader] Skipping status cell with invalid week-start timestamp",
 				);
 			}
@@ -250,11 +251,11 @@ export async function readCalendarData(
 	const readTimeMs = performance.now() - startTime;
 
 	if (mergedConfig.DEBUG) {
-		console.log(
+		logger.debug(
 			`[Calendar Data Reader] Calendar data read in ${readTimeMs.toFixed(2)}ms`,
 		);
-		console.log(`[Calendar Data Reader]   Found ${weeks.length} weeks`);
-		console.log(
+		logger.debug(`[Calendar Data Reader]   Found ${weeks.length} weeks`);
+		logger.debug(
 			`[Calendar Data Reader]   Total holidays across all weeks: ${totalHolidayDays}`,
 		);
 	}

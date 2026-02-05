@@ -4,12 +4,15 @@
  * Implements Singleton pattern to ensure single instance
  */
 
+import { logger } from "../../../utils/logger";
 import NagerDateHolidayDataSource from "./NagerDateHolidayDataSource";
 import type {
 	DataSourceStatus,
 	HolidayDataSource,
 	HolidayDataSourceConfig,
 } from "./types";
+
+type ReloadConfig = HolidayDataSourceConfig & Record<string, unknown>;
 
 interface DataSourceStats {
 	totalDataSources: number;
@@ -65,14 +68,12 @@ export class HolidayDataSourceFactory {
 		try {
 			// Create and register NagerDateHolidayDataSource directly
 			const nagerDataSource = new NagerDateHolidayDataSource();
-			// Cast to unknown then HolidayDataSource to avoid TS missing property errors
-			// (likely due to interface mismatch or complex inheritance inference)
-			this.registerDataSource(nagerDataSource as unknown as HolidayDataSource);
+			this.registerDataSource(nagerDataSource);
 			this.defaultDataSourceName = "nager-date";
 		} catch (error) {
 			const errorMessage =
 				error instanceof Error ? error.message : String(error);
-			console.warn(
+			logger.warn(
 				`[HolidayDataSourceFactory] Failed to initialize default data sources: ${errorMessage}`,
 			);
 		}
@@ -123,7 +124,7 @@ export class HolidayDataSourceFactory {
 
 		const config = dataSource.config;
 		if (config?.debug) {
-			console.log(
+			logger.debug(
 				`[HolidayDataSourceFactory] Registered data source: ${dataSource.name}`,
 			);
 		}
@@ -165,10 +166,10 @@ export class HolidayDataSourceFactory {
 
 		// If default is not set or not found, try to use first available
 		const allDataSources = this.getAllDataSources();
-		if (allDataSources.length > 0) {
-			this.defaultDataSourceName = allDataSources[0]!.name;
-			// Force non-null assertion because we checked length > 0
-			return allDataSources[0]!;
+		const [first] = allDataSources;
+		if (first) {
+			this.defaultDataSourceName = first.name;
+			return first;
 		}
 
 		throw new Error("No holiday data sources available");
@@ -251,16 +252,13 @@ export class HolidayDataSourceFactory {
 	 */
 	async resetAllDataSources(): Promise<void> {
 		const dataSources = this.getAllDataSources();
-		const resetPromises = dataSources.map((dataSource) => {
-			if (
-				"reset" in dataSource &&
-				typeof (dataSource as any).reset === "function"
-			) {
-				return (dataSource as any).reset();
-			}
-			return Promise.resolve();
-		});
-		await Promise.all(resetPromises);
+		await Promise.all(
+			dataSources.map(async (dataSource) => {
+				if (typeof dataSource.reset === "function") {
+					await dataSource.reset();
+				}
+			}),
+		);
 	}
 
 	/**
@@ -297,7 +295,7 @@ export class HolidayDataSourceFactory {
 	 */
 	async reloadDataSource(
 		name: string,
-		config: HolidayDataSourceConfig = {},
+		config: ReloadConfig = {},
 	): Promise<HolidayDataSource> {
 		const existingDataSource = this.dataSources.get(name);
 
@@ -313,9 +311,7 @@ export class HolidayDataSourceFactory {
 			let newDataSource: HolidayDataSource;
 
 			if (name === "nager-date") {
-				newDataSource = new NagerDateHolidayDataSource(
-					config as any,
-				) as unknown as HolidayDataSource;
+				newDataSource = new NagerDateHolidayDataSource(config);
 				this.registerDataSource(newDataSource);
 				return newDataSource;
 			} else {
@@ -332,7 +328,7 @@ export class HolidayDataSourceFactory {
 					restoreError instanceof Error
 						? restoreError.message
 						: String(restoreError);
-				console.error(
+				logger.error(
 					`[HolidayDataSourceFactory] Failed to restore original data source: ${errorMessage}`,
 				);
 			}
