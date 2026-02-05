@@ -226,23 +226,18 @@
       }
 
       // Dynamic import like NagerDateHolidayDataSource uses
-      const { ApiClient, CountryApi } = await import('nager_date_api_reference');
-      
-      const apiClient = new ApiClient(BASE_URL);
-      const countryApi = new CountryApi(apiClient);
+      const { Configuration, CountryApi } = await import('nager_date_api_reference');
 
-      const countries = await new Promise<Array<{ countryCode: string; name: string }>>((resolve, reject) => {
-        countryApi.apiV3AvailableCountriesGet((error: Error | null, data: Array<{ countryCode: string; name: string }> | null) => {
-          if (error) reject(error);
-          else resolve(data || []);
-        });
-      });
+      const config = new Configuration({ basePath: BASE_URL });
+      const countryApi = new CountryApi(config);
+
+      const countries = await countryApi.apiV3AvailableCountriesGet();
 
       // Populate dropdown
       countrySelect.innerHTML = '<option value="">Select a country...</option>';
       countries
-        .sort((a, b) => a.name.localeCompare(b.name))
-        .forEach((country) => {
+        .sort((a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name))
+        .forEach((country: { countryCode: string; name: string }) => {
           const option = document.createElement('option');
           option.value = country.countryCode;
           option.textContent = country.name;
@@ -281,17 +276,12 @@
       const currentYear = new Date().getFullYear();
       
       // Dynamic import
-      const { ApiClient, PublicHolidayApi } = await import('nager_date_api_reference');
-      
-      const apiClient = new ApiClient(BASE_URL);
-      const holidayApi = new PublicHolidayApi(apiClient);
+      const { Configuration, PublicHolidayApi } = await import('nager_date_api_reference');
 
-      const holidays = await new Promise<Array<{ date: string; name: string }>>((resolve, reject) => {
-        holidayApi.apiV3PublicHolidaysYearCountryCodeGet(currentYear, countryCode, (error: Error | null, data: Array<{ date: string; name: string }> | null) => {
-          if (error) reject(error);
-          else resolve((data || []).map((h: { date: string; name: string }) => ({ date: h.date, name: h.name })));
-        });
-      });
+      const config = new Configuration({ basePath: BASE_URL });
+      const holidayApi = new PublicHolidayApi(config);
+
+      const holidays = (await holidayApi.apiV3PublicHolidaysYearCountryCodeGet({ year: currentYear, countryCode })) as unknown as Array<{ date: string; name: string }>;
 
       const dateRange = dateStore.getDateRange();
       let addedCount = 0;

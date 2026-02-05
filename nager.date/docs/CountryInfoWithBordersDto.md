@@ -1,13 +1,43 @@
-# NagerDateApiReference.CountryInfoWithBordersDto
+
+# CountryInfoWithBordersDto
+
+Detailed information about a country, including neighboring countries.
 
 ## Properties
 
-Name | Type | Description | Notes
------------- | ------------- | ------------- | -------------
-**commonName** | **String** | The commonly used name of the country. | 
-**officialName** | **String** | The official name of the country. | 
-**countryCode** | **String** | ISO 3166-1 alpha-2 country code. | 
-**region** | **String** | Geopolitical or continental region of the country. | 
-**borders** | [**[CountryInfoDto]**](CountryInfoDto.md) | Neighboring countries based on geographical borders. | [optional] 
+Name | Type
+------------ | -------------
+`commonName` | string
+`officialName` | string
+`countryCode` | string
+`region` | string
+`borders` | [Array&lt;CountryInfoDto&gt;](CountryInfoDto.md)
+
+## Example
+
+```typescript
+import type { CountryInfoWithBordersDto } from ''
+
+// TODO: Update the object below with actual values
+const example = {
+  "commonName": null,
+  "officialName": null,
+  "countryCode": null,
+  "region": null,
+  "borders": null,
+} satisfies CountryInfoWithBordersDto
+
+console.log(example)
+
+// Convert the instance to a JSON string
+const exampleJSON: string = JSON.stringify(example)
+console.log(exampleJSON)
+
+// Parse the JSON string back to an object
+const exampleParsed = JSON.parse(exampleJSON) as CountryInfoWithBordersDto
+console.log(exampleParsed)
+```
+
+[[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
 
 

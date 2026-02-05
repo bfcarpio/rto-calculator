@@ -3,6 +3,12 @@
  * Implementation of HolidayDataSourceStrategy using the Nager.Date API
  */
 
+import type {
+	Configuration,
+	PublicHolidayApi,
+	PublicHolidayV3Dto,
+	VersionApi,
+} from "nager_date_api_reference";
 import HolidayDataSourceStrategy from "./HolidayDataSourceStrategy";
 import type {
 	DataSourceStatus,
@@ -27,8 +33,8 @@ interface FullConfig extends NagerDateConfig {
 }
 
 class NagerDateHolidayDataSource extends HolidayDataSourceStrategy {
-	private apiClient: unknown | null = null;
-	private publicHolidayApi: unknown | null = null;
+	private configuration: Configuration | null = null;
+	private publicHolidayApi: PublicHolidayApi | null = null;
 	declare config: FullConfig;
 
 	constructor(config: NagerDateConfig = {}) {
@@ -38,7 +44,7 @@ class NagerDateHolidayDataSource extends HolidayDataSourceStrategy {
 			config,
 		);
 
-		this.apiClient = null;
+		this.configuration = null;
 		this.publicHolidayApi = null;
 		this._initializeApiClient();
 	}
@@ -50,22 +56,15 @@ class NagerDateHolidayDataSource extends HolidayDataSourceStrategy {
 	private async _initializeApiClient(): Promise<void> {
 		try {
 			const apiModule = await import("nager_date_api_reference");
-			const { ApiClient, PublicHolidayApi } = apiModule as {
-				ApiClient: new (baseUrl: string) => unknown;
-				PublicHolidayApi: new (client: unknown) => unknown;
+			const { Configuration, PublicHolidayApi } = apiModule as {
+				Configuration: new (params?: { basePath?: string }) => Configuration;
+				PublicHolidayApi: new (config?: Configuration) => PublicHolidayApi;
 			};
 
-			if (this.config.baseUrl) {
-				this.apiClient = new ApiClient(this.config.baseUrl);
-			} else {
-				this.apiClient = new ApiClient("https://date.nager.at");
-			}
+			const basePath = this.config.baseUrl ?? "https://date.nager.at";
+			this.configuration = new Configuration({ basePath });
 
-			if (this.config.timeout) {
-				(this.apiClient as { timeout?: number }).timeout = this.config.timeout;
-			}
-
-			this.publicHolidayApi = new PublicHolidayApi(this.apiClient);
+			this.publicHolidayApi = new PublicHolidayApi(this.configuration);
 
 			this._debug("Nager.Date API client initialized successfully");
 		} catch (error) {
@@ -74,7 +73,7 @@ class NagerDateHolidayDataSource extends HolidayDataSourceStrategy {
 			this._debug(
 				`Failed to initialize Nager.Date API client: ${errorMessage}`,
 			);
-			this.apiClient = null;
+			this.configuration = null;
 			this.publicHolidayApi = null;
 		}
 	}
@@ -100,33 +99,21 @@ class NagerDateHolidayDataSource extends HolidayDataSourceStrategy {
 		this._debug(`Fetching holidays for ${countryCode} - ${year}`);
 
 		try {
-			const holidays = await new Promise<unknown[]>((resolve, reject) => {
-				(
-					this.publicHolidayApi as {
-						apiV3PublicHolidaysYearCountryCodeGet: (
-							year: number,
-							countryCode: string,
-							callback: (error: unknown, data: unknown) => void,
-						) => void;
-					}
-				).apiV3PublicHolidaysYearCountryCodeGet(
-					year,
-					countryCode,
-					(error, data) => {
-						if (error) {
-							reject(error);
-						} else {
-							resolve((data as unknown[]) || []);
-						}
-					},
-				);
-			});
+			const api = this.publicHolidayApi;
+			if (!api) {
+				throw new Error("PublicHolidayApi not initialized");
+			}
+
+			const request = { year, countryCode };
+			const holidays = await api.apiV3PublicHolidaysYearCountryCodeGet(request);
 
 			this._debug(
 				`Successfully fetched ${holidays?.length || 0} holidays for ${countryCode} - ${year}`,
 			);
 
-			return holidays.map((apiHoliday) => this._normalizeHoliday(apiHoliday));
+			return (holidays || []).map((apiHoliday) =>
+				this._normalizeHoliday(apiHoliday),
+			);
 		} catch (error) {
 			const errorMessage =
 				error instanceof Error ? error.message : String(error);
@@ -193,33 +180,15 @@ class NagerDateHolidayDataSource extends HolidayDataSourceStrategy {
 		this._debug(`Checking if today is a holiday for ${countryCode}`);
 
 		try {
-			const statusCode = await new Promise<number>((resolve, reject) => {
-				(
-					this.publicHolidayApi as {
-						apiV3IsTodayPublicHolidayCountryCodeGet: (
-							countryCode: string,
-							opts: object,
-							callback: (
-								error: unknown,
-								_data: unknown,
-								response?: { status?: number },
-							) => void,
-						) => void;
-					}
-				).apiV3IsTodayPublicHolidayCountryCodeGet(
-					countryCode,
-					{},
-					(error, _data, response) => {
-						if (error) {
-							reject(error);
-						} else {
-							resolve(response?.status || 200);
-						}
-					},
-				);
-			});
+			const api = this.publicHolidayApi;
+			if (!api) {
+				throw new Error("PublicHolidayApi not initialized");
+			}
 
-			const isHoliday = statusCode === 200;
+			const request = { countryCode };
+			const response =
+				await api.apiV3IsTodayPublicHolidayCountryCodeGetRaw(request);
+			const isHoliday = response.raw.status === 200;
 
 			if (isHoliday) {
 				const today = new Date();
@@ -282,29 +251,20 @@ class NagerDateHolidayDataSource extends HolidayDataSourceStrategy {
 		this._debug(`Fetching upcoming holidays for ${countryCode}`);
 
 		try {
-			const holidays = await new Promise<unknown[]>((resolve, reject) => {
-				(
-					this.publicHolidayApi as {
-						apiV3NextPublicHolidaysCountryCodeGet: (
-							countryCode: string,
-							callback: (error: unknown, data: unknown) => void,
-						) => void;
-					}
-				).apiV3NextPublicHolidaysCountryCodeGet(countryCode, (error, data) => {
-					if (error) {
-						reject(error);
-					} else {
-						resolve((data as unknown[]) || []);
-					}
-				});
-			});
+			const api = this.publicHolidayApi;
+			if (!api) {
+				throw new Error("PublicHolidayApi not initialized");
+			}
+
+			const request = { countryCode };
+			const holidays = await api.apiV3NextPublicHolidaysCountryCodeGet(request);
 
 			this._debug(
 				`Successfully fetched ${holidays?.length || 0} upcoming holidays for ${countryCode}`,
 			);
 
-			const normalizedHolidays = holidays.map((apiHoliday) =>
-				this._normalizeHoliday(apiHoliday),
+			const normalizedHolidays = (holidays || []).map((apiHoliday) =>
+				this._normalizeHoliday(apiHoliday as PublicHolidayV3Dto),
 			);
 
 			if (limit && limit > 0) {
@@ -386,25 +346,22 @@ class NagerDateHolidayDataSource extends HolidayDataSourceStrategy {
 
 			const apiModule = await import("nager_date_api_reference");
 			const { VersionApi } = apiModule as {
-				VersionApi: new (client: unknown) => unknown;
+				VersionApi: new (config?: Configuration) => VersionApi;
 			};
-			const versionApi = new VersionApi(this.apiClient);
 
-			await new Promise<void>((resolve, reject) => {
-				(
-					versionApi as {
-						apiV3VersionGet: (
-							callback: (error: unknown, _data: unknown) => void,
-						) => void;
-					}
-				).apiV3VersionGet((error) => {
-					if (error) {
-						reject(error);
-					} else {
-						resolve();
-					}
-				});
-			});
+			if (!this.configuration) {
+				const responseTime = Date.now() - startTime;
+				return {
+					isAvailable: false,
+					lastFetch: undefined as unknown as Date,
+					cacheSize: this.cache.size,
+					error: "Configuration not initialized",
+					responseTime,
+				};
+			}
+
+			const versionApi = new VersionApi(this.configuration);
+			await versionApi.apiV3VersionGet();
 
 			const responseTime = Date.now() - startTime;
 
@@ -443,8 +400,25 @@ class NagerDateHolidayDataSource extends HolidayDataSourceStrategy {
 			launchYear?: number;
 		};
 
+		// Parse date string to avoid UTC/local timezone mismatch
+		// API returns "YYYY-MM-DD" strings which should be treated as local dates
+		const dateValue =
+			typeof h.date === "string" ? h.date : h.date.toISOString();
+		const dateStr = dateValue.split("T")[0] || dateValue;
+		const parts = dateStr.split("-");
+		if (parts.length !== 3) {
+			throw new Error(`Invalid date format: ${h.date}`);
+		}
+		const year = Number(parts[0]);
+		const month = Number(parts[1]);
+		const day = Number(parts[2]);
+		if (Number.isNaN(year) || Number.isNaN(month) || Number.isNaN(day)) {
+			throw new Error(`Invalid date format: ${h.date}`);
+		}
+		const localDate = new Date(year, month - 1, day); // month is 0-indexed in JS Date
+
 		const result: Holiday = {
-			date: new Date(h.date),
+			date: localDate,
 			localName: h.localName,
 			name: h.name,
 			countryCode: h.countryCode,

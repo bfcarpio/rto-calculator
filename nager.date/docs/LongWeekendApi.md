@@ -1,16 +1,16 @@
-# NagerDateApiReference.LongWeekendApi
+# LongWeekendApi
 
 All URIs are relative to *http://localhost*
 
-Method | HTTP request | Description
-------------- | ------------- | -------------
-[**apiV3LongWeekendYearCountryCodeGet**](LongWeekendApi.md#apiV3LongWeekendYearCountryCodeGet) | **GET** /api/v3/LongWeekend/{year}/{countryCode} | Retrieve all long weekends for a given country and year
+| Method | HTTP request | Description |
+|------------- | ------------- | -------------|
+| [**apiV3LongWeekendYearCountryCodeGet**](LongWeekendApi.md#apiv3longweekendyearcountrycodeget) | **GET** /api/v3/LongWeekend/{year}/{countryCode} | Retrieve all long weekends for a given country and year |
 
 
 
 ## apiV3LongWeekendYearCountryCodeGet
 
-> [LongWeekendV3Dto] apiV3LongWeekendYearCountryCodeGet(year, countryCode, opts)
+> Array&lt;LongWeekendV3Dto&gt; apiV3LongWeekendYearCountryCodeGet(year, countryCode, availableBridgeDays, subdivisionCode)
 
 Retrieve all long weekends for a given country and year
 
@@ -18,38 +18,53 @@ A long weekend is calculated based on public holidays that create an extended br
 
 ### Example
 
-```javascript
-import NagerDateApiReference from 'nager_date_api_reference';
+```ts
+import {
+  Configuration,
+  LongWeekendApi,
+} from '';
+import type { ApiV3LongWeekendYearCountryCodeGetRequest } from '';
 
-let apiInstance = new NagerDateApiReference.LongWeekendApi();
-let year = 2026; // Number | The target year for which long-weekend data should be calculated.
-let countryCode = "'us'"; // String | A valid `ISO 3166-1 alpha-2` country code determining the region of interest.
-let opts = {
-  'availableBridgeDays': 1, // Number | The maximum number of bridge days to include when determining long-weekend opportunities.
-  'subdivisionCode': "subdivisionCode_example" // String | Narrow the calculation to a specific federal state, province, or subdivision (where supported).
-};
-apiInstance.apiV3LongWeekendYearCountryCodeGet(year, countryCode, opts, (error, data, response) => {
-  if (error) {
+async function example() {
+  console.log("🚀 Testing  SDK...");
+  const api = new LongWeekendApi();
+
+  const body = {
+    // number | The target year for which long-weekend data should be calculated.
+    year: 56,
+    // string | A valid `ISO 3166-1 alpha-2` country code determining the region of interest.
+    countryCode: countryCode_example,
+    // number | The maximum number of bridge days to include when determining long-weekend opportunities. (optional)
+    availableBridgeDays: 56,
+    // string | Narrow the calculation to a specific federal state, province, or subdivision (where supported). (optional)
+    subdivisionCode: subdivisionCode_example,
+  } satisfies ApiV3LongWeekendYearCountryCodeGetRequest;
+
+  try {
+    const data = await api.apiV3LongWeekendYearCountryCodeGet(body);
+    console.log(data);
+  } catch (error) {
     console.error(error);
-  } else {
-    console.log('API called successfully. Returned data: ' + data);
   }
-});
+}
+
+// Run the test
+example().catch(console.error);
 ```
 
 ### Parameters
 
 
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **year** | **Number**| The target year for which long-weekend data should be calculated. | [default to 2026]
- **countryCode** | **String**| A valid &#x60;ISO 3166-1 alpha-2&#x60; country code determining the region of interest. | [default to &#39;us&#39;]
- **availableBridgeDays** | **Number**| The maximum number of bridge days to include when determining long-weekend opportunities. | [optional] [default to 1]
- **subdivisionCode** | **String**| Narrow the calculation to a specific federal state, province, or subdivision (where supported). | [optional] 
+| Name | Type | Description  | Notes |
+|------------- | ------------- | ------------- | -------------|
+| **year** | `number` | The target year for which long-weekend data should be calculated. | [Defaults to `2026`] |
+| **countryCode** | `string` | A valid &#x60;ISO 3166-1 alpha-2&#x60; country code determining the region of interest. | [Defaults to `&#39;us&#39;`] |
+| **availableBridgeDays** | `number` | The maximum number of bridge days to include when determining long-weekend opportunities. | [Optional] [Defaults to `1`] |
+| **subdivisionCode** | `string` | Narrow the calculation to a specific federal state, province, or subdivision (where supported). | [Optional] [Defaults to `undefined`] |
 
 ### Return type
 
-[**[LongWeekendV3Dto]**](LongWeekendV3Dto.md)
+[**Array&lt;LongWeekendV3Dto&gt;**](LongWeekendV3Dto.md)
 
 ### Authorization
 
@@ -58,5 +73,14 @@ No authorization required
 ### HTTP request headers
 
 - **Content-Type**: Not defined
-- **Accept**: application/json
+- **Accept**: `application/json`
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+| **200** | Successfully returns the calculated long-weekend results for the specified country and year. |  -  |
+| **404** | The provided country code is invalid or not recognized. |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
 
