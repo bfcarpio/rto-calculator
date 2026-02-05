@@ -54,7 +54,7 @@ Based on codebase analysis, these specific items need completion:
 <!-- ARIA: aria-labelledby="section-1-title" -->
 
 **Status**: 95% complete - 2 JavaScript files remain
-<!-- ARIA: Task list - 4 items remaining -->
+<!-- ARIA: Task list - 9 items remaining -->
 <!-- ARIA: Checkbox - unchecked -->
 - [ ] `src/scripts/ValidationManager.js` → Convert to TypeScript
 <!-- ARIA: End checkbox -->
@@ -67,6 +67,52 @@ Based on codebase analysis, these specific items need completion:
 <!-- ARIA: Checkbox - unchecked -->
 - [ ] Ensure all validation logic uses new TypeScript strategy pattern
 <!-- ARIA: End checkbox -->
+<!-- ARIA: Checkbox - unchecked -->
+- [ ] **Refactor ValidationStrategy base class** - Move duplicated methods to share code
+<!-- ARIA: End checkbox -->
+  - Move `_getWeeksForEvaluation()` from validators to base class (exact copy in both)
+  - Move `_calculateWeekStart()` to base class (exact copy in both)
+  - Move `_extractWeeksMap()` to base class (exact copy in both)
+  - Move `getWeekCompliance()` to base class (nearly identical logic)
+  - Move `getWindowCompliance()` to base class (nearly identical logic)
+  - **Benefits**: ~125 lines removed, single source of truth, easier testing
+
+<!-- ARIA: Checkbox - unchecked -->
+- [ ] **Delete backup files** - Remove dead code before release
+<!-- ARIA: End checkbox -->
+  - Delete `src/lib/__tests__/RollingPeriodValidation.test.ts.bak` (363 lines of dead code)
+
+<!-- ARIA: Checkbox - unchecked -->
+- [ ] **Address technical debt comments** - Fix or document TODO/FIXME/HACK
+<!-- ARIA: End checkbox -->
+  - Fix 1 FIXME in StrictDayCountValidator.ts ("needs proper implementation")
+  - Fix 1 TODO in ValidationStrategy.ts ("_logDebug() needs proper debug flag")
+  - Review 2 HACK comments in validation tests - fix or document why acceptable
+
+<!-- ARIA: Checkbox - unchecked -->
+- [ ] **Eliminate magic numbers** - Replace hardcoded values with named constants
+<!-- ARIA: End checkbox -->
+  <!-- ARIA: Code example below - Named constants for validation rules -->
+  ```typescript
+  // src/lib/validation/constants.ts
+  export const REQUIRED_OFFICE_DAYS = 3;
+  export const TOTAL_WEEK_DAYS = 5;
+  export const ROLLING_WINDOW_WEEKS = 12;
+  export const BEST_WEEKS_COUNT = 8;
+  export const COMPLIANCE_THRESHOLD = 0.6; // 60%
+  export const MINIMUM_COMPLIANT_DAYS = 3;
+  ```
+  - Currently scattered throughout StrictDayCountValidator and AverageWindowValidator
+  - Centralize in `src/lib/validation/constants.ts`
+
+<!-- ARIA: Checkbox - unchecked -->
+- [ ] **Add JSDoc documentation** - Document public APIs
+<!-- ARIA: End checkbox -->
+  - ValidationStrategy base class methods
+  - StrictDayCountValidator public methods
+  - AverageWindowValidator public methods
+  - Exported utility functions (dateUtils, etc.)
+  - Focus on: parameters, return types, exceptions, examples
 
 <!-- ARIA: section region start -->
 ## 2. State Management Migration to Nano Stores
