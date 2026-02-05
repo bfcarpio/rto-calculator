@@ -4,14 +4,37 @@
  * Implements the HolidayDataSource interface
  */
 
-class HolidayDataSourceStrategy {
+import type {
+	DataSourceStatistics,
+	DataSourceStatus,
+	DateRange,
+	Holiday,
+	HolidayCheckResult,
+	HolidayDataSource,
+	HolidayDataSourceConfig,
+	HolidayQueryOptions,
+	HolidayQueryResult,
+} from "./types";
+
+abstract class HolidayDataSourceStrategy implements HolidayDataSource {
+	name: string;
+	description: string;
+	config: HolidayDataSourceConfig;
+	protected defaultConfig: HolidayDataSourceConfig;
+	protected cache: Map<string, Holiday[]>;
+	protected cacheTimestamps: Map<string, number>;
+
 	/**
 	 * Constructs a new HolidayDataSourceStrategy
 	 * @param {string} name - Unique identifier for this data source
 	 * @param {string} description - Human-readable description
-	 * @param {object} config - Initial configuration
+	 * @param {HolidayDataSourceConfig} config - Initial configuration
 	 */
-	constructor(name, description, config = {}) {
+	constructor(
+		name: string,
+		description: string,
+		config: HolidayDataSourceConfig = {},
+	) {
 		this.name = name;
 		this.description = description;
 		this.defaultConfig = {
@@ -30,14 +53,14 @@ class HolidayDataSourceStrategy {
 	 * Check if this data source is available and ready to use
 	 * @returns {Promise<DataSourceStatus>} Data source status
 	 */
-	async checkAvailability() {
+	async checkAvailability(): Promise<DataSourceStatus> {
 		const startTime = Date.now();
 		try {
 			// Attempt to fetch a simple test query
 			const currentYear = new Date().getFullYear();
-			const _holidays = await this.getHolidaysByYear(
+			await this.getHolidaysByYear(
 				currentYear,
-				this.config.defaultCountryCode,
+				this.config.defaultCountryCode || "US",
 			);
 
 			const responseTime = Date.now() - startTime;
@@ -49,11 +72,12 @@ class HolidayDataSourceStrategy {
 			};
 		} catch (error) {
 			const responseTime = Date.now() - startTime;
+			const errorMessage =
+				error instanceof Error ? error.message : String(error);
 			return {
 				isAvailable: false,
-				lastFetch: undefined,
 				cacheSize: this.cache.size,
-				error: error.message,
+				error: errorMessage,
 				responseTime,
 			};
 		}
@@ -63,9 +87,12 @@ class HolidayDataSourceStrategy {
 	 * Get all holidays for a specific year and country
 	 * @param {number} year - Year to get holidays for
 	 * @param {string} countryCode - ISO 3166-1 alpha-2 country code
-	 * @returns {Promise<Array<Holiday>>} Array of holidays
+	 * @returns {Promise<Holiday[]>} Array of holidays
 	 */
-	async getHolidaysByYear(year, countryCode) {
+	async getHolidaysByYear(
+		year: number,
+		countryCode: string,
+	): Promise<Holiday[]> {
 		const cacheKey = `${countryCode}-${year}`;
 
 		if (this.config.enableCache) {
@@ -97,15 +124,18 @@ class HolidayDataSourceStrategy {
 	 * Get holidays within a date range
 	 * @param {DateRange} dateRange - Date range to query
 	 * @param {string} countryCode - ISO 3166-1 alpha-2 country code
-	 * @returns {Promise<Array<Holiday>>} Array of holidays
+	 * @returns {Promise<Holiday[]>} Array of holidays
 	 */
-	async getHolidaysForDateRange(dateRange, countryCode) {
+	async getHolidaysForDateRange(
+		dateRange: DateRange,
+		countryCode: string,
+	): Promise<Holiday[]> {
 		const { startDate, endDate } = dateRange;
 		const startYear = startDate.getFullYear();
 		const endYear = endDate.getFullYear();
 
 		// Fetch holidays for all years in range
-		const holidays = [];
+		const holidays: Holiday[] = [];
 		for (let year = startYear; year <= endYear; year++) {
 			const yearHolidays = await this.getHolidaysByYear(year, countryCode);
 			holidays.push(...yearHolidays);
@@ -122,9 +152,12 @@ class HolidayDataSourceStrategy {
 	 * Get upcoming holidays
 	 * @param {string} countryCode - ISO 3166-1 alpha-2 country code
 	 * @param {object} options - Optional query options
-	 * @returns {Promise<Array<Holiday>>} Array of upcoming holidays
+	 * @returns {Promise<Holiday[]>} Array of upcoming holidays
 	 */
-	async getUpcomingHolidays(countryCode, options = {}) {
+	async getUpcomingHolidays(
+		countryCode: string,
+		options: { limit?: number; startDate?: Date } = {},
+	): Promise<Holiday[]> {
 		const { limit = 365, startDate = new Date() } = options;
 		const endDate = new Date(startDate);
 		endDate.setDate(startDate.getDate() + limit);
@@ -144,7 +177,10 @@ class HolidayDataSourceStrategy {
 	 * @param {string} countryCode - ISO 3166-1 alpha-2 country code
 	 * @returns {Promise<HolidayCheckResult>} Holiday check result
 	 */
-	async isHoliday(date, countryCode) {
+	async isHoliday(
+		date: Date,
+		countryCode: string,
+	): Promise<HolidayCheckResult> {
 		const year = date.getFullYear();
 		const holidays = await this.getHolidaysByYear(year, countryCode);
 
@@ -154,10 +190,11 @@ class HolidayDataSourceStrategy {
 			return this._formatDate(holidayDate) === dateStr;
 		});
 
-		if (matchingHolidays.length > 0) {
+		const foundHoliday = matchingHolidays[0];
+		if (foundHoliday) {
 			return {
 				isHoliday: true,
-				holiday: matchingHolidays[0],
+				holiday: foundHoliday,
 				holidayCount: matchingHolidays.length,
 			};
 		}
@@ -173,7 +210,7 @@ class HolidayDataSourceStrategy {
 	 * @param {string} countryCode - ISO 3166-1 alpha-2 country code
 	 * @returns {Promise<HolidayCheckResult>} Holiday check result
 	 */
-	async isTodayHoliday(countryCode) {
+	async isTodayHoliday(countryCode: string): Promise<HolidayCheckResult> {
 		const today = new Date();
 		return this.isHoliday(today, countryCode);
 	}
@@ -183,7 +220,9 @@ class HolidayDataSourceStrategy {
 	 * @param {HolidayQueryOptions} options - Query options
 	 * @returns {Promise<HolidayQueryResult>} Holiday query result
 	 */
-	async queryHolidays(options) {
+	async queryHolidays(
+		options: HolidayQueryOptions,
+	): Promise<HolidayQueryResult> {
 		const {
 			countryCode,
 			year,
@@ -193,7 +232,7 @@ class HolidayDataSourceStrategy {
 			types,
 		} = options;
 
-		let holidays;
+		let holidays: Holiday[];
 
 		if (dateRange) {
 			holidays = await this.getHolidaysForDateRange(dateRange, countryCode);
@@ -225,19 +264,24 @@ class HolidayDataSourceStrategy {
 			});
 		}
 
-		return {
+		const result: HolidayQueryResult = {
 			holidays,
-			total: holidays.length,
-			query: options,
-			cached: false, // Subclasses can override this if they track cache hits
+			totalCount: holidays.length,
+			countryCode,
 		};
+
+		if (dateRange) {
+			result.dateRange = dateRange;
+		}
+
+		return result;
 	}
 
 	/**
 	 * Clear any internal cache
-	 * @returns {Promise<void>}
+	 * @returns {void}
 	 */
-	async clearCache() {
+	clearCache(): void {
 		this.cache.clear();
 		this.cacheTimestamps.clear();
 		if (this.config.debug) {
@@ -246,11 +290,33 @@ class HolidayDataSourceStrategy {
 	}
 
 	/**
+	 * Get data source statistics
+	 */
+	getStatistics(): DataSourceStatistics {
+		// Implement a basic return to satisfy the interface or full stats if needed
+		return {
+			totalCalls: 0,
+			successfulCalls: 0,
+			failedCalls: 0,
+			averageResponseTime: 0,
+			cacheHitRate: 0,
+			totalHolidaysFetched: 0,
+		};
+	}
+
+	/**
+	 * Reset the data source statistics
+	 */
+	resetStatistics(): void {
+		// No-op for base class, or reset specific stats if we had them
+	}
+
+	/**
 	 * Reset the data source to initial state
 	 * @returns {Promise<void>}
 	 */
-	async reset() {
-		await this.clearCache();
+	async reset(): Promise<void> {
+		this.clearCache();
 		this.config = { ...this.defaultConfig };
 		if (this.config.debug) {
 			console.log(`[HolidayDataSource] Reset complete`);
@@ -261,7 +327,7 @@ class HolidayDataSourceStrategy {
 	 * Update configuration for this data source
 	 * @param {Partial<HolidayDataSourceConfig>} config - New configuration values
 	 */
-	updateConfig(config) {
+	updateConfig(config: Partial<HolidayDataSourceConfig>): void {
 		this.config = { ...this.config, ...config };
 		if (this.config.debug) {
 			console.log(`[HolidayDataSource] Configuration updated`);
@@ -272,7 +338,7 @@ class HolidayDataSourceStrategy {
 	 * Get current configuration
 	 * @returns {HolidayDataSourceConfig} Current configuration
 	 */
-	getConfig() {
+	getConfig(): HolidayDataSourceConfig {
 		return { ...this.config };
 	}
 
@@ -283,46 +349,47 @@ class HolidayDataSourceStrategy {
 	 * @abstract
 	 * @param {number} year - Year to fetch holidays for
 	 * @param {string} countryCode - ISO 3166-1 alpha-2 country code
-	 * @returns {Promise<Array<Holiday>>} Array of holidays
+	 * @returns {Promise<Holiday[]>} Array of holidays
 	 * @protected
 	 */
-	async _fetchHolidaysForYear(_year, _countryCode) {
-		throw new Error(`_fetchHolidaysForYear must be implemented by subclass`);
-	}
+	protected abstract _fetchHolidaysForYear(
+		year: number,
+		countryCode: string,
+	): Promise<Holiday[]>;
 
 	// Protected helper methods
 
 	/**
 	 * Get value from cache if not expired
 	 * @param {string} key - Cache key
-	 * @returns {any|null} Cached value or null
+	 * @returns {Holiday[] | null} Cached value or null
 	 * @protected
 	 */
-	_getFromCache(key) {
+	protected _getFromCache(key: string): Holiday[] | null {
 		if (!this.cache.has(key)) {
 			return null;
 		}
 
-		const timestamp = this.cacheTimestamps.get(key);
+		const timestamp = this.cacheTimestamps.get(key) || 0;
 		const now = Date.now();
 		const age = now - timestamp;
 
-		if (age > this.config.cacheDuration) {
+		if (this.config.cacheDuration && age > this.config.cacheDuration) {
 			this.cache.delete(key);
 			this.cacheTimestamps.delete(key);
 			return null;
 		}
 
-		return this.cache.get(key);
+		return this.cache.get(key) || null;
 	}
 
 	/**
 	 * Set value in cache
 	 * @param {string} key - Cache key
-	 * @param {any} value - Value to cache
+	 * @param {Holiday[]} value - Value to cache
 	 * @protected
 	 */
-	_setCache(key, value) {
+	protected _setCache(key: string, value: Holiday[]): void {
 		this.cache.set(key, value);
 		this.cacheTimestamps.set(key, Date.now());
 	}
@@ -333,7 +400,7 @@ class HolidayDataSourceStrategy {
 	 * @returns {string} Formatted date string
 	 * @protected
 	 */
-	_formatDate(date) {
+	protected _formatDate(date: Date): string {
 		const year = date.getFullYear();
 		const month = String(date.getMonth() + 1).padStart(2, "0");
 		const day = String(date.getDate()).padStart(2, "0");
@@ -342,21 +409,23 @@ class HolidayDataSourceStrategy {
 
 	/**
 	 * Normalize holiday data from API response to standard format
-	 * @param {object} apiHoliday - Raw holiday data from API
+	 * @param {unknown} apiHoliday - Raw holiday data from API
 	 * @returns {Holiday} Normalized holiday object
 	 * @protected
 	 */
-	_normalizeHoliday(apiHoliday) {
+	protected _normalizeHoliday(apiHoliday: unknown): Holiday {
+		// Default implementation, should be overridden or used if structure matches
+		const h = apiHoliday as any;
 		return {
-			date: new Date(apiHoliday.date),
-			localName: apiHoliday.localName,
-			name: apiHoliday.name,
-			countryCode: apiHoliday.countryCode,
-			types: apiHoliday.types || [],
-			fixed: apiHoliday.fixed,
-			global: apiHoliday.global,
-			counties: apiHoliday.counties,
-			launchYear: apiHoliday.launchYear,
+			date: new Date(h.date),
+			localName: h.localName,
+			name: h.name,
+			countryCode: h.countryCode,
+			types: h.types || [],
+			fixed: h.fixed,
+			global: h.global,
+			counties: h.counties,
+			launchYear: h.launchYear,
 		};
 	}
 
@@ -365,12 +434,11 @@ class HolidayDataSourceStrategy {
 	 * @param {string} message - Message to log
 	 * @protected
 	 */
-	_debug(message) {
+	protected _debug(message: string): void {
 		if (this.config.debug) {
 			console.log(`[HolidayDataSource:${this.name}] ${message}`);
 		}
 	}
 }
 
-// Export for use in holiday data source implementations
 export default HolidayDataSourceStrategy;

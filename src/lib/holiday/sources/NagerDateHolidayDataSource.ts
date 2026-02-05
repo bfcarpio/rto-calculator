@@ -3,7 +3,7 @@
  * Implementation of HolidayDataSourceStrategy using the Nager.Date API
  */
 
-import HolidayDataSourceStrategy from "./HolidayDataSourceStrategy.js";
+import HolidayDataSourceStrategy from "./HolidayDataSourceStrategy";
 import type {
 	DataSourceStatus,
 	DateRange,
@@ -232,11 +232,14 @@ class NagerDateHolidayDataSource extends HolidayDataSourceStrategy {
 					return this._formatDate(holidayDate) === dateStr;
 				});
 
-				return {
+				const result: HolidayCheckResult = {
 					isHoliday: true,
-					holiday: matchingHolidays[0] || null,
 					holidayCount: matchingHolidays.length,
 				};
+				if (matchingHolidays[0]) {
+					result.holiday = matchingHolidays[0];
+				}
+				return result;
 			}
 
 			return {

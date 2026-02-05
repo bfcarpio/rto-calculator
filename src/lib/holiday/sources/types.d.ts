@@ -176,7 +176,7 @@ export interface HolidayDataSource {
 	 * @param countryCode - ISO 3166-1 alpha-2 country code
 	 * @returns Promise that resolves to an array of holidays
 	 */
-	getHolidaysByDateRange(
+	getHolidaysForDateRange(
 		dateRange: DateRange,
 		countryCode: string,
 	): Promise<Holiday[]>;
@@ -184,10 +184,13 @@ export interface HolidayDataSource {
 	/**
 	 * Get upcoming holidays from today
 	 * @param countryCode - ISO 3166-1 alpha-2 country code
-	 * @param days - Number of days ahead to look (default: 365)
+	 * @param options - Query options
 	 * @returns Promise that resolves to an array of holidays
 	 */
-	getUpcomingHolidays(countryCode: string, days?: number): Promise<Holiday[]>;
+	getUpcomingHolidays(
+		countryCode: string,
+		options?: { limit?: number; startDate?: Date },
+	): Promise<Holiday[]>;
 
 	/**
 	 * Check if a specific date is a holiday
