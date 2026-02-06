@@ -1,0 +1,44 @@
+{
+	"name": "rto-calendar",
+	"version": "1.0.0",
+	"type": "module",
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		},
+		"./styles": "./dist/styles/calendar.css",
+		"./Calendar.astro": "./dist/components/Calendar.astro"
+	},
+	"files": [
+		"dist",
+		"README.md",
+		"LICENSE"
+	],
+	"scripts": {
+		"build": "astro build && tsc",
+		"dev": "astro dev",
+		"test": "vitest",
+		"test:ui": "vitest --ui",
+		"test:run": "vitest run",
+		"lint": "eslint src --ext .ts,.astro",
+		"lint:fix": "eslint src --ext .ts,.astro --fix"
+	},
+	"dependencies": {
+		"nanostores": "1.1.0",
+		"date-fns": "3.6.0"
+	},
+	"peerDependencies": {
+		"astro": "4.16.12"
+	},
+	"devDependencies": {
+		"typescript": "5.7.2",
+		"vitest": "2.1.8",
+		"@vitest/ui": "2.1.8",
+		"eslint": "^9.0.0",
+		"@typescript-eslint/eslint-plugin": "^8.0.0",
+		"eslint-plugin-astro": "^1.2.0"
+	}
+}
