@@ -13,6 +13,7 @@
 | Phase 7: Event Handling | ✅ COMPLETE | 2026-02-06 | Refactored calendar-events.ts, created eventHandlers.ts, maintained all features |
 | Phase 8: Vanilla Layer Implementation | ✅ COMPLETE | 2026-02-06 | CalendarRenderer, MonthRenderer, DayRenderer, EventHandler, index.ts entry point |
 | Phase 9: Styling & Theming | 🔄 IN PROGRESS | - | CSS and theme system |
+| Phase 14: Package Rename (rto-calendar → datepainter) | 🔄 IN PROGRESS | 2026-02-06 | Package rename and documentation update |
 
 ---
 
@@ -30,7 +31,7 @@
 - Data attributes for date cell identification (data-date)
 
 ### Commits:
-1. feat(rto-calendar): add template renderer with HTML generation (Phase 6)
+1. feat(datepainter): add template renderer with HTML generation (Phase 6)
 
 ---
 
@@ -53,10 +54,10 @@
 - **Event Delegation**: Efficient event handling through delegation pattern
 
 ### Files Created:
-- `packages/rto-calendar/src/vanilla/eventHandlers.ts`
+- `packages/datepainter/src/vanilla/eventHandlers.ts`
 
 ### Commits:
-1. feat(rto-calendar): add eventHandlers with full feature support (Phase 7)
+1. feat(datepainter): add eventHandlers with full feature support (Phase 7)
 
 ---
 
@@ -70,7 +71,7 @@
 - Added error handling with descriptive messages throughout
 
 ### Commits:
-1. feat(rto-calendar): add CalendarManager core class with full JSDoc (Phase 5)
+1. feat(datepainter): add CalendarManager core class with full JSDoc (Phase 5)
 
 ---
 
@@ -84,7 +85,7 @@
 - Added extensive unit tests for all edge cases
 
 ### Commits:
-1. feat(rto-calendar): add date utilities with JSDoc (Phase 4)
+1. feat(datepainter): add date utilities with JSDoc (Phase 4)
 
 ---
 
@@ -99,8 +100,8 @@
 - Added schema validation for loaded data
 
 ### Commits:
-1. feat(rto-calendar): add Nano Stores state management (Phase 3.1)
-2. feat(rto-calendar): add core types and configuration (Phase 3.1-3.4)
+1. feat(datepainter): add Nano Stores state management (Phase 3.1)
+2. feat(datepainter): add core types and configuration (Phase 3.1-3.4)
 
 ---
 
@@ -124,13 +125,13 @@
 
 ### Commits:
 1. docs: add ExtractCalendar.md with comprehensive implementation plan
-2. feat(rto-calendar): add package.json with dual exports (Astro + Vanilla)
-3. feat(rto-calendar): add TypeScript configuration
-4. feat(rto-calendar): add Vitest and Vite build configurations
-5. feat(rto-calendar): add .npmignore and MIT LICENSE
-6. feat(rto-calendar): add ESLint configuration
-7. feat(rto-calendar): migrate to Biome from ESLint
-8. feat(rto-calendar): use ESM-only for browser-focused library
+2. feat(datepainter): add package.json with dual exports (Astro + Vanilla)
+3. feat(datepainter): add TypeScript configuration
+4. feat(datepainter): add Vitest and Vite build configurations
+5. feat(datepainter): add .npmignore and MIT LICENSE
+6. feat(datepainter): add ESLint configuration
+7. feat(datepainter): migrate to Biome from ESLint
+8. feat(datepainter): use ESM-only for browser-focused library
 
 ---
 
@@ -405,7 +406,7 @@ packages/
 
 #### 2.2 Package-Specific Configuration
 - [ ] Create `packages/extract-calendar/package.json`
-  - Package name: `@rto-calculator/extract-calendar`
+  - Package name: `@datepainter/calendar`
   - Exports: `.` (main), `./astro`, `./vanilla`
   - Types: TypeScript declarations
   - Scripts: build, test, dev, lint
@@ -649,11 +650,11 @@ packages/
 - Enhanced `templateRenderer.ts` with HTML generation functions for SSR compatibility
 
 ### Files Created:
-- `packages/rto-calendar/src/vanilla/CalendarRenderer.ts` - Main DOM renderer class
-- `packages/rto-calendar/src/vanilla/MonthRenderer.ts` - Month grid rendering
-- `packages/rto-calendar/src/vanilla/DayRenderer.ts` - Individual day cell rendering
-- `packages/rto-calendar/src/vanilla/EventHandler.ts` - Event delegation and interaction handling
-- `packages/rto-calendar/src/vanilla/index.ts` - Vanilla entry point with re-exports
+- `packages/datepainter/src/vanilla/CalendarRenderer.ts` - Main DOM renderer class
+- `packages/datepainter/src/vanilla/MonthRenderer.ts` - Month grid rendering
+- `packages/datepainter/src/vanilla/DayRenderer.ts` - Individual day cell rendering
+- `packages/datepainter/src/vanilla/EventHandler.ts` - Event delegation and interaction handling
+- `packages/datepainter/src/vanilla/index.ts` - Vanilla entry point with re-exports
 
 ### Architecture Notes:
 - **CalendarManager** remains the main orchestration layer for business logic
@@ -662,12 +663,12 @@ packages/
 - Clean separation: CalendarManager handles logic, Vanilla layer handles presentation
 
 ### Commits:
-1. feat(rto-calendar): add CalendarRenderer class (Phase 8.1)
-2. feat(rto-calendar): add MonthRenderer class (Phase 8.2)
-3. feat(rto-calendar): add DayRenderer class (Phase 8.3)
-4. feat(rto-calendar): add EventHandler class (Phase 8.4)
-5. feat(rto-calendar): add vanilla entry point (index.ts)
-6. feat(rto-calendar): complete Vanilla layer implementation (Phase 8)
+1. feat(datepainter): add CalendarRenderer class (Phase 8.1)
+2. feat(datepainter): add MonthRenderer class (Phase 8.2)
+3. feat(datepainter): add DayRenderer class (Phase 8.3)
+4. feat(datepainter): add EventHandler class (Phase 8.4)
+5. feat(datepainter): add vanilla entry point (index.ts)
+6. feat(datepainter): complete Vanilla layer implementation (Phase 8)
 
 ---
 
@@ -1054,13 +1055,13 @@ packages/
 
 #### Installation
 ```bash
-npm install @rto-calculator/extract-calendar
+npm install @datepainter/calendar
 ```
 
 #### Basic Implementation
 ```astro
 ---
-import Calendar from '@rto-calculator/extract-calendar/astro/Calendar.astro';
+import Calendar from '@datepainter/calendar/astro/Calendar.astro';
 ---
 
 <!DOCTYPE html>
@@ -1084,8 +1085,8 @@ import Calendar from '@rto-calculator/extract-calendar/astro/Calendar.astro';
 #### With Custom Handlers
 ```astro
 ---
-import Calendar from '@rto-calculator/extract-calendar/astro/Calendar.astro';
-import type { ValidationResult, SelectionType } from '@rto-calculator/extract-calendar';
+import Calendar from '@datepainter/calendar/astro/Calendar.astro';
+import type { ValidationResult, SelectionType } from '@datepainter/calendar';
 
 function handleSelectionChange(dates: Map<string, SelectionType>) {
   console.log('Selections changed:', dates);
@@ -1109,7 +1110,7 @@ function handleValidationChange(result: ValidationResult) {
 #### With Custom Styling
 ```astro
 ---
-import Calendar from '@rto-calculator/extract-calendar/astro/Calendar.astro';
+import Calendar from '@datepainter/calendar/astro/Calendar.astro';
 ---
 
 <style is:global>
@@ -1137,7 +1138,7 @@ import Calendar from '@rto-calculator/extract-calendar/astro/Calendar.astro';
 
 #### Installation
 ```bash
-npm install @rto-calculator/extract-calendar
+npm install @datepainter/calendar
 ```
 
 #### Basic Implementation
@@ -1148,14 +1149,14 @@ npm install @rto-calculator/extract-calendar
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RTO Calendar</title>
-  <link rel="stylesheet" href="node_modules/@rto-calculator/extract-calendar/styles/vanilla.css">
+  <link rel="stylesheet" href="node_modules/@datepainter/calendar/styles/vanilla.css">
 </head>
 <body>
   <h1>Return to Office Calendar</h1>
   <div id="calendar-container"></div>
 
   <script type="module">
-    import { CalendarRenderer } from '@rto-calculator/extract-calendar/vanilla';
+    import { CalendarRenderer } from '@datepainter/calendar/vanilla';
 
     const renderer = new CalendarRenderer({
       startDate: new Date(),
@@ -1176,7 +1177,7 @@ npm install @rto-calculator/extract-calendar
 <div id="status">Selections: 0</div>
 
 <script type="module">
-  import { CalendarRenderer } from '@rto-calculator/extract-calendar/vanilla';
+  import { CalendarRenderer } from '@datepainter/calendar/vanilla';
 
   const renderer = new CalendarRenderer({
     startDate: new Date(),
@@ -1205,7 +1206,7 @@ npm install @rto-calculator/extract-calendar
 <div id="calendar-container"></div>
 
 <script type="module">
-  import { CalendarRenderer } from '@rto-calculator/extract-calendar/vanilla';
+  import { CalendarRenderer } from '@datepainter/calendar/vanilla';
 
   const renderer = new CalendarRenderer();
   renderer.render(document.getElementById('calendar-container'));
@@ -1242,7 +1243,7 @@ npm install @rto-calculator/extract-calendar
 | **Bundle size bloat** | Low | Medium | Tree-shaking verification; code splitting; dependency audit |
 | **Maintenance burden of two UI layers** | Medium | Medium | Shared core logic minimizes duplication; keep UI layers thin |
 | **Breaking changes in RTO Calculator after extraction** | Low | Medium | Deprecation period; migration guide; gradual adoption |
-| **npm package name conflicts** | Very Low | Low | Use scoped package name: `@rto-calculator/extract-calendar` |
+| **npm package name conflicts** | Very Low | Low | Use scoped package name: `@datepainter/calendar` |
 
 ---
 
@@ -1330,7 +1331,7 @@ During development, you can manually test the datepainter component without runn
 
 Create a minimal page that only imports and displays the datepainter component:
 
-**Create `packages/rto-calendar/dev-test/index.html`:**
+**Create `packages/datepainter/dev-test/index.html`:**
 ```html
 <!DOCTYPE html>
 <html lang="en">
@@ -1436,13 +1437,13 @@ Create a minimal page that only imports and displays the datepainter component:
 
 1. Build the package:
    ```bash
-   cd packages/rto-calendar
+   cd packages/datepainter
    npm run build
    ```
 
 2. Serve the test page:
    ```bash
-   cd packages/rto-calendar
+   cd packages/datepainter
    npx serve dev-test
    ```
 
@@ -1468,6 +1469,25 @@ Create a minimal page that only imports and displays the datepainter component:
 Once the package is working, the main RTO Calculator can be updated to use it:
 - Update `src/pages/index.astro` to import from `datepainter`
 - Update `package.json` in main app to add `datepainter` as dependency
+
+---
+
+### Phase 14: Package Rename (rto-calendar → datepainter)
+
+**Status**: 🔄 IN PROGRESS
+**Completion Date**: 2026-02-06
+
+### What Will Be Accomplished:
+- Rename package from `@rto-calculator/extract-calendar` to `@datepainter/calendar`
+- Rename package directory from `packages/rto-calendar/` to `packages/datepainter/`
+- Update all package.json references
+- Update all import statements across the codebase
+- Update documentation to reflect new package name
+- Update CSS class names from `rto-calendar-*` to `datepainter-*` if applicable
+- Verify build and all checks pass after rename
+
+### Commits:
+1. refactor: rename package from rto-calendar to datepainter (Phase 14)
 
 ---
 
