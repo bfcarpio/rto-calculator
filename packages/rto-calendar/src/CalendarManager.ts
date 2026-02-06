@@ -2,11 +2,8 @@ import { validateConfig } from "./config/validate";
 import { formatDate } from "./lib/dateUtils";
 import {
   clearDateState,
-  currentMonth,
-  dragState,
   getAllDates,
   selectedDates,
-  setCurrentMonth,
   setDateState,
 } from "./stores/calendarStore";
 import type { CalendarConfig, CalendarInstance, DateState, DateString } from "./types";
