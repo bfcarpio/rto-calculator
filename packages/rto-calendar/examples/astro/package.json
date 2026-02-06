@@ -1,0 +1,17 @@
+{
+  "name": "datepainter-astro-example",
+  "type": "module",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "astro": "^4.16.12"
+  },
+  "devDependencies": {
+    "@astrojs/ts-plugin": "^1.8.0"
+  }
+}

@@ -1,0 +1,197 @@
+---
+import type { CalendarConfig } from '../../../types';
+import { getCalendarHTML } from '../../../lib/templateRenderer';
+import '../../../styles/astro.css';
+
+const config: CalendarConfig = {
+  dateRange: {
+    start: new Date('2026-01-01'),
+    end: new Date('2026-12-31')
+  },
+  states: {
+    working: {
+      label: 'Working',
+      color: '#10b981',
+      bgColor: '#d1fae5',
+      icon: '💼'
+    },
+    oof: {
+      label: 'OOF',
+      color: '#ef4444',
+      bgColor: '#fee2e2',
+      icon: '🏠'
+    },
+    holiday: {
+      label: 'Holiday',
+      color: '#f59e0b',
+      bgColor: '#fef3c7',
+      icon: '🏖️'
+    }
+  },
+  styling: {
+    cellSize: 48,
+    showWeekdays: true,
+    showWeekNumbers: true,
+    firstDayOfWeek: 1
+  },
+  painting: {
+    enabled: true,
+    paintOnDrag: true,
+    defaultState: 'working'
+  }
+};
+
+const calendarHTML = getCalendarHTML(config);
+---
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Datepainter - Astro Example</title>
+  </head>
+  <body>
+    <main>
+      <h1>Datepainter - Astro Example</h1>
+      <p>Click on dates to select them. Click again to deselect.</p>
+
+      <div id="calendar-container">
+        <div class="rto-calendar" set:html={calendarHTML} />
+      </div>
+
+      <div class="info">
+        <h2>Selected Dates</h2>
+        <div id="selected-dates">No dates selected</div>
+      </div>
+    </main>
+
+    <script>
+      import type { DateState, DateString } from '../../../types';
+      import { setDateState, clearDateState, getAllDates } from '../../../stores/calendarStore';
+      import { formatDate } from '../../../lib/dateUtils';
+
+      const configStates = {
+        working: { color: '#10b981', bgColor: '#d1fae5' },
+        oof: { color: '#ef4444', bgColor: '#fee2e2' },
+        holiday: { color: '#f59e0b', bgColor: '#fef3c7' }
+      };
+
+      let currentPaintState: DateState = 'working';
+      const stateOrder: DateState[] = ['working', 'oof', 'holiday', ''];
+
+      function updateSelectedDatesDisplay() {
+        const container = document.getElementById('selected-dates');
+        if (!container) return;
+
+        const dates = getAllDates();
+        const dateArray = Array.from(dates.entries())
+          .sort((a, b) => a[0].localeCompare(b[0]));
+
+        if (dateArray.length === 0) {
+          container.textContent = 'No dates selected';
+          return;
+        }
+
+        container.innerHTML = dateArray.map(([date, state]) => {
+          const stateConfig = configStates[state as DateState];
+          return `
+            <span class="date-chip" style="
+              background-color: ${stateConfig?.bgColor};
+              color: ${stateConfig?.color};
+              padding: 4px 8px;
+              border-radius: 4px;
+              margin: 2px;
+              display: inline-block;
+            ">
+              ${date} (${state})
+            </span>
+          `;
+        }).join('');
+      }
+
+      function handleDayClick(dayEl: HTMLElement) {
+        const date = dayEl.dataset.date;
+        if (!date) return;
+
+        const currentState = getAllDates().get(date);
+        const currentIndex = stateOrder.indexOf(currentState as DateState);
+        const nextIndex = (currentIndex + 1) % stateOrder.length;
+        const newState = stateOrder[nextIndex];
+
+        if (newState) {
+          setDateState(date, newState as DateState);
+          dayEl.classList.add(`rto-calendar-day--${newState}`);
+        } else {
+          clearDateState(date);
+          stateOrder.slice(0, -1).forEach(s => {
+            dayEl.classList.remove(`rto-calendar-day--${s}`);
+          });
+        }
+
+        updateSelectedDatesDisplay();
+      }
+
+      // Set up event delegation
+      const calendar = document.querySelector('.rto-calendar');
+      if (calendar) {
+        calendar.addEventListener('click', (e) => {
+          const target = e.target as HTMLElement;
+          const dayEl = target.closest('.rto-calendar-day') as HTMLElement;
+
+          if (dayEl && !dayEl.classList.contains('rto-calendar-day--empty')) {
+            handleDayClick(dayEl);
+          }
+        });
+      }
+    </script>
+  </body>
+</html>
+
+<style>
+  :root {
+    --bg-color: #ffffff;
+    --text-color: #1f2937;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg-color);
+    color: var(--text-color);
+    margin: 0;
+    padding: 2rem;
+  }
+
+  main {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+  }
+
+  p {
+    color: #6b7280;
+    margin-bottom: 2rem;
+  }
+
+  #calendar-container {
+    margin-bottom: 2rem;
+  }
+
+  .info {
+    background: #f9fafb;
+    padding: 1.5rem;
+    border-radius: 8px;
+  }
+
+  .info h2 {
+    margin-top: 0;
+    font-size: 1.25rem;
+  }
+
+  #selected-dates {
+    min-height: 40px;
+  }
+</style>
