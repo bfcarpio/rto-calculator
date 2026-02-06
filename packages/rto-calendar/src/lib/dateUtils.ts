@@ -87,7 +87,7 @@ export function getFirstDayOfMonth(date: Date): number {
 export function getWeekNumber(date: Date): number {
   const startOfYear = new Date(date.getFullYear(), 0, 1);
   const daysSinceStart = Math.floor(
-    (date.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000),
+    (date.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000)
   );
   return Math.ceil((daysSinceStart + startOfYear.getDay() + 1) / 7);
 }

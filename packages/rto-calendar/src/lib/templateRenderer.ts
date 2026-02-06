@@ -1,14 +1,5 @@
-import type {
-  CalendarConfig,
-  DateString,
-  DateState,
-} from '../types';
-import {
-  formatDate,
-  getFirstDayOfMonth,
-  getDaysInMonth,
-  getWeekNumber,
-} from './dateUtils';
+import type { CalendarConfig, DateState, DateString } from "../types";
+import { formatDate, getDaysInMonth, getFirstDayOfMonth, getWeekNumber } from "./dateUtils";
 
 /**
  * Get CSS classes for a day cell based on state and position
@@ -30,14 +21,11 @@ import {
  * // Returns: 'rto-calendar-day rto-calendar-day--today' (if today)
  * ```
  */
-export function getDayCellClasses(
-  date: DateString,
-  state: DateState | null
-): string {
+export function getDayCellClasses(date: DateString, state: DateState | null): string {
   const classes: string[] = [];
 
   // Base class for all day cells
-  classes.push('rto-calendar-day');
+  classes.push("rto-calendar-day");
 
   // State class for visual differentiation
   if (state) {
@@ -47,10 +35,10 @@ export function getDayCellClasses(
   // Today class for current date highlighting
   const today = formatDate(new Date());
   if (date === today) {
-    classes.push('rto-calendar-day--today');
+    classes.push("rto-calendar-day--today");
   }
 
-  return classes.join(' ');
+  return classes.join(" ");
 }
 
 /**
@@ -74,9 +62,9 @@ export function getDayCellClasses(
  */
 export function getIconHTML(
   icon?: string,
-  position: 'above' | 'below' | 'left' | 'right' = 'below'
+  position: "above" | "below" | "left" | "right" = "below"
 ): string {
-  if (!icon) return '';
+  if (!icon) return "";
 
   const positionClass = `rto-calendar-day__icon--${position}`;
   return `<span class="rto-calendar-day__icon ${positionClass}" aria-hidden="true">${icon}</span>`;
@@ -144,7 +132,7 @@ export function getCalendarHTML(config: CalendarConfig): string {
   let html = '<div class="rto-calendar">';
 
   // Generate weekday headers
-  const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const adjustedWeekdays = [
     ...weekdays.slice(firstDayOfWeek),
     ...weekdays.slice(0, firstDayOfWeek),
@@ -155,7 +143,7 @@ export function getCalendarHTML(config: CalendarConfig): string {
     for (const day of adjustedWeekdays) {
       html += `<div class="rto-calendar__weekday">${day}</div>`;
     }
-    html += '</div>';
+    html += "</div>";
   }
 
   // Generate month grids
@@ -175,18 +163,18 @@ export function getCalendarHTML(config: CalendarConfig): string {
 
     // Month label
     const monthNames = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
     ];
     html += `<div class="rto-calendar__month-label">${monthNames[month]} ${year}</div>`;
 
@@ -211,14 +199,14 @@ export function getCalendarHTML(config: CalendarConfig): string {
       // not in initial HTML, since state changes happen after initial render.
       // Example: html += getIconHTML(state?.icon, state?.position || 'below');
 
-      html += '</div>';
+      html += "</div>";
     }
 
-    html += '</div>';
-    html += '</div>';
+    html += "</div>";
+    html += "</div>";
   }
 
-  html += '</div>';
+  html += "</div>";
 
   return html;
 }
