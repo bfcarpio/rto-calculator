@@ -12,7 +12,7 @@
 | Phase 6: Shared Core - Template Rendering | ✅ COMPLETE | 2026-02-06 | templateRenderer.ts with HTML generation |
 | Phase 7: Event Handling | ✅ COMPLETE | 2026-02-06 | Refactored calendar-events.ts, created eventHandlers.ts, maintained all features |
 | Phase 8: Vanilla Layer Implementation | ✅ COMPLETE | 2026-02-06 | CalendarRenderer, MonthRenderer, DayRenderer, EventHandler, index.ts entry point |
-| Phase 9: Styling & Theming | 🔄 IN PROGRESS | - | CSS and theme system |
+| Phase 9: Styling & Theming | ✅ COMPLETE | 2026-02-06 | CSS and theme system with datepainter branding |
 | Phase 14: Package Rename (rto-calendar → datepainter) | 🔄 IN PROGRESS | 2026-02-06 | Package rename and documentation update |
 
 ---
@@ -1472,22 +1472,45 @@ Once the package is working, the main RTO Calculator can be updated to use it:
 
 ---
 
-### Phase 14: Package Rename (rto-calendar → datepainter)
+### Phase 14: Package Rename (rto-calendar → datepainter) - 🔄 IN PROGRESS
 
-**Status**: 🔄 IN PROGRESS
+**Status**: In Progress
 **Completion Date**: 2026-02-06
 
 ### What Will Be Accomplished:
-- Rename package from `@rto-calculator/extract-calendar` to `@datepainter/calendar`
 - Rename package directory from `packages/rto-calendar/` to `packages/datepainter/`
-- Update all package.json references
-- Update all import statements across the codebase
+- Update all CSS class names: `rto-calendar-*` → `datepainter-*`
+- Update all CSS custom properties: `--rto-calendar-*` → `--datepainter-*`
+- Update import paths in main project
 - Update documentation to reflect new package name
-- Update CSS class names from `rto-calendar-*` to `datepainter-*` if applicable
-- Verify build and all checks pass after rename
+
+### Files to Update (Total: 13 files)
+
+#### TypeScript/JavaScript Source Files (6 files)
+1. `packages/rto-calendar/src/lib/templateRenderer.ts` - 21 occurrences
+2. `packages/rto-calendar/src/scripts/eventHandlers.ts` - 15 occurrences  
+3. `packages/rto-calendar/src/CalendarManager.ts` - 1 occurrence
+4. `packages/rto-calendar/src/vanilla/DayRenderer.ts` - 6 occurrences
+5. `src/scripts/eventHandlers.ts` - 4 occurrences (import paths only)
+
+#### CSS Files (4 files)
+1. `packages/rto-calendar/styles/base.css` - ~100 occurrences
+2. `packages/rto-calendar/styles/astro.css` - ~40 occurrences
+3. `packages/rto-calendar/styles/vanilla.css` - ~45 occurrences
+4. `packages/rto-calendar/styles/themes.css` - ~85 occurrences
+
+#### Documentation
+1. `ExtractCalendar.md` - 4 occurrences
+
+### Replacement Strategy
+1. Package Name: Already renamed to `datepainter` in package.json
+2. CSS Class Prefixes: All `rto-calendar-*` → `datepainter-*`
+3. CSS Custom Properties: All `--rto-calendar-*` → `--datepainter-*`
+4. Import Paths: Update `packages/rto-calendar/` → `packages/datepainter/`
+5. Comments/Documentation: Update references in comments and documentation files
 
 ### Commits:
-1. refactor: rename package from rto-calendar to datepainter (Phase 14)
+1. refactor: rename rto-calendar to datepainter (Phase 14)
 
 ---
 
