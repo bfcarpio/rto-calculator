@@ -33,7 +33,10 @@ export function formatDate(date: Date): DateString {
  * ```
  */
 export function parseDate(dateStr: string): Date {
-  const [year, month, day] = dateStr.split("-").map(Number);
+  const parts = dateStr.split("-").map(Number);
+  const year = parts[0] ?? new Date().getFullYear();
+  const month = parts[1] ?? new Date().getMonth() + 1;
+  const day = parts[2] ?? 1;
   return new Date(year, month - 1, day);
 }
 
@@ -51,4 +54,56 @@ export function parseDate(dateStr: string): Date {
  */
 export function getDaysInMonth(year: number, month: number): number {
   return new Date(year, month + 1, 0).getDate();
+}
+
+/**
+ * Gets the first day of the month
+ *
+ * Returns the day of the week (0-6) for the first day of the month.
+ * Sunday = 0, Monday = 1, ..., Saturday = 6.
+ *
+ * @param date - The Date object within the month to check
+ * @returns The day index (0-6) for the first day of the month
+ *
+ * @example
+ * ```ts
+ * // January 2026 starts on a Thursday (4)
+ * getFirstDayOfMonth(new Date(2026, 0, 15)) // Returns 4
+ * ```
+ */
+export function getFirstDayOfMonth(date: Date): number {
+  return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+}
+
+/**
+ * Gets the week number for a date
+ *
+ * Calculates the week number for a given date.
+ * Week 1 is the first partial week of the year.
+ *
+ * @param date - The Date object to calculate week number for
+ * @returns The week number (1-53)
+ */
+export function getWeekNumber(date: Date): number {
+  const startOfYear = new Date(date.getFullYear(), 0, 1);
+  const daysSinceStart = Math.floor(
+    (date.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000),
+  );
+  return Math.ceil((daysSinceStart + startOfYear.getDay() + 1) / 7);
+}
+
+/**
+ * Adds days to a date
+ *
+ * Creates a new Date object with the specified number of days added.
+ * Does not mutate the original date object.
+ *
+ * @param date - The original date
+ * @param days - The number of days to add (can be negative)
+ * @returns A new Date object representing the calculated date
+ */
+export function addDays(date: Date, days: number): Date {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
 }
