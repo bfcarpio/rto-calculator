@@ -1257,5 +1257,154 @@ npm install @rto-calculator/extract-calendar
 
 ---
 
+## Manual Testing During Development
+
+During development, you can manually test the datepainter component without running the full RTO Calculator app.
+
+### Local Development Server
+
+Create a minimal page that only imports and displays the datepainter component:
+
+**Create `packages/rto-calendar/dev-test/index.html`:**
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>datepainter - Manual Testing</title>
+  <link rel="stylesheet" href="../dist/styles/calendar.css">
+</head>
+<body>
+  <h1>datepainter Manual Testing</h1>
+  <p>Use this page for rapid manual testing during development.</p>
+
+  <!-- Date Paint Mode -->
+  <h2>Test Date Painting</h2>
+  <button id="paint-mode">Set Paint Mode: Working</button>
+  <button id="clear-all">Clear All Selections</button>
+  <button id="get-selected">Get Selected Dates</button>
+
+  <hr>
+
+  <!-- Calendar -->
+  <div id="calendar-container"></div>
+
+  <hr>
+
+  <!-- Selected Dates Display -->
+  <div>
+    <h3>Selected Dates</h3>
+    <pre id="selected-output">No dates selected</pre>
+  </div>
+
+  <script type="module">
+    import { CalendarManager, type CalendarConfig } from './dist/index.js';
+
+    // Create calendar instance
+    const config: CalendarConfig = {
+      dateRange: {
+        start: new Date('2026-01-01'),
+        end: new Date('2026-12-31'),
+      },
+      states: {
+        working: {
+          label: 'Working',
+          color: '#334155',
+          bgColor: '#ffffff',
+        },
+        oof: {
+          label: 'Out of Office',
+          color: '#ffffff',
+          bgColor: '#ef4444',
+          icon: '🏖️',
+          position: 'below' as const,
+        },
+        holiday: {
+          label: 'Holiday',
+          color: '#ffffff',
+          bgColor: '#10b981',
+          icon: '🎉',
+          position: 'below' as const,
+        },
+      },
+    };
+
+    const calendar = new CalendarManager('#calendar-container', config);
+    calendar.init();
+
+    // Paint mode buttons
+    const paintBtn = document.getElementById('paint-mode');
+    const states = ['working', 'oof', 'holiday'];
+    let currentIndex = 0;
+
+    paintBtn.addEventListener('click', () => {
+      currentIndex = (currentIndex + 1) % states.length;
+      const state = states[currentIndex];
+      paintBtn.textContent = `Set Paint Mode: ${state.toUpperCase()}`;
+      console.log('Paint mode set to:', state);
+    });
+
+    // Clear button
+    document.getElementById('clear-all').addEventListener('click', () => {
+      calendar.clearAll();
+      console.log('Cleared all selections');
+    });
+
+    // Get selected button
+    document.getElementById('get-selected').addEventListener('click', () => {
+      const dates = calendar.getSelectedDates();
+      document.getElementById('selected-output').textContent = JSON.stringify(dates, null, 2);
+      console.log('Selected dates:', dates);
+    });
+
+    // Log selection changes
+    calendar.onStateChange((date, state) => {
+      console.log(`Date ${date} -> ${state}`);
+    });
+  </script>
+</body>
+</html>
+```
+
+### Running the Test Page
+
+1. Build the package:
+   ```bash
+   cd packages/rto-calendar
+   npm run build
+   ```
+
+2. Serve the test page:
+   ```bash
+   cd packages/rto-calendar
+   npx serve dev-test
+   ```
+
+3. Open browser to `http://localhost:3000/dev-test/`
+
+4. Test all interactions manually
+
+### Test Scenarios
+
+- [ ] Single date toggle (click on, click off)
+- [ ] Multiple dates selection via click
+- [ ] Drag painting across dates
+- [ ] Switch between paint modes (working, OOF, holiday)
+- [ ] Clear all selections
+- [ ] Query selected dates
+- [ ] Test with custom date ranges
+- [ ] Test with different state configurations
+- [ ] Verify icons render correctly
+- [ ] Test keyboard navigation
+
+### Integration with Main App
+
+Once the package is working, the main RTO Calculator can be updated to use it:
+- Update `src/pages/index.astro` to import from `datepainter`
+- Update `package.json` in main app to add `datepainter` as dependency
+
+---
+
 *Last Updated*: 2026-02-06
 *Plan Version*: 1.0
