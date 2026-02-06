@@ -49,6 +49,7 @@ export interface CalendarConfig {
   painting?: {
     enabled?: boolean;
     paintOnDrag?: boolean;
+    defaultState?: DateState;
   };
 }
 
