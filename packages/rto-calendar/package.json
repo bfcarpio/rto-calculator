@@ -2,8 +2,6 @@
 	"name": "rto-calendar",
 	"version": "1.0.0",
 	"type": "module",
-	"main": "./dist/index.js",
-	"types": "./dist/index.d.ts",
 	"exports": {
 		".": {
 			"types": "./dist/index.d.ts",
@@ -18,13 +16,15 @@
 		"LICENSE"
 	],
 	"scripts": {
-		"build": "astro build && tsc",
-		"dev": "astro dev",
+		"build": "tsup",
 		"test": "vitest",
 		"test:ui": "vitest --ui",
 		"test:run": "vitest run",
-		"lint": "eslint src --ext .ts,.astro",
-		"lint:fix": "eslint src --ext .ts,.astro --fix"
+		"lint": "biome check src/",
+		"lint:fix": "biome check --write src/"
+	},
+	"engines": {
+		"node": ">=18.0.0"
 	},
 	"dependencies": {
 		"nanostores": "1.1.0",
@@ -34,11 +34,10 @@
 		"astro": "4.16.12"
 	},
 	"devDependencies": {
+		"tsup": "^8.0.0",
 		"typescript": "5.7.2",
 		"vitest": "2.1.8",
 		"@vitest/ui": "2.1.8",
-		"eslint": "^9.0.0",
-		"@typescript-eslint/eslint-plugin": "^8.0.0",
-		"eslint-plugin-astro": "^1.2.0"
+		"@biomejs/biome": "1.9.4"
 	}
 }
