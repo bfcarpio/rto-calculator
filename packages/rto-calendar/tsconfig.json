@@ -6,7 +6,6 @@
 		"moduleResolution": "bundler",
 		"resolveJsonModule": true,
 		"resolvePackageJsonExports": true,
-		"allowJs": true,
 		"strict": true,
 		"noEmit": true,
 		"isolatedModules": true,

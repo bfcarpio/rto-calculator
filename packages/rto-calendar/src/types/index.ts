@@ -33,7 +33,7 @@ export interface StateConfig {
   color: string;
   bgColor: string;
   icon?: string;
-  position?: 'above' | 'below' | 'left' | 'right';
+  position?: "above" | "below" | "left" | "right";
 }
 
 // Calendar configuration

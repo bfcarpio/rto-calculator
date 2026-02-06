@@ -1,4 +1,4 @@
-import type { CalendarConfig } from '../types';
+import type { CalendarConfig } from "../types";
 
 export const defaultConfig: CalendarConfig = {
   dateRange: {
