@@ -1,0 +1,344 @@
+/**
+ * Theming System - RTO Calendar Package
+ * Light and dark theme support with automatic detection
+ *
+ * Features:
+ * - Automatic theme detection (prefers-color-scheme)
+ * - Manual theme switching support
+ * - High contrast mode support
+ * - Semantic variable naming
+ */
+
+/* ============================================
+   Light Theme (Default)
+   ============================================ */
+
+:root {
+	/* Colors - Slate Palette (Light Theme) */
+	--rto-calendar-primary: #475569; /* Slate-600 */
+	--rto-calendar-primary-hover: #334155; /* Slate-700 */
+	--rto-calendar-primary-light: #e2e8f0; /* Slate-200 */
+
+	--rto-calendar-secondary: #64748b; /* Slate-500 */
+	--rto-calendar-secondary-hover: #475569; /* Slate-600 */
+	--rto-calendar-secondary-light: #f1f5f9; /* Slate-100 */
+
+	--rto-calendar-error: #334155; /* Slate-700 */
+	--rto-calendar-error-bg: #f1f5f9; /* Slate-100 */
+	--rto-calendar-warning: #94a3b8; /* Slate-400 */
+
+	/* Holiday colors (distinct from slate) */
+	--rto-calendar-holiday: #d97706; /* Amber-600 */
+	--rto-calendar-holiday-bg: #fffbeb; /* Amber-50 */
+	--rto-calendar-holiday-border: #fcd34d; /* Amber-300 */
+	--rto-calendar-holiday-text: #92400e; /* Amber-800 */
+
+	/* Text colors */
+	--rto-calendar-text: #1e293b; /* Slate-800 */
+	--rto-calendar-text-muted: #64748b; /* Slate-500 */
+	--rto-calendar-text-light: #f1f5f9; /* Slate-100 */
+
+	/* Background colors */
+	--rto-calendar-bg: #ffffff;
+	--rto-calendar-bg-alt: #f8fafc; /* Slate-50 */
+	--rto-calendar-bg-weekend: #f1f5f9; /* Slate-100 */
+	--rto-calendar-bg-past: #94a3b8; /* Slate-400 */
+
+	/* Border colors */
+	--rto-calendar-border: #e2e8f0; /* Slate-200 */
+	--rto-calendar-border-hover: #94a3b8; /* Slate-400 */
+	--rto-calendar-border-focus: #475569; /* Slate-600 */
+
+	/* Focus ring */
+	--rto-calendar-focus: #475569; /* Slate-600 */
+	--rto-calendar-focus-shadow: rgba(71, 85, 105, 0.2);
+
+	/* Shadows */
+	--rto-calendar-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+	--rto-calendar-shadow-md: 0 2px 4px rgba(0, 0, 0, 0.1);
+	--rto-calendar-shadow-lg: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================
+   Dark Theme
+   ============================================ */
+
+/* Automatic dark mode detection */
+@media (prefers-color-scheme: dark) {
+	:root {
+		/* Colors - Inverted Slate Palette (Dark Theme) */
+		--rto-calendar-primary: #94a3b8; /* Slate-400 */
+		--rto-calendar-primary-hover: #cbd5e1; /* Slate-300 */
+		--rto-calendar-primary-light: #334155; /* Slate-700 */
+
+		--rto-calendar-secondary: #cbd5e1; /* Slate-300 */
+		--rto-calendar-secondary-hover: #e2e8f0; /* Slate-200 */
+		--rto-calendar-secondary-light: #1e293b; /* Slate-800 */
+
+		--rto-calendar-error: #f1f5f9; /* Slate-100 */
+		--rto-calendar-error-bg: #334155; /* Slate-700 */
+		--rto-calendar-warning: #94a3b8; /* Slate-400 */
+
+		/* Holiday colors (warmer in dark mode) */
+		--rto-calendar-holiday: #fbbf24; /* Amber-400 */
+		--rto-calendar-holiday-bg: #451a03; /* Amber-900 */
+		--rto-calendar-holiday-border: #d97706; /* Amber-600 */
+		--rto-calendar-holiday-text: #fcd34d; /* Amber-300 */
+
+		/* Text colors */
+		--rto-calendar-text: #f1f5f9; /* Slate-100 */
+		--rto-calendar-text-muted: #94a3b8; /* Slate-400 */
+		--rto-calendar-text-light: #475569; /* Slate-600 */
+
+		/* Background colors */
+		--rto-calendar-bg: #0f172a; /* Slate-900 */
+		--rto-calendar-bg-alt: #1e293b; /* Slate-800 */
+		--rto-calendar-bg-weekend: #334155; /* Slate-700 */
+		--rto-calendar-bg-past: #64748b; /* Slate-500 */
+
+		/* Border colors */
+		--rto-calendar-border: #334155; /* Slate-700 */
+		--rto-calendar-border-hover: #475569; /* Slate-600 */
+		--rto-calendar-border-focus: #94a3b8; /* Slate-400 */
+
+		/* Focus ring */
+		--rto-calendar-focus: #94a3b8; /* Slate-400 */
+		--rto-calendar-focus-shadow: rgba(148, 163, 184, 0.3);
+
+		/* Shadows */
+		--rto-calendar-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+		--rto-calendar-shadow-md: 0 2px 4px rgba(0, 0, 0, 0.4);
+		--rto-calendar-shadow-lg: 0 4px 6px rgba(0, 0, 0, 0.5);
+	}
+}
+
+/* ============================================
+   Manual Dark Mode (Class-based)
+   ============================================ */
+
+/* Apply dark theme via class on container or body */
+.rto-calendar--dark,
+body.rto-calendar-dark-mode {
+	/* Override all light theme variables with dark theme values */
+	--rto-calendar-primary: #94a3b8; /* Slate-400 */
+	--rto-calendar-primary-hover: #cbd5e1; /* Slate-300 */
+	--rto-calendar-primary-light: #334155; /* Slate-700 */
+
+	--rto-calendar-secondary: #cbd5e1; /* Slate-300 */
+	--rto-calendar-secondary-hover: #e2e8f0; /* Slate-200 */
+	--rto-calendar-secondary-light: #1e293b; /* Slate-800 */
+
+	--rto-calendar-error: #f1f5f9; /* Slate-100 */
+	--rto-calendar-error-bg: #334155; /* Slate-700 */
+	--rto-calendar-warning: #94a3b8; /* Slate-400 */
+
+	/* Holiday colors */
+	--rto-calendar-holiday: #fbbf24; /* Amber-400 */
+	--rto-calendar-holiday-bg: #451a03; /* Amber-900 */
+	--rto-calendar-holiday-border: #d97706; /* Amber-600 */
+	--rto-calendar-holiday-text: #fcd34d; /* Amber-300 */
+
+	/* Text colors */
+	--rto-calendar-text: #f1f5f9; /* Slate-100 */
+	--rto-calendar-text-muted: #94a3b8; /* Slate-400 */
+	--rto-calendar-text-light: #475569; /* Slate-600 */
+
+	/* Background colors */
+	--rto-calendar-bg: #0f172a; /* Slate-900 */
+	--rto-calendar-bg-alt: #1e293b; /* Slate-800 */
+	--rto-calendar-bg-weekend: #334155; /* Slate-700 */
+	--rto-calendar-bg-past: #64748b; /* Slate-500 */
+
+	/* Border colors */
+	--rto-calendar-border: #334155; /* Slate-700 */
+	--rto-calendar-border-hover: #475569; /* Slate-600 */
+	--rto-calendar-border-focus: #94a3b8; /* Slate-400 */
+
+	/* Focus ring */
+	--rto-calendar-focus: #94a3b8; /* Slate-400 */
+	--rto-calendar-focus-shadow: rgba(148, 163, 184, 0.3);
+
+	/* Shadows */
+	--rto-calendar-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+	--rto-calendar-shadow-md: 0 2px 4px rgba(0, 0, 0, 0.4);
+	--rto-calendar-shadow-lg: 0 4px 6px rgba(0, 0, 0, 0.5);
+}
+
+/* ============================================
+   Manual Light Mode (Class-based)
+   ============================================ */
+
+/* Force light mode even if system prefers dark */
+.rto-calendar--light,
+body.rto-calendar-light-mode {
+	--rto-calendar-primary: #475569; /* Slate-600 */
+	--rto-calendar-primary-hover: #334155; /* Slate-700 */
+	--rto-calendar-primary-light: #e2e8f0; /* Slate-200 */
+
+	--rto-calendar-secondary: #64748b; /* Slate-500 */
+	--rto-calendar-secondary-hover: #475569; /* Slate-600 */
+	--rto-calendar-secondary-light: #f1f5f9; /* Slate-100 */
+
+	--rto-calendar-error: #334155; /* Slate-700 */
+	--rto-calendar-error-bg: #f1f5f9; /* Slate-100 */
+	--rto-calendar-warning: #94a3b8; /* Slate-400 */
+
+	/* Holiday colors */
+	--rto-calendar-holiday: #d97706; /* Amber-600 */
+	--rto-calendar-holiday-bg: #fffbeb; /* Amber-50 */
+	--rto-calendar-holiday-border: #fcd34d; /* Amber-300 */
+	--rto-calendar-holiday-text: #92400e; /* Amber-800 */
+
+	/* Text colors */
+	--rto-calendar-text: #1e293b; /* Slate-800 */
+	--rto-calendar-text-muted: #64748b; /* Slate-500 */
+	--rto-calendar-text-light: #f1f5f9; /* Slate-100 */
+
+	/* Background colors */
+	--rto-calendar-bg: #ffffff;
+	--rto-calendar-bg-alt: #f8fafc; /* Slate-50 */
+	--rto-calendar-bg-weekend: #f1f5f9; /* Slate-100 */
+	--rto-calendar-bg-past: #94a3b8; /* Slate-400 */
+
+	/* Border colors */
+	--rto-calendar-border: #e2e8f0; /* Slate-200 */
+	--rto-calendar-border-hover: #94a3b8; /* Slate-400 */
+	--rto-calendar-border-focus: #475569; /* Slate-600 */
+
+	/* Focus ring */
+	--rto-calendar-focus: #475569; /* Slate-600 */
+	--rto-calendar-focus-shadow: rgba(71, 85, 105, 0.2);
+
+	/* Shadows */
+	--rto-calendar-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+	--rto-calendar-shadow-md: 0 2px 4px rgba(0, 0, 0, 0.1);
+	--rto-calendar-shadow-lg: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================
+   High Contrast Mode
+   ============================================ */
+
+/* Automatic high contrast mode detection */
+@media (prefers-contrast: high) {
+	:root {
+		/* Increase border widths and contrast */
+		--rto-calendar-border-width: 2px;
+		--rto-calendar-focus-width: 3px;
+	}
+
+	/* Light theme high contrast */
+	@media (prefers-color-scheme: light) {
+		:root {
+			--rto-calendar-primary: #0f172a; /* Slate-900 - darker */
+			--rto-calendar-border: #1e293b; /* Slate-800 - darker */
+		}
+	}
+
+	/* Dark theme high contrast */
+	@media (prefers-color-scheme: dark) {
+		:root {
+			--rto-calendar-primary: #f8fafc; /* Slate-50 - lighter */
+			--rto-calendar-border: #94a3b8; /* Slate-400 - lighter */
+		}
+	}
+}
+
+/* Manual high contrast mode */
+.rto-calendar--high-contrast,
+body.rto-calendar-high-contrast {
+	--rto-calendar-border-width: 2px;
+	--rto-calendar-focus-width: 3px;
+
+	/* Light high contrast */
+	--rto-calendar-primary: #0f172a; /* Slate-900 */
+	--rto-calendar-border: #1e293b; /* Slate-800 */
+	--rto-calendar-bg: #ffffff;
+	--rto-calendar-text: #0f172a;
+}
+
+.rto-calendar--dark.rto-calendar--high-contrast,
+body.rto-calendar-dark-mode.rto-calendar-high-contrast {
+	--rto-calendar-primary: #f8fafc; /* Slate-50 */
+	--rto-calendar-border: #94a3b8; /* Slate-400 */
+	--rto-calendar-bg: #0f172a;
+	--rto-calendar-text: #f8fafc;
+}
+
+/* ============================================
+   Theme Transition
+   ============================================ */
+
+/* Smooth transition when switching themes */
+.rto-calendar,
+.rto-calendar__day,
+.rto-calendar__weekday,
+.rto-calendar__month-label {
+	transition: background-color var(--rto-calendar-transition-base, 200ms ease-out),
+		color var(--rto-calendar-transition-base, 200ms ease-out),
+		border-color var(--rto-calendar-transition-base, 200ms ease-out),
+		box-shadow var(--rto-calendar-transition-base, 200ms ease-out);
+}
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+	.rto-calendar,
+	.rto-calendar__day,
+	.rto-calendar__weekday,
+	.rto-calendar__month-label {
+		transition: none;
+	}
+}
+
+/* ============================================
+   Theme Toggle Button (Optional UI)
+   ============================================ */
+
+.rto-calendar__theme-toggle {
+	position: absolute;
+	top: var(--rto-calendar-spacing-md, 0.5rem);
+	right: var(--rto-calendar-spacing-md, 0.5rem);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	padding: 0;
+	background: transparent;
+	border: 2px solid var(--rto-calendar-border, #e2e8f0);
+	border-radius: var(--rto-calendar-radius-md, 6px);
+	cursor: pointer;
+	color: var(--rto-calendar-text, #1e293b);
+	transition: all var(--rto-calendar-transition-fast, 150ms ease-out);
+}
+
+.rto-calendar__theme-toggle:hover {
+	background-color: var(--rto-calendar-bg-alt, #f8fafc);
+	border-color: var(--rto-calendar-border-hover, #94a3b8);
+}
+
+.rto-calendar__theme-toggle:focus {
+	outline: 2px solid var(--rto-calendar-focus, #475569);
+	outline-offset: 2px;
+}
+
+.rto-calendar__theme-toggle svg {
+	width: 20px;
+	height: 20px;
+}
+
+/* ============================================
+   Print Styles (Theme Aware)
+   ============================================ */
+
+@media print {
+	/* Force high contrast for print */
+	.rto-calendar,
+	.rto-calendar--dark,
+	.rto-calendar--light {
+		--rto-calendar-primary: #000000;
+		--rto-calendar-text: #000000;
+		--rto-calendar-bg: #ffffff;
+		--rto-calendar-border: #000000;
+	}
+}
