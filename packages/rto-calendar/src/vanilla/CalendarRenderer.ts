@@ -1,7 +1,6 @@
 import { validateConfig } from "../config/validate";
-import { formatDate, getDaysInMonth } from "../lib/dateUtils";
 import { getCalendarHTML } from "../lib/templateRenderer";
-import type { CalendarConfig, DateState, DateString } from "../types";
+import type { CalendarConfig } from "../types";
 
 /**
  * CalendarRenderer class - Main renderer for calendar display
