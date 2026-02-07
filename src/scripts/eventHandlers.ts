@@ -12,13 +12,13 @@
  * @packageDocumentation
  */
 
-import type { CalendarManager } from "../../packages/rto-calendar/src/CalendarManager";
-import { formatDate } from "../../packages/rto-calendar/src/lib/dateUtils";
-import { dragState } from "../../packages/rto-calendar/src/stores/calendarStore";
+import type { CalendarManager } from "../../packages/datepainter/src/CalendarManager";
+import { formatDate } from "../../packages/datepainter/src/lib/dateUtils";
+import { dragState } from "../../packages/datepainter/src/stores/calendarStore";
 import type {
 	DateState,
 	DateString,
-} from "../../packages/rto-calendar/src/types";
+} from "../../packages/datepainter/src/types";
 import { logger } from "../utils/logger";
 
 /**
@@ -799,7 +799,7 @@ class CalendarEventManager {
  *
  * @example
  * ```ts
- * import { CalendarManager } from '../../packages/rto-calendar/src/CalendarManager';
+ * import { CalendarManager } from '../../packages/datepainter/src/CalendarManager';
  * import { initializeEventHandlers } from './eventHandlers';
  *
  * const manager = new CalendarManager('#calendar', config);

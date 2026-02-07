@@ -6,7 +6,7 @@ import { formatDate, getDaysInMonth, getFirstDayOfMonth, getWeekNumber } from ".
  *
  * Generates the CSS class string for a calendar day cell based on its state
  * (working, OOF, holiday), whether it's today, and any additional styling needs.
- * Classes follow a BEM-like naming convention with the `rto-calendar` prefix.
+ * Classes follow a BEM-like naming convention with the `datepainter` prefix.
  *
  * @param date - The date string for the cell (YYYY-MM-DD format)
  * @param state - The state of the date (working, oof, holiday) or null if unassigned
@@ -15,27 +15,27 @@ import { formatDate, getDaysInMonth, getFirstDayOfMonth, getWeekNumber } from ".
  * @example
  * ```ts
  * getDayCellClasses('2026-02-06', 'oof');
- * // Returns: 'rto-calendar-day rto-calendar-day--oof'
+ * // Returns: 'datepainter-day datepainter-day--oof'
  *
  * getDayCellClasses('2026-02-06', null);
- * // Returns: 'rto-calendar-day rto-calendar-day--today' (if today)
+ * // Returns: 'datepainter-day datepainter-day--today' (if today)
  * ```
  */
 export function getDayCellClasses(date: DateString, state: DateState | null): string {
   const classes: string[] = [];
 
   // Base class for all day cells
-  classes.push("rto-calendar-day");
+  classes.push("datepainter-day");
 
   // State class for visual differentiation
   if (state) {
-    classes.push(`rto-calendar-day--${state}`);
+    classes.push(`datepainter-day--${state}`);
   }
 
   // Today class for current date highlighting
   const today = formatDate(new Date());
   if (date === today) {
-    classes.push("rto-calendar-day--today");
+    classes.push("datepainter-day--today");
   }
 
   return classes.join(" ");
@@ -55,7 +55,7 @@ export function getDayCellClasses(date: DateString, state: DateState | null): st
  * @example
  * ```ts
  * getIconHTML('🏠', 'below');
- * // Returns: '<span class="rto-calendar-day__icon rto-calendar-day__icon--below" aria-hidden="true">🏠</span>'
+ * // Returns: '<span class="datepainter-day__icon datepainter-day__icon--below" aria-hidden="true">🏠</span>'
  *
  * getIconHTML(); // Returns: ''
  * ```
@@ -66,8 +66,8 @@ export function getIconHTML(
 ): string {
   if (!icon) return "";
 
-  const positionClass = `rto-calendar-day__icon--${position}`;
-  return `<span class="rto-calendar-day__icon ${positionClass}" aria-hidden="true">${icon}</span>`;
+  const positionClass = `datepainter-day__icon--${position}`;
+  return `<span class="datepainter-day__icon ${positionClass}" aria-hidden="true">${icon}</span>`;
 }
 
 /**
@@ -129,7 +129,7 @@ export function getCalendarHTML(config: CalendarConfig): string {
     currentDate.setMonth(currentDate.getMonth() + 1);
   }
 
-  let html = '<div class="rto-calendar">';
+  let html = '<div class="datepainter">';
 
   // Generate weekday headers
   const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -139,9 +139,9 @@ export function getCalendarHTML(config: CalendarConfig): string {
   ];
 
   if (styling?.showWeekdays !== false) {
-    html += '<div class="rto-calendar__weekdays">';
+    html += '<div class="datepainter__weekdays">';
     for (const day of adjustedWeekdays) {
-      html += `<div class="rto-calendar__weekday">${day}</div>`;
+      html += `<div class="datepainter__weekday">${day}</div>`;
     }
     html += "</div>";
   }
@@ -154,11 +154,11 @@ export function getCalendarHTML(config: CalendarConfig): string {
     const firstDay = getFirstDayOfMonth(date);
     const weekNumber = getWeekNumber(date);
 
-    html += `<div class="rto-calendar__month" data-month="${year}-${month + 1}">`;
+    html += `<div class="datepainter__month" data-month="${year}-${month + 1}">`;
 
     // Week numbers (if enabled)
     if (styling?.showWeekNumbers !== false) {
-      html += `<div class="rto-calendar__week-number">W${weekNumber}</div>`;
+      html += `<div class="datepainter__week-number">W${weekNumber}</div>`;
     }
 
     // Month label
@@ -176,14 +176,14 @@ export function getCalendarHTML(config: CalendarConfig): string {
       "November",
       "December",
     ];
-    html += `<div class="rto-calendar__month-label">${monthNames[month]} ${year}</div>`;
+    html += `<div class="datepainter__month-label">${monthNames[month]} ${year}</div>`;
 
     // Day grid
-    html += '<div class="rto-calendar__days">';
+    html += '<div class="datepainter__days">';
 
     // Empty cells for alignment (padding days from previous month)
     for (let i = 0; i < firstDay; i++) {
-      html += '<div class="rto-calendar__day rto-calendar__day--empty"></div>';
+      html += '<div class="datepainter__day datepainter__day--empty"></div>';
     }
 
     // Day cells for each day of the month
@@ -192,8 +192,8 @@ export function getCalendarHTML(config: CalendarConfig): string {
       const dayString = formatDate(dayDate);
       const cellClasses = getDayCellClasses(dayString, null); // State will be set dynamically
 
-      html += `<div class="rto-calendar__day ${cellClasses}" data-date="${dayString}">`;
-      html += `<span class="rto-calendar__day-number">${i}</span>`;
+      html += `<div class="datepainter__day ${cellClasses}" data-date="${dayString}">`;
+      html += `<span class="datepainter__day-number">${i}</span>`;
 
       // Note: Icons will be rendered dynamically via DOM updates,
       // not in initial HTML, since state changes happen after initial render.

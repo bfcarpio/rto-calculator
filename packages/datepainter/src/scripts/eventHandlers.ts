@@ -162,7 +162,7 @@ export class CalendarEventHandlers {
    * @private
    */
   private attachCalendarGridEvents(): void {
-    const grid = this.container.querySelector(".rto-calendar__days");
+    const grid = this.container.querySelector(".datepainter__days");
     if (!grid) {
       console.warn("[CalendarEventHandlers] Calendar grid not found");
       return;
@@ -241,7 +241,7 @@ export class CalendarEventHandlers {
    */
   private handleGridMouseDown(e: MouseEvent): void {
     const target = e.target as Element;
-    const cell = target.closest(".rto-calendar__day[data-date]");
+    const cell = target.closest(".datepainter__day[data-date]");
 
     // Guard clause: ignore if not on a date cell
     if (!cell) return;
@@ -301,7 +301,7 @@ export class CalendarEventHandlers {
     if (!this.dragState.isDragging) return;
 
     const target = e.target as Element;
-    const cell = target.closest(".rto-calendar__day[data-date]");
+    const cell = target.closest(".datepainter__day[data-date]");
 
     // Guard clause: ignore if not on a date cell
     if (!cell) return;
@@ -350,7 +350,7 @@ export class CalendarEventHandlers {
    */
   private handleGridKeyDown(e: KeyboardEvent): void {
     const target = e.target as Element;
-    const cell = target.closest(".rto-calendar__day[data-date]");
+    const cell = target.closest(".datepainter__day[data-date]");
 
     // Guard clause: ignore if not on a date cell
     if (!cell) return;
@@ -399,9 +399,7 @@ export class CalendarEventHandlers {
    */
   private navigateKeyboard(direction: string, currentCell: HTMLElement): void {
     const allCells = Array.from(
-      this.container.querySelectorAll(
-        ".rto-calendar__day[data-date]:not(.rto-calendar__day--empty)"
-      )
+      this.container.querySelectorAll(".datepainter__day[data-date]:not(.datepainter__day--empty)")
     );
 
     const currentIndex = allCells.indexOf(currentCell);
@@ -457,15 +455,15 @@ export class CalendarEventHandlers {
       clearDateState(dateStr);
       cell.dataset.state = "";
       cell.classList.remove(
-        "rto-calendar__day--working",
-        "rto-calendar__day--oof",
-        "rto-calendar__day--holiday"
+        "datepainter__day--working",
+        "datepainter__day--oof",
+        "datepainter__day--holiday"
       );
     } else {
       // Apply selection state
       setDateState(dateStr, state);
       cell.dataset.state = state;
-      cell.classList.add(`rto-calendar__day--${state}`);
+      cell.classList.add(`datepainter__day--${state}`);
     }
 
     // Update ARIA attributes for accessibility
@@ -491,7 +489,7 @@ export class CalendarEventHandlers {
    * Resets all cells to unselected state and clears the store.
    */
   clearAllSelections(): void {
-    const selectedCells = this.container.querySelectorAll(".rto-calendar__day[data-state]");
+    const selectedCells = this.container.querySelectorAll(".datepainter__day[data-state]");
 
     for (const cell of selectedCells) {
       this.applySelectionToCell(cell as HTMLElement, null);
@@ -513,7 +511,7 @@ export class CalendarEventHandlers {
       return;
     }
 
-    const selectedCells = monthContainer.querySelectorAll(".rto-calendar__day[data-state]");
+    const selectedCells = monthContainer.querySelectorAll(".datepainter__day[data-state]");
 
     const count = selectedCells.length;
 
@@ -552,17 +550,17 @@ export class CalendarEventHandlers {
   updateTodayHighlight(): void {
     const today = formatDate(new Date());
 
-    const allCells = this.container.querySelectorAll(".rto-calendar__day[data-date]");
+    const allCells = this.container.querySelectorAll(".datepainter__day[data-date]");
 
     for (const cell of allCells) {
       const el = cell as HTMLElement;
       const cellDate = el.dataset.date as DateString;
 
       if (cellDate === today) {
-        el.classList.add("rto-calendar__day--today");
+        el.classList.add("datepainter__day--today");
         el.setAttribute("aria-current", "date");
       } else {
-        el.classList.remove("rto-calendar__day--today");
+        el.classList.remove("datepainter__day--today");
         el.removeAttribute("aria-current");
       }
     }
@@ -600,7 +598,7 @@ export class CalendarEventHandlers {
     announcement.setAttribute("role", "status");
     announcement.setAttribute("aria-live", "polite");
     announcement.setAttribute("aria-atomic", "true");
-    announcement.className = "rto-calendar__sr-only";
+    announcement.className = "datepainter__sr-only";
     announcement.textContent = message;
 
     document.body.appendChild(announcement);

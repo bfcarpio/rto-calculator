@@ -3,7 +3,7 @@
  * Global styles for standalone vanilla JavaScript usage
  *
  * Usage: Import in HTML/JS projects for standalone calendar rendering
- * BEM naming convention with rto-calendar prefix
+ * BEM naming convention with datepainter prefix
  */
 
 /* ============================================
@@ -11,7 +11,7 @@
    ============================================ */
 
 /* Apply reset globally for vanilla usage */
-.rto-calendar {
+.datepainter {
 	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
@@ -22,10 +22,10 @@
    ============================================ */
 
 /* Full calendar container */
-.rto-calendar {
+.datepainter {
 	display: flex;
 	flex-direction: column;
-	gap: var(--rto-calendar-month-gap, 1rem);
+	gap: var(--datepainter-month-gap, 1rem);
 	max-width: 100%;
 	margin: 0 auto;
 }
@@ -36,46 +36,46 @@
 
 /* Base: Single column for mobile */
 @media (max-width: 480px) {
-	.rto-calendar__day {
+	.datepainter__day {
 		min-height: 32px;
 		font-size: 0.75rem;
 	}
 
-	.rto-calendar__weekday {
+	.datepainter__weekday {
 		font-size: 0.7rem;
 		padding: 4px;
 	}
 
-	.rto-calendar__month-label {
+	.datepainter__month-label {
 		font-size: 1rem;
 		padding: 8px;
 	}
 
-	.rto-calendar-day__icon {
+	.datepainter-day__icon {
 		font-size: 0.7em;
 	}
 }
 
 /* Tablet: Adjusted spacing */
 @media (min-width: 481px) and (max-width: 768px) {
-	.rto-calendar__day {
+	.datepainter__day {
 		min-height: 40px;
 		font-size: 0.875rem;
 	}
 
-	.rto-calendar__weekday {
+	.datepainter__weekday {
 		font-size: 0.75rem;
 	}
 }
 
 /* Desktop: Standard sizing */
 @media (min-width: 769px) {
-	.rto-calendar__day {
+	.datepainter__day {
 		min-height: 48px;
 		font-size: 1rem;
 	}
 
-	.rto-calendar__weekday {
+	.datepainter__weekday {
 		font-size: 0.875rem;
 		padding: 12px;
 	}
@@ -83,12 +83,12 @@
 
 /* Large Desktop: More spacious */
 @media (min-width: 1200px) {
-	.rto-calendar__day {
+	.datepainter__day {
 		min-height: 56px;
 		font-size: 1.125rem;
 	}
 
-	.rto-calendar__month-label {
+	.datepainter__month-label {
 		font-size: 1.5rem;
 	}
 }
@@ -98,14 +98,14 @@
    ============================================ */
 
 /* Month blocks in multi-month view */
-.rto-calendar .rto-calendar__month {
+.datepainter .datepainter__month {
 	display: flex;
 	flex-direction: column;
 	gap: 0.5rem;
 }
 
 /* Grid layout for multiple months */
-.rto-calendar.rto-calendar--multi-month {
+.datepainter.datepainter--multi-month {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 	gap: 1.5rem;
@@ -113,19 +113,19 @@
 
 /* Responsive adjustments for multi-month */
 @media (max-width: 768px) {
-	.rto-calendar.rto-calendar--multi-month {
+	.datepainter.datepainter--multi-month {
 		grid-template-columns: 1fr;
 	}
 }
 
 @media (min-width: 769px) and (max-width: 1200px) {
-	.rto-calendar.rto-calendar--multi-month {
+	.datepainter.datepainter--multi-month {
 		grid-template-columns: repeat(2, 1fr);
 	}
 }
 
 @media (min-width: 1201px) {
-	.rto-calendar.rto-calendar--multi-month {
+	.datepainter.datepainter--multi-month {
 		grid-template-columns: repeat(3, 1fr);
 	}
 }
@@ -135,26 +135,26 @@
    ============================================ */
 
 /* Past days */
-.rto-calendar__day--past {
+.datepainter__day--past {
 	opacity: 0.5;
 	cursor: not-allowed;
-	background-color: var(--rto-calendar-bg-past, #94a3b8);
+	background-color: var(--datepainter-bg-past, #94a3b8);
 }
 
-.rto-calendar__day--past:hover {
+.datepainter__day--past:hover {
 	transform: none;
-	border-color: var(--rto-calendar-border, #e2e8f0);
+	border-color: var(--datepainter-border, #e2e8f0);
 }
 
 /* Weekend days */
-.rto-calendar__day--weekend {
-	background-color: var(--rto-calendar-bg-weekend, #f1f5f9);
+.datepainter__day--weekend {
+	background-color: var(--datepainter-bg-weekend, #f1f5f9);
 }
 
 /* Today */
-.rto-calendar__day--today {
+.datepainter__day--today {
 	font-weight: 700;
-	border: 2px solid var(--rto-calendar-primary, #475569);
+	border: 2px solid var(--datepainter-primary, #475569);
 }
 
 /* ============================================
@@ -162,12 +162,12 @@
    ============================================ */
 
 /* Active/Pressed state */
-.rto-calendar__day:active:not(.rto-calendar__day--empty) {
+.datepainter__day:active:not(.datepainter__day--empty) {
 	transform: scale(0.95);
 }
 
 /* Disabled state */
-.rto-calendar__day--disabled {
+.datepainter__day--disabled {
 	opacity: 0.3;
 	cursor: not-allowed;
 	pointer-events: none;
@@ -178,14 +178,14 @@
    ============================================ */
 
 /* Drag selection range */
-.rto-calendar__day--in-selection-range {
-	background-color: var(--rto-calendar-primary-light, #e2e8f0) !important;
+.datepainter__day--in-selection-range {
+	background-color: var(--datepainter-primary-light, #e2e8f0) !important;
 }
 
 /* Drag start/end points */
-.rto-calendar__day--drag-start,
-.rto-calendar__day--drag-end {
-	background-color: var(--rto-calendar-primary, #475569) !important;
+.datepainter__day--drag-start,
+.datepainter__day--drag-end {
+	background-color: var(--datepainter-primary, #475569) !important;
 	color: white !important;
 }
 
@@ -194,7 +194,7 @@
    ============================================ */
 
 /* Week status container */
-.rto-calendar__week-status {
+.datepainter__week-status {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
@@ -205,7 +205,7 @@
 }
 
 /* Status badges */
-.rto-calendar__week-status-badge {
+.datepainter__week-status-badge {
 	display: inline-flex;
 	align-items: center;
 	gap: 4px;
@@ -217,27 +217,27 @@
 }
 
 /* Compliant status */
-.rto-calendar__week-status-badge--compliant {
-	background-color: var(--rto-calendar-primary-light, #e2e8f0);
-	color: var(--rto-calendar-primary, #475569);
+.datepainter__week-status-badge--compliant {
+	background-color: var(--datepainter-primary-light, #e2e8f0);
+	color: var(--datepainter-primary, #475569);
 }
 
 /* Invalid status */
-.rto-calendar__week-status-badge--invalid {
-	background-color: var(--rto-calendar-error-bg, #f1f5f9);
-	color: var(--rto-calendar-error, #334155);
+.datepainter__week-status-badge--invalid {
+	background-color: var(--datepainter-error-bg, #f1f5f9);
+	color: var(--datepainter-error, #334155);
 }
 
 /* Pending status */
-.rto-calendar__week-status-badge--pending {
-	background-color: var(--rto-calendar-secondary-light, #f1f5f9);
-	color: var(--rto-calendar-secondary, #64748b);
+.datepainter__week-status-badge--pending {
+	background-color: var(--datepainter-secondary-light, #f1f5f9);
+	color: var(--datepainter-secondary, #64748b);
 }
 
 /* Ignored status */
-.rto-calendar__week-status-badge--ignored {
-	background-color: var(--rto-calendar-bg-alt, #f8fafc);
-	color: var(--rto-calendar-text-muted, #64748b);
+.datepainter__week-status-badge--ignored {
+	background-color: var(--datepainter-bg-alt, #f8fafc);
+	color: var(--datepainter-text-muted, #64748b);
 }
 
 /* ============================================
@@ -245,13 +245,13 @@
    ============================================ */
 
 /* Tooltip container */
-.rto-calendar__tooltip {
+.datepainter__tooltip {
 	position: absolute;
 	bottom: 100%;
 	left: 50%;
 	transform: translateX(-50%);
 	padding: 8px 12px;
-	background-color: var(--rto-calendar-text, #1e293b);
+	background-color: var(--datepainter-text, #1e293b);
 	color: white;
 	font-size: 0.75rem;
 	border-radius: 4px;
@@ -262,17 +262,17 @@
 	transition: opacity 150ms ease-out;
 }
 
-.rto-calendar__tooltip::after {
+.datepainter__tooltip::after {
 	content: "";
 	position: absolute;
 	top: 100%;
 	left: 50%;
 	transform: translateX(-50%);
 	border: 6px solid transparent;
-	border-top-color: var(--rto-calendar-text, #1e293b);
+	border-top-color: var(--datepainter-text, #1e293b);
 }
 
-.rto-calendar__day:hover .rto-calendar__tooltip {
+.datepainter__day:hover .datepainter__tooltip {
 	opacity: 1;
 }
 
@@ -281,15 +281,15 @@
    ============================================ */
 
 /* Keyboard focus styles */
-.rto-calendar__day:focus {
+.datepainter__day:focus {
 	outline: none;
-	box-shadow: 0 0 0 2px var(--rto-calendar-bg, #ffffff),
-		0 0 0 4px var(--rto-calendar-focus, #475569);
+	box-shadow: 0 0 0 2px var(--datepainter-bg, #ffffff),
+		0 0 0 4px var(--datepainter-focus, #475569);
 }
 
 /* Arrow key navigation hint */
-.rto-calendar__day--keyboard-selected {
-	background-color: var(--rto-calendar-primary-light, #e2e8f0);
+.datepainter__day--keyboard-selected {
+	background-color: var(--datepainter-primary-light, #e2e8f0);
 }
 
 /* ============================================
@@ -297,7 +297,7 @@
    ============================================ */
 
 /* Selection animation */
-@keyframes rto-calendar-select-vanilla {
+@keyframes datepainter-select-vanilla {
 	0% {
 		transform: scale(1);
 	}
@@ -309,12 +309,12 @@
 	}
 }
 
-.rto-calendar__day--animate-select {
-	animation: rto-calendar-select-vanilla 200ms ease-out;
+.datepainter__day--animate-select {
+	animation: datepainter-select-vanilla 200ms ease-out;
 }
 
 /* Shake animation for invalid selection */
-@keyframes rto-calendar-shake {
+@keyframes datepainter-shake {
 	0%, 100% {
 		transform: translateX(0);
 	}
@@ -326,8 +326,8 @@
 	}
 }
 
-.rto-calendar__day--shake {
-	animation: rto-calendar-shake 300ms ease-out;
+.datepainter__day--shake {
+	animation: datepainter-shake 300ms ease-out;
 }
 
 /* ============================================
@@ -335,29 +335,29 @@
    ============================================ */
 
 /* Center alignment */
-.rto-calendar--centered {
+.datepainter--centered {
 	margin-left: auto;
 	margin-right: auto;
 }
 
 /* Full width */
-.rto-calendar--full-width {
+.datepainter--full-width {
 	width: 100%;
 	max-width: none;
 }
 
 /* Compact mode */
-.rto-calendar--compact .rto-calendar__day {
+.datepainter--compact .datepainter__day {
 	min-height: 32px;
 	font-size: 0.75rem;
 }
 
-.rto-calendar--compact .rto-calendar__weekday {
+.datepainter--compact .datepainter__weekday {
 	font-size: 0.7rem;
 	padding: 4px;
 }
 
-.rto-calendar--compact .rto-calendar__month-label {
+.datepainter--compact .datepainter__month-label {
 	font-size: 0.875rem;
 }
 
@@ -366,13 +366,13 @@
    ============================================ */
 
 /* Skip to calendar link (for accessibility) */
-.rto-calendar__skip-link {
+.datepainter__skip-link {
 	position: absolute;
 	top: -100px;
 	left: 50%;
 	transform: translateX(-50%);
 	padding: 8px 16px;
-	background-color: var(--rto-calendar-primary, #475569);
+	background-color: var(--datepainter-primary, #475569);
 	color: white;
 	text-decoration: none;
 	border-radius: 4px;
@@ -380,7 +380,7 @@
 	transition: top 200ms ease-out;
 }
 
-.rto-calendar__skip-link:focus {
+.datepainter__skip-link:focus {
 	top: 8px;
 }
 
@@ -389,24 +389,24 @@
    ============================================ */
 
 @media print {
-	.rto-calendar {
+	.datepainter {
 		break-inside: avoid;
 		page-break-inside: avoid;
 	}
 
-	.rto-calendar__day {
+	.datepainter__day {
 		border: 1px solid #ccc;
 		transition: none;
 		transform: none;
 		box-shadow: none;
 	}
 
-	.rto-calendar__day:hover {
+	.datepainter__day:hover {
 		transform: none;
 		box-shadow: none;
 	}
 
-	.rto-calendar__tooltip {
+	.datepainter__tooltip {
 		display: none;
 	}
 }
@@ -416,17 +416,17 @@
    ============================================ */
 
 @media (prefers-contrast: high) {
-	.rto-calendar__day {
+	.datepainter__day {
 		border-width: 2px;
 	}
 
-	.rto-calendar__day--today {
+	.datepainter__day--today {
 		border-width: 3px;
 	}
 
-	.rto-calendar-day--working,
-	.rto-calendar-day--oof,
-	.rto-calendar-day--holiday {
+	.datepainter-day--working,
+	.datepainter-day--oof,
+	.datepainter-day--holiday {
 		border-width: 3px;
 		font-weight: 700;
 	}
@@ -437,12 +437,12 @@
    ============================================ */
 
 @media (prefers-reduced-motion: reduce) {
-	.rto-calendar__day--animate-select,
-	.rto-calendar__day--shake {
+	.datepainter__day--animate-select,
+	.datepainter__day--shake {
 		animation: none;
 	}
 
-	.rto-calendar__tooltip {
+	.datepainter__tooltip {
 		transition: none;
 	}
 }

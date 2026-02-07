@@ -70,7 +70,7 @@ export class DayRenderer {
     const dayEl = document.createElement("div");
     dayEl.className = this.getDayClasses(date, state);
     if (isToday) {
-      dayEl.classList.add("rto-calendar-day--today");
+      dayEl.classList.add("datepainter-day--today");
     }
 
     const dayNumber = date.split("-").pop() || "";
@@ -80,7 +80,7 @@ export class DayRenderer {
     if (state && this.config.states[state]?.icon) {
       const icon = this.config.states[state].icon;
       const iconEl = document.createElement("span");
-      iconEl.className = "rto-calendar-day__icon";
+      iconEl.className = "datepainter-day__icon";
       iconEl.textContent = icon;
       iconEl.setAttribute("aria-hidden", "true");
       dayEl.appendChild(iconEl);
@@ -111,18 +111,18 @@ export class DayRenderer {
    * @example
    * ```ts
    * const classes = renderer.getDayClasses('2026-02-06', 'working');
-   * // Returns: 'rto-calendar-day rto-calendar-day--working rto-calendar-day--today'
+   * // Returns: 'datepainter-day datepainter-day--working datepainter-day--today'
    * ```
    */
   private getDayClasses(date: DateString, state: DateState | null): string {
-    const classes: string[] = ["rto-calendar-day"];
+    const classes: string[] = ["datepainter-day"];
 
     if (state) {
-      classes.push(`rto-calendar-day--${state}`);
+      classes.push(`datepainter-day--${state}`);
     }
 
     if (this.isToday(date)) {
-      classes.push("rto-calendar-day--today");
+      classes.push("datepainter-day--today");
     }
 
     return classes.join(" ");

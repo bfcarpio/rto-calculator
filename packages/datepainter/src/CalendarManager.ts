@@ -330,7 +330,7 @@ export class CalendarManager implements CalendarInstance {
   private render(): void {
     if (!this.container) return;
     // TODO: Will be implemented in Phase 6 (templateRenderer)
-    this.container.innerHTML = '<div class="rto-calendar">Calendar rendering placeholder</div>';
+    this.container.innerHTML = '<div class="datepainter">Calendar rendering placeholder</div>';
   }
 
   /**

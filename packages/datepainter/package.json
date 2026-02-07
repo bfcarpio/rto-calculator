@@ -2,6 +2,28 @@
 	"name": "datepainter",
 	"version": "1.0.0",
 	"type": "module",
+	"description": "A lightweight, flexible calendar component library with built-in date validation and state management. Works with Astro, Vanilla JS, and more.",
+	"keywords": [
+		"calendar",
+		"date-picker",
+		"validation",
+		"astro",
+		"vanilla",
+		"typescript",
+		"date",
+		"rto",
+		"return-to-office"
+	],
+	"author": "",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/username/datepainter.git"
+	},
+	"homepage": "https://github.com/username/datepainter",
+	"bugs": {
+		"url": "https://github.com/username/datepainter/issues"
+	},
 	"exports": {
 		".": {
 			"types": "./dist/index.d.ts",
