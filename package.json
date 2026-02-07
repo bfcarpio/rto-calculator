@@ -28,7 +28,7 @@
 		"air-datepicker": "^3.6.0",
 		"astro": "^5.16.8",
 		"bulma": "^1.0.4",
-		"nager_date_api_reference": "file:nager.date",
+		"nager_date_api_reference": "file:packages/nager.date",
 		"open-props": "^1.7.23",
 		"ts-ics": "^2.4.0",
 		"typescript": "^5.9.3"
