@@ -22,8 +22,8 @@ vi.mock("../holiday/data/company-filters.json", () => ({
 		US: {
 			name: "United States",
 			companies: {
-				TechCo: ["New Year's Day", "Christmas Day"],
-				SmallCo: ["New Year's Day"],
+				Amazon: ["New Year's Day", "Christmas Day"],
+				Google: ["New Year's Day"],
 			},
 		},
 	},
@@ -136,18 +136,18 @@ describe("HolidayManager", () => {
 		it("should set configuration", () => {
 			manager.setConfig({
 				countryCode: "US",
-				companyName: "Acme Corp",
+				companyName: "Amazon",
 			});
 
 			const config = manager.getConfig();
 			expect(config.countryCode).toBe("US");
-			expect(config.companyName).toBe("Acme Corp");
+			expect(config.companyName).toBe("Amazon");
 		});
 
 		it("should create a copy of configuration when getting", () => {
 			manager.setConfig({
 				countryCode: "US",
-				companyName: "Acme Corp",
+				companyName: "Amazon",
 			});
 
 			const config1 = manager.getConfig();
@@ -245,7 +245,7 @@ describe("HolidayManager", () => {
 			it("should filter holidays by company name", async () => {
 				const result = await manager.fetchHolidays({
 					countryCode: "US",
-					companyName: "TechCo",
+					companyName: "Amazon",
 					years: [2024],
 				});
 
@@ -299,7 +299,7 @@ describe("HolidayManager", () => {
 		it("should filter by company when specified", async () => {
 			const holidayDates = await manager.getHolidayDates(
 				"US",
-				"SmallCo",
+				"Google",
 				[2024],
 			);
 
@@ -353,11 +353,11 @@ describe("HolidayManager", () => {
 		});
 
 		it("should filter by company when specified", async () => {
-			// Independence Day is not in TechCo's company filter
+			// Independence Day is not in Amazon's company filter
 			const isHoliday = await manager.isHoliday(
 				new Date("2024-07-04"),
 				"US",
-				"TechCo",
+				"Amazon",
 			);
 
 			expect(isHoliday).toBe(false);
@@ -434,7 +434,7 @@ describe("HolidayManager", () => {
 		});
 
 		it("should filter by company when applying", async () => {
-			await manager.applyHolidaysToCalendar("US", "SmallCo", [2024]);
+			await manager.applyHolidaysToCalendar("US", "Google", [2024]);
 
 			const holidayCells = document.querySelectorAll(".calendar-day.holiday");
 			expect(holidayCells).toHaveLength(1);
@@ -564,14 +564,14 @@ describe("HolidayManager", () => {
 
 			const result = await manager.fetchHolidays({
 				countryCode: "US",
-				companyName: "SmallCo",
+				companyName: "Google",
 				years: [2024],
 			});
 
 			const summary = manager.getHolidaySummary(result);
 
 			expect(summary).toContain("1 holiday");
-			expect(summary).toContain("filtered by SmallCo");
+			expect(summary).toContain("filtered by Google");
 		});
 
 		it("should generate summary for no holidays", async () => {
@@ -595,7 +595,7 @@ describe("HolidayManager", () => {
 
 			expect(Array.isArray(companies)).toBe(true);
 			expect(companies.length).toBeGreaterThan(0);
-			expect(companies).toContain("TechCo");
+			expect(companies).toContain("Amazon");
 		});
 
 		it("should return empty array for country without filters", () => {
