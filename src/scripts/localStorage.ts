@@ -38,7 +38,11 @@ function getSelectedDatesFromDOM(): Map<string, string> {
 
 		// Create ISO date string
 		const date = new Date(year, month, day);
-		const isoString = date.toISOString().split("T")[0]!; // YYYY-MM-DD format
+		const isoParts = date.toISOString().split("T");
+		const isoString = isoParts[0]; // YYYY-MM-DD format
+		if (!isoString || !selectionType) {
+			return;
+		}
 
 		selectedDates.set(isoString, selectionType);
 	});
@@ -73,7 +77,11 @@ function applySelectionsToDOM(savedDates: Map<string, string>): void {
 
 		// Create ISO date string to match saved format
 		const date = new Date(year, month, day);
-		const isoString = date.toISOString().split("T")[0]!;
+		const isoParts = date.toISOString().split("T");
+		if (!isoParts[0]) {
+			return;
+		}
+		const isoString = isoParts[0];
 
 		// Check if this date has a saved selection
 		if (savedDates.has(isoString)) {
@@ -182,13 +190,13 @@ export function clearSavedSelections(): void {
 /**
  * Debounce function to limit save frequency
  */
-function debounce(
-	func: (...args: any[]) => void,
+function debounce<T extends (...args: unknown[]) => void>(
+	func: T,
 	delay: number,
-): (...args: any[]) => void {
+): (...args: Parameters<T>) => void {
 	let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
-	return (...args: any[]) => {
+	return (...args: Parameters<T>) => {
 		if (timeoutId) {
 			clearTimeout(timeoutId);
 		}
@@ -239,7 +247,11 @@ export function initializeLocalStorage(): void {
 	}
 
 	// Expose storage manager to window for settings modal
-	(window as any).storageManager = {
+	(
+		window as {
+			storageManager?: { setDataSavingEnabled(enabled: boolean): void };
+		}
+	).storageManager = {
 		setDataSavingEnabled,
 	};
 

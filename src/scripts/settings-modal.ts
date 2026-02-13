@@ -217,7 +217,7 @@ class SettingsModal {
 	}
 
 	private onMinOfficeDaysChange(e: Event): void {
-		const value = parseInt((e.target as HTMLInputElement).value);
+		const value = parseInt((e.target as HTMLInputElement).value, 10);
 		if (value >= 0 && value <= 5) {
 			debugLog(`[Settings] Min office days changed to: ${value}`);
 			window.validationManager?.updateConfig({ minOfficeDaysPerWeek: value });
@@ -244,7 +244,7 @@ class SettingsModal {
 		const target = e.target as HTMLElement;
 		if (!target.classList.contains("pattern-day")) return;
 
-		const dayIndex = parseInt(target.getAttribute("data-day") || "0");
+		const dayIndex = parseInt(target.getAttribute("data-day") || "0", 10);
 		const index = this.selectedPattern.indexOf(dayIndex);
 
 		if (index > -1) {
@@ -342,7 +342,7 @@ class SettingsModal {
 
 	private applyPatternToCalendar(): number {
 		const minOfficeDays = this.minOfficeDaysInput
-			? parseInt(this.minOfficeDaysInput.value)
+			? parseInt(this.minOfficeDaysInput.value, 10)
 			: 3;
 		const officeDays = 5 - this.selectedPattern.length;
 
@@ -364,9 +364,9 @@ class SettingsModal {
 			const selectionType = cellElement.dataset.selectionType;
 
 			if (!isSelected && !selectionType) {
-				const year = parseInt(cellElement.dataset.year || "0");
-				const month = parseInt(cellElement.dataset.month || "0");
-				const day = parseInt(cellElement.dataset.day || "0");
+				const year = parseInt(cellElement.dataset.year || "0", 10);
+				const month = parseInt(cellElement.dataset.month || "0", 10);
+				const day = parseInt(cellElement.dataset.day || "0", 10);
 				const date = new Date(year, month, day);
 				const dayIndex = date.getDay();
 				const isWeekday = dayIndex >= 1 && dayIndex <= 5;
@@ -399,7 +399,7 @@ class SettingsModal {
 	private updatePatternSelectorUI(): void {
 		const patternDays = document.querySelectorAll(".pattern-day");
 		patternDays.forEach((day) => {
-			const dayIndex = parseInt(day.getAttribute("data-day") || "0");
+			const dayIndex = parseInt(day.getAttribute("data-day") || "0", 10);
 			const isSelected = this.selectedPattern.includes(dayIndex);
 			day.setAttribute("aria-pressed", isSelected.toString());
 		});
@@ -411,7 +411,7 @@ class SettingsModal {
 
 		const officeDays = 5 - this.selectedPattern.length;
 		const minOfficeDays = this.minOfficeDaysInput
-			? parseInt(this.minOfficeDaysInput.value)
+			? parseInt(this.minOfficeDaysInput.value, 10)
 			: 3;
 		const isValid = officeDays >= minOfficeDays;
 
@@ -448,7 +448,7 @@ class SettingsModal {
 			saveData: this.saveDataToggle?.getAttribute("aria-checked") === "true",
 			strategy: this.strategySelect?.value ?? "rolling-period",
 			minOfficeDays: this.minOfficeDaysInput
-				? parseInt(this.minOfficeDaysInput.value)
+				? parseInt(this.minOfficeDaysInput.value, 10)
 				: 3,
 			defaultPattern:
 				this.selectedPattern.length > 0 ? [...this.selectedPattern] : null,

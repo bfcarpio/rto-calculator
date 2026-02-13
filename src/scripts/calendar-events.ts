@@ -249,9 +249,9 @@ class CalendarEventManager {
 	// Clear all selections globally
 	private clearAllSelections(): void {
 		const selectedCells = document.querySelectorAll(".calendar-day.selected");
-		selectedCells.forEach((cell) =>
-			this.applySelectionToCell(cell as HTMLElement, null),
-		);
+		selectedCells.forEach((cell) => {
+			this.applySelectionToCell(cell as HTMLElement, null);
+		});
 		this.announceToScreenReader("Cleared all selections");
 	}
 
@@ -268,9 +268,9 @@ class CalendarEventManager {
 		);
 		const count = selectedCells.length;
 
-		selectedCells.forEach((cell) =>
-			this.applySelectionToCell(cell as HTMLElement, null),
-		);
+		selectedCells.forEach((cell) => {
+			this.applySelectionToCell(cell as HTMLElement, null);
+		});
 		this.announceToScreenReader(`Cleared ${count} selections`);
 	}
 
@@ -293,9 +293,9 @@ class CalendarEventManager {
 		allCells.forEach((cell) => {
 			const el = cell as HTMLElement;
 			const cellDate = new Date(
-				parseInt(el.dataset.year || "0"),
-				parseInt(el.dataset.month || "0"),
-				parseInt(el.dataset.day || "0"),
+				parseInt(el.dataset.year || "0", 10),
+				parseInt(el.dataset.month || "0", 10),
+				parseInt(el.dataset.day || "0", 10),
 			);
 			cellDate.setHours(0, 0, 0, 0);
 
@@ -348,7 +348,9 @@ export function initializeCalendarEvents(): void {
 	manager.initialize();
 
 	// Expose for debugging/cleanup if needed
-	(window as any).__calendarEventManager = manager;
+	(
+		window as { __calendarEventManager?: CalendarEventManager }
+	).__calendarEventManager = manager;
 }
 
 export { CalendarEventManager };

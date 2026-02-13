@@ -85,7 +85,6 @@ const mockUIUpdates = {
 				sr.textContent =
 					"Excluded - in evaluation window but not evaluated (worst 4 weeks)";
 				break;
-			case "ignored":
 			default:
 				// Empty status for weeks not in the 12-week evaluation window
 				icon.textContent = "";
@@ -153,9 +152,9 @@ const mockUIUpdates = {
 
 			// Only apply to unselected days
 			if (!isSelected && !selectionType) {
-				const year = parseInt(cellEl.dataset.year || "0");
-				const month = parseInt(cellEl.dataset.month || "0");
-				const day = parseInt(cellEl.dataset.day || "0");
+				const year = parseInt(cellEl.dataset.year || "0", 10);
+				const month = parseInt(cellEl.dataset.month || "0", 10);
+				const day = parseInt(cellEl.dataset.day || "0", 10);
 				const date = new Date(year, month, day);
 				const dayOfWeek = date.getDay();
 
@@ -616,9 +615,9 @@ describe("UI Updates - Pattern Application", () => {
 
 		cells.forEach((cell) => {
 			const cellEl = cell as HTMLElement;
-			const year = parseInt(cellEl.dataset.year || "0");
-			const month = parseInt(cellEl.dataset.month || "0");
-			const day = parseInt(cellEl.dataset.day || "0");
+			const year = parseInt(cellEl.dataset.year || "0", 10);
+			const month = parseInt(cellEl.dataset.month || "0", 10);
+			const day = parseInt(cellEl.dataset.day || "0", 10);
 			const date = new Date(year, month, day);
 			const dayOfWeek = date.getDay();
 
@@ -700,9 +699,9 @@ describe("UI Updates - Pattern Application", () => {
 		let appliedCount = 0;
 		cells.forEach((cell) => {
 			const cellEl = cell as HTMLElement;
-			const year = parseInt(cellEl.getAttribute("data-year") || "0");
-			const month = parseInt(cellEl.getAttribute("data-month") || "0");
-			const day = parseInt(cellEl.getAttribute("data-day") || "0");
+			const year = parseInt(cellEl.getAttribute("data-year") || "0", 10);
+			const month = parseInt(cellEl.getAttribute("data-month") || "0", 10);
+			const day = parseInt(cellEl.getAttribute("data-day") || "0", 10);
 			const date = new Date(year, month, day);
 			const dayOfWeek = date.getDay();
 

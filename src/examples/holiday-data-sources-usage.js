@@ -8,12 +8,9 @@
  */
 
 import {
-	getAvailableHolidayDataSources,
 	getDefaultHolidayDataSource,
-	getHolidayDataSource,
 	HolidayDataSourceFactory,
-	registerHolidayDataSource,
-} from "../lib/holiday-data-sources/index.js";
+} from "../lib/holiday/sources/index.js";
 
 // Helper function to pretty-print results
 function printResult(title, data) {
@@ -34,7 +31,7 @@ function printError(error) {
  * Example 1: Get the default holiday data source
  */
 async function example1_getDefaultDataSource() {
-	console.log("\n" + "=".repeat(60));
+	console.log(`\n${"=".repeat(60)}`);
 	console.log("Example 1: Get Default Holiday Data Source");
 	console.log("=".repeat(60));
 
@@ -54,7 +51,7 @@ async function example1_getDefaultDataSource() {
  * Example 2: Check data source availability
  */
 async function example2_checkAvailability() {
-	console.log("\n" + "=".repeat(60));
+	console.log(`\n${"=".repeat(60)}`);
 	console.log("Example 2: Check Data Source Availability");
 	console.log("=".repeat(60));
 
@@ -71,7 +68,7 @@ async function example2_checkAvailability() {
  * Example 3: Get holidays for a specific year and country
  */
 async function example3_getHolidaysForYear() {
-	console.log("\n" + "=".repeat(60));
+	console.log(`\n${"=".repeat(60)}`);
 	console.log("Example 3: Get Holidays for a Year");
 	console.log("=".repeat(60));
 
@@ -99,7 +96,7 @@ async function example3_getHolidaysForYear() {
  * Example 4: Check if a specific date is a holiday
  */
 async function example4_checkIfHoliday() {
-	console.log("\n" + "=".repeat(60));
+	console.log(`\n${"=".repeat(60)}`);
 	console.log("Example 4: Check If a Date Is a Holiday");
 	console.log("=".repeat(60));
 
@@ -135,7 +132,7 @@ async function example4_checkIfHoliday() {
  * Example 5: Check if today is a holiday
  */
 async function example5_checkTodayHoliday() {
-	console.log("\n" + "=".repeat(60));
+	console.log(`\n${"=".repeat(60)}`);
 	console.log("Example 5: Check If Today Is a Holiday");
 	console.log("=".repeat(60));
 
@@ -163,7 +160,7 @@ async function example5_checkTodayHoliday() {
  * Example 6: Get upcoming holidays
  */
 async function example6_getUpcomingHolidays() {
-	console.log("\n" + "=".repeat(60));
+	console.log(`\n${"=".repeat(60)}`);
 	console.log("Example 6: Get Upcoming Holidays");
 	console.log("=".repeat(60));
 
@@ -194,7 +191,7 @@ async function example6_getUpcomingHolidays() {
  * Example 7: Get holidays for a date range
  */
 async function example7_getHolidaysForDateRange() {
-	console.log("\n" + "=".repeat(60));
+	console.log(`\n${"=".repeat(60)}`);
 	console.log("Example 7: Get Holidays for Date Range");
 	console.log("=".repeat(60));
 
@@ -234,7 +231,7 @@ async function example7_getHolidaysForDateRange() {
  * Example 8: Query holidays with custom options
  */
 async function example8_queryWithOptions() {
-	console.log("\n" + "=".repeat(60));
+	console.log(`\n${"=".repeat(60)}`);
 	console.log("Example 8: Query Holidays with Custom Options");
 	console.log("=".repeat(60));
 
@@ -281,7 +278,7 @@ async function example8_queryWithOptions() {
  * Example 9: Use the factory to manage data sources
  */
 async function example9_useFactory() {
-	console.log("\n" + "=".repeat(60));
+	console.log(`\n${"=".repeat(60)}`);
 	console.log("Example 9: Use Factory to Manage Data Sources");
 	console.log("=".repeat(60));
 
@@ -315,7 +312,7 @@ async function example9_useFactory() {
  * Example 10: Caching and performance
  */
 async function example10_caching() {
-	console.log("\n" + "=".repeat(60));
+	console.log(`\n${"=".repeat(60)}`);
 	console.log("Example 10: Caching and Performance");
 	console.log("=".repeat(60));
 
@@ -366,7 +363,7 @@ async function example10_caching() {
  * Example 11: Check all data sources health
  */
 async function example11_checkAllDataSources() {
-	console.log("\n" + "=".repeat(60));
+	console.log(`\n${"=".repeat(60)}`);
 	console.log("Example 11: Check All Data Sources Health");
 	console.log("=".repeat(60));
 
@@ -396,7 +393,7 @@ async function example11_checkAllDataSources() {
  * Example 12: Error handling
  */
 async function example12_errorHandling() {
-	console.log("\n" + "=".repeat(60));
+	console.log(`\n${"=".repeat(60)}`);
 	console.log("Example 12: Error Handling");
 	console.log("=".repeat(60));
 
@@ -437,7 +434,7 @@ async function example12_errorHandling() {
  * Example 13: Working with multiple countries
  */
 async function example13_multipleCountries() {
-	console.log("\n" + "=".repeat(60));
+	console.log(`\n${"=".repeat(60)}`);
 	console.log("Example 13: Working with Multiple Countries");
 	console.log("=".repeat(60));
 
@@ -482,7 +479,7 @@ async function example13_multipleCountries() {
  * Example 14: Reset and reconfigure data source
  */
 async function example14_resetAndReconfigure() {
-	console.log("\n" + "=".repeat(60));
+	console.log(`\n${"=".repeat(60)}`);
 	console.log("Example 14: Reset and Reconfigure Data Source");
 	console.log("=".repeat(60));
 
@@ -519,7 +516,7 @@ async function example14_resetAndReconfigure() {
  * Run all examples
  */
 async function runAllExamples() {
-	console.log("\n" + "=".repeat(60));
+	console.log(`\n${"=".repeat(60)}`);
 	console.log("Holiday Data Sources - Usage Examples");
 	console.log("=".repeat(60));
 	console.log("This file demonstrates various ways to use the holiday");
@@ -541,11 +538,11 @@ async function runAllExamples() {
 		await example13_multipleCountries();
 		await example14_resetAndReconfigure();
 
-		console.log("\n" + "=".repeat(60));
+		console.log(`\n${"=".repeat(60)}`);
 		console.log("All examples completed successfully! ✓");
 		console.log("=".repeat(60));
 	} catch (error) {
-		console.error("\n" + "=".repeat(60));
+		console.error(`\n${"=".repeat(60)}`);
 		console.error("Examples failed with error:");
 		console.error("=".repeat(60));
 		printError(error);

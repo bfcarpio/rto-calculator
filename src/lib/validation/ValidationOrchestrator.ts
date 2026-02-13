@@ -5,20 +5,20 @@
  * Takes typed data from the data reader layer and coordinates
  * validation using the core validation library.
  *
- * @module rto-orchestrator
+ * @module ValidationOrchestrator
  */
 
 import {
 	type CalendarDataResult,
 	convertWeeksToCompliance,
 	type WeekInfo,
-} from "./calendar-data-reader";
-import { DEFAULT_POLICY, RTO_CONFIG } from "./rto-config";
+} from "../calendar-data-reader";
+import { DEFAULT_POLICY, RTO_CONFIG } from "../rto-config";
 import {
 	type RTOPolicyConfig,
 	type SlidingWindowResult,
 	validateSlidingWindow,
-} from "./rtoValidation";
+} from "./rto-core";
 
 /**
  * Configuration for the RTO orchestrator

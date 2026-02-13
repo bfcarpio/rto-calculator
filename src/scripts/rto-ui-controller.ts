@@ -7,17 +7,18 @@
  *
  * Layer Architecture:
  * - Data extraction: src/lib/calendar-data-reader.ts (pure function, DOM reading)
- * - Validation orchestration: src/lib/rto-orchestrator.ts (no DOM dependencies)
+ * - Validation orchestration: src/lib/validation/ValidationOrchestrator.ts (no DOM dependencies)
  * - UI integration: This file (only UI event handlers)
  */
 
 import { readCalendarData } from "../lib/calendar-data-reader";
+import { DEFAULT_RTO_POLICY } from "../lib/validation/rto-core";
 import {
 	clearAllValidationHighlights,
 	orchestrateValidation,
 	type RTOOrchestratorConfig,
-} from "../lib/rto-orchestrator";
-import { DEFAULT_RTO_POLICY } from "../lib/rtoValidation";
+} from "../lib/validation/ValidationOrchestrator";
+import type { ValidationResult } from "../types/validation-strategy";
 import {
 	clearValidationMessage,
 	displayValidationResults,
@@ -94,7 +95,9 @@ export async function runValidationWithHighlights(): Promise<void> {
 
 		// Step 4: Update week status cells in DOM
 		console.log("[RTO Validation UI] Step 4: Updating week statuses...");
-		const { updateWeekStatusCells } = await import("../lib/rto-orchestrator");
+		const { updateWeekStatusCells } = await import(
+			"../lib/validation/ValidationOrchestrator"
+		);
 		updateWeekStatusCells(result.evaluatedWeeks);
 
 		// Step 5: Display validation results to user
@@ -105,11 +108,10 @@ export async function runValidationWithHighlights(): Promise<void> {
 			isValid: result.isValid,
 			overallCompliance: result.compliancePercentage,
 			message: result.message,
-			evaluatedWeekStarts: result.slidingWindowResult.evaluatedWeekStarts,
-			windowWeekStarts: result.slidingWindowResult.windowWeekStarts,
-			invalidWeekStart: result.slidingWindowResult.invalidWeekStart,
-			windowStart: result.slidingWindowResult.windowStart,
-		});
+			windowResults: [],
+			violatingWindows: [],
+			compliantWindows: [],
+		} as ValidationResult);
 
 		if (CONFIG.DEBUG) {
 			console.log("[RTO Validation UI] Validation completed successfully");
@@ -159,7 +161,14 @@ if (document.readyState === "loading") {
 
 // Expose validation functions to window for global access
 if (typeof window !== "undefined") {
-	(window as any).rtoValidation = {
+	(
+		window as {
+			rtoValidation?: {
+				clearAllValidationHighlights(): void;
+				runValidationWithHighlights(): void;
+			};
+		}
+	).rtoValidation = {
 		clearAllValidationHighlights: clearAllValidationHighlightsUI,
 		runValidationWithHighlights,
 	};

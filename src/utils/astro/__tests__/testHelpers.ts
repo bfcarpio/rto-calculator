@@ -369,9 +369,9 @@ export function verifyElementDataAttributes(dayInfo: DayInfo): boolean {
 		return false;
 	}
 
-	const year = parseInt(element.dataset.year || "0");
-	const month = parseInt(element.dataset.month || "0");
-	const day = parseInt(element.dataset.day || "0");
+	const year = parseInt(element.dataset.year || "0", 10);
+	const month = parseInt(element.dataset.month || "0", 10);
+	const day = parseInt(element.dataset.day || "0", 10);
 	const selectionType = element.dataset.selectionType as
 		| "out-of-office"
 		| "office"

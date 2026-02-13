@@ -535,9 +535,9 @@ export function elementToDaySelection(
 	}
 
 	return createDaySelection(
-		parseInt(year),
-		parseInt(month),
-		parseInt(day),
+		parseInt(year, 10),
+		parseInt(month, 10),
+		parseInt(day, 10),
 		(selectionType as "out-of-office" | "none") || "none",
 	);
 }

@@ -158,7 +158,7 @@ describe("Validation Cycle Integration", () => {
 			expect(affectedWeeks.length).toBeGreaterThan(0);
 
 			// First week should be the one with the selection
-			expect(affectedWeeks[0]!.officeDays).toBe(4); // 5 - 1 = 4
+			expect(affectedWeeks[0]?.officeDays).toBe(4); // 5 - 1 = 4
 		});
 
 		it("should cascade validation to rolling period", async () => {
@@ -181,11 +181,33 @@ describe("Validation Cycle Integration", () => {
 
 	describe("Selection Validation", () => {
 		it("should validate before adding selection", async () => {
-			// Current selections
-			const currentSelections = new Set<string>(["2025-01-06", "2025-01-07"]);
+			// Calculate dates that are guaranteed to be in the same week
+			const today = new Date();
 
-			// User wants to select another day
-			const newDate = new Date(2025, 0, 8); // Wednesday
+			// Find the start of the current week (Sunday)
+			const dayOfWeek = today.getDay();
+			const daysUntilSunday = dayOfWeek === 0 ? 0 : 7 - dayOfWeek;
+			const weekStart = new Date(today);
+			weekStart.setDate(today.getDate() + daysUntilSunday);
+
+			// Monday and Tuesday of this week
+			const monday = new Date(weekStart);
+			monday.setDate(weekStart.getDate() + 1);
+
+			const tuesday = new Date(weekStart);
+			tuesday.setDate(weekStart.getDate() + 2);
+
+			// Wednesday of the same week
+			const wednesday = new Date(weekStart);
+			wednesday.setDate(weekStart.getDate() + 3);
+
+			const mondayStr = monday.toISOString().split("T")[0] ?? "";
+			const tuesdayStr = tuesday.toISOString().split("T")[0] ?? "";
+
+			const currentSelections = new Set<string>([mondayStr, tuesdayStr]);
+
+			// User wants to select Wednesday of the same week
+			const newDate = wednesday;
 
 			// Validate the selection
 			const validationResult = validation.validateSelection(
@@ -200,11 +222,14 @@ describe("Validation Cycle Integration", () => {
 		});
 
 		it("should allow valid selection", async () => {
-			// Current selections
-			const currentSelections = new Set<string>(["2025-01-06"]);
+			// Current selections - use dates in the future
+			const currentSelections = new Set<string>(["2026-02-02"]); // Monday
 
-			// User wants to select a weekday
-			const newDate = new Date(2025, 0, 8); // Wednesday
+			// User wants to select a weekday (Wednesday)
+			const baseDate = new Date();
+			baseDate.setDate(baseDate.getDate() + 30); // ~1 month in the future
+			baseDate.setDate(baseDate.getDate() - baseDate.getDay() + 2); // Adjust to Wednesday
+			const newDate = baseDate;
 
 			// Validate the selection
 			const validationResult = validation.validateSelection(
@@ -313,10 +338,10 @@ describe("Validation Cycle Integration", () => {
 			expect(allWeeksData.length).toBe(12);
 
 			// First week should have fewer office days due to selections
-			expect(allWeeksData[0]!.officeDays).toBe(3);
+			expect(allWeeksData[0]?.officeDays).toBe(3);
 
 			// Later weeks should have full office days
-			expect(allWeeksData[1]!.officeDays).toBe(5);
+			expect(allWeeksData[1]?.officeDays).toBe(5);
 		});
 	});
 
@@ -384,11 +409,11 @@ describe("Validation Cycle Integration", () => {
 			const weekDates = dateUtils.getWeekDates(weekStart);
 
 			expect(weekDates).toHaveLength(5);
-			expect(weekDates[0]!.getDate()).toBe(6); // Monday
-			expect(weekDates[1]!.getDate()).toBe(7); // Tuesday
-			expect(weekDates[2]!.getDate()).toBe(8); // Wednesday
-			expect(weekDates[3]!.getDate()).toBe(9); // Thursday
-			expect(weekDates[4]!.getDate()).toBe(10); // Friday
+			expect(weekDates[0]?.getDate()).toBe(6); // Monday
+			expect(weekDates[1]?.getDate()).toBe(7); // Tuesday
+			expect(weekDates[2]?.getDate()).toBe(8); // Wednesday
+			expect(weekDates[3]?.getDate()).toBe(9); // Thursday
+			expect(weekDates[4]?.getDate()).toBe(10); // Friday
 		});
 	});
 });

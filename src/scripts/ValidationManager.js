@@ -357,9 +357,9 @@ class ValidationManager {
 
 		const selectedDays = [];
 		selectedCells.forEach((cell) => {
-			const year = parseInt(cell.dataset.year);
-			const month = parseInt(cell.dataset.month);
-			const day = parseInt(cell.dataset.day);
+			const year = parseInt(cell.dataset.year, 10);
+			const month = parseInt(cell.dataset.month, 10);
+			const day = parseInt(cell.dataset.day, 10);
 			const type = cell.dataset.selectionType || "work-from-home";
 
 			selectedDays.push({ year, month, day, type });

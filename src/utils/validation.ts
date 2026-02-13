@@ -320,7 +320,7 @@ export function validateAllWeeks(
 		if (!weeksMap.has(weekKey)) {
 			weeksMap.set(weekKey, []);
 		}
-		weeksMap.get(weekKey)!.push(date);
+		weeksMap.get(weekKey)?.push(date);
 	});
 
 	// Validate each week

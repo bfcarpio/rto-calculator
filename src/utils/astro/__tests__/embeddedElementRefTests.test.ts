@@ -169,7 +169,7 @@ describe("Embedded Element References - WeekInfo", () => {
 			const weekInfo = createMockWeekInfo(weekStart, days);
 
 			expect(weekInfo.statusCellElement).toBeInstanceOf(HTMLElement);
-			expect(weekInfo.statusCellElement!.dataset.weekStart).toBe(
+			expect(weekInfo.statusCellElement?.dataset.weekStart).toBe(
 				weekStart.getTime().toString(),
 			);
 		});
@@ -185,7 +185,7 @@ describe("Embedded Element References - WeekInfo", () => {
 			];
 			const weekInfo = createMockWeekInfo(weekStart, days);
 
-			const iconElement = weekInfo.statusCellElement!.querySelector(
+			const iconElement = weekInfo.statusCellElement?.querySelector(
 				".week-status-icon",
 			) as HTMLElement;
 
@@ -204,7 +204,7 @@ describe("Embedded Element References - WeekInfo", () => {
 			];
 			const weekInfo = createMockWeekInfo(weekStart, days);
 
-			const srElement = weekInfo.statusCellElement!.querySelector(
+			const srElement = weekInfo.statusCellElement?.querySelector(
 				".sr-only",
 			) as HTMLElement;
 
@@ -219,8 +219,8 @@ describe("Embedded Element References - WeekInfo", () => {
 			const weekInfo = createWeekWithPattern(weekStart, [0, 2]); // Mon, Wed WFH
 
 			expect(weekInfo.days).toHaveLength(5);
-			expect(weekInfo.days![0]!.element).toBeInstanceOf(HTMLElement);
-			expect(weekInfo.days![2]!.element).toBeInstanceOf(HTMLElement);
+			expect(weekInfo.days?.[0]?.element).toBeInstanceOf(HTMLElement);
+			expect(weekInfo.days?.[2]?.element).toBeInstanceOf(HTMLElement);
 		});
 
 		it("should preserve element references in all days", () => {

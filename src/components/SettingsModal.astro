@@ -1,33 +1,29 @@
 ---
 import "/src/styles/utilities.css";
 
-interface Props {
-	id?: string;
-}
-
-const { id = "settings-modal" } = Astro.props;
+const { id: _id = "settings-modal" } = Astro.props;
 ---
 
 <dialog
-    id={id}
+    id={_id}
     class="settings-modal"
-    aria-labelledby={`${id}-title`}
-    aria-describedby={`${id}-description`}
+    aria-labelledby={`${_id}-title`}
+    aria-describedby={`${_id}-description`}
 >
     <div class="modal-content">
         <header class="modal-header">
-            <h2 id={`${id}-title`} class="modal-title">Settings</h2>
+            <h2 id={`${_id}-title`} class="modal-title">Settings</h2>
             <button
                 class="close-button focus-reset no-reduced-motion"
                 type="button"
                 aria-label="Close settings"
-                id={`${id}-close`}
+                id={`${_id}-close`}
             >
                 <span aria-hidden="true">×</span>
             </button>
         </header>
 
-        <p id={`${id}-description`} class="sr-only">
+        <p id={`${_id}-description`} class="sr-only">
             Configure RTO calculator settings and preferences
         </p>
 
@@ -233,14 +229,14 @@ class="setting-select focus-reset no-reduced-motion"
         <footer class="modal-footer">
             <button
                 type="button"
-                id={`${id}-reset`}
+                id={`${_id}-reset`}
 class="button button-secondary focus-reset no-reduced-motion"
             >
                 Reset to Defaults
             </button>
             <button
                 type="button"
-                id={`${id}-save`}
+                id={`${_id}-save`}
                 class="button button-primary focus-reset no-reduced-motion"
             >
                 Save Changes
