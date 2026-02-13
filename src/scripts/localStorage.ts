@@ -12,6 +12,12 @@ import {
 const STORAGE_DEBUG = false;
 
 /**
+ * Flag to control whether data saving is enabled
+ * Can be toggled via settings modal
+ */
+let dataSavingEnabled = false;
+
+/**
  * Get all currently selected dates from the DOM
  * @returns Map of ISO date strings to selection type
  */
@@ -82,8 +88,7 @@ function applySelectionsToDOM(savedDates: Map<string, string>): void {
 
         // Update aria-label
         const selectionLabels: Record<string, string> = {
-          "work-from-home": "Work from home",
-          office: "Office day",
+          "out-of-office": "Out of office",
         };
         const label = selectionLabels[selectionType] || selectionType;
         if (element.ariaLabel) {
@@ -104,6 +109,13 @@ function applySelectionsToDOM(savedDates: Map<string, string>): void {
  * Save current selections to localStorage
  */
 function saveSelections(): void {
+  if (!dataSavingEnabled) {
+    if (STORAGE_DEBUG) {
+      console.log("[LocalStorage] Data saving disabled, skipping save");
+    }
+    return;
+  }
+
   const selectedDates = getSelectedDatesFromDOM();
 
   // Convert Map to Set of ISO strings for storage
@@ -124,6 +136,13 @@ function saveSelections(): void {
  * Load and apply selections from localStorage
  */
 function loadSelections(): void {
+  if (!dataSavingEnabled) {
+    if (STORAGE_DEBUG) {
+      console.log("[LocalStorage] Data saving disabled, skipping load");
+    }
+    return;
+  }
+
   const savedDates = loadSelectedDates();
 
   if (savedDates.size === 0) {
@@ -153,7 +172,7 @@ function loadSelections(): void {
 /**
  * Clear saved selections from localStorage
  */
-function clearSavedSelections(): void {
+export function clearSavedSelections(): void {
   clearSelectedDates();
   if (STORAGE_DEBUG) {
     console.log("[LocalStorage] Cleared saved selections");
@@ -184,6 +203,17 @@ function debounce(
 const debouncedSave = debounce(saveSelections, 500);
 
 /**
+ * Set whether data saving is enabled
+ * @param enabled - Whether to enable data saving to localStorage
+ */
+export function setDataSavingEnabled(enabled: boolean): void {
+  dataSavingEnabled = enabled;
+  if (STORAGE_DEBUG) {
+    console.log("[LocalStorage] Data saving", enabled ? "enabled" : "disabled");
+  }
+}
+
+/**
  * Handle selection change events
  */
 function handleSelectionChange(event: Event): void {
@@ -199,10 +229,6 @@ function handleSelectionChange(event: Event): void {
 /**
  * Handle clear all events
  */
-function handleClearAll(): void {
-  // Clear localStorage when user clears all selections
-  clearSavedSelections();
-}
 
 /**
  * Initialize localStorage integration
@@ -212,38 +238,33 @@ export function initializeLocalStorage(): void {
     console.log("[LocalStorage] Initializing localStorage integration...");
   }
 
-  // Load saved selections when DOM is ready
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", () => {
-      // Small delay to ensure calendar cells are rendered
-      setTimeout(() => {
-        loadSelections();
-      }, 100);
-    });
-  } else {
-    // DOM is already ready
+  // Expose storage manager to window for settings modal
+  (window as any).storageManager = {
+    setDataSavingEnabled,
+  };
+
+  // Load saved selections and attach event listeners when DOM is ready
+  const setupIntegration = () => {
+    // Small delay to ensure calendar cells and buttons are rendered
     setTimeout(() => {
       loadSelections();
+
+      if (STORAGE_DEBUG) {
+        console.log("[LocalStorage] Integration initialized");
+      }
     }, 100);
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", setupIntegration);
+  } else {
+    // DOM is already ready
+    setupIntegration();
   }
 
   // Listen for selection changes
   // The day.astro component dispatches "rto-selection-changed" events
   document.addEventListener("rto-selection-changed", handleSelectionChange);
-
-  // Listen for clear all events
-  // We'll hook into the clear all button click
-  const clearAllButtons = document.querySelectorAll(
-    '[id^="clear-all-button-"]',
-  );
-  clearAllButtons.forEach((button) => {
-    const buttonElement = button as HTMLElement;
-    buttonElement.addEventListener("click", handleClearAll);
-  });
-
-  if (STORAGE_DEBUG) {
-    console.log("[LocalStorage] Integration initialized");
-  }
 }
 
 /**
@@ -255,9 +276,8 @@ export function cleanupLocalStorage(): void {
   const clearAllButtons = document.querySelectorAll(
     '[id^="clear-all-button-"]',
   );
-  clearAllButtons.forEach((button) => {
-    const buttonElement = button as HTMLElement;
-    buttonElement.removeEventListener("click", handleClearAll);
+  clearAllButtons.forEach(() => {
+    // The event listener is now managed by calendarFunctions.ts, so no removal is needed here
   });
 
   if (STORAGE_DEBUG) {

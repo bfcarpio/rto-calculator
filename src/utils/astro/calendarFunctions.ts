@@ -3,7 +3,6 @@
  * These functions are designed to work specifically within Astro components
  */
 
-import type { WeekData } from "../../types";
 import type {
   DateString,
   IDragSelectionManager,
@@ -18,6 +17,7 @@ import {
   getStartOfWeek,
   getWeekDates,
 } from "../dateUtils";
+import { clearSavedSelections } from "../../scripts/localStorage";
 
 // Week start configuration
 export type WeekStart = "sunday" | "monday";
@@ -32,15 +32,11 @@ export function getLocaleWeekStart(): WeekStart {
 
 import {
   validateWeek,
-  validateAllWeeks,
   validateSelection,
-  getComplianceStatus,
   DEFAULT_POLICY,
 } from "../validation";
 
-import { saveSelectedDates, loadSelectedDates } from "../storage";
-
-import { DragSelectionManager } from "../dragSelection";
+import { saveSelectedDates } from "../storage";
 
 // State management
 let selectedDates: Set<DateString> = new Set<DateString>();
@@ -414,8 +410,7 @@ export function handleDayClick(event: Event): void {
     );
 
     if (!validation.isValid && validation.message) {
-      showValidationMessage(validation.message, "warning");
-      // Still allow selection despite warning
+      console.warn(validation.message);
     }
 
     selectedDates.add(dateString);
@@ -432,7 +427,6 @@ export function handleDayClick(event: Event): void {
   // Update UI
   updateDayCell(target, dateStr);
   validateAndUpdateCalendar(weekStart);
-  updateComplianceIndicator();
 }
 
 /**
@@ -479,7 +473,6 @@ export function handleDayMouseOver(event: Event): void {
 
       // Update UI for all affected cells
       validateAndUpdateCalendar(weekStart);
-      updateComplianceIndicator();
     }
   }
 }
@@ -516,83 +509,9 @@ export function updateDayCell(cell: HTMLElement, dateStr: string): void {
 /**
  * Update the compliance display using validation message
  */
-export function updateComplianceIndicator(): void {
-  const messageContainer = document.getElementById("validation-message");
-  if (!messageContainer) return;
+// Old updateComplianceIndicator function removed - replaced by proper validation system
 
-  // Calculate overall compliance
-  const dates = getCalendarDates();
-  const weekData = validateAllWeeks(
-    dates,
-    selectedDates,
-    DEFAULT_POLICY.minOfficeDaysPerWeek,
-  );
-
-  const totalOfficeDays = weekData.reduce(
-    (sum: number, week: WeekData) => sum + week.officeDays,
-    0,
-  );
-  const totalWeekdays = weekData.reduce(
-    (sum: number, week: WeekData) => sum + week.totalDays,
-    0,
-  );
-  const overallCompliance =
-    totalWeekdays > 0 ? (totalOfficeDays / totalWeekdays) * 100 : 100;
-
-  const status = getComplianceStatus(overallCompliance);
-
-  // Update UI
-  messageContainer.style.display = "block";
-  messageContainer.style.visibility = "visible";
-
-  // Clear previous color classes
-  messageContainer.classList.remove("success", "error", "warning");
-
-  const isCompliant = status.colorClass.includes("green");
-  if (isCompliant) {
-    messageContainer.classList.add("success");
-  } else {
-    messageContainer.classList.add("error");
-  }
-
-  messageContainer.textContent = isCompliant
-    ? `✓ RTO Compliant: Best 8 of 12 weeks average ${Math.round(overallCompliance)}% compliance. Required: 60%`
-    : `⚠ RTO Not Compliant: Below required 60% threshold (${Math.round(overallCompliance)}%).`;
-}
-
-/**
- * Show a validation message
- * @param message - The message to display
- * @param type - The type of message ("error", "warning", "success")
- */
-export function showValidationMessage(
-  message: string,
-  type: "error" | "warning" | "success",
-): void {
-  const messageEl = document.getElementById("validation-message");
-  if (!messageEl) return;
-
-  messageEl.textContent = message;
-  messageEl.className = `validation-message ${type}`;
-  messageEl.style.display = "block";
-
-  // Auto-hide success messages after 3 seconds
-  if (type === "success") {
-    setTimeout(() => {
-      hideValidationMessage();
-    }, 3000);
-  }
-}
-
-/**
- * Hide the validation message
- */
-export function hideValidationMessage(): void {
-  const messageEl = document.getElementById("validation-message");
-  if (messageEl) {
-    messageEl.style.display = "none";
-  }
-}
+// Old show/hideValidationMessage functions removed - replaced by validation-result-display module
 
 /**
  * Clear all selections
@@ -600,19 +519,50 @@ export function hideValidationMessage(): void {
 export function clearAllSelections(): void {
   selectedDates.clear();
   saveSelectedDates(selectedDates);
+  clearSavedSelections();
 
   // Update drag selection manager
   if (dragSelectionManager) {
     dragSelectionManager.updateSelectedDates(selectedDates as Set<DateString>);
   }
 
-  const calendarContainer = document.getElementById("calendar-container");
-  if (calendarContainer) {
-    renderCalendar(calendarContainer, weekStart);
+  // Directly clear all selections from DOM elements
+  const dayCells = document.querySelectorAll(
+    '.calendar-day[data-selected="true"]',
+  );
+  dayCells.forEach((cell) => {
+    const cellElement = cell as HTMLElement;
+
+    // Remove selection classes
+    cellElement.classList.remove("selected", "out-of-office");
+
+    // Reset data attributes
+    cellElement.dataset.selected = "false";
+    cellElement.dataset.selectionType = "";
+
+    // Update aria attributes
+    cellElement.ariaSelected = "false";
+
+    // Update aria-label to reflect unselected state
+    const currentLabel = cellElement.getAttribute("aria-label") || "";
+    const selectionRegex =
+      /\.( Out of office|Work from home|Office day|Vacation|Sick leave|Personal day)$/;
+    if (selectionRegex.test(currentLabel)) {
+      const newLabel = currentLabel.replace(selectionRegex, ". Unselected");
+      cellElement.setAttribute("aria-label", newLabel);
+    } else if (!currentLabel.includes(". Unselected")) {
+      // If no selection suffix, add unselected
+      const datePart = currentLabel.replace(/\..*$/, "");
+      cellElement.setAttribute("aria-label", `${datePart}. Unselected`);
+    }
+  });
+
+  // Clear all validation highlights
+  if (typeof window !== "undefined" && (window as any).rtoValidation) {
+    (window as any).rtoValidation.clearAllValidationHighlights();
   }
+
   validateAndUpdateCalendar(weekStart);
-  updateComplianceIndicator();
-  showValidationMessage("All selections cleared.", "success");
 }
 
 /**
@@ -642,67 +592,64 @@ export function exportSelections(): void {
  * Setup event listeners for the calendar
  */
 export function setupEventListeners(): void {
-  const calendarContainer = document.getElementById("calendar-container");
-  if (!calendarContainer) return;
+  let calendarContainer = document.getElementById("calendar-container");
+
+  // Fallback to old ID if new one not found
+  if (!calendarContainer) {
+    calendarContainer = document.getElementById("calendar");
+    if (calendarContainer) {
+      console.warn(
+        "[CalendarFunctions] Using fallback ID 'calendar' instead of 'calendar-container'",
+      );
+    }
+  }
+
+  if (!calendarContainer) {
+    console.error(
+      "[CalendarFunctions] Calendar container not found. Button event listeners not attached.",
+    );
+    return;
+  }
 
   // Click events
   calendarContainer.addEventListener("click", handleDayClick);
+  console.log("[CalendarFunctions] Attached calendar click handler");
 
   // Drag selection events
   calendarContainer.addEventListener("mousedown", handleDayMouseDown);
   calendarContainer.addEventListener("mouseover", handleDayMouseOver);
   document.addEventListener("mouseup", handleDayMouseUp);
+  console.log("[CalendarFunctions] Attached drag selection handlers");
 
   // Action buttons
-  const clearButton = document.getElementById("clear-button");
-  if (clearButton) {
-    clearButton.addEventListener("click", clearAllSelections);
-  }
+  const clearAllButtons = document.querySelectorAll(
+    '[id^="clear-all-button-"]',
+  );
+  console.log(
+    `[CalendarFunctions] Found ${clearAllButtons.length} clear-all button(s)`,
+  );
+  clearAllButtons.forEach((button) => {
+    const buttonElement = button as HTMLElement;
+    buttonElement.addEventListener("click", clearAllSelections);
+    console.log(
+      `[CalendarFunctions] Attached click listener to clear-all button: ${buttonElement.id}`,
+    );
+  });
 
-  const exportButton = document.getElementById("export-button");
-  if (exportButton) {
-    exportButton.addEventListener("click", exportSelections);
-  }
-
-  // Setup event listeners
-  setupEventListeners();
-
-  // Initial compliance check
-  updateComplianceIndicator();
+  const exportButtons = document.querySelectorAll('[id^="export-button-"]');
+  console.log(
+    `[CalendarFunctions] Found ${exportButtons.length} export button(s)`,
+  );
+  exportButtons.forEach((button) => {
+    const buttonElement = button as HTMLElement;
+    buttonElement.addEventListener("click", exportSelections);
+    console.log(
+      `[CalendarFunctions] Attached click listener to export button: ${buttonElement.id}`,
+    );
+  });
 }
 
-/**
- * Initialize application
- */
-export function init(): void {
-  // Set week start based on locale
-  weekStart = getLocaleWeekStart();
-
-  // Load saved selections
-  selectedDates = loadSelectedDates() as Set<DateString>;
-
-  // Render calendar
-  const calendarContainer = document.getElementById("calendar-container");
-  if (calendarContainer) {
-    renderCalendar(calendarContainer, weekStart);
-  }
-
-  // Initialize drag selection manager
-  dragSelectionManager = new DragSelectionManager(
-    selectedDates as Set<DateString>,
-    (newDates: Set<DateString>) => {
-      selectedDates = newDates;
-      saveSelectedDates(selectedDates);
-      validateAndUpdateCalendar(weekStart);
-      updateComplianceIndicator();
-    },
-  ) as IDragSelectionManager | null;
-
-  // Setup event listeners
-  setupEventListeners();
-  // Initial compliance check
-  updateComplianceIndicator();
-}
+// Old init() function removed - initialization now handled by separate modules
 
 // Export getter functions for state variables
 export function getSelectedDates(): Set<string> {
