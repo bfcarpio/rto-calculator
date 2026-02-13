@@ -1,46 +1,129 @@
 ---
 // StatusDetails.astro - Display compliance status, capacity, and non-compliant weeks
-// Placeholder data - real data integration comes in later phases
+// Uses real data from dateStore and validation utilities
 
-// Week Summary Data
-const _bestWeeks = 8;
-const _totalBestWeeks = 8;
-const _averageDays = 3.2;
-const _targetDays = 3;
-const _maxDays = 5;
+import { getDateStore } from "../lib/dateStore";
+import type { WeekData } from "../types";
+import { getStartOfWeek, getWeekDates } from "../utils/dateUtils";
+import { DEFAULT_POLICY, validateWeek } from "../utils/validation";
 
-// Capacity Data
-const _goodWeeks = 5;
-const _weeksNeeded = 8;
-const _oofWeeksAvailable = 3;
+const store = getDateStore();
+const allMarkedDates = store.getAllMarkedDates();
+const selectedDatesSet = new Set(allMarkedDates.map((d) => d.date));
+const dateRange = store.getDateRange();
 
-// Current Week Data
-const _currentWeekStart = "Jan 27";
-const _currentWeekEnd = "Feb 2";
-const _currentWeekDaysWorked = 2;
-const _currentWeekTarget = 3;
+// Configuration
+const TARGET_DAYS_PER_WEEK = DEFAULT_POLICY.minOfficeDaysPerWeek;
+const MAX_DAYS_PER_WEEK = 5;
+const BEST_WEEKS_REQUIRED = 8;
 
-// Non-Compliant Weeks (placeholder)
-interface NonCompliantWeek {
-	weekRange: string;
-	daysWorked: number;
-	target: number;
+// Get all weeks in the date range
+function getAllWeeksInRange(dateRange: {
+	startDate: Date;
+	endDate: Date;
+}): WeekData[] {
+	const weeks: WeekData[] = [];
+	let currentWeekStart = getStartOfWeek(dateRange.startDate);
+
+	while (currentWeekStart <= dateRange.endDate) {
+		const weekDates = getWeekDates(currentWeekStart);
+		// Only include weeks that have weekdays in our range
+		const hasRelevantDays = weekDates.some(
+			(d) => d >= dateRange.startDate && d <= dateRange.endDate,
+		);
+		if (hasRelevantDays) {
+			const weekData = validateWeek(
+				weekDates,
+				selectedDatesSet,
+				TARGET_DAYS_PER_WEEK,
+			);
+			weeks.push(weekData);
+		}
+		// Move to next week
+		currentWeekStart = new Date(
+			currentWeekStart.getTime() + 7 * 24 * 60 * 60 * 1000,
+		);
+	}
+
+	return weeks;
 }
 
-const _nonCompliantWeeks: NonCompliantWeek[] = [
-	{ weekRange: "Jan 13 - Jan 19", daysWorked: 1, target: 3 },
-	{ weekRange: "Jan 6 - Jan 12", daysWorked: 2, target: 3 },
-];
+// Calculate statistics
+const allWeeks = getAllWeeksInRange(dateRange);
+const compliantWeeks = allWeeks.filter(
+	(w) => w.officeDays >= TARGET_DAYS_PER_WEEK,
+);
+const totalBestWeeks = allWeeks.length;
+const bestWeeks = compliantWeeks.length;
+
+// Average days per week
+const totalOfficeDays = allWeeks.reduce(
+	(sum: number, w: WeekData) => sum + w.officeDays,
+	0,
+);
+const averageDays: number =
+	allWeeks.length > 0 ? totalOfficeDays / allWeeks.length : 0;
+const averageDaysFormatted: string = averageDays.toFixed(1);
+
+// Capacity calculation
+const goodWeeks = compliantWeeks.length;
+const weeksNeeded = BEST_WEEKS_REQUIRED;
+const oofWeeksAvailable = Math.max(0, goodWeeks - weeksNeeded);
+
+// Current week info
+const today = new Date();
+today.setHours(0, 0, 0, 0);
+const currentWeekStart = getStartOfWeek(today);
+const currentWeekDates = getWeekDates(currentWeekStart);
+const currentWeekData = validateWeek(
+	currentWeekDates,
+	selectedDatesSet,
+	TARGET_DAYS_PER_WEEK,
+);
+const currentWeekEnd = new Date(
+	currentWeekStart.getTime() + 6 * 24 * 60 * 60 * 1000,
+);
+
+// Format dates for display
+function formatDate(date: Date): string {
+	const months = [
+		"Jan",
+		"Feb",
+		"Mar",
+		"Apr",
+		"May",
+		"Jun",
+		"Jul",
+		"Aug",
+		"Sep",
+		"Oct",
+		"Nov",
+		"Dec",
+	];
+	return `${months[date.getMonth()]} ${date.getDate()}`;
+}
+
+// Get non-compliant weeks
+const nonCompliantWeeks = allWeeks
+	.filter((w) => w.officeDays < TARGET_DAYS_PER_WEEK)
+	.map((w) => {
+		const weekEnd = new Date(w.startDate.getTime() + 6 * 24 * 60 * 60 * 1000);
+		return {
+			weekRange: `${formatDate(w.startDate)} - ${formatDate(weekEnd)}`,
+			daysWorked: w.officeDays,
+			target: TARGET_DAYS_PER_WEEK,
+		};
+	});
 
 // Helper to determine status color
-const _getStatusColor = (current: number, target: number): string => {
+const getStatusColor = (current: number, target: number): string => {
 	if (current >= target) return "has-text-success";
 	if (current >= target - 0.5) return "has-text-warning";
 	return "has-text-danger";
 };
 
-const _complianceStatusClass =
-	_averageDays >= _targetDays ? "has-text-success" : "has-text-warning";
+const complianceStatusClass =
+	averageDays >= TARGET_DAYS_PER_WEEK ? "has-text-success" : "has-text-warning";
 ---
 
 <div class="status-details">
@@ -50,11 +133,11 @@ const _complianceStatusClass =
 		<div class="content">
 			<div class="level is-mobile mb-2">
 				<div class="level-left">
-					<p>In best {_totalBestWeeks} weeks:</p>
+					<p>In best {totalBestWeeks} weeks:</p>
 				</div>
 				<div class="level-right">
-					<p class={`has-text-weight-bold ${_complianceStatusClass}`}>
-						{_bestWeeks}/{_totalBestWeeks}
+					<p class={`has-text-weight-bold ${complianceStatusClass}`}>
+						{bestWeeks}/{totalBestWeeks}
 					</p>
 				</div>
 			</div>
@@ -64,8 +147,8 @@ const _complianceStatusClass =
 					<p>Average:</p>
 				</div>
 				<div class="level-right">
-					<p class={`has-text-weight-bold ${_getStatusColor(_averageDays, _targetDays)}`}>
-						{_averageDays}/{_maxDays} days
+					<p class={`has-text-weight-bold ${getStatusColor(averageDays, TARGET_DAYS_PER_WEEK)}`}>
+						{averageDaysFormatted}/{MAX_DAYS_PER_WEEK} days
 					</p>
 				</div>
 			</div>
@@ -76,7 +159,7 @@ const _complianceStatusClass =
 				</div>
 				<div class="level-right">
 					<p class="has-text-weight-bold has-text-primary">
-						{_targetDays}/{_maxDays} days
+						{TARGET_DAYS_PER_WEEK}/{MAX_DAYS_PER_WEEK} days
 					</p>
 				</div>
 			</div>
@@ -93,7 +176,7 @@ const _complianceStatusClass =
 				</div>
 				<div class="level-right">
 					<p class="has-text-weight-bold has-text-info">
-						Good weeks = {_goodWeeks} of {_weeksNeeded} needed
+						Good weeks = {goodWeeks} of {weeksNeeded} needed
 					</p>
 				</div>
 			</div>
@@ -104,7 +187,7 @@ const _complianceStatusClass =
 				</div>
 				<div class="level-right">
 					<p class="has-text-weight-bold has-text-success">
-						{_oofWeeksAvailable} full weeks OOF
+						{oofWeeksAvailable} full weeks OOF
 					</p>
 				</div>
 			</div>
@@ -117,15 +200,15 @@ const _complianceStatusClass =
 		<div class="content">
 			<p class="mb-2">
 				<span class="has-text-weight-semibold">Week of:</span>
-				{_currentWeekStart} - {_currentWeekEnd}
+				{formatDate(currentWeekStart)} - {formatDate(currentWeekEnd)}
 			</p>
 			<div class="level is-mobile">
 				<div class="level-left">
 					<p>Days worked:</p>
 				</div>
 				<div class="level-right">
-					<p class={`has-text-weight-bold ${_getStatusColor(_currentWeekDaysWorked, _currentWeekTarget)}`}>
-						{_currentWeekDaysWorked}/{_currentWeekTarget}
+					<p class={`has-text-weight-bold ${getStatusColor(currentWeekData.officeDays, TARGET_DAYS_PER_WEEK)}`}>
+						{currentWeekData.officeDays}/{TARGET_DAYS_PER_WEEK}
 					</p>
 				</div>
 			</div>
@@ -139,13 +222,13 @@ const _complianceStatusClass =
 			Non-Compliant Weeks
 		</h3>
 		<div class="content">
-			{_nonCompliantWeeks.length === 0 ? (
+			{nonCompliantWeeks.length === 0 ? (
 				<div class="notification is-success is-light">
 					<p class="has-text-centered">All weeks are compliant! 🎉</p>
 				</div>
 			) : (
 				<div class="non-compliant-list">
-					{_nonCompliantWeeks.map((week) => (
+					{nonCompliantWeeks.map((week) => (
 						<div class="notification is-warning is-light mb-2">
 							<div class="is-flex is-justify-content-space-between is-align-items-center">
 								<div>

@@ -3,7 +3,7 @@
 	/* Map Air Datepicker variables to Slate palette */
 	--adp-font-family: inherit;
 	--adp-font-size: 1rem;
-	--adp-width: 100%; /* Make it responsive */
+	--adp-width: 280px; /* Fixed width to prevent full-screen expansion */
 	--adp-background-color: #ffffff;
 	--adp-background-color-hover: var(--color-bg-alt);
 	--adp-background-color-active: var(--color-selected-bg);
