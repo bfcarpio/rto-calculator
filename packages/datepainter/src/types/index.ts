@@ -69,6 +69,7 @@ export interface CalendarInstance {
 	getState(date: DateString): DateState | null;
 	getDatesByState(state: DateState): DateString[];
 	getAllDates(): Map<DateString, DateState>;
+	getDateRanges(options?: DateRangeOptions): MarkedDateRange[];
 	getCurrentMonth(): Date;
 	setDates(dates: DateString[], state: DateState): void;
 	clearDates(dates: DateString[]): void;
@@ -82,6 +83,23 @@ export interface CalendarInstance {
 	nextMonth(): void;
 	prevMonth(): void;
 	destroy(): void;
+}
+
+// Marked date range returned by getDateRanges()
+export interface MarkedDateRange {
+	start: Date;
+	end: Date;
+	state: DateState;
+}
+
+// Options for filtering date ranges
+export interface DateRangeOptions {
+	/** Only include ranges with this state */
+	state?: DateState;
+	/** Exclude dates on or before this date */
+	after?: Date;
+	/** Exclude dates on or after this date */
+	before?: Date;
 }
 
 // Validation result type

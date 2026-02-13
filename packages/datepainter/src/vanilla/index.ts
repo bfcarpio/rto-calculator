@@ -13,8 +13,10 @@ export {
 export type {
 	CalendarConfig,
 	CalendarInstance,
+	DateRangeOptions,
 	DateState,
 	DateString,
+	MarkedDateRange,
 } from "../types";
 export * from "./CalendarRenderer";
 export * from "./DayRenderer";

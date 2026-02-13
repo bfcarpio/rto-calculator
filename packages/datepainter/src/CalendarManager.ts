@@ -1,5 +1,5 @@
 import { validateConfig } from "./config/validate";
-import { formatDate } from "./lib/dateUtils";
+import { formatDate, parseDate } from "./lib/dateUtils";
 import {
 	getDayCellClasses,
 	getIconHTML,
@@ -16,8 +16,10 @@ import {
 import type {
 	CalendarConfig,
 	CalendarInstance,
+	DateRangeOptions,
 	DateState,
 	DateString,
+	MarkedDateRange,
 } from "./types";
 
 /**
@@ -214,6 +216,86 @@ export class CalendarManager implements CalendarInstance {
 		return Array.from(allDates.entries())
 			.filter(([_, s]) => s === state)
 			.map(([date]) => date);
+	}
+
+	/**
+	 * Gets contiguous date ranges grouped by state
+	 *
+	 * Returns an array of date ranges where consecutive calendar days sharing
+	 * the same state are merged into a single range. A single isolated day
+	 * produces a range where start equals end.
+	 *
+	 * @param options - Optional filters for state, after, and before boundaries
+	 * @returns Array of marked date ranges sorted chronologically
+	 * @throws {Error} If calendar not initialized
+	 *
+	 * @example
+	 * ```ts
+	 * // Get all ranges
+	 * manager.getDateRanges();
+	 *
+	 * // Get only OOF ranges after a specific date
+	 * manager.getDateRanges({ state: 'oof', after: new Date(2026, 0, 15) });
+	 * ```
+	 */
+	getDateRanges(options?: DateRangeOptions): MarkedDateRange[] {
+		if (!this.isInitialized) {
+			throw new Error("Calendar not initialized");
+		}
+
+		const allDates = getAllDates();
+		const afterStr = options?.after ? formatDate(options.after) : null;
+		const beforeStr = options?.before ? formatDate(options.before) : null;
+
+		// Filter and collect entries
+		const entries: [DateString, DateState][] = [];
+		for (const [dateStr, state] of allDates) {
+			if (options?.state && state !== options.state) continue;
+			if (afterStr && dateStr <= afterStr) continue;
+			if (beforeStr && dateStr >= beforeStr) continue;
+			entries.push([dateStr, state]);
+		}
+
+		// Sort chronologically (YYYY-MM-DD strings sort correctly)
+		entries.sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
+
+		if (entries.length === 0) return [];
+
+		// Group consecutive same-state days into ranges
+		const ranges: MarkedDateRange[] = [];
+		let rangeStart = entries[0]![0];
+		let rangeEnd = entries[0]![0];
+		let rangeState = entries[0]![1];
+
+		for (let i = 1; i < entries.length; i++) {
+			const [dateStr, state] = entries[i]!;
+			const prevDate = parseDate(rangeEnd);
+			const currDate = parseDate(dateStr);
+			const diffMs = currDate.getTime() - prevDate.getTime();
+			const isAdjacent = diffMs === 24 * 60 * 60 * 1000 && state === rangeState;
+
+			if (isAdjacent) {
+				rangeEnd = dateStr;
+			} else {
+				ranges.push({
+					start: parseDate(rangeStart),
+					end: parseDate(rangeEnd),
+					state: rangeState,
+				});
+				rangeStart = dateStr;
+				rangeEnd = dateStr;
+				rangeState = state;
+			}
+		}
+
+		// Push final range
+		ranges.push({
+			start: parseDate(rangeStart),
+			end: parseDate(rangeEnd),
+			state: rangeState,
+		});
+
+		return ranges;
 	}
 
 	/**
