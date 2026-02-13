@@ -27,7 +27,16 @@ const monthNames = [
     "November",
     "December",
 ];
-const shortDayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+const shortDayNames = [
+    { abbr: "Sun", full: "Sunday" },
+    { abbr: "Mon", full: "Monday" },
+    { abbr: "Tue", full: "Tuesday" },
+    { abbr: "Wed", full: "Wednesday" },
+    { abbr: "Thu", full: "Thursday" },
+    { abbr: "Fri", full: "Friday" },
+    { abbr: "Sat", full: "Saturday" },
+];
 
 // Fixed 5 rows and 7 columns
 const rows = 5;
@@ -36,29 +45,63 @@ const cols = 7;
 // Create unique IDs for this month
 const monthId = `month-${year}-${month}`;
 const clearButtonId = `clear-${year}-${month}`;
+const descriptionId = `desc-${year}-${month}`;
 ---
 
-<div class="calendar-month" id={monthId}>
-    <div class="month-header">
-        <h2 class="month-year">{monthNames[month]} {year}</h2>
+<section
+    class="calendar-month"
+    id={monthId}
+    aria-labelledby={`${monthId}-heading`}
+    aria-describedby={descriptionId}
+>
+    <header class="month-header">
+        <h2 id={`${monthId}-heading`} class="month-year">
+            {monthNames[month]}
+            {year}
+        </h2>
         <button
             id={clearButtonId}
             class="clear-button"
-            aria-label={`Clear selections for ${monthNames[month]} ${year}`}
+            aria-label={`Clear all selections for ${monthNames[month]} ${year}`}
+            aria-controls={monthId}
+            type="button"
         >
-            ×
+            <span aria-hidden="true">×</span>
+            <span class="sr-only">Clear all selections</span>
         </button>
-    </div>
-    <table class="calendar-table">
+    </header>
+
+    <p id={descriptionId} class="sr-only">
+        Calendar for {monthNames[month]}
+        {year}. Use arrow keys to navigate days, Enter or Space to select work
+        from home. Click and drag to paint multiple days.
+    </p>
+
+    <table
+        class="calendar-table"
+        role="grid"
+        aria-label={`${monthNames[month]} ${year} calendar`}
+    >
         <thead>
-            <tr>
-                {shortDayNames.map((day) => <th scope="col">{day}</th>)}
+            <tr role="row">
+                {
+                    shortDayNames.map((day, index) => (
+                        <th
+                            scope="col"
+                            role="columnheader"
+                            aria-label={day.full}
+                            abbr={day.abbr}
+                        >
+                            <span aria-hidden="true">{day.abbr}</span>
+                        </th>
+                    ))
+                }
             </tr>
         </thead>
-        <tbody>
+        <tbody role="rowgroup">
             {
                 Array.from({ length: rows }).map((_, rowIndex) => (
-                    <tr>
+                    <tr role="row">
                         {Array.from({ length: cols }).map((_, colIndex) => {
                             const cellIndex = rowIndex * cols + colIndex;
                             const dayNumber = cellIndex - offset + 1;
@@ -76,7 +119,13 @@ const clearButtonId = `clear-${year}-${month}`;
                                     />
                                 );
                             } else {
-                                return <td class="calendar-day empty" />;
+                                return (
+                                    <td
+                                        class="calendar-day empty"
+                                        role="gridcell"
+                                        aria-hidden="true"
+                                    />
+                                );
                             }
                         })}
                     </tr>
@@ -84,31 +133,45 @@ const clearButtonId = `clear-${year}-${month}`;
             }
         </tbody>
     </table>
-</div>
+</section>
 
 <script define:vars={{ monthId, clearButtonId, year, month }}>
+    /**
+     * Initialize clear button with proper accessibility
+     */
     function initClearButton() {
         const clearButton = document.getElementById(clearButtonId);
         const monthContainer = document.getElementById(monthId);
 
         if (!clearButton || !monthContainer) {
-            console.warn(
-                `Clear button or month container not found: ${clearButtonId}, ${monthId}`,
-            );
             return;
         }
 
+        // Add keyboard support for clear button
+        clearButton.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                clearButton.click();
+            }
+        });
+
         clearButton.addEventListener("click", (e) => {
             e.preventDefault();
-            e.stopPropagation();
 
-            // Find all day cells in this month
-            const dayCells = monthContainer.querySelectorAll(
-                ".calendar-day[data-year][data-month]",
+            // Find all selected day cells in this month
+            const selectedCells = monthContainer.querySelectorAll(
+                ".calendar-day.selected[data-year][data-month]",
             );
 
+            if (selectedCells.length === 0) {
+                // Announce that there's nothing to clear
+                announceToScreenReader("No selections to clear");
+                return;
+            }
+
             // Clear all selections
-            dayCells.forEach((cell) => {
+            const clearedCount = selectedCells.length;
+            selectedCells.forEach((cell) => {
                 const cellYear = parseInt(cell.dataset.year);
                 const cellMonth = parseInt(cell.dataset.month);
 
@@ -116,10 +179,50 @@ const clearButtonId = `clear-${year}-${month}`;
                 if (cellYear === year && cellMonth === month) {
                     cell.dataset.selected = "false";
                     cell.dataset.selectionType = "";
-                    cell.style.backgroundColor = "transparent";
+                    cell.classList.remove(
+                        "selected",
+                        "work-from-home",
+                        "office",
+                    );
+                    cell.ariaSelected = "false";
+
+                    // Update aria-label to reflect unselected state
+                    const currentLabel = cell.ariaLabel;
+                    cell.ariaLabel = currentLabel.replace(
+                        /\. .*$/,
+                        ". Unselected",
+                    );
                 }
             });
+
+            // Announce the action to screen readers
+            announceToScreenReader(
+                `Cleared ${clearedCount} selection${clearedCount !== 1 ? "s" : ""} from ${monthNames[month]} ${year}`,
+            );
+
+            // Focus back on the clear button for keyboard users
+            clearButton.focus();
         });
+    }
+
+    /**
+     * Announce a message to screen readers
+     * @param {string} message - The message to announce
+     */
+    function announceToScreenReader(message) {
+        const announcement = document.createElement("div");
+        announcement.setAttribute("role", "status");
+        announcement.setAttribute("aria-live", "polite");
+        announcement.setAttribute("aria-atomic", "true");
+        announcement.className = "sr-only calendar-announcement";
+
+        announcement.textContent = message;
+        document.body.appendChild(announcement);
+
+        // Remove announcement after it's been read
+        setTimeout(() => {
+            document.body.removeChild(announcement);
+        }, 1000);
     }
 
     // Initialize when DOM is ready
@@ -131,14 +234,35 @@ const clearButtonId = `clear-${year}-${month}`;
 </script>
 
 <style>
+    :root {
+        --calendar-month-bg: white;
+        --calendar-month-border-radius: 8px;
+        --calendar-month-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        --calendar-month-padding: 0.5rem;
+        --calendar-heading-color: #333;
+        --calendar-heading-font-size: 1.1rem;
+        --calendar-table-border: #ddd;
+        --calendar-header-bg: #f5f5f5;
+        --calendar-header-color: #555;
+        --calendar-cell-width: 2rem;
+        --calendar-cell-height: 2rem;
+        --calendar-cell-hover-border: #555;
+        --calendar-cell-focus-outline: #1890ff;
+        --clear-button-bg: #ff4d4f;
+        --clear-button-hover-bg: #ff7875;
+        --clear-button-active-bg: #d9363e;
+        --clear-button-text: white;
+    }
+
     .calendar-month {
         margin: 0.5rem 0;
-        background-color: white;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        padding: 0.5rem;
+        background-color: var(--calendar-month-bg);
+        border-radius: var(--calendar-month-border-radius);
+        box-shadow: var(--calendar-month-shadow);
+        padding: var(--calendar-month-padding);
         display: inline-block;
         position: relative;
+        max-width: 100%;
     }
 
     .month-header {
@@ -147,14 +271,16 @@ const clearButtonId = `clear-${year}-${month}`;
         align-items: center;
         position: relative;
         margin-bottom: 0.5rem;
+        gap: 1rem;
     }
 
     .month-year {
         text-align: center;
         margin: 0;
-        color: #333;
-        font-size: 1.1rem;
+        color: var(--calendar-heading-color);
+        font-size: var(--calendar-heading-font-size);
         line-height: 1.2;
+        font-weight: 600;
     }
 
     .clear-button {
@@ -162,8 +288,8 @@ const clearButtonId = `clear-${year}-${month}`;
         top: 50%;
         right: 0;
         transform: translateY(-50%);
-        background-color: #ff4d4f;
-        color: white;
+        background-color: var(--clear-button-bg);
+        color: var(--clear-button-text);
         border: none;
         border-radius: 50%;
         width: 20px;
@@ -176,45 +302,108 @@ const clearButtonId = `clear-${year}-${month}`;
         justify-content: center;
         transition: all 0.2s ease;
         padding: 0;
+        min-width: 20px;
+        min-height: 20px;
     }
 
     .clear-button:hover {
-        background-color: #ff7875;
+        background-color: var(--clear-button-hover-bg);
         transform: translateY(-50%) scale(1.1);
     }
 
     .clear-button:active {
-        background-color: #d9363e;
+        background-color: var(--clear-button-active-bg);
         transform: translateY(-50%) scale(0.95);
+    }
+
+    .clear-button:focus {
+        outline: 2px solid var(--calendar-cell-focus-outline);
+        outline-offset: 2px;
+    }
+
+    .clear-button:focus:not(:focus-visible) {
+        outline: none;
+    }
+
+    .clear-button:focus-visible {
+        outline: 2px solid var(--calendar-cell-focus-outline);
+        outline-offset: 2px;
     }
 
     .calendar-table {
         border-collapse: collapse;
         table-layout: fixed;
+        width: 100%;
     }
 
     .calendar-table th,
     .calendar-table td {
-        border: 1px solid #ddd;
+        border: 1px solid var(--calendar-table-border);
         text-align: center;
         padding: 0;
     }
 
     .calendar-table th {
-        background-color: #f5f5f5;
+        background-color: var(--calendar-header-bg);
         font-weight: bold;
-        color: #555;
-        width: 2rem;
-        height: 2rem;
+        color: var(--calendar-header-color);
+        width: var(--calendar-cell-width);
+        height: var(--calendar-cell-height);
         font-size: 0.8rem;
+        position: relative;
     }
 
     .calendar-table td {
-        width: 2rem;
-        height: 2rem;
+        width: var(--calendar-cell-width);
+        height: var(--calendar-cell-height);
     }
 
     .calendar-day.empty {
         background-color: #f9f9f9;
+        pointer-events: none;
+    }
+
+    /* Screen reader only content */
+    .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border-width: 0;
+    }
+
+    /* Reduced motion support */
+    @media (prefers-reduced-motion: reduce) {
+        .calendar-month,
+        .clear-button,
+        .calendar-day {
+            transition: none;
+        }
+    }
+
+    /* High contrast mode support */
+    @media (prefers-contrast: high) {
+        .calendar-month {
+            border: 2px solid #000;
+        }
+
+        .calendar-table th,
+        .calendar-table td {
+            border: 2px solid #000;
+        }
+
+        .clear-button {
+            border: 2px solid white;
+        }
+    }
+
+    /* Focus visible improvement */
+    :focus-visible {
+        outline: 2px solid var(--calendar-cell-focus-outline);
+        outline-offset: 2px;
     }
 </style>

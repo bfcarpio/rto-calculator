@@ -15,85 +15,112 @@ const {
     selectionType = "",
 } = Astro.props;
 
-// Create the full date string for this day
+// Create full date string for this day
 const date = new Date(year, month, dayNumber);
-const dateString = date.toISOString().split("T")[0]; // Format: YYYY-MM-DD
+const dateString = date.toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+});
 
-const selectionColors: Record<string, string> = {
-    "work-from-home": "#1890ff", // Blue
-    vacation: "#52c41a",
-    "sick-leave": "#faad14",
-    personal: "#722ed1",
-    office: "#f5222d", // Red
-    default: "#d9d9d9",
+// Selection type to human-readable label mapping
+const selectionLabels: Record<string, string> = {
+    "work-from-home": "Work from home",
+    vacation: "Vacation",
+    "sick-leave": "Sick leave",
+    personal: "Personal day",
+    office: "Office day",
 };
 
+// Get human-readable label for current selection
+const selectionLabel = selectionType
+    ? selectionLabels[selectionType]
+    : "Unselected";
+
 // Create a unique ID for this day cell
-const cellId = `day-cell-${dateString}-${dayNumber}`;
+const cellId = `day-cell-${year}-${month}-${dayNumber}`;
 ---
 
 <td
     id={cellId}
     class="calendar-day"
+    role="gridcell"
+    aria-label={`${dateString}. ${selectionLabel}`}
+    aria-selected={isSelected ? "true" : "false"}
     data-day={dayNumber}
-    data-date={dateString}
     data-year={year}
     data-month={month}
     data-selected={isSelected}
     data-selection-type={selectionType}
-    style={{
-        backgroundColor:
-            isSelected && selectionType
-                ? selectionColors[selectionType]
-                : "transparent",
-    }}
+    tabindex="0"
 >
-    <span class="day-number">{dayNumber}</span>
+    <span class="day-number" aria-hidden="true">{dayNumber}</span>
+    <span class="sr-only">{dateString}</span>
 </td>
 
-<script define:vars={{ cellId }}>
-    // Global drag state (shared across all day cells)
-    let isDragging = false;
-    let dragSelectionType = null;
-
-    // Initialize drag state on first use
-    if (!window.__calendarDragState) {
-        window.__calendarDragState = {
-            isDragging: false,
-            selectionType: null,
-        };
-    }
-
-    // Wait for DOM to be ready
+<script define:vars={{ cellId, dayNumber }}>
+    /**
+     * Initialize day cell with proper accessibility and event handling
+     */
     function initDayCell() {
         const cell = document.getElementById(cellId);
         if (!cell) {
-            console.warn(`Day cell not found: ${cellId}`);
             return;
         }
 
-        // Get global drag state
+        // Ensure global drag state exists
+        if (!window.__calendarDragState) {
+            window.__calendarDragState = {
+                isDragging: false,
+                selectionType: null,
+                lastFocusedCell: null,
+            };
+        }
+
         const dragState = window.__calendarDragState;
 
-        // Apply a selection type to a cell
+        /**
+         * Apply selection state to a cell
+         * @param {HTMLElement} targetCell - The cell to apply selection to
+         * @param {string|null} type - The selection type or null to clear
+         */
         function applySelection(targetCell, type) {
+            const selectionLabels = {
+                "work-from-home": "Work from home",
+                office: "Office day",
+            };
+
             if (type === null) {
                 targetCell.dataset.selected = "false";
                 targetCell.dataset.selectionType = "";
-                targetCell.style.backgroundColor = "transparent";
-            } else if (type === "work-from-home") {
+                targetCell.classList.remove(
+                    "selected",
+                    "work-from-home",
+                    "office",
+                );
+                targetCell.ariaSelected = "false";
+                targetCell.ariaLabel = targetCell.ariaLabel.replace(
+                    /\. .*$/,
+                    ". Unselected",
+                );
+            } else {
+                const label = selectionLabels[type];
                 targetCell.dataset.selected = "true";
-                targetCell.dataset.selectionType = "work-from-home";
-                targetCell.style.backgroundColor = "#1890ff";
-            } else if (type === "office") {
-                targetCell.dataset.selected = "true";
-                targetCell.dataset.selectionType = "office";
-                targetCell.style.backgroundColor = "#f5222d";
+                targetCell.dataset.selectionType = type;
+                targetCell.classList.add("selected", type);
+                targetCell.ariaSelected = "true";
+                targetCell.ariaLabel = targetCell.ariaLabel.replace(
+                    /\. .*$/,
+                    `.${label}`,
+                );
             }
         }
 
-        // Handle mouse down - start dragging
-        cell.addEventListener("mousedown", (e) => {
+        /**
+         * Handle mouse down - start dragging
+         */
+        function handleMouseDown(e) {
             if (e.button === 0 || e.button === 2) {
                 // Left or right click
                 e.preventDefault();
@@ -101,31 +128,149 @@ const cellId = `day-cell-${dateString}-${dayNumber}`;
                 const currentType = cell.dataset.selectionType || "";
                 const newType = e.button === 0 ? "work-from-home" : "office";
 
-                // Toggle logic: if clicking the same type, clear it
+                // Toggle logic: if clicking same type, clear it
                 dragState.selectionType =
                     currentType === newType ? null : newType;
                 dragState.isDragging = true;
 
-                // Apply the selection to this cell
                 applySelection(cell, dragState.selectionType);
-            }
-        });
 
-        // Handle mouse enter - apply selection if dragging
-        cell.addEventListener("mouseenter", (e) => {
+                // Announce selection to screen readers
+                announceSelection(cell, dragState.selectionType);
+            }
+        }
+
+        /**
+         * Handle mouse enter - apply selection if dragging
+         */
+        function handleMouseEnter() {
             if (dragState.isDragging && dragState.selectionType !== null) {
                 applySelection(cell, dragState.selectionType);
+                announceSelection(cell, dragState.selectionType);
             }
-        });
+        }
 
-        // Prevent context menu on right-click
+        /**
+         * Handle keyboard interactions
+         */
+        function handleKeyDown(e) {
+            const key = e.key;
+
+            // Handle Enter or Space to toggle work-from-home
+            if (key === "Enter" || key === " ") {
+                e.preventDefault();
+                const currentType = cell.dataset.selectionType || "";
+                const newType = "work-from-home";
+
+                dragState.selectionType =
+                    currentType === newType ? null : newType;
+                applySelection(cell, dragState.selectionType);
+                announceSelection(cell, dragState.selectionType);
+            }
+
+            // Handle Escape to clear selection
+            if (key === "Escape") {
+                e.preventDefault();
+                applySelection(cell, null);
+                announceSelection(cell, null);
+            }
+
+            // Handle arrow key navigation
+            if (
+                ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(
+                    key,
+                )
+            ) {
+                handleArrowNavigation(e, key);
+            }
+        }
+
+        /**
+         * Handle arrow key navigation between days
+         */
+        function handleArrowNavigation(e, key) {
+            e.preventDefault();
+            const allCells = Array.from(
+                document.querySelectorAll(
+                    ".calendar-day[data-day]:not(.empty)",
+                ),
+            );
+            const currentIndex = allCells.indexOf(cell);
+
+            let nextIndex;
+            if (key === "ArrowRight") {
+                nextIndex = (currentIndex + 1) % allCells.length;
+            } else if (key === "ArrowLeft") {
+                nextIndex =
+                    (currentIndex - 1 + allCells.length) % allCells.length;
+            } else if (key === "ArrowDown") {
+                nextIndex = (currentIndex + 7) % allCells.length;
+            } else if (key === "ArrowUp") {
+                nextIndex =
+                    (currentIndex - 7 + allCells.length) % allCells.length;
+            }
+
+            if (nextIndex !== undefined && nextIndex >= 0) {
+                const nextCell = allCells[nextIndex];
+                nextCell.focus();
+                dragState.lastFocusedCell = nextCell;
+            }
+        }
+
+        /**
+         * Announce selection state to screen readers
+         */
+        function announceSelection(targetCell, type) {
+            const announcement = document.createElement("div");
+            announcement.setAttribute("role", "status");
+            announcement.setAttribute("aria-live", "polite");
+            announcement.className = "sr-only announcement";
+
+            const dayNum = targetCell.dataset.day;
+            if (type === null) {
+                announcement.textContent = `Unselected ${dayNum}`;
+            } else if (type === "work-from-home") {
+                announcement.textContent = `${dayNum} set to work from home`;
+            } else if (type === "office") {
+                announcement.textContent = `${dayNum} set to office day`;
+            }
+
+            document.body.appendChild(announcement);
+
+            // Remove announcement after it's been read
+            setTimeout(() => {
+                document.body.removeChild(announcement);
+            }, 1000);
+        }
+
+        /**
+         * Handle focus
+         */
+        function handleFocus() {
+            dragState.lastFocusedCell = cell;
+        }
+
+        // Attach event listeners
+        cell.addEventListener("mousedown", handleMouseDown);
+        cell.addEventListener("mouseenter", handleMouseEnter);
+        cell.addEventListener("keydown", handleKeyDown);
+        cell.addEventListener("focus", handleFocus);
         cell.addEventListener("contextmenu", (e) => {
             e.preventDefault();
-            e.stopPropagation();
         });
+
+        // Store cleanup function
+        cell._cleanup = () => {
+            cell.removeEventListener("mousedown", handleMouseDown);
+            cell.removeEventListener("mouseenter", handleMouseEnter);
+            cell.removeEventListener("keydown", handleKeyDown);
+            cell.removeEventListener("focus", handleFocus);
+        };
     }
 
-    // Global mouse up handler - stop dragging
+    /**
+     * Global mouse up handler - stop dragging
+     */
     function stopDragging() {
         const dragState = window.__calendarDragState;
         if (dragState) {
@@ -150,6 +295,13 @@ const cellId = `day-cell-${dateString}-${dayNumber}`;
 </script>
 
 <style>
+    :root {
+        --calendar-day-work-from-home: #1890ff;
+        --calendar-day-office: #f5222d;
+        --calendar-day-hover-border: #555;
+        --calendar-day-focus-outline: #1890ff;
+    }
+
     .calendar-day {
         width: 2rem;
         height: 2rem;
@@ -161,10 +313,46 @@ const cellId = `day-cell-${dateString}-${dayNumber}`;
         text-align: center;
         padding: 0;
         border: 1px solid transparent;
-        user-select: none; /* Prevent text selection */
+        user-select: none;
         -webkit-user-select: none;
         -moz-user-select: none;
         -ms-user-select: none;
+        background-color: transparent;
+    }
+
+    .calendar-day:focus {
+        outline: 2px solid var(--calendar-day-focus-outline);
+        outline-offset: 2px;
+        z-index: 2;
+    }
+
+    .calendar-day:focus:not(:focus-visible) {
+        outline: none;
+    }
+
+    .calendar-day:focus-visible {
+        outline: 2px solid var(--calendar-day-focus-outline);
+        outline-offset: 2px;
+    }
+
+    .calendar-day:hover {
+        box-shadow: 0 0 0 2px var(--calendar-day-hover-border) inset;
+        border-color: var(--calendar-day-hover-border);
+    }
+
+    /* Selection states - color + visual indicators for accessibility */
+    .calendar-day.selected.work-from-home {
+        background-color: var(--calendar-day-work-from-home);
+        border-color: var(--calendar-day-work-from-home);
+        color: white;
+        font-weight: 600;
+    }
+
+    .calendar-day.selected.office {
+        background-color: var(--calendar-day-office);
+        border-color: var(--calendar-day-office);
+        color: white;
+        font-weight: 600;
     }
 
     .day-number {
@@ -172,17 +360,42 @@ const cellId = `day-cell-${dateString}-${dayNumber}`;
         width: 100%;
         height: 100%;
         line-height: 2rem;
-        pointer-events: none; /* Allow clicks to pass through to the td */
-    }
-
-    /* Change hover outline to dark grey */
-    .calendar-day:hover {
-        box-shadow: 0 0 0 2px #555 inset;
-        border-color: #555;
+        pointer-events: none;
     }
 
     .calendar-day.empty {
         background-color: #f9f9f9;
         pointer-events: none;
+    }
+
+    /* Screen reader only content */
+    .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border-width: 0;
+    }
+
+    /* Reduced motion support */
+    @media (prefers-reduced-motion: reduce) {
+        .calendar-day {
+            transition: none;
+        }
+    }
+
+    /* High contrast mode support */
+    @media (prefers-contrast: high) {
+        .calendar-day {
+            border: 1px solid #000;
+        }
+
+        .calendar-day.selected {
+            border-width: 2px;
+        }
     }
 </style>
