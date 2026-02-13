@@ -5,7 +5,7 @@
 const {
 	title = "Panel Title",
 	open = false,
-	id: _id = `panel-toggle-${Math.random().toString(36).substr(2, 9)}`,
+	id: _id = `panel-toggle-${Math.random().toString(36).slice(2)}`,
 } = Astro.props;
 ---
 

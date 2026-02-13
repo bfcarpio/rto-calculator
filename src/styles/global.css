@@ -128,25 +128,25 @@ body.dark-mode .button:hover {
 
 /* Framework Overrides - Enforce Slate Theme */
 .hero.is-primary {
-	background-color: var(--color-compliant) !important;
+	background-color: var(--color-compliant);
 	color: #ffffff;
 }
 
 /* Hero header text - Explicit white for WCAG AA compliance (4.5:1 contrast) */
 .hero.is-primary .title,
 .hero.is-primary .subtitle {
-	color: #ffffff !important;
+	color: #ffffff;
 }
 
 .button.is-primary {
-	background-color: var(--color-compliant) !important;
+	background-color: var(--color-compliant);
 	border-color: transparent;
 	color: #ffffff;
 }
 
 .button.is-primary:hover,
 .button.is-primary:focus {
-	background-color: var(--color-violation) !important; /* Slate-700 */
+	background-color: var(--color-violation); /* Slate-700 */
 	color: #ffffff;
 }
 

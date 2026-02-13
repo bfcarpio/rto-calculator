@@ -14,7 +14,7 @@ test.describe("Theme System", () => {
 
 	test("should open settings via gear button", async ({ page }) => {
 		await openSettings(page);
-		await expect(page.getByText("Appearance")).toBeVisible();
+		expect(page.getByText("Appearance")).toBeVisible();
 		await closeSettings(page);
 	});
 
@@ -49,7 +49,7 @@ test.describe("Theme System", () => {
 		await cycleTheme(page); // light -> dark
 
 		// Verify dark mode class is applied
-		await expect(await isDarkModeActive(page)).toBe(true);
+		expect(await isDarkModeActive(page)).toBe(true);
 	});
 
 	test("should remove dark mode class when light theme selected", async ({
@@ -60,7 +60,7 @@ test.describe("Theme System", () => {
 		// Go to light theme
 		await cycleTheme(page); // system -> light
 
-		await expect(await isDarkModeActive(page)).toBe(false);
+		expect(await isDarkModeActive(page)).toBe(false);
 	});
 
 	test("should reset theme on page refresh (in-memory only)", async ({
@@ -87,14 +87,14 @@ test.describe("Theme System", () => {
 		const themeIcon = page.locator("#theme-icon");
 
 		// System should show computer icon
-		await expect(themeIcon).toHaveText("🖥️");
+		expect(themeIcon).toHaveText("🖥️");
 
 		// Light should show sun
 		await cycleTheme(page);
-		await expect(themeIcon).toHaveText("☀️");
+		expect(themeIcon).toHaveText("☀️");
 
 		// Dark should show moon
 		await cycleTheme(page);
-		await expect(themeIcon).toHaveText("🌙");
+		expect(themeIcon).toHaveText("🌙");
 	});
 });

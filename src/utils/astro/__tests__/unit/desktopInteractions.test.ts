@@ -498,6 +498,11 @@ describe("Desktop Interactions - Mouse Movement Tracker", () => {
 
 	beforeEach(() => {
 		tracker = new MouseMovementTracker();
+		vi.useFakeTimers();
+	});
+
+	afterEach(() => {
+		vi.useRealTimers();
 	});
 
 	describe("recordPosition", () => {
@@ -509,6 +514,9 @@ describe("Desktop Interactions - Mouse Movement Tracker", () => {
 
 		it("should maintain position history", () => {
 			tracker.recordPosition(100, 200);
+
+			// Advance time before second recording
+			vi.setSystemTime(new Date(Date.now() + 10));
 			tracker.recordPosition(110, 210);
 
 			const velocity = tracker.getVelocity();
@@ -528,6 +536,9 @@ describe("Desktop Interactions - Mouse Movement Tracker", () => {
 
 		it("should calculate velocity from position changes", () => {
 			tracker.recordPosition(100, 200);
+
+			// Advance time before second recording
+			vi.setSystemTime(new Date(Date.now() + 10));
 			tracker.recordPosition(150, 250);
 
 			const velocity = tracker.getVelocity();
@@ -543,6 +554,9 @@ describe("Desktop Interactions - Mouse Movement Tracker", () => {
 
 		it("should return positive speed when moving", () => {
 			tracker.recordPosition(100, 200);
+
+			// Advance time before second recording
+			vi.setSystemTime(new Date(Date.now() + 10));
 			tracker.recordPosition(150, 250);
 
 			expect(tracker.getSpeed()).toBeGreaterThan(0);
@@ -556,6 +570,9 @@ describe("Desktop Interactions - Mouse Movement Tracker", () => {
 
 		it("should return true when moving", () => {
 			tracker.recordPosition(100, 200);
+
+			// Advance time before second recording
+			vi.setSystemTime(new Date(Date.now() + 10));
 			tracker.recordPosition(200, 300);
 
 			expect(tracker.isMoving()).toBe(true);

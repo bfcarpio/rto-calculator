@@ -104,12 +104,12 @@ body.dark-mode {
 /* Selected state should inverse text color usually, handled by library but ensure visibility */
 .air-datepicker-cell.-selected- {
 	color: #ffffff;
-	background-color: var(--adp-background-color-selected) !important;
+	background-color: var(--adp-background-color-selected);
 }
 
 body.dark-mode .air-datepicker-cell.-selected- {
 	color: #ffffff;
-	background-color: var(--adp-background-color-selected) !important;
+	background-color: var(--adp-background-color-selected);
 }
 
 /* Remove today border if desired, or style it */

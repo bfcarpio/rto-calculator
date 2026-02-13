@@ -190,10 +190,18 @@ describe("HolidayDataSourceFactory", () => {
 		});
 
 		it("should handle unregistering when only one data source exists", () => {
+			// Unregister all existing data sources first
+			const existingSources = factory.getAllDataSources();
+			for (const source of existingSources) {
+				factory.unregisterDataSource(source.name);
+			}
+
+			// Register a single data source
 			const source1 = new NagerDateHolidayDataSource();
 			source1.name = "only-source";
 			factory.registerDataSource(source1);
 
+			// Unregister the only data source
 			factory.unregisterDataSource("only-source");
 
 			expect(() => {
@@ -621,7 +629,7 @@ describe("HolidayDataSourceFactory", () => {
 			// but we're testing the restore mechanism
 			try {
 				await factory.reloadDataSource("nager-date");
-			} catch (error) {
+			} catch (_error) {
 				// Expected to succeed in normal case
 			}
 

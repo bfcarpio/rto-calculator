@@ -1,4 +1,4 @@
-import process from "process";
+import process from "node:process";
 
 import { HolidayDataSourceFactory } from "../lib/holiday/sources";
 import type { HolidayDataSource } from "../lib/holiday/sources/types";

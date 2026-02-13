@@ -142,7 +142,7 @@ export class HolidayDataSourceFactory {
 			// Reset default to first available data source
 			const remaining = this.getAllDataSources();
 			if (remaining.length > 0) {
-				this.defaultDataSourceName = remaining[0]!.name;
+				this.defaultDataSourceName = remaining[0]?.name ?? null;
 			} else {
 				this.defaultDataSourceName = null;
 			}
