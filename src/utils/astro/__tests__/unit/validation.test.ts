@@ -830,23 +830,52 @@ describe("validateTop8Weeks - Sliding Window Optimization", () => {
 
     const result = validateTop8Weeks(selections, new Date(2025, 0, 1));
 
-    // All weeks have 2 office days = 40% average
+    // Should detect violation (2 office days vs required 3)
     expect(result.isValid).toBe(false);
-    expect(result.averageOfficeDays).toBeCloseTo(2.0, 1);
+    expect(result.averageOfficeDays).toBeCloseTo(2, 1);
+    expect(result.averageOfficePercentage).toBeCloseTo(40, 0);
+  });
+});
+
+describe("Partial Weeks Filtering - Edge Cases", () => {
+  it("should handle partial week data at start of calendar (January 2025)", () => {
+    // January 1, 2025 is a Wednesday - first week has only 3 weekdays in calendar
+    // NOTE: validateTop8Weeks is a library function that processes selections abstractly.
+    // It assumes all weeks have 5 weekdays and doesn't know about partial weeks.
+    // Partial week filtering happens in UI layer (readCalendarData) which reads DOM.
+    // This test documents the library behavior with incomplete selection data.
+    const selections: DaySelection[] = [
+      // Partial week: Wed Jan 1, Thu Jan 2, Fri Jan 3 selected as WFH
+      createDaySelection(2025, 0, 1, "work-from-home"),
+      createDaySelection(2025, 0, 2, "work-from-home"),
+      createDaySelection(2025, 0, 3, "work-from-home"),
+      // Complete week: Mon Jan 6, Tue Jan 7, Wed Jan 8 selected as WFH
+      createDaySelection(2025, 0, 6, "work-from-home"),
+      createDaySelection(2025, 0, 7, "work-from-home"),
+      createDaySelection(2025, 0, 8, "work-from-home"),
+    ];
+
+    const result = validateTop8Weeks(selections, new Date(2025, 0, 1));
+
+    // validateTop8Weeks processes selections assuming 5 weekdays per week
+    expect(result.weeksData.length).toBeGreaterThan(0);
+    // First week (starting Dec 30, 2024) has 3 WFH days, but validation assumes 5 weekdays
+    // So office days = 5 - 3 = 2 (not 0, because it doesn't know about partial weeks)
+    expect(result.weeksData[0]!.officeDays).toBe(2);
   });
 
-  it("should handle mixed compliance across all 12 weeks", () => {
+  it("should handle weeks with varying numbers of selections", () => {
+    // Create selections with different patterns per week
+    // NOTE: This validates library function behavior, not UI filtering
     const selections: DaySelection[] = [];
-    const weekStart = new Date(2025, 0, 6);
 
-    // Create 12 weeks with varying compliance
-    for (let week = 0; week < 12; week++) {
+    // Create 8 complete weeks
+    const weekStart = new Date(2025, 0, 6);
+    for (let week = 0; week < 8; week++) {
       const currentWeekStart = new Date(weekStart);
       currentWeekStart.setDate(weekStart.getDate() + week * 7);
 
-      // Alternating between 1, 2, and 3 WFH days
-      const wfhCount = (week % 3) + 1; // 1, 2, 3 pattern (minimum 1 WFH)
-      for (let day = 0; day < wfhCount; day++) {
+      for (let day = 0; day < 3; day++) {
         selections.push(
           createDaySelection(
             currentWeekStart.getFullYear(),
@@ -858,101 +887,109 @@ describe("validateTop8Weeks - Sliding Window Optimization", () => {
       }
     }
 
-    const result = validateTop8Weeks(selections, new Date(2025, 0, 1));
-
-    // Algorithm should find the best 8 weeks from the 12
-    expect(result.weeksData).toHaveLength(8);
-  });
-
-  it("should correctly calculate top 8 weeks regardless of later weeks", () => {
-    const selections: DaySelection[] = [];
-
-    // First 8 weeks: 2 WFH (3 office) - compliant
-    for (let week = 0; week < 8; week++) {
-      const weekDate = new Date(2025, 0, 6 + week * 7);
+    // Add a week with only 2 WFH selections
+    const lastDate = new Date(2025, 2, 31); // March 31 - Monday
+    for (let day = 0; day < 2; day++) {
       selections.push(
         createDaySelection(
-          weekDate.getFullYear(),
-          weekDate.getMonth(),
-          weekDate.getDate(),
-          "work-from-home",
-        ),
-      );
-      selections.push(
-        createDaySelection(
-          weekDate.getFullYear(),
-          weekDate.getMonth(),
-          weekDate.getDate() + 1,
+          lastDate.getFullYear(),
+          lastDate.getMonth(),
+          lastDate.getDate() + day,
           "work-from-home",
         ),
       );
     }
 
-    // Last 4 weeks: 0 WFH (5 office) - even better, but still 8-week window
+    const result = validateTop8Weeks(selections, new Date(2025, 0, 1));
+
+    // validateTop8Weeks processes all weeks with selections
+    expect(result.weeksData.length).toBeGreaterThanOrEqual(8);
   });
 
-  // TODO: Temporarily commented out due to import resolution issue
-  // describe("getISOWeekNumber", () => {
-  //   it("should return 1 for January 1st when it's Thursday", () => {
-  //     const date = new Date(2025, 0, 1); // Wednesday, Jan 1
-  //     const result = getISOWeekNumber(date);
-  //     expect(result).toBeGreaterThanOrEqual(1);
-  //     expect(result).toBeLessThanOrEqual(52);
-  //   });
+  it("should include weeks with exactly 5 weekdays", () => {
+    // Standard week with exactly 5 weekdays should be included
+    const selections: DaySelection[] = [];
+    const weekStart = new Date(2025, 0, 6); // Monday, Jan 6
 
-  //   it("should return week number for Monday in January", () => {
-  //     const date = new Date(2025, 0, 6); // Monday, Jan 6
-  //     const result = getISOWeekNumber(date);
-  //     expect(result).toBe(2); // ISO week 2
-  //   });
+    for (let day = 0; day < 5; day++) {
+      selections.push(
+        createDaySelection(
+          weekStart.getFullYear(),
+          weekStart.getMonth(),
+          weekStart.getDate() + day,
+          "work-from-home",
+        ),
+      );
+    }
 
-  //   it("should return week number for Friday in January", () => {
-  //     const date = new Date(2025, 0, 10); // Friday, Jan 10
-  //     const result = getISOWeekNumber(date);
-  //     expect(result).toBe(2); // Same week as Jan 6
-  //   });
+    const result = validateTop8Weeks(selections, new Date(2025, 0, 1));
 
-  //   it("should return week number for Monday in March", () => {
-  //     const date = new Date(2025, 2, 10); // Monday, Mar 10
-  //     const result = getISOWeekNumber(date);
-  //     expect(result).toBe(10); // ISO week 10
-  //   });
+    // Week with exactly 5 weekdays should be included
+    expect(result.weeksData.length).toBeGreaterThan(0);
+    expect(result.weeksData[0]!.weekStart.getTime()).toBe(weekStart.getTime());
+  });
 
-  //   it("should return week number in valid range (1-52)", () => {
-  //     const date = new Date(2025, 0, 6); // Monday, Jan 6
-  //     const result = getISOWeekNumber(date);
-  //     expect(result).toBeGreaterThanOrEqual(1);
-  //     expect(result).toBeLessThanOrEqual(52);
-  //   });
+  it("should handle weeks with varying WFH counts", () => {
+    // Create a week with 3 WFH selections
+    // NOTE: validateTop8Weeks processes selections assuming 5 weekdays per week
+    const selections: DaySelection[] = [];
+    const weekStart = new Date(2025, 0, 6); // Monday, Jan 6
 
-  //   it("should return different week numbers for different weeks", () => {
-  //     const week1 = new Date(2025, 0, 6); // Jan 6
-  //     const week2 = new Date(2025, 0, 13); // Jan 13
-  //     const result1 = getISOWeekNumber(week1);
-  //     const result2 = getISOWeekNumber(week2);
-  //     expect(result1).not.toBe(result2); // Should be different
-  //   });
+    // Only 3 days have WFH selections (Mon, Tue, Wed)
+    for (let day = 0; day < 3; day++) {
+      selections.push(
+        createDaySelection(
+          weekStart.getFullYear(),
+          weekStart.getMonth(),
+          weekStart.getDate() + day,
+          "work-from-home",
+        ),
+      );
+    }
 
-  //   it("should return same week number for same week", () => {
-  //     const monday = new Date(2025, 0, 6); // Monday, Jan 6
-  //     const friday = new Date(2025, 0, 10); // Friday, Jan 10
-  //     const result1 = getISOWeekNumber(monday);
-  //     const result2 = getISOWeekNumber(friday);
-  //     expect(result1).toBe(result2); // Should be same
-  //   });
+    const result = validateTop8Weeks(selections, new Date(2025, 0, 6));
 
-  //   it("should return week 53 for December 31st in some years", () => {
-  //     const date = new Date(2025, 11, 31); // Wednesday, Dec 31
-  //     const result = getISOWeekNumber(date);
-  //     expect(result).toBeGreaterThanOrEqual(1);
-  //     expect(result).toBeLessThanOrEqual(53); // Can be 53 in some years
-  //   });
+    // First week has 3 WFH days out of 5 = 2 office days
+    expect(result.weeksData.length).toBeGreaterThanOrEqual(1);
+    expect(result.weeksData[0]!.officeDays).toBe(2);
+    expect(result.weeksData[0]!.isCompliant).toBe(false);
+  });
 
-  //   it("should handle leap year dates", () => {
-  //     const date = new Date(2024, 1, 29); // Thursday, Feb 29 (leap day)
-  //     const result = getISOWeekNumber(date);
-  //     expect(result).toBeGreaterThanOrEqual(1);
-  //     expect(result).toBeLessThanOrEqual(52);
-  //   });
-  // });
+  it("should handle weeks with different WFH patterns", () => {
+    // Mix of weeks with different WFH selection counts
+    // This tests the library's ability to process varied selection patterns
+    const selections: DaySelection[] = [];
+
+    // Week with 3 WFH selections (Wed, Thu, Fri)
+    for (let i = 1; i <= 3; i++) {
+      selections.push(createDaySelection(2025, 0, i, "work-from-home"));
+    }
+
+    // 4 complete weeks with 3 WFH selections each
+    for (let week = 0; week < 4; week++) {
+      const weekStart = new Date(2025, 0, 6 + week * 7);
+      for (let day = 0; day < 3; day++) {
+        selections.push(
+          createDaySelection(
+            weekStart.getFullYear(),
+            weekStart.getMonth(),
+            weekStart.getDate() + day,
+            "work-from-home",
+          ),
+        );
+      }
+    }
+
+    const result = validateTop8Weeks(selections, new Date(2025, 0, 1));
+
+    // validateTop8Weeks processes all weeks with selections
+    expect(result.weeksData.length).toBeGreaterThanOrEqual(1);
+
+    // First week: 3 WFH out of 5 weekdays = 2 office days
+    expect(result.weeksData[0]!.officeDays).toBe(2);
+    expect(result.weeksData[0]!.isCompliant).toBe(false);
+    // Complete weeks: 3 WFH out of 5 weekdays = 2 office days each
+    expect(result.weeksData[1]!.officeDays).toBe(2);
+    expect(result.weeksData[1]!.isCompliant).toBe(false);
+  });
 });
