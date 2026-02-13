@@ -8,6 +8,7 @@ The RTO Calculator is an Astro-based web application for tracking Return-to-Offi
 - **Framework**: Astro v4+ (SSR + client-side hydration)
 - **Language**: TypeScript (strict mode)
 - **Calendar**: datepainter library (custom calendar widget)
+- **Date utilities**: date-fns (tree-shakeable date library)
 - **State Management**: DOM-based with datepainter API + localStorage persistence
 - **Styling**: Scoped CSS with custom properties
 - **Testing**: Vitest (unit) + Playwright (E2E)
@@ -233,19 +234,21 @@ The application includes a sophisticated holiday management system with pluggabl
 
 The application uses the **datepainter** library for calendar rendering and state management.
 
-**API Methods:**
-- `getAllDates()` - Get all selected dates
-- `setDateState(date, state)` - Set date selection state
-- `clearDateState(date)` - Clear date selection
-- `getDateState(date)` - Query date state
+**API Methods** (via `CalendarInstance`):
+- `getAllDates()` - Get all dates as `Map<DateString, DateState>`
+- `getState(date)` - Query state of a single date
+- `setDates(dates, state)` - Set state for multiple dates
+- `clearDates(dates)` - Clear state for multiple dates
+- `getDateRanges(options?)` - Get contiguous date ranges grouped by state
 
 **State Types:**
 - `"oof"` - Out of office (work from home)
 - `"holiday"` - Public holiday
 - `"sick"` - Sick leave
-- Custom states can be added
 
-**Migration Note:** The application is transitioning from `dateStore` to `datepainter`. A temporary `DateStore` stub exists for compatibility but will be removed.
+**Global Access:** The calendar instance is exposed as `window.__datepainterInstance`.
+
+**Legacy Note:** `dateStore` in `src/lib/dateStore.ts` is a compatibility stub. New code should use the datepainter `CalendarInstance` API directly.
 
 ### 2. HistoryManager (Undo/Redo)
 
@@ -349,7 +352,7 @@ src/
 │   │
 │   ├── calendar-data-reader.ts    # Data extraction layer (DOM → pure data)
 │   ├── rto-config.ts              # Configuration constants
-│   └── dateStore.ts               # DEPRECATED: Stub for datepainter migration
+│   └── dateStore.ts               # Legacy stub (use datepainter CalendarInstance instead)
 │
 ├── scripts/              # Client-side DOM integration
 │   ├── rto-ui-controller.ts       # UI Controller layer
@@ -664,7 +667,7 @@ See [AGENTS.md](../AGENTS.md) for build/test commands.
 2. **Single User**: No multi-user or collaboration features
 3. **Fixed 12-Month View**: Cannot navigate to different years
 4. **Client-Side Validation**: All validation runs in browser
-5. **dateStore Migration**: Some legacy code still references old state management
+5. **dateStore Legacy**: `StatusDetails.astro` still uses the dateStore stub
 
 ---
 

@@ -85,7 +85,7 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md#the-3-layer-validation-flow) for detaile
 - Company-specific filtering via `company-filters.json`
 
 **State Management**:
-- **datepainter** - Primary calendar state (replacing deprecated dateStore)
+- **datepainter** - Primary calendar state via `window.__datepainterInstance`
 - **HistoryManager** - Undo/redo functionality with state snapshots
 - **localStorage** - Persists user settings
 
@@ -271,37 +271,39 @@ Edit `src/lib/holiday/data/company-filters.json`:
 
 ### Using datepainter API
 
-The calendar uses the **datepainter** library for state management:
+The calendar uses the **datepainter** library for state management. The calendar instance is exposed globally as `window.__datepainterInstance`:
 
 ```typescript
+import type { CalendarInstance, DateString } from 'datepainter';
+
 // Get calendar instance
-const calendarInstance = window.calendarManager; // or from datepainter API
+const calendar = (window as any).__datepainterInstance as CalendarInstance;
 
 // Get all selected dates
-const dates = calendarInstance.getAllDates();
+const dates: Map<DateString, DateState> = calendar.getAllDates();
 
-// Set date state
-calendarInstance.setDateState(new Date('2025-01-15'), 'oof'); // out-of-office
+// Set date state (takes an array of DateString values)
+calendar.setDates(['2025-01-15' as DateString], 'oof');
 
 // Clear date state
-calendarInstance.clearDateState(new Date('2025-01-15'));
+calendar.clearDates(['2025-01-15' as DateString]);
 
 // Query date state
-const state = calendarInstance.getDateState(new Date('2025-01-15'));
+const state = calendar.getState('2025-01-15' as DateString); // 'oof' | 'holiday' | 'sick' | null
 
 // Get contiguous date ranges grouped by state
-const allRanges = calendarInstance.getDateRanges();
-// → [{ start: Date, end: Date, state: 'oof' }, ...]
+const allRanges = calendar.getDateRanges();
+// → [{ start: DateString, end: DateString, state: 'oof', dates: [...] }, ...]
 
 // Filter by state, before/after boundaries
-const oofRanges = calendarInstance.getDateRanges({
+const oofRanges = calendar.getDateRanges({
   state: 'oof',
-  after: new Date('2025-02-01'),   // exclude dates on or before Feb 1
-  before: new Date('2025-03-01'),  // exclude dates on or after Mar 1
+  after: '2025-02-01',   // exclude dates on or before Feb 1
+  before: '2025-03-01',  // exclude dates on or after Mar 1
 });
 ```
 
-**Note**: `dateStore` in `src/lib/dateStore.ts` is deprecated and being phased out. Use datepainter API directly.
+**Note**: `dateStore` in `src/lib/dateStore.ts` is a legacy stub. New code should use the datepainter `CalendarInstance` API directly.
 
 ### Using HistoryManager (Undo/Redo)
 
@@ -484,13 +486,13 @@ error('[MyModule] Error message');        // Always shown
 - `window.validationManager` - ValidationManager instance
 - `window.__holidayCountries` - Array of country objects
 - `window.__getHolidayManager` - Function to get HolidayManager instance
-- `window.calendarManager` - datepainter calendar instance
+- `window.__datepainterInstance` - datepainter CalendarInstance
 
 ```javascript
 // In browser console
 window.validationManager.validate(selectedDays, options);
 window.__getHolidayManager().getHolidayDates(2025, 'US');
-window.calendarManager.getAllDates();
+window.__datepainterInstance.getAllDates();
 ```
 
 ---
@@ -666,4 +668,4 @@ git push && git push --tags
 
 ---
 
-*Last Updated: February 2025*
+*Last Updated: February 2026*
