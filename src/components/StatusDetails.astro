@@ -67,7 +67,7 @@ const BEST_WEEKS_REQUIRED = 8;
 				</div>
 			</div>
 
-			<div class="level is-mobile">
+			<div class="level is-mobile mb-2">
 				<div class="level-left">
 					<p>You can take:</p>
 				</div>
@@ -75,6 +75,15 @@ const BEST_WEEKS_REQUIRED = 8;
 					<p class="has-text-weight-bold has-text-success" id="stat-oof-available">
 						0 full weeks WFH
 					</p>
+				</div>
+			</div>
+
+			<div class="level is-mobile">
+				<div class="level-left">
+					<p>Next available:</p>
+				</div>
+				<div class="level-right">
+					<p class="has-text-weight-bold" id="stat-next-wfh">&mdash;</p>
 				</div>
 			</div>
 		</div>
@@ -361,6 +370,13 @@ const BEST_WEEKS_REQUIRED = 8;
 		}
 		if (elBuffer) elBuffer.textContent = `Good weeks = ${data.goodWeeks} of ${data.bestWeekCount} needed`;
 		if (elOof) elOof.textContent = `${data.bufferWeeks} full weeks WFH`;
+
+		const elNextWfh = document.getElementById('stat-next-wfh');
+		if (elNextWfh) {
+			elNextWfh.textContent = data.nextWfhWeek
+				? `Week of ${fmtDate(data.nextWfhWeek)}`
+				: '\u2014';
+		}
 		if (elWeekRange) elWeekRange.textContent = `${fmtDate(data.currentWeek.weekStart)} - ${fmtDate(data.currentWeek.weekEnd)}`;
 		if (elWeekDays) {
 			elWeekDays.textContent = `${data.currentWeek.officeDays}/${REQUIRED_OFFICE_DAYS}`;

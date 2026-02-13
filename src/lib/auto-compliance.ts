@@ -47,6 +47,8 @@ export interface ComplianceEventData {
 	goodWeeks: number;
 	/** Droppable slots minus non-compliant dropped weeks */
 	bufferWeeks: number;
+	/** Earliest dropped-compliant week that can be taken as full WFH */
+	nextWfhWeek: Date | null;
 
 	/** Current (possibly incomplete) week, shown separately */
 	currentWeek: { weekStart: Date; weekEnd: Date; officeDays: number };
@@ -169,6 +171,12 @@ function computeComplianceData(allWeeks: WeekInfo[]): ComplianceEventData {
 	).length;
 	const bufferWeeks = Math.max(0, droppableSlots - droppedNonCompliant);
 
+	const nextWfhWeek = bufferWeeks > 0
+		? annotated
+			.filter((w) => w.isIgnored && w.isCompliant)
+			.sort((a, b) => a.weekStart.getTime() - b.weekStart.getTime())[0]?.weekStart ?? null
+		: null;
+
 	// Day counts from display window
 	let totalWfhDays = 0;
 	let totalHolidayDays = 0;
@@ -212,6 +220,7 @@ function computeComplianceData(allWeeks: WeekInfo[]): ComplianceEventData {
 		averageOfficeDays,
 		goodWeeks: goodWeeksInWindow,
 		bufferWeeks,
+		nextWfhWeek,
 		currentWeek,
 		totalWfhDays,
 		totalHolidayDays,
