@@ -1,5 +1,5 @@
-import type { CalendarConfig } from '../types';
-import { formatDate } from '../lib/dateUtils';
+import { formatDate } from "../lib/dateUtils";
+import type { CalendarConfig } from "../types";
 
 /**
  * MonthRenderer class - Renders individual month grids
@@ -10,10 +10,10 @@ export class MonthRenderer {
 
   // Config will be stored for Phase 8.3+ when actual rendering is implemented
   constructor(container: string | HTMLElement, config: CalendarConfig) {
-    if (typeof container === 'string') {
+    if (typeof container === "string") {
       const el = document.querySelector<HTMLElement>(container);
       if (!el) {
-        throw new Error('Container element not found');
+        throw new Error("Container element not found");
       }
       this.container = el;
     } else {
@@ -29,12 +29,12 @@ export class MonthRenderer {
    */
   renderMonth(date: Date): void {
     if (!this.container) {
-      throw new Error('MonthRenderer not initialized - call init() first');
+      throw new Error("MonthRenderer not initialized - call init() first");
     }
 
     // TODO: Implement actual month grid rendering
     // Will need: date.getFullYear(), date.getMonth(), getDaysInMonth(), getFirstDayOfMonth()
-    console.log('Rendering month:', formatDate(date));
+    console.log("Rendering month:", formatDate(date));
   }
 
   /**
@@ -42,7 +42,7 @@ export class MonthRenderer {
    */
   updateMonthGrid(dates: Date[]): void {
     // TODO: Update DOM with new date selections
-    console.log('Updating month with', dates.length, 'dates');
+    console.log("Updating month with", dates.length, "dates");
   }
 
   /**
@@ -50,7 +50,7 @@ export class MonthRenderer {
    */
   destroy(): void {
     if (this.container) {
-      this.container.innerHTML = '';
+      this.container.innerHTML = "";
     }
   }
 }
