@@ -1,11 +1,124 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
+import "../styles/global.css";
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+// Page metadata
+const title = "RTO Calculator - Plan Your Time Off";
+const description =
+    "Plan your vacation for the next 365 days while ensuring compliance with RTO policies";
 ---
 
-<Layout>
-	<Welcome />
-</Layout>
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="description" content={description} />
+        <title>{title}</title>
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    </head>
+    <body>
+        <a href="#calendar" class="skip-link">Skip to calendar</a>
+
+        <header class="calendar-header">
+            <h1>RTO Calculator</h1>
+            <p>
+                Plan your time off while staying compliant with office
+                attendance policies
+            </p>
+
+            <div
+                id="compliance-indicator"
+                class="compliance-indicator"
+                role="status"
+                aria-live="polite"
+            >
+                <span id="compliance-icon">✓</span>
+                <span id="compliance-text">Loading...</span>
+            </div>
+        </header>
+
+        <main id="calendar" class="calendar-container">
+            <div
+                id="validation-message"
+                class="validation-message"
+                role="alert"
+                aria-live="assertive"
+                style="display: none;"
+            >
+            </div>
+
+            <div class="legend" role="region" aria-label="Calendar legend">
+                <div class="legend-item">
+                    <div class="legend-color compliant" aria-hidden="true">
+                    </div>
+                    <span>Compliant</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color violation" aria-hidden="true">
+                    </div>
+                    <span>Violation</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color selected" aria-hidden="true"></div>
+                    <span>Selected (Non-Office)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color weekend" aria-hidden="true"></div>
+                    <span>Weekend</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color past" aria-hidden="true"></div>
+                    <span>Past Date</span>
+                </div>
+            </div>
+
+            <div
+                id="calendar-container"
+                class="calendar-container"
+                role="grid"
+                aria-label="365-day calendar"
+            >
+                <div class="loading">Loading calendar...</div>
+            </div>
+
+            <div class="action-buttons">
+                <button
+                    id="clear-button"
+                    class="button button-danger"
+                    type="button"
+                    aria-label="Clear all selections"
+                >
+                    <span>🗑️</span> Clear All
+                </button>
+                <button
+                    id="export-button"
+                    class="button button-secondary"
+                    type="button"
+                    aria-label="Export selections"
+                >
+                    <span>📥</span> Export
+                </button>
+            </div>
+        </main>
+
+        <footer>
+            <p>
+                <small>
+                    RTO Calculator - 3/5 office days per week • 12-week rolling
+                    period evaluation
+                </small>
+            </p>
+        </footer>
+
+        <script>
+            import { init } from "../utils/astro/calendarFunctions";
+
+            // Initialize when DOM is ready
+            if (document.readyState === "loading") {
+                document.addEventListener("DOMContentLoaded", init);
+            } else {
+                init();
+            }
+        </script>
+    </body>
+</html>

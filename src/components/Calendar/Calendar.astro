@@ -1,0 +1,182 @@
+---
+import { getMonthWeeks } from "../../utils/dateUtils";
+import type { CalendarProps } from "../../types/index";
+
+const {
+    year = new Date().getFullYear(),
+    weekStartDay = "sunday",
+    selectedDays = new Set<string>(),
+} = Astro.props as CalendarProps;
+
+const months = Array.from({ length: 12 }, (_, i) => i);
+const dayNames =
+    weekStartDay === "sunday"
+        ? ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+        : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+---
+
+<div
+    class="calendar-container"
+    data-year={year}
+    data-week-start={weekStartDay}
+    data-selected-days={JSON.stringify([...selectedDays])}
+>
+    <div class="months-grid">
+        {
+            months.map((monthIndex) => {
+                const monthDate = new Date(year, monthIndex, 1);
+                const monthName = monthDate.toLocaleDateString("en-US", {
+                    month: "long",
+                });
+                const weeks = getMonthWeeks(year, monthIndex, weekStartDay);
+
+                return (
+                    <div class="month" data-month={monthIndex}>
+                        <h3 class="month-title">
+                            {monthName} {year}
+                        </h3>
+                        <div class="days-grid">
+                            {dayNames.map((dayName) => (
+                                <div class="day-header">{dayName}</div>
+                            ))}
+                            {weeks.map((week, weekIndex) =>
+                                week.map((day, dayIndex) => {
+                                    if (day === null) {
+                                        return (
+                                            <div
+                                                class="day empty"
+                                                key={`${monthIndex}-${weekIndex}-${dayIndex}`}
+                                            />
+                                        );
+                                    }
+
+                                    const dateString = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
+                                    const isSelected =
+                                        selectedDays.has(dateString);
+                                    const isToday =
+                                        dateString ===
+                                        new Date().toISOString().split("T")[0];
+
+                                    return (
+                                        <div
+                                            class={`day ${isSelected ? "selected" : ""} ${isToday ? "today" : ""}`}
+                                            data-date={dateString}
+                                            key={dateString}
+                                            title={dateString}
+                                        >
+                                            {day.getDate()}
+                                        </div>
+                                    );
+                                }),
+                            )}
+                        </div>
+                    </div>
+                );
+            })
+        }
+    </div>
+</div>
+
+<script>
+    import "./calendarClient.ts";
+</script>
+
+<style>
+    .calendar-container {
+        --day-size: 2rem;
+        --grid-gap: 0.25rem;
+        --month-padding: 1rem;
+        --month-border: 1px solid #e5e7eb;
+        --month-border-radius: 0.5rem;
+        --selected-bg: #3b82f6;
+        --selected-color: white;
+        --today-border: 2px solid #ef4444;
+    }
+
+    .months-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 2rem;
+        padding: 1rem;
+    }
+
+    .month {
+        border: var(--month-border);
+        border-radius: var(--month-border-radius);
+        padding: var(--month-padding);
+        background: white;
+    }
+
+    .month-title {
+        text-align: center;
+        margin-top: 0;
+        margin-bottom: 1rem;
+        font-size: 1.25rem;
+        font-weight: 600;
+    }
+
+    .days-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: var(--grid-gap);
+    }
+
+    .day-header {
+        text-align: center;
+        font-weight: 600;
+        font-size: 0.875rem;
+        padding: 0.25rem;
+        color: #6b7280;
+    }
+
+    .day {
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.25rem;
+        cursor: pointer;
+        user-select: none;
+        font-size: 0.875rem;
+        transition:
+            background-color 0.2s,
+            color 0.2s;
+    }
+
+    .day:not(.empty):hover {
+        background-color: #f3f4f6;
+    }
+
+    .day.selected {
+        background-color: var(--selected-bg);
+        color: var(--selected-color);
+    }
+
+    .day.selected:hover {
+        background-color: #2563eb;
+    }
+
+    .day.today {
+        border: var(--today-border);
+    }
+
+    .day.empty {
+        cursor: default;
+    }
+
+    @media (max-width: 640px) {
+        .months-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            padding: 0.5rem;
+        }
+
+        .month {
+            padding: 0.75rem;
+        }
+
+        .day {
+            font-size: 0.75rem;
+        }
+    }
+</style>
