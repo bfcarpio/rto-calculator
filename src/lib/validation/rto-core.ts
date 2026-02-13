@@ -369,7 +369,6 @@ export function validateSlidingWindow(
 	if (weeksData.length > 0 && weeksData.length < windowSize) {
 		const { isValid, averageOfficeDays, averageOfficePercentage, bestWeeks } =
 			evaluateWindow(weeksData);
-		const requiredPercentage = policy.thresholdPercentage * 100;
 		const evaluatedWeekStarts = bestWeeks.map((w) => w.weekStart.getTime());
 		const windowWeekStarts = weeksData.map((w) => w.weekStart.getTime());
 		const windowStartTimestamp = weeksData[0]?.weekStart.getTime() ?? null;
