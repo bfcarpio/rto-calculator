@@ -62,13 +62,15 @@ npm run check           # All checks (lint + types)
 ### 3-Layer Validation Flow
 
 ```
-UI Controller (ActionButtons.astro / rto-ui-controller.ts)
-    ↓ triggers
+Auto-Compliance Hub (auto-compliance.ts)
+    ↓ subscribes to onStateChange, debounces 1.5s
 Data Reader (calendar-data-reader.ts)
     ↓ enumerates ALL weeks in range, reads datepainter API
 Orchestrator (ValidationOrchestrator.ts)
     ↓ coordinates validation
 Strategy (StrictDayCountValidator / AverageWindowValidator)
+    ↓ results dispatched as compliance-updated event on window
+Sidebar UI (StatusDetails / SummaryBar)
 ```
 
 **Data Reader key behavior**: Iterates through every Monday-aligned week in the calendar range (not just painted dates). For each Mon-Fri, checks the datepainter state and holiday set. Calculates `officeDays = 5 - holidayCount - wfhCount` (minus `sickCount` if `sickDaysPenalize` is enabled in settings).
@@ -588,7 +590,6 @@ src/
 │   └── calendar-data-reader.ts
 │
 ├── scripts/               # Client-side DOM integration
-│   ├── rto-ui-controller.ts
 │   ├── ValidationManager.ts
 │   └── eventHandlers.ts
 │

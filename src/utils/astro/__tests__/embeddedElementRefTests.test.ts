@@ -17,7 +17,6 @@ import {
 	createMixedComplianceCalendar,
 	createMockDayElement,
 	createMockDayInfo,
-	createMockStatusCell,
 	createMockWeekInfo,
 	createNonCompliantCalendar,
 	createWeekWithPattern,
@@ -137,82 +136,6 @@ describe("Embedded Element References - WeekInfo", () => {
 		cleanupMockElements();
 	});
 
-	describe("Status Cell Reference", () => {
-		it("should store HTMLElement reference in WeekInfo", () => {
-			const mockStatusCell = createMockStatusCell();
-
-			const weekInfo: WeekInfo = {
-				weekStart: new Date(2025, 0, 6),
-				weekNumber: 1,
-				days: [],
-				wfhCount: 0,
-				officeDays: 5,
-				isCompliant: true,
-				isUnderEvaluation: false,
-				status: "compliant",
-				statusCellElement: mockStatusCell,
-			};
-
-			expect(weekInfo.statusCellElement).toBeInstanceOf(HTMLElement);
-			expect(weekInfo.statusCellElement).toBe(mockStatusCell);
-		});
-
-		it("should have matching data-week-start attribute", () => {
-			const weekStart = new Date(2025, 0, 6);
-			const days = [
-				createMockDayInfo(weekStart, null),
-				createMockDayInfo(new Date(2025, 0, 7), null),
-				createMockDayInfo(new Date(2025, 0, 8), null),
-				createMockDayInfo(new Date(2025, 0, 9), null),
-				createMockDayInfo(new Date(2025, 0, 10), null),
-			];
-			const weekInfo = createMockWeekInfo(weekStart, days);
-
-			expect(weekInfo.statusCellElement).toBeInstanceOf(HTMLElement);
-			expect(weekInfo.statusCellElement?.dataset.weekStart).toBe(
-				weekStart.getTime().toString(),
-			);
-		});
-
-		it("should allow direct access to status icon", () => {
-			const weekStart = new Date(2025, 0, 6);
-			const days = [
-				createMockDayInfo(weekStart, null),
-				createMockDayInfo(new Date(2025, 0, 7), null),
-				createMockDayInfo(new Date(2025, 0, 8), null),
-				createMockDayInfo(new Date(2025, 0, 9), null),
-				createMockDayInfo(new Date(2025, 0, 10), null),
-			];
-			const weekInfo = createMockWeekInfo(weekStart, days);
-
-			const iconElement = weekInfo.statusCellElement?.querySelector(
-				".week-status-icon",
-			) as HTMLElement;
-
-			expect(iconElement).toBeInstanceOf(HTMLElement);
-			expect(iconElement.textContent).toBe("");
-		});
-
-		it("should allow direct access to screen reader text", () => {
-			const weekStart = new Date(2025, 0, 6);
-			const days = [
-				createMockDayInfo(weekStart, null),
-				createMockDayInfo(new Date(2025, 0, 7), null),
-				createMockDayInfo(new Date(2025, 0, 8), null),
-				createMockDayInfo(new Date(2025, 0, 9), null),
-				createMockDayInfo(new Date(2025, 0, 10), null),
-			];
-			const weekInfo = createMockWeekInfo(weekStart, days);
-
-			const srElement = weekInfo.statusCellElement?.querySelector(
-				".sr-only",
-			) as HTMLElement;
-
-			expect(srElement).toBeInstanceOf(HTMLElement);
-			expect(srElement.textContent).toBe("Week status");
-		});
-	});
-
 	describe("Day Elements Array", () => {
 		it("should store array of DayInfo with element references", () => {
 			const weekStart = new Date(2025, 0, 6);
@@ -325,7 +248,6 @@ describe("Embedded Element References - Verification", () => {
 				isCompliant: true,
 				isUnderEvaluation: false,
 				status: "compliant",
-				statusCellElement: createMockStatusCell(),
 			};
 
 			expect(verifyEmbeddedReferences(weekInfo)).toBe(false);
@@ -374,7 +296,6 @@ describe("Embedded Element References - Integration", () => {
 			weeks.forEach((week, index) => {
 				expect(week.weekStart).toBeInstanceOf(Date);
 				expect(week.days).toHaveLength(5);
-				expect(week.statusCellElement).toBeInstanceOf(HTMLElement);
 				expect(week.weekNumber).toBe(index + 1);
 
 				// Verify all day elements
@@ -444,7 +365,6 @@ describe("Embedded Element References - Integration", () => {
 
 			// Access all elements directly (no Map lookup)
 			weeks.forEach((week) => {
-				void week.statusCellElement;
 				week.days.forEach((day) => {
 					const element = day.element;
 					// Access properties
@@ -469,9 +389,9 @@ describe("Embedded Element References - Integration", () => {
 
 			// Estimate memory usage
 			const elementCount = largeWeeks.reduce(
-				(sum, week) => sum + week.days.length + 1,
+				(sum, week) => sum + week.days.length,
 				0,
-			); // days + status cell
+			);
 			const estimatedMemoryKB = elementCount * 0.5; // ~0.5KB per element
 
 			// Should be reasonable (< 100KB for 24 months)
@@ -499,26 +419,6 @@ describe("Embedded Element References - Edge Cases", () => {
 			expect(() => {
 				const element = dayInfo.element;
 				expect(element).toBeNull();
-			}).not.toThrow();
-		});
-
-		it("should handle missing status cell element gracefully", () => {
-			const weekInfo: WeekInfo = {
-				weekStart: new Date(2025, 0, 6),
-				weekNumber: 1,
-				days: [],
-				wfhCount: 0,
-				officeDays: 5,
-				isCompliant: true,
-				isUnderEvaluation: false,
-				status: "compliant",
-				statusCellElement: null, // Missing
-			};
-
-			// Should not throw error
-			expect(() => {
-				const statusCell = weekInfo.statusCellElement;
-				expect(statusCell).toBeNull();
 			}).not.toThrow();
 		});
 
@@ -599,9 +499,6 @@ describe("Embedded Element References - Regression Prevention", () => {
 
 			// Access all elements directly
 			weeks.forEach((week) => {
-				const statusCell = week.statusCellElement;
-				expect(statusCell).toBeInstanceOf(HTMLElement);
-
 				week.days.forEach((day) => {
 					const element = day.element;
 					expect(element).toBeInstanceOf(HTMLElement);
@@ -624,7 +521,6 @@ describe("Embedded Element References - Regression Prevention", () => {
 
 			// Access all elements
 			weeks.forEach((week) => {
-				void week.statusCellElement;
 				week.days.forEach((day) => {
 					const element = day.element;
 					void element.tagName;
@@ -670,7 +566,6 @@ describe("Embedded Element References - Regression Prevention", () => {
 			expect(weekInfo).toHaveProperty("officeDays");
 			expect(weekInfo).toHaveProperty("isCompliant");
 			expect(weekInfo).toHaveProperty("isUnderEvaluation");
-			expect(weekInfo).toHaveProperty("statusCellElement");
 
 			// Verify types
 			expect(weekInfo.weekStart).toBeInstanceOf(Date);
@@ -693,37 +588,13 @@ describe("Embedded Element References - Best Practices", () => {
 		it("should use consistent element access patterns", () => {
 			const weeks = create12WeekCalendar();
 
-			// Pattern 1: Direct property access for status cell
-			const statusCell = weeks[0]?.statusCellElement;
-			expect(statusCell).toBeInstanceOf(HTMLElement);
-
-			// Pattern 2: Direct property access for day elements
+			// Pattern 1: Direct property access for day elements
 			const dayElement = weeks[0]?.days[0]?.element;
 			expect(dayElement).toBeInstanceOf(HTMLElement);
 
-			// Pattern 3: Destructuring for readability
-			const { days, statusCellElement } = weeks[0]!;
+			// Pattern 2: Destructuring for readability
+			const { days } = weeks[0]!;
 			expect(days).toHaveLength(5);
-			expect(statusCellElement).toBeInstanceOf(HTMLElement);
-		});
-
-		it("should support optional chaining for safety", () => {
-			const weekInfo: WeekInfo = {
-				weekStart: new Date(2025, 0, 6),
-				weekNumber: 1,
-				days: [],
-				wfhCount: 0,
-				officeDays: 5,
-				isCompliant: true,
-				isUnderEvaluation: false,
-				status: "compliant",
-				statusCellElement: null,
-			};
-
-			// Optional chaining prevents errors
-			const icon =
-				weekInfo.statusCellElement?.querySelector(".week-status-icon");
-			expect(icon).toBeUndefined();
 		});
 	});
 
@@ -732,9 +603,6 @@ describe("Embedded Element References - Best Practices", () => {
 			// Setup: Append elements to DOM body
 			const weeks = create12WeekCalendar();
 			weeks.forEach((week) => {
-				if (week.statusCellElement) {
-					document.body.appendChild(week.statusCellElement);
-				}
 				week.days.forEach((day) => {
 					if (day.element) {
 						document.body.appendChild(day.element);

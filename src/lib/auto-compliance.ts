@@ -15,6 +15,11 @@ import {
 	REQUIRED_OFFICE_DAYS,
 	ROLLING_WINDOW_WEEKS,
 } from "./validation/constants";
+import {
+	orchestrateValidation,
+	type OrchestratedValidationResult,
+} from "./validation/ValidationOrchestrator";
+import { DEFAULT_RTO_POLICY } from "./validation/rto-core";
 
 // ─── Public Types ───────────────────────────────────────────────────
 
@@ -54,6 +59,9 @@ export interface ComplianceEventData {
 	isCompliant: boolean;
 	compliancePercentage: number;
 	message: string;
+
+	/** Sliding-window validation result (orchestrator output) */
+	validationResult: OrchestratedValidationResult;
 }
 
 // ─── Event Helpers ──────────────────────────────────────────────────
@@ -65,8 +73,8 @@ export function onComplianceUpdated(
 ): () => void {
 	const handler = (e: Event) =>
 		cb((e as CustomEvent<ComplianceEventData>).detail);
-	document.addEventListener(COMPLIANCE_EVENT, handler);
-	return () => document.removeEventListener(COMPLIANCE_EVENT, handler);
+	window.addEventListener(COMPLIANCE_EVENT, handler);
+	return () => window.removeEventListener(COMPLIANCE_EVENT, handler);
 }
 
 /** Latest cached result for late-loading components */
@@ -76,29 +84,13 @@ export function getLatestCompliance(): ComplianceEventData | null {
 	return latestResult;
 }
 
-// ─── Loader Bar Helpers ─────────────────────────────────────────────
+// ─── Computing State Helpers ────────────────────────────────────────
 
-function showLoader(): void {
-	const el = document.getElementById("compliance-loader");
-	if (!el) return;
-	el.classList.remove("complete", "hidden");
-	// Force reflow to restart transition
-	void el.offsetWidth;
-	el.classList.add("loading");
-}
-
-function completeLoader(): void {
-	const el = document.getElementById("compliance-loader");
-	if (!el) return;
-	el.classList.remove("loading");
-	el.classList.add("complete");
-	setTimeout(() => {
-		el.classList.add("hidden");
-		setTimeout(() => {
-			el.classList.remove("complete", "hidden");
-			el.style.width = "";
-		}, 300);
-	}, 300);
+function setComputingState(active: boolean): void {
+	for (const selector of [".status-details", ".summary-bar"]) {
+		const el = document.querySelector(selector);
+		if (el) el.classList.toggle("computing", active);
+	}
 }
 
 // ─── Core Computation ───────────────────────────────────────────────
@@ -113,7 +105,7 @@ function isWeekComplete(weekStart: Date): boolean {
 
 function computeComplianceData(
 	allWeeks: WeekInfo[],
-): ComplianceEventData {
+): Omit<ComplianceEventData, "validationResult"> {
 	// Separate current incomplete week
 	const completedWeeks = allWeeks.filter((w) => isWeekComplete(w.weekStart));
 	const currentWeekInfo = allWeeks.find((w) => !isWeekComplete(w.weekStart));
@@ -214,18 +206,25 @@ async function runComputation(
 	calendarManager: CalendarInstance,
 ): Promise<void> {
 	const myId = ++invocationId;
+	setComputingState(true);
 
 	const calendarData = await readCalendarData(calendarManager);
 
 	// Stale check: if a newer invocation started, bail
 	if (myId !== invocationId) return;
 
-	const data = computeComplianceData(calendarData.weeks);
+	const complianceData = computeComplianceData(calendarData.weeks);
+	const validationResult = orchestrateValidation(calendarData, {
+		policy: DEFAULT_RTO_POLICY,
+		DEBUG: false,
+	});
+
+	const data: ComplianceEventData = { ...complianceData, validationResult };
 	latestResult = data;
 
-	completeLoader();
+	setComputingState(false);
 
-	document.dispatchEvent(
+	window.dispatchEvent(
 		new CustomEvent<ComplianceEventData>(COMPLIANCE_EVENT, { detail: data }),
 	);
 }
@@ -250,7 +249,7 @@ function initAutoCompliance(): void {
 	let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 	calendarManager.onStateChange(() => {
-		showLoader();
+		setComputingState(true);
 
 		if (debounceTimer) clearTimeout(debounceTimer);
 		debounceTimer = setTimeout(() => {

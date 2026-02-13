@@ -55,7 +55,6 @@ export interface WeekInfo {
 	isCompliant: boolean;
 	isUnderEvaluation: boolean;
 	status: WeekStatus;
-	statusCellElement: HTMLElement | null;
 }
 
 /**
@@ -139,22 +138,6 @@ export async function readCalendarData(
 
 	// Get the full calendar range
 	const range = getDateRange();
-
-	// Query all status cells and build lookup map keyed by week start timestamp
-	const statusCellElements = document.querySelectorAll(
-		".week-status-cell[data-week-start]",
-	);
-	const statusCellMap = new Map<number, HTMLElement>();
-	Array.from(statusCellElements).forEach((cell) => {
-		const element = cell as HTMLElement;
-		const weekStartAttr = element.dataset.weekStart;
-		if (!weekStartAttr) return;
-
-		const weekStartTimestamp = parseInt(weekStartAttr, 10);
-		if (Number.isNaN(weekStartTimestamp)) return;
-
-		statusCellMap.set(weekStartTimestamp, element);
-	});
 
 	// Read sick-penalize setting
 	const sickDaysPenalize = getSickDaysPenalizeSetting();
@@ -241,10 +224,6 @@ export async function readCalendarData(
 
 			const isCompliant = officeDays >= mergedConfig.minOfficeDaysPerWeek;
 
-			// Look up status cell element for this week
-			const weekKey = weekStart.getTime();
-			const statusCellElement = statusCellMap.get(weekKey) ?? null;
-
 			const weekInfo: WeekInfo = {
 				weekStart: new Date(weekStart),
 				weekNumber: weeks.length + 1,
@@ -258,7 +237,6 @@ export async function readCalendarData(
 				isCompliant,
 				isUnderEvaluation: true,
 				status: isCompliant ? "compliant" : "invalid",
-				statusCellElement,
 			};
 
 			weeks.push(weekInfo);

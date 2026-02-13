@@ -108,10 +108,11 @@ docs/
 
 ## Key Concepts
 
-### 3-Layer Validation Flow
-1. **UI Controller** - Handles user interactions (`rto-ui-controller.ts`)
+### Reactive Validation Flow
+1. **Auto-Compliance Hub** - Subscribes to date changes, debounces, dispatches results (`auto-compliance.ts`)
 2. **Data Reader** - Reads calendar state via datepainter API (`calendar-data-reader.ts`)
 3. **Orchestrator** - Coordinates validation without DOM dependencies (`ValidationOrchestrator.ts`)
+4. **Sidebar UI** - StatusDetails and SummaryBar consume `compliance-updated` events
 
 ### Strategy Pattern for Validation
 - **StrictDayCountValidator** - Each week must individually meet 3-day minimum

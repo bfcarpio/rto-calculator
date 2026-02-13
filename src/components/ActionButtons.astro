@@ -12,27 +12,12 @@ const { position } = Astro.props;
 // Button configurations
 const _buttons: ButtonConfig[] = [
 	{
-		id: `validate-button-${position}`,
-		text: "Validate",
-		icon: "✓",
-		variant: "primary",
-		ariaLabel: "Validate RTO compliance",
-	},
-	{
 		id: `clear-all-button-${position}`,
 		text: "Clear All",
 		icon: "🗑️",
 		variant: "danger",
 		ariaLabel: "Clear all selections",
 	},
-	// Export button — not yet functional
-	// {
-	// 	id: `export-button-${position}`,
-	// 	text: "Export",
-	// 	icon: "📥",
-	// 	variant: "secondary",
-	// 	ariaLabel: "Export selections",
-	// },
 ];
 ---
 
@@ -44,21 +29,15 @@ const _buttons: ButtonConfig[] = [
             type="button"
             aria-label={button.ariaLabel}
             data-button-type={button.variant}
-            data-testid={button.id.includes("validate")
-                ? "validate-button"
-                : button.id.includes("clear-all")
-                    ? "clear-all-button"
-                    : button.id.includes("export")
-                        ? "export-button"
-                        : undefined}
+            data-testid={button.id.includes("clear-all")
+                ? "clear-all-button"
+                : undefined}
         >
             <span class="button-icon" aria-hidden="true">{button.icon}</span>
             <span class="button-text">{button.text}</span>
         </button>
     ))}
 </div>
-
-<div id="validation-message" class="validation-message"></div>
 
 <style>
     .action-buttons {
@@ -219,100 +198,13 @@ const _buttons: ButtonConfig[] = [
         }
     }
 
-    .validation-message {
-        display: none;
-        text-align: center;
-        padding: 0.75rem 1rem;
-        border-radius: 6px;
-        font-weight: 600;
-        margin-top: 0.75rem;
-    }
-
-    .validation-message.success {
-        display: block;
-        background-color: #f0fdf4;
-        color: #166534;
-        border: 1px solid #bbf7d0;
-    }
-
-    .validation-message.error {
-        display: block;
-        background-color: #fef2f2;
-        color: #991b1b;
-        border: 1px solid #fecaca;
-    }
-
-    .validation-message.warning {
-        display: block;
-        background-color: #fffbeb;
-        color: #92400e;
-        border: 1px solid #fde68a;
-    }
-
-    .validation-message.centered-message {
-        display: block;
-        background-color: #f0f9ff;
-        color: #1e40af;
-        border: 1px solid #bfdbfe;
-    }
 </style>
 
 <script>
   import type { CalendarInstance } from 'datepainter';
-  import { readCalendarData } from '../lib/calendar-data-reader';
-  import {
-    clearAllValidationHighlights,
-    orchestrateValidation,
-    updateWeekStatusCells,
-  } from '../lib/validation/ValidationOrchestrator';
-  import { DEFAULT_RTO_POLICY } from '../lib/validation/rto-core';
-  import {
-    clearValidationMessage,
-    displayValidationResults,
-  } from '../scripts/validation-result-display';
-  import type { ValidationResult } from '../types/validation-strategy';
 
   function getCalendarManager(): CalendarInstance | null {
     return (window as any).__datepainterInstance || null;
-  }
-
-  /** Run validation using the datepainter API */
-  async function handleValidate(): Promise<void> {
-    const calendarManager = getCalendarManager();
-    if (!calendarManager) {
-      alert('Calendar not ready. Please wait a moment and try again.');
-      return;
-    }
-
-    try {
-      const calendarData = await readCalendarData(calendarManager, { DEBUG: false });
-
-      if (calendarData.totalWeeks === 0) {
-        alert('No weeks found. Please mark some dates first.');
-        return;
-      }
-
-      clearAllValidationHighlights();
-
-      const result = orchestrateValidation(calendarData, {
-        policy: DEFAULT_RTO_POLICY,
-        DEBUG: false,
-      });
-
-      updateWeekStatusCells(result.evaluatedWeeks);
-      clearValidationMessage();
-      displayValidationResults({
-        isValid: result.isValid,
-        overallCompliance: result.compliancePercentage,
-        message: result.message,
-        windowResults: [],
-        violatingWindows: [],
-        compliantWindows: [],
-      } as ValidationResult);
-    } catch (error) {
-      console.error('[ActionButtons] Validation error:', error);
-      alert('An error occurred during validation. Please try again.');
-    }
   }
 
   /** Clear all date selections */
@@ -323,15 +215,9 @@ const _buttons: ButtonConfig[] = [
     if (!confirm('Clear all marked dates?')) return;
 
     calendarManager.clearAll();
-    clearAllValidationHighlights();
-    clearValidationMessage();
   }
 
   // Wire up buttons
-  document.querySelectorAll('[data-testid="validate-button"]').forEach((btn) => {
-    btn.addEventListener('click', handleValidate);
-  });
-
   document.querySelectorAll('[data-testid="clear-all-button"]').forEach((btn) => {
     btn.addEventListener('click', handleClearAll);
   });

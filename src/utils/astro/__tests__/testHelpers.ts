@@ -52,44 +52,6 @@ export function createMockDayElement(
 }
 
 /**
- * Create a mock status cell element
- *
- * @param weekStart - Date object representing Monday of the week
- * @returns HTMLElement representing a week status cell
- */
-export function createMockStatusCell(
-	weekStart: Date = new Date(2025, 0, 6),
-): HTMLElement {
-	const element = document.createElement("td");
-	element.className = "week-status-cell";
-	element.setAttribute("role", "gridcell");
-	element.setAttribute("aria-label", "Week status indicator");
-	element.dataset.weekStart = weekStart.getTime().toString();
-
-	// Create container
-	const container = document.createElement("div");
-	container.className = "week-status-container";
-
-	// Create icon element
-	const iconElement = document.createElement("span");
-	iconElement.className = "week-status-icon";
-	iconElement.setAttribute("aria-hidden", "true");
-	iconElement.textContent = "";
-
-	// Create screen reader text
-	const srElement = document.createElement("span");
-	srElement.className = "sr-only";
-	srElement.textContent = "Week status";
-
-	// Assemble
-	container.appendChild(iconElement);
-	container.appendChild(srElement);
-	element.appendChild(container);
-
-	return element;
-}
-
-/**
  * Create a mock DayInfo object with embedded element reference
  *
  * @param date - Date object
@@ -150,8 +112,6 @@ export function createMockWeekInfo(
 		isCompliant: options.isCompliant ?? totalOfficeDays >= 3,
 		isUnderEvaluation: options.isUnderEvaluation ?? false,
 		status: options.status ?? "ignored",
-		statusCellElement:
-			options.statusCellElement || createMockStatusCell(weekStart),
 	};
 }
 
@@ -236,10 +196,6 @@ export function cleanupMockElements(): void {
 	// Remove all day cells (created by helpers)
 	const mockDays = document.querySelectorAll(".calendar-day");
 	mockDays.forEach((element) => element.remove());
-
-	// Remove all status cells (created by helpers)
-	const mockStatusCells = document.querySelectorAll(".week-status-cell");
-	mockStatusCells.forEach((element) => element.remove());
 }
 
 /**
@@ -253,16 +209,6 @@ export function createCalendarHTML(weekCount: number = 12): string {
 
 	for (let week = 0; week < weekCount; week++) {
 		html += `<div class="calendar-week">`;
-
-		// Status cell
-		html += `
-      <td class="week-status-cell" data-week-start="${new Date(2025, 0, 6 + week * 7).getTime()}">
-        <div class="week-status-container">
-          <span class="week-status-icon"></span>
-          <span class="sr-only">Week status</span>
-        </div>
-      </td>
-    `;
 
 		// Day cells (5 weekdays)
 		for (let day = 0; day < 5; day++) {
@@ -341,11 +287,6 @@ export function createEmptyCalendar(): WeekInfo[] {
  * @returns true if all element references are present
  */
 export function verifyEmbeddedReferences(weekInfo: WeekInfo): boolean {
-	// Check status cell element
-	if (!weekInfo.statusCellElement) {
-		return false;
-	}
-
 	// Check all day elements
 	for (const day of weekInfo.days) {
 		if (!day.element) {
@@ -385,50 +326,6 @@ export function verifyElementDataAttributes(dayInfo: DayInfo): boolean {
 		selectionType === dayInfo.selectionType &&
 		isSelected === dayInfo.isSelected
 	);
-}
-
-/**
- * Mock the global RTOValidation object for testing
- *
- * @param options - Partial RTOValidation object to override defaults
- */
-export function mockRTOValidation(
-	options: {
-		CONFIG?: any;
-		updateWeekStatusIcon?: any;
-		updateComplianceIndicator?: any;
-		runValidationWithHighlights?: any;
-		weeksData?: WeekInfo[];
-		currentResult?: any;
-	} = {},
-): void {
-	(window as any).RTOValidation = {
-		CONFIG: {
-			DEBUG: false,
-			MIN_OFFICE_DAYS_PER_WEEK: 3,
-			TOTAL_WEEKDAYS_PER_WEEK: 5,
-			ROLLING_PERIOD_WEEKS: 12,
-			THRESHOLD_PERCENTAGE: 0.6,
-			...options.CONFIG,
-		},
-		updateWeekStatusIcon:
-			options.updateWeekStatusIcon ||
-			(() => {
-				/* Default mock */
-			}),
-		updateComplianceIndicator:
-			options.updateComplianceIndicator ||
-			(() => {
-				/* Default mock */
-			}),
-		runValidationWithHighlights:
-			options.runValidationWithHighlights ||
-			(() => {
-				/* Default mock */
-			}),
-		weeksData: options.weeksData || [],
-		currentResult: options.currentResult || null,
-	};
 }
 
 /**

@@ -16,21 +16,21 @@ The RTO Calculator is an Astro-based web application for tracking Return-to-Offi
 
 ---
 
-## The 3-Layer Validation Flow
+## The Reactive Validation Flow
 
-The validation system is organized into three distinct layers, each with specific responsibilities:
+Validation runs automatically via the **auto-compliance module** — a singleton that subscribes to datepainter state changes, debounces computation, and dispatches results as a `compliance-updated` CustomEvent on `window`. There is no validate button.
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│                         UI Controller Layer                       │
-│              (src/components/ActionButtons.astro +                │
-│               src/scripts/rto-ui-controller.ts)                  │
+│                     Auto-Compliance Hub                           │
+│                  (src/lib/auto-compliance.ts)                    │
 │                                                                   │
 │  Responsibilities:                                                │
-│  - Handle user interactions (click events)                        │
-│  - Trigger validation workflows                                   │
-│  - Display results to users                                       │
-│  - No validation logic here - delegates to orchestrator           │
+│  - Subscribe to datepainter onStateChange                         │
+│  - Debounce (1.5s) then read calendar data + run validation       │
+│  - Compute best-8-of-12 sliding window stats                      │
+│  - Dispatch compliance-updated CustomEvent on window              │
+│  - Toggle .computing opacity fade on sidebar panels               │
 └───────────────────────────────┬──────────────────────────────────┘
                                 │
                                 ▼
@@ -45,7 +45,6 @@ The validation system is organized into three distinct layers, each with specifi
 │  - Calculate officeDays = 5 - holidays - WFH (- sick)             │
 │  - Respect sickDaysPenalize setting from localStorage             │
 │  - Return typed data structures (DayInfo, WeekInfo)               │
-│  - Only layer with DOM access                                     │
 └───────────────────────────────┬──────────────────────────────────┘
                                 │
                                 ▼
@@ -58,20 +57,18 @@ The validation system is organized into three distinct layers, each with specifi
 │  - Manage configuration and policy application                    │
 │  - No DOM dependencies - works with pure data                     │
 │  - Delegates to concrete strategies via Factory                   │
-│  - Updates week status based on validation results                │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
-### Data Flow Example
+### Data Flow
 
 ```
-User clicks "Validate" button
+User paints/clears a date
         │
         ▼
 ┌───────────────┐
-│ UI Controller │  Step 1: Trigger validation
-│   (rto-ui-    │
-│  controller)  │
+│ Auto-         │  Step 1: onStateChange fires, debounce 1.5s
+│ Compliance    │  Sidebar panels dim (opacity 0.5)
 └───────┬───────┘
         │
         ▼
@@ -88,14 +85,13 @@ User clicks "Validate" button
 │ Orchestrator  │  Step 3: Coordinate validation
 │               │  - Convert data for strategies
 │               │  - Run sliding window validation
-│               │  - Update week statuses
 └───────┬───────┘
         │
         ▼
 ┌───────────────┐
-│   UI Update   │  Step 4: Reflect results in DOM
-│   (status     │  - Update week status icons
-│    cells)     │  - Show compliance messages
+│  Sidebar UI   │  Step 4: Components consume compliance-updated event
+│ (StatusDetails│  - Compliance status box (compliant/not compliant)
+│  SummaryBar)  │  - Week summary, capacity, non-compliant weeks
 └───────────────┘
 ```
 
@@ -383,9 +379,7 @@ src/
 │   └── dateStore.ts               # Legacy stub (use datepainter CalendarInstance instead)
 │
 ├── scripts/              # Client-side DOM integration
-│   ├── rto-ui-controller.ts       # UI Controller layer
 │   ├── ValidationManager.ts       # Strategy orchestration (client-side)
-│   ├── validation-result-display.ts
 │   ├── eventHandlers.ts
 │   ├── settings-modal.ts
 │   ├── localStorage.ts
@@ -395,9 +389,8 @@ src/
 ├── types/                # TypeScript type definitions
 │   ├── validation-strategy.d.ts
 │   ├── calendar-types.d.ts
-│   ├── rto-validation.d.ts
 │   ├── holiday-data-source.ts
-│   └── index.d.ts
+│   └── index.ts
 │
 ├── utils/                # Utility functions
 │   ├── dateUtils.ts
@@ -421,9 +414,10 @@ src/
 
 ### 1. Separation of Concerns
 
-- **UI Controller Layer**: Handles user events and updates the UI
+- **Auto-Compliance Hub**: Reactive singleton that debounces and dispatches results
 - **Data Reader Layer**: Single DOM query, returns typed data
 - **Orchestration Layer**: Coordinates validation without DOM dependencies
+- **Sidebar Components**: Consume `compliance-updated` events to render stats
 
 ### 2. Pure Functions
 
@@ -484,7 +478,6 @@ interface WeekInfo {
   isCompliant: boolean;               // Meets 3-day minimum?
   isUnderEvaluation: boolean;         // In 12-week window?
   status: WeekStatus;                 // "compliant" | "invalid" | "pending" | "excluded" | "ignored"
-  statusCellElement: HTMLElement | null;  // DOM reference for UI updates
 }
 ```
 
@@ -567,6 +560,7 @@ interface Holiday {
 
 #### `components/StatusDetails.astro`
 - Consumes `compliance-updated` events from auto-compliance module
+- Compliance status box (compliant/not compliant with color coding)
 - Week summary, capacity, current week status, non-compliant weeks
 - Non-compliant weeks show "Ignored" (dimmed) for dropped weeks vs "Needs X more" for counted weeks
 - Updates after 1.5s debounce as dates are painted
@@ -718,13 +712,7 @@ See [AGENTS.md](../AGENTS.md) for build/test commands.
 - [DEVELOPER_GUIDE.md](./DEVELOPER_GUIDE.md) - Developer workflows and patterns
 - [USER_GUIDE.md](./USER_GUIDE.md) - End-user documentation
 - [PlaywrightTesting.md](./PlaywrightTesting.md) - E2E testing guide
-- [StatusColumn.md](./StatusColumn.md) - Status column implementation details
 - [AGENTS.md](../AGENTS.md) - AI agent guidelines and build commands
-
-**Historical Documentation:**
-- [StatusColumnFixes.md](./StatusColumnFixes.md) - Status column bug fixes
-- [ValidationBugFix.md](./ValidationBugFix.md) - Validation bug fixes
-- [ClearAllFix.md](./ClearAllFix.md) - Clear all button fix
 
 ---
 

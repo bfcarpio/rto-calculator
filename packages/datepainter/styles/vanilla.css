@@ -235,57 +235,6 @@ body.dark-mode .datepainter__month-label {
 }
 
 /* ============================================
-   Status Indicators (Vanilla - BEM)
-   ============================================ */
-
-/* Week status container */
-.datepainter__week-status {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	padding: 0.5rem;
-	margin-top: 0.25rem;
-	border-radius: 4px;
-	font-size: 0.75rem;
-}
-
-/* Status badges */
-.datepainter__week-status-badge {
-	display: inline-flex;
-	align-items: center;
-	gap: 4px;
-	padding: 4px 8px;
-	border-radius: 4px;
-	font-weight: 600;
-	text-transform: uppercase;
-	letter-spacing: 0.05em;
-}
-
-/* Compliant status */
-.datepainter__week-status-badge--compliant {
-	background-color: var(--datepainter-primary-light, #e2e8f0);
-	color: var(--datepainter-primary, #475569);
-}
-
-/* Invalid status */
-.datepainter__week-status-badge--invalid {
-	background-color: var(--datepainter-error-bg, #f1f5f9);
-	color: var(--datepainter-error, #334155);
-}
-
-/* Pending status */
-.datepainter__week-status-badge--pending {
-	background-color: var(--datepainter-secondary-light, #f1f5f9);
-	color: var(--datepainter-secondary, #64748b);
-}
-
-/* Ignored status */
-.datepainter__week-status-badge--ignored {
-	background-color: var(--datepainter-bg-alt, #f8fafc);
-	color: var(--datepainter-text-muted, #64748b);
-}
-
-/* ============================================
    Tooltips (Vanilla)
    ============================================ */
 

@@ -76,20 +76,6 @@ export function setupBasicCalendarDOM(weekCount: number = 3): void {
 		const weekDiv = document.createElement("div");
 		weekDiv.className = "calendar-week";
 
-		// Status cell
-		const statusCell = document.createElement("td");
-		statusCell.className = "week-status-cell";
-		statusCell.dataset.weekStart = new Date(2025, 0, 6 + week * 7)
-			.getTime()
-			.toString();
-		statusCell.innerHTML = `
-      <div class="week-status-container">
-        <span class="week-status-icon"></span>
-        <span class="sr-only">Week status</span>
-      </div>
-    `;
-		weekDiv.appendChild(statusCell);
-
 		// Day cells (5 weekdays)
 		for (let day = 0; day < 5; day++) {
 			const dayCell = document.createElement("td");

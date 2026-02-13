@@ -89,32 +89,16 @@ button:focus-visible,
 	outline: 0 0 0 3px rgba(71, 85, 105, 0.3); /* Slate-600 with opacity */
 }
 
-/* Compliance Loader Bar */
-.compliance-loader {
-	position: fixed;
-	top: 0;
-	left: 0;
-	height: 3px;
-	width: 0;
-	background: linear-gradient(90deg, #3b82f6, #60a5fa);
-	z-index: 9999;
-	transition: width 0.3s ease;
-	pointer-events: none;
-}
-
-.compliance-loader.loading {
-	width: 70%;
-	transition: width 1.5s ease-out;
-}
-
-.compliance-loader.complete {
-	width: 100%;
-	transition: width 0.2s ease-in;
-}
-
-.compliance-loader.hidden {
-	opacity: 0;
+/* Computing state: dim sidebar panels while auto-compliance recalculates */
+.status-details,
+.summary-bar {
 	transition: opacity 0.3s ease;
+}
+
+.status-details.computing,
+.summary-bar.computing {
+	opacity: 0.5;
+	pointer-events: none;
 }
 
 /* Dark Mode Support */

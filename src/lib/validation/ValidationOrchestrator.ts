@@ -39,7 +39,6 @@ export const DEFAULT_ORCHESTRATOR_CONFIG: RTOOrchestratorConfig = {
 
 /**
  * Create a type-safe copy of WeekInfo
- * Ensures all properties including statusCellElement are properly copied
  *
  * @param week - The week to copy
  * @returns A new WeekInfo object with the same values
@@ -47,8 +46,7 @@ export const DEFAULT_ORCHESTRATOR_CONFIG: RTOOrchestratorConfig = {
 function copyWeekInfo(week: WeekInfo): WeekInfo {
 	return {
 		...week,
-		days: [...week.days], // Shallow copy the days array
-		statusCellElement: week.statusCellElement, // Explicitly preserve DOM reference
+		days: [...week.days],
 	};
 }
 
@@ -138,66 +136,6 @@ export function orchestrateValidation(
 	}
 
 	return result;
-}
-
-/**
- * Update week status cells based on validation results
- *
- * This function updates the DOM status cells for evaluated weeks.
- * It requires DOM access but only for the specific status cell elements.
- *
- * @param evaluatedWeeks - The weeks with updated statuses
- */
-export function updateWeekStatusCells(evaluatedWeeks: WeekInfo[]): void {
-	for (const week of evaluatedWeeks) {
-		if (week.statusCellElement) {
-			const container = week.statusCellElement;
-			const iconElement = container.querySelector(".week-status-icon");
-			const srElement = container.querySelector(".sr-only");
-
-			if (iconElement) {
-				iconElement.textContent = "";
-				iconElement.classList.remove("violation", "least-attended");
-			}
-			if (srElement) {
-				srElement.textContent = "";
-			}
-
-			if (week.status === "compliant" && iconElement && srElement) {
-				iconElement.textContent = "✓";
-				srElement.textContent = "Compliant";
-			} else if (week.status === "invalid" && iconElement && srElement) {
-				iconElement.textContent = "✗";
-				srElement.textContent = "Not compliant";
-			}
-		}
-	}
-}
-
-/**
- * Clear all validation status highlights from the calendar
- *
- * This function clears status indicators without re-running validation.
- *
- * @param statusContainerSelector - CSS selector for status containers
- */
-export function clearAllValidationHighlights(
-	statusContainerSelector: string = ".week-status-container",
-): void {
-	const statusCells = document.querySelectorAll(statusContainerSelector);
-
-	statusCells.forEach((cell) => {
-		const iconElement = cell.querySelector(".week-status-icon");
-		const srElement = cell.querySelector(".sr-only");
-
-		if (iconElement) {
-			iconElement.textContent = "";
-			iconElement.classList.remove("violation", "least-attended");
-		}
-		if (srElement) {
-			srElement.textContent = "";
-		}
-	});
 }
 
 /**

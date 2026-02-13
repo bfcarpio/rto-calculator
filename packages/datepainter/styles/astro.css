@@ -154,38 +154,4 @@
 	border-color: var(--datepainter-primary) !important;
 }
 
-/* ============================================
-   Status Indicators (if used) week-status classes
-   ============================================ */
-
-.datepainter :scope .week-status {
-	display: inline-flex;
-	align-items: center;
-	gap: var(--datepainter-spacing-sm);
-	padding: var(--datepainter-spacing-sm) var(--datepainter-spacing-md);
-	border-radius: var(--datepainter-radius-md);
-	font-size: var(--datepainter-font-size-xs);
-	font-weight: var(--datepainter-font-weight-medium);
-}
-
-.datepainter :scope .week-status.compliant {
-	background-color: var(--datepainter-primary-light);
-	color: var(--datepainter-primary);
-}
-
-.datepainter :scope .week-status.invalid {
-	background-color: var(--datepainter-error-bg);
-	color: var(--datepainter-error);
-}
-
-.datepainter :scope .week-status.pending {
-	background-color: var(--datepainter-secondary-light);
-	color: var(--datepainter-secondary);
-}
-
-.datepainter :scope .week-status.ignored {
-	background-color: var(--datepainter-bg-alt);
-	color: var(--datepainter-text-muted);
-}
-
 /* Print, high-contrast, and reduced-motion styles are in base.css */

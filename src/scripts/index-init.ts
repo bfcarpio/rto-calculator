@@ -1,17 +1,10 @@
 import { initializeHolidayIntegration } from "../lib/holiday/CalendarHolidayIntegration";
 import { initializeLocalStorage } from "../scripts/localStorage";
-import {
-	displayInitialPrompt,
-	displayValidationResults,
-} from "../scripts/validation-result-display";
 import { setupEventListeners } from "../utils/astro/calendarFunctions";
-import "../scripts/rto-ui-controller";
-import type { ValidationResult } from "../types/validation-strategy";
 import { debugLog, getDebugEnabled } from "./debug";
 
 declare global {
 	interface Window {
-		displayValidationResults?: (validationResult: ValidationResult) => void;
 		validationManager?: {
 			setDebugMode(enabled: boolean): void;
 			getDebugMode(): boolean;
@@ -52,12 +45,6 @@ export function initializeIndex() {
 	}
 
 	initializeHolidayIntegration();
-
-	window.displayValidationResults = (validationResult: ValidationResult) => {
-		displayValidationResults(validationResult);
-	};
-
-	displayInitialPrompt();
 
 	const isDebugEnabled =
 		window.validationManager?.getDebugMode() ?? getDebugEnabled();

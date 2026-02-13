@@ -25,14 +25,6 @@ export type WeekStart = "sunday" | "monday";
 
 export const DEFAULT_WEEK_START: WeekStart = "sunday";
 
-/**
- * Extended Window interface for RTO Validation access
- */
-interface WindowWithRTOValidation extends Window {
-	rtoValidation?: {
-		clearAllValidationHighlights: () => void;
-	};
-}
 
 export function getLocaleWeekStart(): WeekStart {
 	// For now, default to Sunday start
@@ -509,13 +501,6 @@ export function updateDayCell(cell: HTMLElement, dateStr: string): void {
 }
 
 /**
- * Update the compliance display using validation message
- */
-// Old updateComplianceIndicator function removed - replaced by proper validation system
-
-// Old show/hideValidationMessage functions removed - replaced by validation-result-display module
-
-/**
  * Clear all selections
  */
 export function clearAllSelections(): void {
@@ -558,14 +543,6 @@ export function clearAllSelections(): void {
 			cellElement.setAttribute("aria-label", `${datePart}. Unselected`);
 		}
 	});
-
-	// Clear all validation highlights
-	if (typeof window !== "undefined") {
-		const rtoValidation = (window as WindowWithRTOValidation).rtoValidation;
-		if (rtoValidation) {
-			rtoValidation.clearAllValidationHighlights();
-		}
-	}
 
 	validateAndUpdateCalendar(weekStart);
 }

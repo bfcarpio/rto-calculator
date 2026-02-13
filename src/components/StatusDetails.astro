@@ -8,6 +8,13 @@ const BEST_WEEKS_REQUIRED = 8;
 ---
 
 <div class="status-details">
+	<!-- Compliance Status Box -->
+	<div class="box compliance-status" id="compliance-status-box">
+		<p class="has-text-centered has-text-weight-semibold" id="compliance-status-message">
+			Mark dates to see compliance status
+		</p>
+	</div>
+
 	<!-- Week Summary Box -->
 	<div class="box week-summary">
 		<h3 class="title is-6 mb-3">Week Summary</h3>
@@ -128,7 +135,23 @@ const BEST_WEEKS_REQUIRED = 8;
 	.status-details .box {
 		margin-bottom: 0;
 		padding: 1.25rem;
-		transition: box-shadow 0.2s ease;
+		transition: box-shadow 0.2s ease, background-color 0.3s ease, border-color 0.3s ease;
+	}
+
+	.compliance-status {
+		border: 2px solid #e2e8f0;
+	}
+
+	.compliance-status.is-success {
+		background-color: #f0fdf4;
+		border-color: #bbf7d0;
+		color: #166534;
+	}
+
+	.compliance-status.is-warning {
+		background-color: #fffbeb;
+		border-color: #fde68a;
+		color: #92400e;
 	}
 
 	.status-details .box:hover {
@@ -294,6 +317,14 @@ const BEST_WEEKS_REQUIRED = 8;
 		}
 
 		renderNonCompliantWeeks(data);
+
+		// Update compliance status box
+		const elStatus = document.getElementById('compliance-status-message');
+		const elStatusBox = document.getElementById('compliance-status-box');
+		if (elStatus && elStatusBox) {
+			elStatus.textContent = data.message;
+			elStatusBox.className = `box compliance-status ${data.isCompliant ? 'is-success' : 'is-warning'}`;
+		}
 	}
 
 	// Subscribe to auto-compliance events

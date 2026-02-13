@@ -88,13 +88,12 @@ export interface WeekData {
 export interface WeekInfo {
 	weekStart: Date;
 	weekNumber: number;
-	days: DayInfo[]; // Each day has element reference
+	days: DayInfo[];
 	wfhCount: number;
 	officeDays: number;
 	isCompliant: boolean;
 	isUnderEvaluation: boolean;
 	status: WeekStatus;
-	statusCellElement: HTMLElement | null; // Direct DOM reference - no cache needed
 }
 
 /**

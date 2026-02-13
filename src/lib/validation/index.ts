@@ -17,8 +17,5 @@ export {
 	getAvailableModes,
 	isValidMode,
 } from "./ValidationFactory";
-export {
-	clearAllValidationHighlights,
-	orchestrateValidation,
-} from "./ValidationOrchestrator";
+export { orchestrateValidation } from "./ValidationOrchestrator";
 export { ValidationStrategy } from "./ValidationStrategy";
