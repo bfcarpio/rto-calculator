@@ -13,7 +13,6 @@ import type {
 	DateString,
 } from "../../packages/datepainter/src/types";
 import type { HistoryManager } from "../lib/history/HistoryManager";
-import type { ValidationMode } from "../lib/validation";
 import type { ValidationConfig } from "../types/validation-strategy";
 import type { ValidationManager } from "./ValidationManager";
 
@@ -28,7 +27,7 @@ export interface UndoSnapshot {
 	/** Current month being displayed */
 	currentMonth: Date;
 	/** Current validation configuration */
-	validationConfig: ValidationConfig & { validationMode?: ValidationMode };
+	validationConfig: ValidationConfig;
 	/** Unix timestamp when snapshot was created */
 	timestamp: number;
 }
@@ -359,7 +358,6 @@ export class KeyboardShortcuts {
 		// Restore validation config
 		this.validationManager.updateConfig(snapshot.validationConfig);
 	}
-
 }
 
 export default KeyboardShortcuts;

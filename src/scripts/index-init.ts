@@ -8,7 +8,6 @@ declare global {
 		validationManager?: {
 			setDebugMode(enabled: boolean): void;
 			getDebugMode(): boolean;
-			SetValidator(strategy: string): void;
 			updateConfig(config: { minOfficeDaysPerWeek: number }): void;
 			getConfig(): { minOfficeDaysPerWeek?: number };
 		};
