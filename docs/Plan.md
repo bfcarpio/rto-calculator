@@ -76,7 +76,13 @@ An Astro-based web application for tracking Return-to-Office (RTO) compliance. T
 - **Responsibility**: Renders individual month with day grid and week status
 - **Key Features**:
   - 6-row x 7-column grid (Mon-Sun + week number)
-  - Week status column with compliance icons
+  - Week status column with 5-state compliance indicators:
+    - ✓ Green checkmark (compliant): Week has ≥ 3 office days AND is in evaluated set when overall is valid
+    - ✗ Red X (invalid): Week has < 3 office days, OR is the lowest-attendance week when window is invalid
+    - ⏳ Hourglass (pending): Week is in evaluated set when overall window is invalid (but not the lowest)
+    - ○ Grey circle (excluded): Week is in 12-week evaluation window but NOT in evaluated set (the "worst 4 weeks")
+    - (empty) (ignored): Week is NOT in the 12-week evaluation window
+  - Week number column displaying ISO 8601 week numbers (1-52)
   - Month-level clear button
   - Keyboard navigation between days
   - Custom event dispatching for selection changes
@@ -151,11 +157,22 @@ ValidationManager (Context)
 - **Responsibilities**:
   - Read calendar data from DOM elements
   - Calculate rolling compliance with week-by-week evaluation
-  - Update week status icons based on 4-state system:
+  - Update week status icons based on 5-state system:
     - ✓ **compliant**: Green checkmark (individual week has ≥ 3 office days AND is in evaluated set when overall is valid)
+      - CSS classes: .evaluated .compliant
+      - Screen reader: "Compliant week"
     - ✗ **invalid**: Red X (two cases: 1) Individual week has < 3 office days regardless of overall result, OR 2) The week with lowest office days in evaluated set when window is invalid)
+      - CSS classes: .evaluated .non-compliant
+      - Screen reader: "Invalid week - lowest office days in evaluated set"
     - ⏳ **pending**: Hourglass (remaining evaluated weeks when window is invalid)
-    - **(no icon)**: Ignored - weeks not in the evaluated set
+      - CSS classes: .evaluated .least-attended
+      - Screen reader: "Pending evaluation - part of invalid window"
+    - ○ **excluded**: Grey circle (weeks in 12-week window but not in evaluated set - the "worst 4 weeks")
+      - CSS classes: .evaluated .excluded
+      - Screen reader: "Excluded - in evaluation window but not evaluated (worst 4 weeks)"
+    - (empty) **ignored**: Empty status (weeks NOT in the 12-week evaluation window)
+      - No CSS classes
+      - Screen reader: (empty)
   - Display compliance messages
   - Clear validation highlights
 
@@ -240,15 +257,33 @@ calculateRollingCompliance()
     ▼
 updateWeekStatusIcon()
     │
-    ├─► Week not in evaluated set: (no icon) - ignored
+    ├─► Week NOT in 12-week evaluation window: Empty (ignored)
+    │   - No CSS classes
+    │   - Screen reader: (empty)
     │
-    ├─► Week in evaluated set AND has < 3 office days: Red ✗ (invalid)
-    │
-    ├─► Week in evaluated set, has ≥ 3 office days, AND overall window is VALID: Green ✓ (compliant)
-    │
-    └─► Week in evaluated set, has ≥ 3 office days, AND overall window is INVALID:
-        ├─► Lowest office days in evaluated set: Red ✗ (invalid)
-        └─► Other weeks in evaluated set: Hourglass ⏳ (pending)
+    ├─► Week in 12-week window:
+    │   ├─► Week has < 3 office days: Red ✗ (invalid)
+    │   │   - CSS classes: .evaluated .non-compliant
+    │   │   - Screen reader: "Invalid week - lowest office days in evaluated set"
+    │   │
+    │   ├─► Week in evaluated set AND overall window is VALID:
+    │   │   ├─► Best 8 weeks: Green ✓ (compliant)
+    │   │   │   - CSS classes: .evaluated .compliant
+    │   │   │   - Screen reader: "Compliant week"
+    │   │   └─► Other 4 weeks in window: Grey circle ○ (excluded)
+    │   │       - CSS classes: .evaluated .excluded
+    │   │       - Screen reader: "Excluded - in evaluation window but not evaluated (worst 4 weeks)"
+    │   │
+    │   └─► Week in evaluated set AND overall window is INVALID:
+    │       ├─► Lowest office days in evaluated set: Red ✗ (invalid)
+    │       │   - CSS classes: .evaluated .non-compliant
+    │       │   - Screen reader: "Invalid week - lowest office days in evaluated set"
+    │       ├─► Best 7 weeks: Green ✓ (compliant)
+    │       │   - CSS classes: .evaluated .compliant
+    │       │   - Screen reader: "Compliant week"
+    │       └─► Other 4 weeks in window: Grey circle ○ (excluded)
+    │           - CSS classes: .evaluated .excluded
+    │           - Screen reader: "Excluded - in evaluation window but not evaluated (worst 4 weeks)"
 ```
 
 ## State Management
@@ -288,7 +323,7 @@ interface WeekInfo {
   officeDays: number;
   isCompliant: boolean;
   isUnderEvaluation: boolean;
-  status: "compliant" | "invalid" | "pending" | "ignored";
+  status: WeekStatus; // "compliant" | "invalid" | "pending" | "excluded" | "ignored"
   statusCellElement: HTMLElement | null;
 }
 
@@ -298,6 +333,7 @@ interface SlidingWindowResult {
   message: string;
   overallCompliance: number;
   evaluatedWeekStarts: number[];
+  windowWeekStarts: number[]; // All weeks in the 12-week evaluation window
   invalidWeekStart: number | null; // The week with lowest office days in evaluated set (when invalid)
   windowStart: number | null; // The start of the 12-week window that was evaluated
 }

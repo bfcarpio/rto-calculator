@@ -64,7 +64,8 @@ export interface SlidingWindowResult {
   isValid: boolean;
   message: string;
   overallCompliance: number;
-  evaluatedWeekStarts: number[];
+  evaluatedWeekStarts: number[]; // The best 8 weeks in the 12-week window
+  windowWeekStarts: number[]; // All weeks in the 12-week window being evaluated
   invalidWeekStart: number | null; // The week with lowest office days in evaluated set (when invalid)
   windowStart: number | null; // The start of the 12-week window that was evaluated
 }
@@ -343,6 +344,7 @@ export function validateSlidingWindow(
     // Return immediately if invalid (break on first invalid window)
     if (!isValid) {
       const evaluatedWeekStarts = bestWeeks.map((w) => w.weekStart.getTime());
+      const windowWeekStarts = windowWeeks.map((w) => w.weekStart.getTime());
       // Find the week with lowest office days in the evaluated set
       const invalidWeek = bestWeeks[bestWeeks.length - 1]; // Last one has lowest office days (sorted descending)
       const invalidWeekStart = invalidWeek?.weekStart.getTime() ?? null;
@@ -355,6 +357,7 @@ export function validateSlidingWindow(
         message: `✗ RTO Violation: Best ${weeksToEvaluate} of ${windowSize} weeks average ${averageOfficeDays.toFixed(1)} office days (${averageOfficePercentage.toFixed(0)}%) of ${policy.totalWeekdaysPerWeek} weekdays. Required: ${requiredPercentage.toFixed(0)}%`,
         overallCompliance: averageOfficePercentage,
         evaluatedWeekStarts,
+        windowWeekStarts,
         invalidWeekStart,
         windowStart: windowStartTimestamp,
       };
@@ -380,6 +383,7 @@ export function validateSlidingWindow(
     (averageOfficeDays / policy.totalWeekdaysPerWeek) * 100;
   const requiredPercentage = policy.thresholdPercentage * 100;
   const evaluatedWeekStarts = bestWeeks.map((w) => w.weekStart.getTime());
+  const windowWeekStarts = lastWindowWeeks.map((w) => w.weekStart.getTime());
   const lastWindowWeek = weeksData[lastWindowStart];
   const windowStartTimestamp = lastWindowWeek?.weekStart.getTime() ?? null;
 
@@ -388,6 +392,7 @@ export function validateSlidingWindow(
     message: `✓ RTO Compliant: Best ${weeksToEvaluate} of ${windowSize} weeks average ${averageOfficeDays.toFixed(1)} office days (${averageOfficePercentage.toFixed(0)}%) of ${policy.totalWeekdaysPerWeek} weekdays. Required: ${requiredPercentage.toFixed(0)}%`,
     overallCompliance: averageOfficePercentage,
     evaluatedWeekStarts,
+    windowWeekStarts,
     invalidWeekStart: null,
     windowStart: windowStartTimestamp,
   };

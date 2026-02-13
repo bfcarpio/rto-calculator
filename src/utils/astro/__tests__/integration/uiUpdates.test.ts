@@ -57,13 +57,21 @@ const mockUIUpdates = {
     const sr = container.querySelector(".sr-only") as HTMLElement;
 
     // Clear previous classes
-    container.classList.remove("compliant", "non-compliant", "least-attended");
+    container.classList.remove(
+      "evaluated",
+      "compliant",
+      "non-compliant",
+      "excluded",
+      "least-attended",
+      "ignored",
+    );
 
-    // Four states based on WeekStatus:
+    // Five states based on WeekStatus:
     // "compliant": Green checkmark
     // "invalid": Red X
     // "pending": Hourglass
-    // "ignored": Grey marker
+    // "excluded": Grey circle (weeks in 12-week window but not in evaluated set)
+    // "ignored": Empty - no icon (weeks not in 12-week window)
     switch (weekInfo.status) {
       case "compliant":
         container.classList.add("evaluated", "compliant");
@@ -80,9 +88,15 @@ const mockUIUpdates = {
         icon.textContent = "⏳";
         sr.textContent = "Pending evaluation - part of invalid window";
         break;
+      case "excluded":
+        container.classList.add("evaluated", "excluded");
+        icon.textContent = "○";
+        sr.textContent =
+          "Excluded - in evaluation window but not evaluated (worst 4 weeks)";
+        break;
       case "ignored":
       default:
-        // Don't add any classes or icons for weeks not in the evaluated set
+        // Empty status for weeks not in the 12-week evaluation window
         icon.textContent = "";
         sr.textContent = "";
         break;
@@ -125,7 +139,9 @@ const mockUIUpdates = {
         "evaluated",
         "compliant",
         "non-compliant",
+        "excluded",
         "least-attended",
+        "ignored",
       );
       const icon = container.querySelector(".week-status-icon") as HTMLElement;
       const sr = container.querySelector(".sr-only") as HTMLElement;
@@ -224,7 +240,7 @@ describe("UI Updates - Status Icon States", () => {
     expect(container?.classList.contains("non-compliant")).toBe(true);
   });
 
-  it("should show no icon for ignored weeks (not in evaluated window)", () => {
+  it("should show empty status for ignored weeks (not in evaluated window)", () => {
     const weekStart = new Date(2025, 0, 6);
     const week: WeekInfo = createMockWeekInfo(weekStart, [], {
       weekNumber: 1,
@@ -245,6 +261,31 @@ describe("UI Updates - Status Icon States", () => {
 
     expect(icon?.textContent).toBe("");
     expect(container?.classList.contains("evaluated")).toBe(false);
+    expect(container?.classList.contains("compliant")).toBe(false);
+  });
+
+  it("should show grey circle for excluded weeks (in window but not evaluated)", () => {
+    const weekStart = new Date(2025, 0, 6);
+    const week: WeekInfo = createMockWeekInfo(weekStart, [], {
+      weekNumber: 1,
+      wfhCount: 2,
+      officeDays: 3,
+      isCompliant: true,
+      status: "excluded",
+    });
+
+    mockUIUpdates.updateWeekStatusIcon(week);
+
+    const icon = week.statusCellElement?.querySelector(
+      ".week-status-icon",
+    ) as HTMLElement;
+    const container = week.statusCellElement?.querySelector(
+      ".week-status-container",
+    ) as HTMLElement;
+
+    expect(icon?.textContent).toBe("○");
+    expect(container?.classList.contains("evaluated")).toBe(true);
+    expect(container?.classList.contains("excluded")).toBe(true);
     expect(container?.classList.contains("compliant")).toBe(false);
   });
 
@@ -278,10 +319,11 @@ describe("UI Updates - Status Icon States", () => {
       wfhCount: 2,
       officeDays: 3,
       isCompliant: true,
-      status: "compliant",
+      status: "ignored",
     });
 
     // First mark as compliant
+    week.status = "compliant";
     mockUIUpdates.updateWeekStatusIcon(week);
     let container = week.statusCellElement?.querySelector(
       ".week-status-container",
@@ -295,9 +337,11 @@ describe("UI Updates - Status Icon States", () => {
     container = week.statusCellElement?.querySelector(
       ".week-status-container",
     ) as HTMLElement;
-    expect(container?.classList.contains("evaluated")).toBe(true);
+    expect(container?.classList.contains("evaluated")).toBe(false);
     expect(container?.classList.contains("compliant")).toBe(false);
     expect(container?.classList.contains("non-compliant")).toBe(false);
+    expect(container?.classList.contains("excluded")).toBe(false);
+    expect(container?.classList.contains("ignored")).toBe(false);
   });
 });
 
@@ -370,6 +414,7 @@ describe("UI Updates - Icon Class Management", () => {
     expect(container?.classList.contains("evaluated")).toBe(false);
     expect(container?.classList.contains("compliant")).toBe(false);
     expect(container?.classList.contains("non-compliant")).toBe(false);
+    expect(container?.classList.contains("ignored")).toBe(false);
   });
 
   it("should not apply compliant or non-compliant class to ignored weeks", () => {
@@ -390,6 +435,7 @@ describe("UI Updates - Icon Class Management", () => {
     expect(container?.classList.contains("evaluated")).toBe(false);
     expect(container?.classList.contains("compliant")).toBe(false);
     expect(container?.classList.contains("non-compliant")).toBe(false);
+    expect(container?.classList.contains("ignored")).toBe(false);
   });
 });
 
@@ -740,7 +786,11 @@ describe("UI Updates - Integration Scenarios", () => {
       const icon = container?.querySelector(".week-status-icon") as HTMLElement;
 
       if (container?.classList.contains("compliant")) compliantCount++;
-      else if (icon?.textContent === "") ignoredCount++;
+      else if (
+        icon?.textContent === "" &&
+        !container?.classList.contains("ignored")
+      )
+        ignoredCount++;
     });
 
     expect(compliantCount).toBe(8);
