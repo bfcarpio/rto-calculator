@@ -213,7 +213,7 @@ const clearButtonId = `clear-${year}-${month}`;
      * Initialize clear button with proper accessibility
      */
     function initClearButton() {
-        // @ts-ignore - clearButtonId is defined via define:vars
+        // @ts-expect-error - clearButtonId is defined via define:vars
         const clearButton = document.getElementById(clearButtonId);
         const monthContainer = document.getElementById(monthId);
 
@@ -541,10 +541,6 @@ const clearButtonId = `clear-${year}-${month}`;
         font-size: 0.8rem;
         color: #718096;
         line-height: 1;
-    }
-
-    .week-status-icon.evaluating {
-        color: #ecc94b;
     }
 
     .week-status-icon.violation {

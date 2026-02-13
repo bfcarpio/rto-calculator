@@ -52,7 +52,7 @@ const months = Array.from({ length: 12 }, (_, index) => {
                 aria-live="polite"
             >
                 <span id="compliance-icon">✓</span>
-                <span id="compliance-text">Loading...</span>
+                <span id="compliance-text">Ready</span>
             </div>
         </header>
 
@@ -67,6 +67,9 @@ const months = Array.from({ length: 12 }, (_, index) => {
             </div>
 
 
+
+            <!-- Load validation scripts before inline scripts -->
+            <script src="/src/scripts/rtoValidation.ts"></script>
 
             <ActionButtons position="top" />
             <SettingsButton />
@@ -143,7 +146,13 @@ const months = Array.from({ length: 12 }, (_, index) => {
 
                         const clearedCount = selectedCells.length;
 
-                        // Clear everything: selections, highlights, and status icons
+                        // Clear all selections
+                        selectedCells.forEach((cell) => {
+                            (cell as HTMLElement).classList.remove("selected");
+                            (cell as HTMLElement).removeAttribute("data-selection-type");
+                        });
+
+                        // Clear validation highlights and status icons
                         if (
                             window.RTOValidation &&
                             window.RTOValidation.clearAllValidationHighlights
@@ -242,9 +251,6 @@ const months = Array.from({ length: 12 }, (_, index) => {
                 initExportButtons();
             }
         </script>
-
-    <!-- Load validation scripts in correct order -->
-    <script src="/src/scripts/rtoValidation.ts"></script>
 
         <style>
             .calendar-container {
