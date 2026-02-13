@@ -33,11 +33,11 @@ class NagerDateHolidayDataSource extends HolidayDataSourceStrategy {
 			const apiModule = await import("nager_date_api_reference");
 			const { ApiClient, PublicHolidayApi } = apiModule;
 
-			// Configure API client with custom base URL if provided
+			// Configure API client with explicit base URL to ensure correct endpoint
 			if (this.config.baseUrl) {
 				this.apiClient = new ApiClient(this.config.baseUrl);
 			} else {
-				this.apiClient = ApiClient.instance;
+				this.apiClient = new ApiClient("https://date.nager.at");
 			}
 
 			// Set timeout if provided
