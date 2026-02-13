@@ -26,43 +26,72 @@ When the sliding window validation found an overall valid result (average of bes
 
 ## Root Cause
 
-The status assignment logic in `runValidationWithHighlights()` checked the overall validation result BEFORE checking individual week compliance:
+The status assignment logic in `orchestrateValidation()` checked the overall validation result BEFORE checking individual week compliance. In the new 3-layer architecture, this has been corrected in `ValidationOrchestrator.ts`:
 
 ```typescript
-// BUGGY CODE (before fix):
-if (!week.isUnderEvaluation) {
-  week.status = "ignored";
-} else if (!isInvalid) {
-  // BUG: Marks all evaluated weeks as compliant when overall is valid
-  week.status = "compliant";
-} else if (week.weekStart.getTime() === invalidWeekStart) {
-  week.status = "invalid";
-} else {
-  week.status = "pending";
+// FIXED CODE (current implementation in ValidationOrchestrator.ts):
+for (const week of calendarData.weeks) {
+  const weekCopy = copyWeekInfo(week);
+
+  if (evaluatedTimestamps.has(week.weekStart.getTime())) {
+    weekCopy.isUnderEvaluation = true;
+    
+    // Check individual compliance FIRST (officeDays >= minOfficeDaysPerWeek)
+    if (!week.isCompliant) {
+      weekCopy.status = "invalid"; // ✗ Red X for individual violation
+    } else if (slidingWindowResult.isValid) {
+      weekCopy.status = "compliant"; // ✓ Green checkmark
+    } else {
+      weekCopy.status = "invalid"; // ✗ Red X for window violation
+    }
+  } else {
+    weekCopy.isUnderEvaluation = false;
+    weekCopy.status = "pending";
+  }
+  
+  // Additional check for lowest week in invalid window
+  if (
+    isInvalid &&
+    invalidWeekStart !== null &&
+    week.weekStart.getTime() === invalidWeekStart
+  ) {
+    weekCopy.status = "invalid";
+  }
+
+  evaluatedWeeks.push(weekCopy);
 }
 ```
 
-The issue was in the `else if (!isInvalid)` condition. When `isInvalid` was `false` (meaning overall validation passed), it immediately marked all evaluated weeks as compliant without checking if each individual week actually met the 3-day minimum.
+## Current 3-Layer Architecture
 
-## Solution
+The validation system now uses a 3-layer architecture to properly handle individual week compliance:
 
-Reordered the status assignment logic to check individual week compliance FIRST:
-
-```typescript
-// FIXED CODE (after fix):
-if (!week.isUnderEvaluation) {
-  week.status = "ignored";
-} else if (!week.isCompliant) {
-  // Check individual compliance FIRST
-  week.status = "invalid";
-} else if (!isInvalid) {
-  // Only mark as compliant if both individual AND overall are valid
-  week.status = "compliant";
-} else if (week.weekStart.getTime() === invalidWeekStart) {
-  week.status = "invalid";
-} else {
-  week.status = "pending";
-}
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ Layer 1: UI Controller (src/scripts/rto-ui-controller.ts)      │
+│                                                                  │
+│ - runValidationWithHighlights()                                  │
+│ - Reads calendar data, orchestrates validation                   │
+│ - Updates UI with results                                        │
+└──────────────────────────┬─────────────────────────────────────┘
+                           │
+┌──────────────────────────▼─────────────────────────────────────┐
+│ Layer 2: Data Reader (src/lib/calendar-data-reader.ts)           │
+│                                                                  │
+│ - readCalendarData() queries DOM once                          │
+│ - Calculates isCompliant per week (officeDays >= 3)            │
+│ - Returns WeekInfo[] with compliance status                      │
+└──────────────────────────┬─────────────────────────────────────┘
+                           │
+┌──────────────────────────▼─────────────────────────────────────┐
+│ Layer 3: Orchestrator (src/lib/validation/                     │
+│          ValidationOrchestrator.ts)                            │
+│                                                                  │
+│ - orchestrateValidation()                                        │
+│ - Runs sliding window validation via rto-core.ts                 │
+│ - Updates week statuses respecting individual compliance         │
+│ - updateWeekStatusCells() applies results to DOM               │
+└────────────────────────────────────────────────────────────────┘
 ```
 
 ## Status Logic After Fix
@@ -72,29 +101,143 @@ The corrected status assignment follows this decision tree:
 ```
 Week Status Decision Tree:
 │
-├─► Not in evaluated set?
-│   └─► YES → "ignored" (no icon)
-│   └─► NO  → Continue
+├─► Is week in evaluated set (best 8 of 12)?
+│   └─► NO → "pending" (not under evaluation)
+│   └─► YES → Continue
 │
-├─► Individual week has < 3 office days?
+├─► Does week have < 3 office days (individual violation)?
 │   └─► YES → "invalid" (Red ✗)
-│   └─► NO  → Continue
+│   └─► NO → Continue
 │
-├─► Overall validation is INVALID?
-│   ├─► YES → Check if this is the lowest office days week
+├─► Is overall window INVALID?
+│   ├─► YES → Is this the lowest-attendance week?
 │   │   ├─► YES → "invalid" (Red ✗)
-│   │   └─► NO  → "pending" (Hourglass ⏳)
-│   └─► NO  → "compliant" (Green ✓)
+│   │   └─► NO → "invalid" (Red ✗) or "pending" based on logic
+│   └─► NO → "compliant" (Green ✓)
 ```
 
 ## Changes Made
 
 ### 1. Core Logic Fix
-**File:** `src/scripts/rtoValidation.ts` (lines 525-537)
 
-Added individual week compliance check before overall validation check.
+**File:** `src/lib/validation/ValidationOrchestrator.ts` (lines 76-140)
 
-### 2. Test Coverage
+The orchestration layer now properly checks individual week compliance before overall validation:
+
+```typescript
+export function orchestrateValidation(
+  calendarData: CalendarDataResult,
+  config: Partial<RTOOrchestratorConfig> = {},
+): OrchestratedValidationResult {
+  const mergedConfig = { ...DEFAULT_ORCHESTRATOR_CONFIG, ...config };
+  const { policy } = mergedConfig;
+
+  // Convert WeekInfo to WeekCompliance for validation
+  const weeksForValidation = convertWeeksToCompliance(calendarData.weeks);
+
+  // Run sliding window validation
+  const slidingWindowResult = validateSlidingWindow(weeksForValidation, policy);
+
+  // Update week statuses based on validation results
+  const evaluatedTimestamps = new Set(slidingWindowResult.evaluatedWeekStarts);
+  const isInvalid = !slidingWindowResult.isValid;
+  const invalidWeekStart = slidingWindowResult.invalidWeekStart;
+
+  const evaluatedWeeks: WeekInfo[] = [];
+
+  for (const week of calendarData.weeks) {
+    const weekCopy = copyWeekInfo(week);
+
+    // Week is under evaluation if in the best 8 weeks
+    if (evaluatedTimestamps.has(week.weekStart.getTime())) {
+      weekCopy.isUnderEvaluation = true;
+      
+      // Check individual compliance FIRST
+      // week.isCompliant is set in calendar-data-reader.ts based on officeDays >= minOfficeDaysPerWeek
+      if (!week.isCompliant) {
+        weekCopy.status = "invalid"; // Individual violation - always red ✗
+      } else if (slidingWindowResult.isValid) {
+        weekCopy.status = "compliant"; // ✓ Green checkmark
+      } else {
+        // Window is invalid but this week meets minimum
+        // Mark as invalid if it's the lowest week, otherwise handled by UI
+        weekCopy.status = "invalid";
+      }
+    } else {
+      weekCopy.isUnderEvaluation = false;
+      weekCopy.status = "pending";
+    }
+
+    // If invalid and we have an invalid week start, mark that specific week
+    if (
+      isInvalid &&
+      invalidWeekStart !== null &&
+      week.weekStart.getTime() === invalidWeekStart
+    ) {
+      weekCopy.status = "invalid"; // ✗ This is the lowest-attendance week
+    }
+
+    evaluatedWeeks.push(weekCopy);
+  }
+
+  return {
+    slidingWindowResult,
+    evaluatedWeeks,
+    totalWeeksEvaluated: evaluatedWeeks.length,
+    compliancePercentage: slidingWindowResult.overallCompliance,
+    isValid: slidingWindowResult.isValid,
+    message: slidingWindowResult.message,
+  };
+}
+```
+
+### 2. Data Reader Individual Compliance
+
+**File:** `src/lib/calendar-data-reader.ts` (lines 200-267)
+
+Individual week compliance is calculated during data reading:
+
+```typescript
+// In readCalendarData() function
+for (const weekStartTimestamp of sortedWeekStarts) {
+  // ... gather day info ...
+  
+  // Calculate week statistics
+  const weekdayDays = days.filter((d) => d.isWeekday);
+  const holidayDays = days.filter((d) => d.isHoliday && d.isWeekday);
+  totalHolidayDays += holidayDays.length;
+  
+  const oofCount = days.filter(
+    (d) => d.selectionType === "out-of-office" && d.isWeekday && !d.isHoliday,
+  ).length;
+
+  // Office days = weekdays that are not OOF and not holidays
+  const officeDays = weekdayDays.length - holidayDays.length - oofCount;
+  const totalEffectiveDays = weekdayDays.length - holidayDays.length;
+  
+  // Individual compliance check - set in Data Reader layer
+  const isCompliant = officeDays >= mergedConfig.minOfficeDaysPerWeek;
+
+  const weekInfo: WeekInfo = {
+    weekStart,
+    weekNumber: weeks.length + 1,
+    days,
+    oofCount,
+    officeDays,
+    totalDays: totalEffectiveDays,
+    oofDays: oofCount,
+    isCompliant,  // ← Individual compliance calculated here
+    isUnderEvaluation: true,
+    status: isCompliant ? "compliant" : "invalid",
+    statusCellElement,
+  };
+
+  weeks.push(weekInfo);
+}
+```
+
+### 3. Test Coverage
+
 **File:** `src/utils/astro/__tests__/integration/uiUpdates.test.ts`
 
 Added new test: `"should mark individual non-compliant weeks as invalid even when overall validation is valid"`
@@ -104,11 +247,38 @@ This test verifies:
 - Compliant weeks are correctly marked as compliant
 - Status icons display correctly for each case
 
-### 3. Documentation Updates
+```typescript
+describe("UI Updates - Individual Week Compliance", () => {
+  it("should mark individual non-compliant weeks as invalid even when overall validation is valid", () => {
+    // Setup: Create weeks where overall is valid but one week violates individual minimum
+    const weeks = [
+      createMockWeek({ weekNumber: 1, officeDays: 3, isCompliant: true }),
+      createMockWeek({ weekNumber: 2, officeDays: 0, isCompliant: false }), // Violation!
+      createMockWeek({ weekNumber: 3, officeDays: 5, isCompliant: true }),
+      // ... more weeks to make overall average ≥ 60%
+    ];
+    
+    // Run validation
+    const result = orchestrateValidation(
+      { weeks, totalWeeks: weeks.length, totalHolidayDays: 0, readTimeMs: 0 },
+      DEFAULT_ORCHESTRATOR_CONFIG
+    );
+    
+    // Assert: Week 2 should be invalid even if overall is valid
+    const week2Result = result.evaluatedWeeks.find(w => w.weekNumber === 2);
+    expect(week2Result?.status).toBe("invalid");
+    expect(week2Result?.isCompliant).toBe(false);
+  });
+});
+```
+
+### 4. Documentation Updates
+
 **Files:** 
-- `docs/Plan.md` - Updated status icon descriptions
+- `docs/Plan.md` - Updated status icon descriptions with 3-layer architecture
 - `docs/Plan.md` - Updated flowchart to reflect corrected logic
-- `rollingvalidation.md` - Updated status icon code example
+- `docs/StatusColumn.md` - Updated status determination logic section
+- `docs/INTRO.md` - Added 3-layer architecture overview
 
 ## Impact
 
@@ -142,52 +312,28 @@ The RTO policy requires:
 
 The fix ensures that requirement #1 is **always** enforced, even when requirement #2 is met.
 
+## Current Implementation Files
+
+- **`src/lib/validation/ValidationOrchestrator.ts`** - Contains the fix in `orchestrateValidation()`
+- **`src/lib/calendar-data-reader.ts`** - Calculates `isCompliant` per week
+- **`src/scripts/rto-ui-controller.ts`** - UI controller that triggers validation
+- **`src/utils/astro/__tests__/integration/uiUpdates.test.ts`** - Test coverage
+- **`docs/Plan.md`** - Architecture documentation with 3-layer flow
+- **`docs/StatusColumn.md`** - Status column behavior documentation
+
 ## User Impact
 
 Users will now see:
 - ✓ **Green checkmark** only on weeks with ≥ 3 office days AND overall validation is valid
 - ✗ **Red X** on any week with < 3 office days (regardless of overall result)
 - ⏳ **Hourglass** on weeks in invalid windows that have ≥ 3 office days
-- **No icon** on weeks not in the evaluated set
+- **Empty** on weeks not in the evaluated set
 
-This provides complete transparency about which specific weeks violate the policy, and ignored weeks are clearly distinguished by having no status icon at all.
-
-## Additional Fix: Ignored Weeks Display
-
-### Problem
-Previously, weeks not in the evaluated 12-week window were displayed with a grey circle (○) icon, which could be confusing since these weeks weren't actually part of the validation.
-
-### Solution
-Changed the behavior so that weeks not in the evaluated set display **no icon at all**, making it clear that they are outside the validation window.
-
-### Changes Made
-1. **UI Logic** (`src/scripts/rtoValidation.ts`): Updated `updateWeekStatusIcon()` to set `iconElement.textContent = ""` and `srElement.textContent = ""` for ignored weeks, instead of showing a grey circle.
-
-2. **Test Updates** (`src/utils/astro/__tests__/integration/uiUpdates.test.ts`):
-   - Updated mock implementation to match the new behavior
-   - Changed test expectations to verify ignored weeks have empty icon text
-   - Updated class checks to verify ignored weeks don't have the "evaluated" class
-
-3. **Documentation**:
-   - Updated `docs/Plan.md` to show "(no icon)" for ignored weeks instead of "Grey ○"
-   - Updated `rollingvalidation.md` with corrected code examples
-   - Updated decision trees to reflect the new display logic
-
-### Benefits
-- **Clearer Visual Hierarchy**: Only validated weeks have status icons, making it immediately obvious which weeks are part of the evaluation
-- **Reduced Confusion**: Users won't mistakenly think ignored weeks have some validation status
-- **Better Accessibility**: Screen readers won't announce status information for non-evaluated weeks
-
-## Related Files
-
-- `src/scripts/rtoValidation.ts` - Contains the fix
-- `src/utils/astro/__tests__/integration/uiUpdates.test.ts` - Test coverage
-- `docs/Plan.md` - Architecture documentation
-- `rollingvalidation.md` - Technical implementation details
+This provides complete transparency about which specific weeks violate the policy.
 
 ## Date of Fix
 
-January 15, 2025
+January 2025 - Updated with 3-layer architecture in February 2025
 
 ## Verification
 
@@ -200,3 +346,29 @@ To verify the fix manually:
 5. **Expected Result**: The all-WFH week should show a red ✗ (invalid), even if the overall 8-week average is ≥ 60%
 
 The week with 0 office days will now always be identified as a violation, providing accurate compliance tracking.
+
+---
+
+## Architecture Benefits
+
+The 3-layer architecture that implements this fix provides:
+
+1. **Separation of Concerns**:
+   - Data Reader calculates individual compliance
+   - Orchestrator respects individual compliance when determining final status
+   - UI Controller only displays results
+
+2. **Testability**:
+   - Individual compliance logic can be tested in isolation
+   - Orchestrator logic can be tested with mock data
+   - UI updates can be tested separately
+
+3. **Maintainability**:
+   - Changes to individual compliance logic only affect Data Reader
+   - Changes to window validation only affect rto-core.ts
+   - Changes to status display only affect Orchestrator
+
+4. **Extensibility**:
+   - New validation modes can be added via Strategy Pattern
+   - Individual compliance rules can be adjusted in one place
+   - Status display can be enhanced without touching validation logic

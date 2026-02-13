@@ -20,7 +20,7 @@ The status column displays **four distinct states**, each with a unique visual i
 - CSS classes: `.week-status-container.evaluated.compliant`
 - Color: Green (default from `.compliant` class)
 
-**Screen reader text:** "Compliant week"
+**Screen reader text:** "Compliant"
 
 **Example scenario:**
 ```
@@ -45,7 +45,7 @@ Result: All 3 weeks show ✓
 - Additional class on icon: `.week-status-icon.violation`
 - Color: Red (bold, weight: 700)
 
-**Screen reader text:** "Invalid week - lowest office days in evaluated set"
+**Screen reader text:** "Not compliant"
 
 **Example scenario (individual violation):**
 ```
@@ -119,33 +119,48 @@ Result: Weeks outside of 12-week window show empty status
 
 ## Status Determination Logic
 
-The status is determined through the following decision tree:
+The status is determined in the **ValidationOrchestrator** through the following decision tree:
 
 ```typescript
-function determineWeekStatus(week, validation) {
-  // Step 1: Check if week is in the evaluation set
-  if (!isInEvaluatedWindow(week)) {
-    return "ignored"; // ○ Grey circle
-  }
+// In src/lib/validation/ValidationOrchestrator.ts
 
-  // Step 2: Check individual week compliance (3 office days minimum)
-  if (!hasMinimumOfficeDays(week)) {
-    return "invalid"; // ✗ Red X (individual violation)
+function determineWeekStatus(week: WeekInfo, validation: SlidingWindowResult): WeekStatus {
+  const evaluatedTimestamps = new Set(validation.evaluatedWeekStarts);
+  const isInvalid = !validation.isValid;
+  const invalidWeekStart = validation.invalidWeekStart;
+  
+  // Step 1: Check if week is in the evaluated set
+  if (!evaluatedTimestamps.has(week.weekStart.getTime())) {
+    week.status = "pending"; // Not in best 8
+    week.isUnderEvaluation = false;
+  } else {
+    week.isUnderEvaluation = true;
+    
+    // Step 2: Check overall window validity
+    if (isInvalid) {
+      // Step 3: Window is invalid - mark lowest week
+      if (invalidWeekStart !== null && 
+          week.weekStart.getTime() === invalidWeekStart) {
+        week.status = "invalid"; // ✗ Red X (lowest in invalid window)
+      } else {
+        week.status = validation.isValid ? "compliant" : "invalid";
+      }
+    } else {
+      // Step 4: Window is valid
+      week.status = "compliant"; // ✓ Green checkmark
+    }
   }
-
-  // Step 3: Check overall window validity
-  if (validation.isValid) {
-    return "compliant"; // ✓ Green checkmark
-  }
-
-  // Step 4: Window is invalid, identify lowest-attendance week
-  if (isLowestAttendanceWeek(week, validation)) {
-    return "invalid"; // ✗ Red X (window violation)
-  }
-
-  // Step 5: Remaining weeks in invalid window
-  return "pending"; // ⏳ Hourglass
 }
+```
+
+The UI layer (`src/scripts/rto-ui-controller.ts`) then applies these statuses to the DOM:
+
+```typescript
+// Step 4: Update week status cells in DOM
+const { updateWeekStatusCells } = await import(
+  "../lib/validation/ValidationOrchestrator"
+);
+updateWeekStatusCells(result.evaluatedWeeks);
 ```
 
 ## Visual Design
@@ -158,9 +173,10 @@ The status column is the first column in the calendar table:
 ┌────────┬──────────────────────────────────────┬──────┐
 │ Status │ Mon Tue Wed Thu Fri                 │ Week │
 ├────────┼──────────────────────────────────────┼──────┤
-│   ✓    │ [ ] [ ] [ ] [ ] [ ]                │ Jan 6 │
-│   ✗    │ [ ] [ ] [ ] [ ] [ ]                │ Jan 13│
-│   ○    │ [ ] [ ] [ ] [ ] [ ]                │ Jan 20│
+│   ✓    │ [ ] [ ] [ ] [ ] [ ]                │  02  │
+│   ✗    │ [ ] [ ] [ ] [ ] [ ]                │  03  │
+│   ⏳    │ [ ] [ ] [ ] [ ] [ ]                │  04  │
+│        │ [ ] [ ] [ ] [ ] [ ]                │  05  │  ← Ignored (no icon)
 └────────┴──────────────────────────────────────┴──────┘
 ```
 
@@ -215,7 +231,6 @@ The status column is the first column in the calendar table:
   transform: scale(0.85);
 }
 
-```css
 /* Ignored - Empty Status (no specific styles needed) */
 /* Weeks not in evaluation window have no status classes or icons */
 ```
@@ -228,10 +243,10 @@ Each status icon is accompanied by screen reader text for assistive technologies
 
 | Status | Icon | ARIA Label | Screen Reader Text |
 |--------|------|------------|-------------------|
-| Compliant | ✓ | "Week status indicator" | "Compliant week" |
-| Invalid | ✗ | "Week status indicator" | "Invalid week - lowest office days in evaluated set" |
+| Compliant | ✓ | "Week status indicator" | "Compliant" |
+| Invalid | ✗ | "Week status indicator" | "Not compliant" |
 | Pending | ⏳ | "Week status indicator" | "Pending evaluation - part of invalid window" |
-| Ignored | ○ | "Week status indicator" | "Ignored - not in evaluated weeks" |
+| Ignored | (empty) | "Week status indicator" | (empty) |
 
 ### HTML Structure
 
@@ -257,7 +272,7 @@ Each status icon is accompanied by screen reader text for assistive technologies
 
 ### DOM Structure
 
-The status cell is embedded in each week row of the calendar:
+The status cell is embedded in each week row of the calendar in `src/components/month.astro`:
 
 ```typescript
 // In month.astro - Status cell generation
@@ -276,10 +291,12 @@ The status cell is embedded in each week row of the calendar:
 
 ### Week Identification
 
-Weeks are uniquely identified by their start timestamp (Monday at midnight):
+Weeks are uniquely identified by their start timestamp (Monday at midnight) in `src/lib/calendar-data-reader.ts`:
 
 ```typescript
 // Week start calculation (Monday at 00:00:00.000)
+import { getStartOfWeek } from "../lib/validation/rto-core";
+
 const weekStart = getStartOfWeek(date);
 const weekKey = weekStart.getTime(); // Millisecond timestamp
 
@@ -288,67 +305,60 @@ const weekKey = weekStart.getTime(); // Millisecond timestamp
 
 ### Status Update Process
 
-The status column is updated during validation:
+The status column is updated during validation through the orchestrator layer:
 
 ```typescript
-// In rtoValidation.ts - Status update workflow
-function updateWeekStatusIcon(weekInfo: WeekInfo): void {
-  const { statusCellElement, status } = weekInfo;
+// In ValidationOrchestrator.ts - Status update workflow
+export function updateWeekStatusCells(evaluatedWeeks: WeekInfo[]): void {
+  for (const week of evaluatedWeeks) {
+    if (week.statusCellElement) {
+      const container = week.statusCellElement;
+      const iconElement = container.querySelector(".week-status-icon");
+      const srElement = container.querySelector(".sr-only");
 
-  // Find icon and screen reader elements
-  const iconElement = statusCellElement.querySelector(".week-status-icon");
-  const srElement = statusCellElement.querySelector(".sr-only");
+      if (iconElement) {
+        iconElement.textContent = "";
+        iconElement.classList.remove("violation", "least-attended");
+      }
+      if (srElement) {
+        srElement.textContent = "";
+      }
 
-  // Clear previous state
-  statusCellElement.classList.remove("evaluated", "compliant", "non-compliant", "ignored");
-  iconElement.classList.remove("violation", "least-attended");
-
-  // Apply new state based on status
-  switch (status) {
-    case "compliant":
-      statusCellElement.classList.add("evaluated", "compliant");
-      iconElement.textContent = "✓";
-      srElement.textContent = "Compliant week";
-      break;
-    case "invalid":
-      statusCellElement.classList.add("evaluated", "non-compliant");
-      iconElement.classList.add("violation");
-      iconElement.textContent = "✗";
-      srElement.textContent = "Invalid week - lowest office days in evaluated set";
-      break;
-    case "pending":
-      statusCellElement.classList.add("evaluated");
-      iconElement.classList.add("least-attended");
-      iconElement.textContent = "⏳";
-      srElement.textContent = "Pending evaluation - part of invalid window";
-      break;
-    case "ignored":
-    default:
-      statusCellElement.classList.add("ignored");
-      iconElement.textContent = "○";
-      srElement.textContent = "Ignored - not in evaluated weeks";
-      break;
+      if (week.status === "compliant" && iconElement && srElement) {
+        iconElement.textContent = "✓";
+        srElement.textContent = "Compliant";
+      } else if (week.status === "invalid" && iconElement && srElement) {
+        iconElement.textContent = "✗";
+        srElement.textContent = "Not compliant";
+      }
+    }
   }
 }
 ```
 
 ### Clearing Status
 
-When validation is cleared, all status icons are reset:
+When validation is cleared, all status icons are reset through the orchestrator:
 
 ```typescript
-function clearAllValidationHighlights(): void {
-  // Remove all status classes
-  statusCellElement.classList.remove(
-    "evaluated",
-    "compliant",
-    "non-compliant"
-  );
-  
-  // Clear icon and screen reader text
-  iconElement.textContent = "";
-  iconElement.classList.remove("violation", "least-attended");
-  srElement.textContent = "";
+// In ValidationOrchestrator.ts
+export function clearAllValidationHighlights(
+  statusContainerSelector: string = ".week-status-container",
+): void {
+  const statusCells = document.querySelectorAll(statusContainerSelector);
+
+  statusCells.forEach((cell) => {
+    const iconElement = cell.querySelector(".week-status-icon");
+    const srElement = cell.querySelector(".sr-only");
+
+    if (iconElement) {
+      iconElement.textContent = "";
+      iconElement.classList.remove("violation", "least-attended");
+    }
+    if (srElement) {
+      srElement.textContent = "";
+    }
+  });
 }
 ```
 
@@ -402,13 +412,13 @@ describe("UI Updates - Accessibility", () => {
    - ✓ Green: You're compliant! This week meets requirements
    - ✗ Red: Problem! This week needs attention
    - ⏳ Grey: Needs work when the window is invalid
-   - ○ Light grey: Not currently being evaluated
+   - (empty): Not currently being evaluated
 
 3. **Take action based on state:**
    - ✓ Compliant: No action needed
    - ✗ Invalid: Add more office days to this week
    - ⏳ Pending: Try to add office days to improve overall compliance
-   - ○ Ignored: Wait until this week enters the evaluation window
+   - (empty) Ignored: Wait until this week enters the evaluation window
 
 ### Common Scenarios
 
@@ -462,7 +472,7 @@ Result: First week ignored - Wait until you have more data
 
 ---
 
-### Issue: All weeks show grey circles (○)
+### Issue: All weeks show no status icons
 
 **Cause:** Calendar has insufficient data for 12-week evaluation
 
@@ -488,7 +498,7 @@ Result: First week ignored - Wait until you have more data
 
 - [Plan.md](./Plan.md) - Overall architecture and validation flow
 - [ValidationBugFix.md](./ValidationBugFix.md) - Details on validation bug fixes
-- [rollingvalidation.md](./rollingvalidation.md) - Sliding window validation algorithm
+- [INTRO.md](./INTRO.md) - Project architecture overview
 
 ## Changelog
 
@@ -502,6 +512,8 @@ Result: First week ignored - Wait until you have more data
 - ✅ Updated Plan.md documentation with correct evaluation window behavior
 - ✅ Updated StatusColumn.md documentation to reflect empty ignored status
 - ✅ Updated StatusColumnFixes.md with technical details
+- ✅ Refactored validation to use 3-layer architecture with ValidationOrchestrator
+- ✅ Migrated from rtoValidation.ts to new rto-ui-controller.ts layer
 
 ### Version 1.2
 - ✅ Fixed duplicate week numbers in week number column (initially used date format)
