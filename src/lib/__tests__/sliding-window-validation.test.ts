@@ -3,6 +3,15 @@
  *
  * Tests validateSlidingWindow() directly with various scenarios
  * to verify best-8-of-12 rolling window compliance logic.
+ *
+ * Coverage:
+ * - Empty / single week / partial window (< 12 weeks)
+ * - Full 12-week windows (exact boundary)
+ * - Multi-window sliding (> 12 weeks)
+ * - Threshold boundaries (exactly 60%, just below, just above)
+ * - Buffer weeks (best-8-of-12 drop logic)
+ * - Result shape: windowWeekStarts, evaluatedWeekStarts, message
+ * - Real-world scenarios: all WFH, Thu+Fri WFH + travel
  */
 
 import { describe, expect, it } from "vitest";
@@ -12,7 +21,9 @@ import {
 	type WeekCompliance,
 } from "../validation/rto-core";
 
-/** Helper: create a WeekCompliance object for a given Monday */
+// ─── Helpers ──────────────────────────────────────────────────────
+
+/** Create a single WeekCompliance for a given Monday */
 function makeWeek(
 	weekStart: Date,
 	officeDays: number,
@@ -34,7 +45,7 @@ function makeWeek(
 	};
 }
 
-/** Helper: create N consecutive weeks starting from a given Monday */
+/** Create N consecutive weeks starting from a given Monday */
 function makeWeeks(
 	startMonday: Date,
 	count: number,
@@ -49,152 +60,363 @@ function makeWeeks(
 	return weeks;
 }
 
+/** Concatenate multiple runs of weeks with different office day counts */
+function makeSchedule(
+	startMonday: Date,
+	...segments: [count: number, officeDays: number][]
+): WeekCompliance[] {
+	const weeks: WeekCompliance[] = [];
+	let offset = 0;
+	for (const [count, officeDays] of segments) {
+		const segStart = new Date(startMonday);
+		segStart.setDate(startMonday.getDate() + offset * 7);
+		weeks.push(...makeWeeks(segStart, count, officeDays));
+		offset += count;
+	}
+	// Fix weekNumbers to be sequential
+	weeks.forEach((w, i) => (w.weekNumber = i + 1));
+	return weeks;
+}
+
+const START = new Date(2025, 0, 6); // Monday Jan 6 2025
+
+// ─── Tests ────────────────────────────────────────────────────────
+
 describe("validateSlidingWindow", () => {
-	it("should return valid for empty weeks (fewer than window size)", () => {
-		const result = validateSlidingWindow([], DEFAULT_RTO_POLICY);
+	// ── Empty / trivial input ────────────────────────────────────
 
-		expect(result.isValid).toBe(true);
-		expect(result.overallCompliance).toBe(100);
+	describe("empty and trivial input", () => {
+		it("returns valid with 100% compliance for 0 weeks", () => {
+			const result = validateSlidingWindow([], DEFAULT_RTO_POLICY);
+
+			expect(result.isValid).toBe(true);
+			expect(result.overallCompliance).toBe(100);
+			expect(result.windowWeekStarts).toEqual([]);
+			expect(result.evaluatedWeekStarts).toEqual([]);
+		});
+
+		it("returns NOT valid for 1 week with 0 office days", () => {
+			const weeks = makeWeeks(START, 1, 0);
+			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
+
+			expect(result.isValid).toBe(false);
+			expect(result.overallCompliance).toBe(0);
+			expect(result.windowWeekStarts).toHaveLength(1);
+			expect(result.evaluatedWeekStarts).toHaveLength(1);
+		});
+
+		it("returns valid for 1 week with 3 office days (at threshold)", () => {
+			const weeks = makeWeeks(START, 1, 3);
+			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
+
+			expect(result.isValid).toBe(true);
+			expect(result.overallCompliance).toBe(60);
+		});
+
+		it("returns NOT valid for 1 week with 2 office days (below threshold)", () => {
+			const weeks = makeWeeks(START, 1, 2);
+			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
+
+			expect(result.isValid).toBe(false);
+			expect(result.overallCompliance).toBe(40);
+		});
 	});
 
-	it("should return valid for fewer than 12 weeks with good attendance", () => {
-		const start = new Date(2025, 0, 6); // Monday Jan 6
-		const weeks = makeWeeks(start, 8, 5); // 8 weeks, all 5-day
+	// ── Partial windows (< 12 weeks) ────────────────────────────
 
-		const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
+	describe("partial windows (fewer than 12 weeks)", () => {
+		it("evaluates all available weeks (no drop buffer)", () => {
+			// 8 weeks: 4 good (3 days) + 4 bad (0 days)
+			// In a full 12-week window the 4 bad would be dropped,
+			// but with only 8 weeks there's no buffer — all 8 are evaluated.
+			// Best 8 of 8 = avg (4*3 + 4*0)/8 = 1.5 days = 30% < 60%
+			const weeks = makeSchedule(START, [4, 3], [4, 0]);
+			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
 
-		expect(result.isValid).toBe(true);
+			expect(result.isValid).toBe(false);
+			expect(result.evaluatedWeekStarts).toHaveLength(8);
+			expect(result.windowWeekStarts).toHaveLength(8);
+		});
+
+		it("returns valid for 6 good weeks", () => {
+			const weeks = makeWeeks(START, 6, 4);
+			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
+
+			expect(result.isValid).toBe(true);
+			expect(result.overallCompliance).toBe(80);
+			expect(result.evaluatedWeekStarts).toHaveLength(6);
+		});
+
+		it("returns NOT valid for 6 weeks all WFH", () => {
+			const weeks = makeWeeks(START, 6, 0);
+			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
+
+			expect(result.isValid).toBe(false);
+			expect(result.overallCompliance).toBe(0);
+		});
+
+		it("includes correct windowStart for partial window", () => {
+			const weeks = makeWeeks(START, 5, 5);
+			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
+
+			expect(result.windowStart).toBe(START.getTime());
+		});
+
+		it("message says 'Best N of M' for partial windows", () => {
+			const weeks = makeWeeks(START, 5, 5);
+			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
+
+			expect(result.message).toContain("Best 5 of 5 weeks");
+		});
 	});
 
-	it("should return NOT valid for fewer than 12 weeks with bad attendance", () => {
-		const start = new Date(2025, 0, 6);
-		const weeks = makeWeeks(start, 6, 0); // 6 weeks, all 0-day
+	// ── Exact 12-week boundary ──────────────────────────────────
 
-		const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
+	describe("exactly 12 weeks (single full window)", () => {
+		it("all 5-day weeks → valid", () => {
+			const weeks = makeWeeks(START, 12, 5);
+			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
 
-		expect(result.isValid).toBe(false);
-		expect(result.overallCompliance).toBe(0);
+			expect(result.isValid).toBe(true);
+			expect(result.overallCompliance).toBe(100);
+			expect(result.windowWeekStarts).toHaveLength(12);
+			expect(result.evaluatedWeekStarts).toHaveLength(8);
+		});
+
+		it("all 0-day weeks → NOT valid", () => {
+			const weeks = makeWeeks(START, 12, 0);
+			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
+
+			expect(result.isValid).toBe(false);
+			expect(result.overallCompliance).toBe(0);
+		});
+
+		it("8 good + 4 bad → valid (bad weeks are dropped)", () => {
+			// Best 8 of 12: pick the 8 good weeks (3 days each)
+			// Average = 3.0 days = 60% → exactly at threshold
+			const weeks = makeSchedule(START, [8, 3], [4, 0]);
+			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
+
+			expect(result.isValid).toBe(true);
+			expect(result.overallCompliance).toBe(60);
+		});
+
+		it("7 good + 5 bad → NOT valid (not enough good weeks to fill best 8)", () => {
+			// Best 8 of 12: 7 weeks of 3 + 1 week of 0 = 21/40 = 52.5%
+			const weeks = makeSchedule(START, [7, 3], [5, 0]);
+			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
+
+			expect(result.isValid).toBe(false);
+			expect(result.overallCompliance).toBeCloseTo(52.5, 0);
+		});
+
+		it("dropped weeks are NOT in evaluatedWeekStarts", () => {
+			const weeks = makeSchedule(START, [8, 5], [4, 0]);
+			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
+
+			expect(result.isValid).toBe(true);
+			// evaluatedWeekStarts should have 8 entries (the best 8)
+			expect(result.evaluatedWeekStarts).toHaveLength(8);
+			// windowWeekStarts should have all 12
+			expect(result.windowWeekStarts).toHaveLength(12);
+			// The 4 bad weeks should NOT be in evaluatedWeekStarts
+			const badWeekTimestamps = weeks
+				.slice(8)
+				.map((w) => w.weekStart.getTime());
+			for (const ts of badWeekTimestamps) {
+				expect(result.evaluatedWeekStarts).not.toContain(ts);
+			}
+		});
 	});
 
-	it("should return valid when all weeks have 5 office days", () => {
-		const start = new Date(2025, 0, 6);
-		const weeks = makeWeeks(start, 20, 5);
+	// ── Multi-window sliding (> 12 weeks) ───────────────────────
 
-		const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
+	describe("multi-window sliding (> 12 weeks)", () => {
+		it("all good weeks over 20 weeks → valid", () => {
+			const weeks = makeWeeks(START, 20, 5);
+			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
 
-		expect(result.isValid).toBe(true);
-		expect(result.overallCompliance).toBe(100);
+			expect(result.isValid).toBe(true);
+			expect(result.overallCompliance).toBe(100);
+		});
+
+		it("3 days/week for 20 weeks → valid (at threshold in every window)", () => {
+			const weeks = makeWeeks(START, 20, 3);
+			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
+
+			expect(result.isValid).toBe(true);
+			expect(result.overallCompliance).toBe(60);
+		});
+
+		it("detects failure in earliest window even if later windows pass", () => {
+			// Weeks 1-12: 5 bad + 7 low (2 days) → best 8 = 7×2+1×0 = 14/40 = 35%
+			// Later windows shift in good weeks and eventually pass
+			const weeks = makeSchedule(START, [5, 0], [7, 2], [5, 5]);
+			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
+
+			expect(result.isValid).toBe(false);
+			expect(result.windowStart).toBe(START.getTime());
+		});
+
+		it("returns the last window when all pass", () => {
+			const weeks = makeWeeks(START, 15, 4);
+			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
+
+			expect(result.isValid).toBe(true);
+			// Last window starts at index 3 (weeks 4-15)
+			const expectedStart = new Date(START);
+			expectedStart.setDate(START.getDate() + 3 * 7);
+			expect(result.windowStart).toBe(expectedStart.getTime());
+		});
 	});
 
-	it("should return valid for Thu+Fri WFH every week (3 days/week = at threshold)", () => {
-		// 3 office days per week = exactly 60% threshold
-		const start = new Date(2025, 0, 6);
-		const weeks = makeWeeks(start, 20, 3);
+	// ── Threshold boundary tests ────────────────────────────────
 
-		const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
+	describe("threshold boundaries", () => {
+		it("exactly 60% (3/5 days) → valid", () => {
+			const weeks = makeWeeks(START, 12, 3);
+			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
 
-		expect(result.isValid).toBe(true);
-		expect(result.overallCompliance).toBe(60);
+			expect(result.isValid).toBe(true);
+			expect(result.overallCompliance).toBe(60);
+		});
+
+		it("just below 60% (2 days/week = 40%) → NOT valid", () => {
+			const weeks = makeWeeks(START, 12, 2);
+			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
+
+			expect(result.isValid).toBe(false);
+			expect(result.overallCompliance).toBe(40);
+		});
+
+		it("just above 60% (mix that averages to ~62.5%) → valid", () => {
+			// 8 best weeks: 4 weeks of 4 days + 4 weeks of 2 days (dropped)
+			// + 4 weeks of 3 days → best 8 = 4×4 + 4×3 = 28/40 = 70%
+			const weeks = makeSchedule(START, [4, 4], [4, 2], [4, 3]);
+			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
+
+			expect(result.isValid).toBe(true);
+			expect(result.overallCompliance).toBeGreaterThan(60);
+		});
 	});
 
-	it("should return NOT valid for Thu+Fri WFH + 5 weeks travel (0 office days)", () => {
-		// 12 weeks: 7 weeks with 3 office days, 5 weeks with 0 office days
-		// Best 8 of 12: pick 7 weeks of 3 + 1 week of 0 = 21 office days
-		// Average = 21/8 = 2.625 days, 21/40 = 52.5% < 60%
-		const start = new Date(2025, 0, 6);
-		const normalWeeks = makeWeeks(start, 7, 3);
-		const travelStart = new Date(start);
-		travelStart.setDate(start.getDate() + 7 * 7);
-		const travelWeeks = makeWeeks(travelStart, 5, 0);
-		const weeks = [...normalWeeks, ...travelWeeks];
+	// ── Real-world scenarios ────────────────────────────────────
 
-		const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
+	describe("real-world scenarios", () => {
+		it("Thu+Fri WFH every week (3 days) + 4 weeks travel → valid", () => {
+			// 8 weeks of 3 + 4 weeks of 0 = best 8 has 3.0 avg = 60%
+			const weeks = makeSchedule(START, [8, 3], [4, 0]);
+			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
 
-		expect(result.isValid).toBe(false);
-		expect(result.overallCompliance).toBeLessThan(60);
+			expect(result.isValid).toBe(true);
+			expect(result.overallCompliance).toBe(60);
+		});
+
+		it("Thu+Fri WFH every week (3 days) + 5 weeks travel → NOT valid", () => {
+			// 7 weeks of 3 + 5 weeks of 0 = best 8 = 7×3+1×0 = 21/40 = 52.5%
+			const weeks = makeSchedule(START, [7, 3], [5, 0]);
+			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
+
+			expect(result.isValid).toBe(false);
+			expect(result.overallCompliance).toBeLessThan(60);
+		});
+
+		it("entire calendar marked WFH (0 days for 52 weeks) → NOT valid", () => {
+			const weeks = makeWeeks(START, 52, 0);
+			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
+
+			expect(result.isValid).toBe(false);
+			expect(result.overallCompliance).toBe(0);
+			// Should fail on the very first window
+			expect(result.windowStart).toBe(START.getTime());
+		});
+
+		it("one bad week surrounded by good weeks → valid (buffer absorbs)", () => {
+			// 11 good + 1 bad = best 8 are all good
+			const weeks = makeSchedule(START, [11, 5], [1, 0]);
+			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
+
+			expect(result.isValid).toBe(true);
+			expect(result.overallCompliance).toBe(100);
+		});
+
+		it("alternating good/bad weeks over 24 weeks → depends on window", () => {
+			// Every other week: 5 days, 0 days, 5 days, 0 days...
+			// In any 12-week window: 6 good + 6 bad
+			// Best 8: 6×5 + 2×0 = 30/40 = 75% → valid
+			const weeks: WeekCompliance[] = [];
+			for (let i = 0; i < 24; i++) {
+				const ws = new Date(START);
+				ws.setDate(START.getDate() + i * 7);
+				weeks.push(makeWeek(ws, i % 2 === 0 ? 5 : 0, i + 1));
+			}
+			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
+
+			expect(result.isValid).toBe(true);
+		});
 	});
 
-	it("should return valid for Thu+Fri WFH + 4 weeks travel (buffer absorbs)", () => {
-		// 12 weeks: 8 weeks with 3 office days, 4 weeks with 0 office days
-		// Best 8 of 12: pick 8 weeks of 3 = 24 office days
-		// Average = 24/8 = 3.0 days, 24/40 = 60% >= 60%
-		const start = new Date(2025, 0, 6);
-		const normalWeeks = makeWeeks(start, 8, 3);
-		const travelStart = new Date(start);
-		travelStart.setDate(start.getDate() + 8 * 7);
-		const travelWeeks = makeWeeks(travelStart, 4, 0);
-		const weeks = [...normalWeeks, ...travelWeeks];
+	// ── Result shape validation ─────────────────────────────────
 
-		const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
+	describe("result shape", () => {
+		it("full window result has exactly 12 windowWeekStarts", () => {
+			const weeks = makeWeeks(START, 12, 5);
+			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
 
-		expect(result.isValid).toBe(true);
-		expect(result.overallCompliance).toBe(60);
-	});
+			expect(result.windowWeekStarts).toHaveLength(12);
+		});
 
-	it("should return valid for single bad week in 12-week window (3 buffer weeks)", () => {
-		// 11 weeks with 5 office days + 1 week with 0
-		// Best 8: all have 5 days, buffer absorbs the bad week
-		const start = new Date(2025, 0, 6);
-		const goodWeeks = makeWeeks(start, 11, 5);
-		const badWeekStart = new Date(start);
-		badWeekStart.setDate(start.getDate() + 11 * 7);
-		const badWeek = makeWeek(badWeekStart, 0, 12);
-		const weeks = [...goodWeeks, badWeek];
+		it("full window result has exactly 8 evaluatedWeekStarts", () => {
+			const weeks = makeWeeks(START, 12, 5);
+			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
 
-		const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
+			expect(result.evaluatedWeekStarts).toHaveLength(8);
+		});
 
-		expect(result.isValid).toBe(true);
-		expect(result.overallCompliance).toBe(100);
-	});
+		it("evaluatedWeekStarts is a subset of windowWeekStarts", () => {
+			const weeks = makeSchedule(START, [8, 5], [4, 0]);
+			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
 
-	it("should detect failure in earlier window even if later windows pass", () => {
-		// Window 1 (weeks 1-12): 5 bad (0 days) + 7 weeks with 2 days
-		//   Best 8 = 7 weeks of 2 + 1 week of 0 = 14/40 = 35% < 60% → FAILS
-		// Window 2+ shifts and eventually has enough good weeks → might pass
-		const start = new Date(2025, 0, 6);
-		const badWeeks = makeWeeks(start, 5, 0);
-		const midStart = new Date(start);
-		midStart.setDate(start.getDate() + 5 * 7);
-		const lowWeeks = makeWeeks(midStart, 7, 2);
-		const goodStart = new Date(midStart);
-		goodStart.setDate(midStart.getDate() + 7 * 7);
-		const goodWeeks = makeWeeks(goodStart, 5, 5);
-		const weeks = [...badWeeks, ...lowWeeks, ...goodWeeks];
+			const windowSet = new Set(result.windowWeekStarts);
+			for (const ts of result.evaluatedWeekStarts) {
+				expect(windowSet.has(ts)).toBe(true);
+			}
+		});
 
-		const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
+		it("invalidWeekStart is null when valid", () => {
+			const weeks = makeWeeks(START, 12, 5);
+			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
 
-		expect(result.isValid).toBe(false);
-		// windowStart should be the first window
-		expect(result.windowStart).toBe(start.getTime());
-	});
+			expect(result.invalidWeekStart).toBeNull();
+		});
 
-	it("should return the last valid window when all pass", () => {
-		const start = new Date(2025, 0, 6);
-		const weeks = makeWeeks(start, 15, 4); // 15 weeks, all 4-day
+		it("invalidWeekStart points to worst evaluated week when invalid", () => {
+			const weeks = makeSchedule(START, [5, 0], [7, 3]);
+			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
 
-		const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
+			expect(result.isValid).toBe(false);
+			expect(result.invalidWeekStart).not.toBeNull();
+			// Should be a 0-day week (one of the bad ones that got into best 8)
+			const invalidWeek = weeks.find(
+				(w) => w.weekStart.getTime() === result.invalidWeekStart,
+			);
+			expect(invalidWeek).toBeDefined();
+			expect(invalidWeek!.officeDays).toBe(0);
+		});
 
-		expect(result.isValid).toBe(true);
-		// windowStart should be for the last window (week 4, index 3)
-		const expectedLastWindowStart = new Date(start);
-		expectedLastWindowStart.setDate(start.getDate() + 3 * 7);
-		expect(result.windowStart).toBe(expectedLastWindowStart.getTime());
-	});
+		it("message contains 'Compliant' when valid", () => {
+			const weeks = makeWeeks(START, 12, 5);
+			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
 
-	it("should identify best 8 weeks (evaluatedWeekStarts) in the failing window", () => {
-		const start = new Date(2025, 0, 6);
-		// 12 weeks: first 5 with 0 days, last 7 with 3 days
-		const badWeeks = makeWeeks(start, 5, 0);
-		const goodStart = new Date(start);
-		goodStart.setDate(start.getDate() + 5 * 7);
-		const goodWeeks = makeWeeks(goodStart, 7, 3);
-		const weeks = [...badWeeks, ...goodWeeks];
+			expect(result.message).toContain("Compliant");
+			expect(result.message).not.toContain("Not compliant");
+		});
 
-		const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
+		it("message contains 'Not compliant' when invalid", () => {
+			const weeks = makeWeeks(START, 12, 0);
+			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
 
-		expect(result.isValid).toBe(false);
-		// The best 8 should include all 7 good weeks + 1 bad week
-		expect(result.evaluatedWeekStarts.length).toBe(8);
-		expect(result.windowWeekStarts.length).toBe(12);
+			expect(result.message).toContain("Not compliant");
+		});
 	});
 });
