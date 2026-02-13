@@ -40,26 +40,6 @@ export async function getTargetDays(page: Page): Promise<number> {
 }
 
 /**
- * Select validation mode
- */
-export async function selectValidationMode(
-	page: Page,
-	mode: "strict" | "average4" | "average12",
-): Promise<void> {
-	const radio = page.locator(`input[name="validationMode"][value="${mode}"]`);
-	await radio.click();
-}
-
-/**
- * Get the currently selected validation mode
- */
-export async function getSelectedValidationMode(page: Page): Promise<string> {
-	const selected = page.locator('input[name="validationMode"]:checked');
-	const value = await selected.getAttribute("value");
-	return value ?? "strict";
-}
-
-/**
  * Check if settings modal is open
  */
 export async function isSettingsOpen(page: Page): Promise<boolean> {

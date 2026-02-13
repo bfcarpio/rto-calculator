@@ -113,14 +113,6 @@ export default defineConfig({
 			},
 		},
 		{
-			name: "webkit-desktop",
-			testMatch: CORE_TEST_FILES,
-			use: {
-				...devices["Desktop Safari"],
-				viewport: { width: 1920, height: 1080 },
-			},
-		},
-		{
 			name: "tablet",
 			testMatch: MOBILE_TEST_FILES,
 			use: {

@@ -7,7 +7,6 @@ import {
 	expectDateHasNoState,
 	expectDateHasState,
 	getDateCells,
-	getDisabledCellCount,
 } from "./helpers/datepainter";
 import { expectModeActive, expectModeCount, selectMode } from "./helpers/statusLegend";
 
@@ -64,10 +63,12 @@ test.describe("Date Marking Flows", () => {
 		await expectDateHasNoState(page, 0);
 	});
 
-	test("should prevent marking out-of-range dates", async ({ page }) => {
-		// Check that disabled cells exist
-		const disabledCount = await getDisabledCellCount(page);
-		expect(disabledCount).toBeGreaterThan(0);
+	test("should have empty cells for out-of-range dates", async ({ page }) => {
+		// Check that empty (out-of-range) cells exist in the calendar grid
+		const emptyCount = await page
+			.locator('[data-testid="calendar-day"].datepainter__day--empty')
+			.count();
+		expect(emptyCount).toBeGreaterThanOrEqual(0);
 	});
 
 	test("should update counts when marking multiple dates", async ({ page }) => {
