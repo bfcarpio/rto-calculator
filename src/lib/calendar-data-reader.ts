@@ -100,6 +100,20 @@ function getSickDaysPenalizeSetting(): boolean {
 }
 
 /**
+ * Read the holidayPenalize setting from localStorage
+ */
+function getHolidayPenalizeSetting(): boolean {
+	try {
+		const saved = localStorage.getItem("rto-calculator-settings");
+		if (!saved) return true; // default: holidays penalize
+		const settings = JSON.parse(saved);
+		return settings.holidayPenalize !== false; // default true
+	} catch {
+		return true;
+	}
+}
+
+/**
  * Read calendar data from datepainter API into pure data structure
  *
  * This function queries the calendar manager's internal state and builds a complete data model.
@@ -139,8 +153,9 @@ export async function readCalendarData(
 	// Get the full calendar range
 	const range = getDateRange();
 
-	// Read sick-penalize setting
+	// Read penalize settings
 	const sickDaysPenalize = getSickDaysPenalizeSetting();
+	const holidayPenalize = getHolidayPenalizeSetting();
 
 	// Iterate through ALL Monday-aligned weeks in the calendar range
 	const weeks: WeekInfo[] = [];
@@ -208,18 +223,22 @@ export async function readCalendarData(
 		if (days.length > 0) {
 			totalHolidayDays += holidayCount;
 
-			// Office days = weekdays that are not OOF, not holidays, and (if penalizing) not sick
-			let officeDays: number;
-			let totalEffectiveDays: number;
+			// Office days = weekdays minus OOF, minus penalized day types
+			// Penalize ON: day type reduces officeDays (counts against you)
+			// Penalize OFF: day type reduces totalEffectiveDays (excused absence)
+			let officeDays = WEEKDAY_COUNT - oofCount;
+			let totalEffectiveDays = WEEKDAY_COUNT;
+
+			if (holidayPenalize) {
+				officeDays -= holidayCount;
+			} else {
+				totalEffectiveDays -= holidayCount;
+			}
 
 			if (sickDaysPenalize) {
-				// Sick days reduce office days (like OOF)
-				officeDays = WEEKDAY_COUNT - holidayCount - oofCount - sickCount;
-				totalEffectiveDays = WEEKDAY_COUNT - holidayCount;
+				officeDays -= sickCount;
 			} else {
-				// Sick days reduce effective total (don't penalize)
-				officeDays = WEEKDAY_COUNT - holidayCount - oofCount;
-				totalEffectiveDays = WEEKDAY_COUNT - holidayCount - sickCount;
+				totalEffectiveDays -= sickCount;
 			}
 
 			const isCompliant = officeDays >= mergedConfig.minOfficeDaysPerWeek;

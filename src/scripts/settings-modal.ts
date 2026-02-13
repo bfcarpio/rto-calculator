@@ -10,6 +10,7 @@ interface Settings {
 	defaultPattern: number[] | null;
 	holidays: { countryCode: string | null; holidaysAsOOF: boolean };
 	sickDaysPenalize: boolean;
+	holidayPenalize: boolean;
 }
 
 declare global {
@@ -42,6 +43,7 @@ class SettingsModal {
 	private selectedPattern: number[] = [];
 	private holidayOofToggle: HTMLButtonElement | null = null;
 	private sickPenalizeToggle: HTMLButtonElement | null = null;
+	private holidayPenalizeToggle: HTMLButtonElement | null = null;
 
 	constructor() {
 		initializeIndex();
@@ -86,6 +88,9 @@ class SettingsModal {
 		) as HTMLButtonElement | null;
 		this.sickPenalizeToggle = document.getElementById(
 			"sick-penalize-toggle",
+		) as HTMLButtonElement | null;
+		this.holidayPenalizeToggle = document.getElementById(
+			"holiday-penalize-toggle",
 		) as HTMLButtonElement | null;
 	}
 
@@ -135,6 +140,9 @@ class SettingsModal {
 		);
 		this.sickPenalizeToggle?.addEventListener("click", () =>
 			this.toggleSickPenalize(),
+		);
+		this.holidayPenalizeToggle?.addEventListener("click", () =>
+			this.toggleHolidayPenalize(),
 		);
 	}
 
@@ -189,6 +197,22 @@ class SettingsModal {
 		this.saveSettingsToLocalStorage();
 		debugLog(
 			`[Settings] Sick days penalize ${newState ? "enabled" : "disabled"}`,
+		);
+	}
+
+	private toggleHolidayPenalize(): void {
+		if (!this.holidayPenalizeToggle) return;
+		const currentState =
+			this.holidayPenalizeToggle.getAttribute("aria-checked") === "true";
+		const newState = !currentState;
+		this.holidayPenalizeToggle.setAttribute(
+			"aria-checked",
+			newState.toString(),
+		);
+
+		this.saveSettingsToLocalStorage();
+		debugLog(
+			`[Settings] Holiday penalize ${newState ? "enabled" : "disabled"}`,
 		);
 	}
 
@@ -285,6 +309,7 @@ class SettingsModal {
 		);
 
 		this.sickPenalizeToggle?.setAttribute("aria-checked", "true");
+		this.holidayPenalizeToggle?.setAttribute("aria-checked", "true");
 
 		localStorage.removeItem("rto-calculator-settings");
 		debugLog("[Settings] Settings reset to defaults");
@@ -423,6 +448,8 @@ class SettingsModal {
 			},
 			sickDaysPenalize:
 				this.sickPenalizeToggle?.getAttribute("aria-checked") !== "false",
+			holidayPenalize:
+				this.holidayPenalizeToggle?.getAttribute("aria-checked") !== "false",
 		};
 
 		localStorage.setItem("rto-calculator-settings", JSON.stringify(settings));
@@ -497,6 +524,16 @@ class SettingsModal {
 				this.sickPenalizeToggle.setAttribute(
 					"aria-checked",
 					settings.sickDaysPenalize.toString(),
+				);
+			}
+
+			if (
+				settings.holidayPenalize !== undefined &&
+				this.holidayPenalizeToggle
+			) {
+				this.holidayPenalizeToggle.setAttribute(
+					"aria-checked",
+					settings.holidayPenalize.toString(),
 				);
 			}
 
