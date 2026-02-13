@@ -41,6 +41,17 @@
     cursor: not-allowed;
   }
 
+  /* Add data-testid for week rows - targeting the row element */
+  :global(.air-datepicker-body--day-cells) {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  :global(.air-datepicker-body--cells.-days-) {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
   /* Selected date styling */
   :global(.air-datepicker-cell.-selected-) {
     font-weight: bold;
@@ -119,21 +130,43 @@
 
         const isInRange = isDateInRange(date, dateRange);
         const dateState = getDateState(date);
+        const year = date.getFullYear();
+        const month = date.getMonth();
+        const day = date.getDate();
 
         if (!isInRange) {
           return {
             disabled: true,
             classes: '-disabled-',
+            attrs: {
+              'data-testid': 'calendar-day',
+              'data-year': String(year),
+              'data-month': String(month),
+              'data-day': String(day),
+            }
           };
         }
 
         if (dateState) {
           return {
             classes: `-${dateState}-`,
+            attrs: {
+              'data-testid': 'calendar-day',
+              'data-year': String(year),
+              'data-month': String(month),
+              'data-day': String(day),
+            }
           };
         }
 
-        return {};
+        return {
+          attrs: {
+            'data-testid': 'calendar-day',
+            'data-year': String(year),
+            'data-month': String(month),
+            'data-day': String(day),
+          }
+        };
       },
 
       // Handle date selection

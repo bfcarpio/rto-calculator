@@ -481,22 +481,6 @@ export class HolidayManager {
 	}
 
 	/**
-	 * Get available countries from the data source
-	 */
-	public async getAvailableCountries(): Promise<
-		Array<{ code: string; name: string }>
-	> {
-		if (!this.dataSource) {
-			throw new Error(
-				"HolidayManager data source not initialized. " +
-					"Call initialize() before fetching countries.",
-			);
-		}
-
-		return this.dataSource.getAvailableCountries();
-	}
-
-	/**
 	 * Check if a country has company filters available
 	 */
 	public hasCompanyFilters(countryCode: string): boolean {

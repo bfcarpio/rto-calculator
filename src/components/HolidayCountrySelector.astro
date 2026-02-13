@@ -152,13 +152,15 @@
 </style>
 
 <script>
-  import { getHolidayManager } from '../lib/holiday/HolidayManager';
+  import { ApiClient, CountryApi, PublicHolidayApi } from 'nager_date_api_reference';
   import { getDateStore } from '../lib/dateStore';
 
   const countrySelect = document.getElementById('country-select') as HTMLSelectElement;
   const addButton = document.getElementById('add-holidays-button') as HTMLButtonElement;
   const statusDiv = document.getElementById('holiday-status');
   const dateStore = getDateStore();
+
+  const BASE_URL = 'https://date.nager.at';
 
   async function loadCountries() {
     try {
@@ -167,18 +169,26 @@
         statusDiv.textContent = 'Loading countries...';
       }
 
-      // Use HolidayManager (strategy pattern) to get countries
-      const manager = await getHolidayManager();
-      const countries = await manager.getAvailableCountries();
-      
+      const apiClient = new ApiClient(BASE_URL);
+      const countryApi = new CountryApi(apiClient);
+
+      const countries = await new Promise<Array<{ countryCode: string; name: string }>>((resolve, reject) => {
+        countryApi.apiV3AvailableCountriesGet((error: Error | null, data: Array<{ countryCode: string; name: string }> | null | undefined) => {
+          if (error) reject(error);
+          else resolve(data || []);
+        });
+      });
+
       // Populate dropdown
       countrySelect.innerHTML = '<option value="">Select a country...</option>';
-      countries.forEach((country) => {
-        const option = document.createElement('option');
-        option.value = country.code;
-        option.textContent = country.name;
-        countrySelect.appendChild(option);
-      });
+      countries
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .forEach((country) => {
+          const option = document.createElement('option');
+          option.value = country.countryCode;
+          option.textContent = country.name;
+          countrySelect.appendChild(option);
+        });
       
       countrySelect.disabled = false;
       
@@ -209,36 +219,27 @@
       }
       addButton.disabled = true;
 
-      // Calculate years needed to cover date range
-      const dateRange = dateStore.getDateRange();
-      const startYear = dateRange.startDate.getFullYear();
-      const endYear = dateRange.endDate.getFullYear();
-      
-      // Create array of all years in the range
-      const years: number[] = [];
-      for (let year = startYear; year <= endYear; year++) {
-        years.push(year);
-      }
+      const currentYear = new Date().getFullYear();
+      const apiClient = new ApiClient(BASE_URL);
+      const holidayApi = new PublicHolidayApi(apiClient);
 
-      // Use HolidayManager (strategy pattern) to fetch holidays
-      const manager = await getHolidayManager();
-      const result = await manager.fetchHolidays({
-        countryCode,
-        years,
+      const holidays = await new Promise<Array<{ date: string; name: string; localName: string }>>((resolve, reject) => {
+        holidayApi.apiV3PublicHolidaysYearCountryCodeGet(currentYear, countryCode, (error: Error | null, data: Array<{ date: string; name: string; localName: string }> | null | undefined) => {
+          if (error) reject(error);
+          else resolve((data || []).map((h: { date: string; name: string; localName: string }) => ({ date: h.date, name: h.name, localName: h.localName })));
+        });
       });
 
-      // Mark holidays in the store
+      const dateRange = dateStore.getDateRange();
       let addedCount = 0;
-      
-      for (const holiday of result.holidays) {
-        const holidayDate = holiday.date;
+
+      for (const holiday of holidays) {
+        const holidayDate = new Date(holiday.date);
         
-        // Check if date is in valid range
         if (holidayDate >= dateRange.startDate && holidayDate <= dateRange.endDate) {
-          // Only add if not already marked as holiday
           const existingState = dateStore.getDateState(holidayDate);
           if (!existingState || existingState !== 'holiday') {
-            dateStore.markDate(holidayDate, 'holiday', true); // Force override
+            dateStore.markDate(holidayDate, 'holiday', true);
             addedCount++;
           }
         }
@@ -246,10 +247,9 @@
 
       if (statusDiv) {
         statusDiv.className = 'holiday-status success';
-        statusDiv.textContent = `Added ${addedCount} holidays for ${years.join(', ')}!`;
+        statusDiv.textContent = `Added ${addedCount} holidays!`;
       }
 
-      // Clear status after 3 seconds
       setTimeout(() => {
         if (statusDiv) {
           statusDiv.textContent = '';
@@ -266,10 +266,7 @@
     }
   }
 
-  // Initialize
   loadCountries();
-
-  // Event listeners
   countrySelect.addEventListener('change', updateButtonState);
   addButton.addEventListener('click', addHolidays);
 </script>
