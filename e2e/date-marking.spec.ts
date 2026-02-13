@@ -6,9 +6,10 @@ import {
 	clickDate,
 	expectDateHasNoState,
 	expectDateHasState,
+	getDateCells,
 	getDisabledCellCount,
 } from "./helpers/datepainter";
-import { expectModeCount, selectMode } from "./helpers/statusLegend";
+import { expectModeActive, expectModeCount, selectMode } from "./helpers/statusLegend";
 
 test.describe("Date Marking Flows", () => {
 	test.beforeEach(async ({ page }) => {
@@ -157,6 +158,61 @@ test.describe("Date Marking Flows", () => {
 		await page.keyboard.press("3");
 		await clickDate(page, 2);
 		await expectDateHasState(page, 2, "sick");
+	});
+
+	test("should show active state on palette button when selected", async ({ page }) => {
+		// Arrange - OOF is default active mode on load
+		await expectModeActive(page, "oof");
+
+		// Act - switch to holiday
+		await selectMode(page, "holiday");
+
+		// Assert - holiday is active, oof is not
+		await expectModeActive(page, "holiday");
+		const oofButton = page.locator('[data-testid="mode-oof"]');
+		await expect(oofButton).not.toHaveClass(/is-active/);
+	});
+
+	test("should drag-paint multiple cells with active palette state", async ({ page }) => {
+		// Arrange - select holiday mode
+		await selectMode(page, "holiday");
+		const cells = getDateCells(page);
+
+		// Act - drag from cell 1 across cells 2 and 3
+		await cells.nth(1).hover();
+		await page.mouse.down();
+		await cells.nth(2).hover();
+		await cells.nth(3).hover();
+		await page.mouse.up();
+
+		// Assert - all dragged cells have holiday state
+		await expectDateHasState(page, 1, "holiday");
+		await expectDateHasState(page, 2, "holiday");
+		await expectDateHasState(page, 3, "holiday");
+		await expectModeCount(page, "holiday", 3);
+	});
+
+	test("should drag-clear already painted cells", async ({ page }) => {
+		// Arrange - paint 3 cells as OOF via clicks
+		await selectMode(page, "oof");
+		await clickDate(page, 1);
+		await clickDate(page, 2);
+		await clickDate(page, 3);
+		await expectModeCount(page, "oof", 3);
+
+		// Act - drag over the painted cells to clear them
+		const cells = getDateCells(page);
+		await cells.nth(1).hover();
+		await page.mouse.down();
+		await cells.nth(2).hover();
+		await cells.nth(3).hover();
+		await page.mouse.up();
+
+		// Assert - all cells are cleared
+		await expectDateHasNoState(page, 1);
+		await expectDateHasNoState(page, 2);
+		await expectDateHasNoState(page, 3);
+		await expectModeCount(page, "oof", 0);
 	});
 
 	test("should preserve marked dates after month navigation", async ({ page }) => {
