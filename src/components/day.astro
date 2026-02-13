@@ -1,4 +1,6 @@
 ---
+import '/src/styles/utilities.css';
+
 interface Props {
     dayNumber: number;
     year: number;
@@ -40,7 +42,7 @@ const cellId = `day-cell-${year}-${month}-${dayNumber}`;
 
 <td
     id={cellId}
-    class="calendar-day"
+    class="calendar-day no-reduced-motion"
     role="gridcell"
     aria-label={`${dateString}. ${selectionLabel}`}
     aria-selected={isSelected ? "true" : "false"}
@@ -157,40 +159,5 @@ const cellId = `day-cell-${year}-${month}-${dayNumber}`;
     .calendar-day.empty {
         background-color: #f9f9f9;
         pointer-events: none;
-    }
-
-    /* Screen reader only content */
-    .sr-only {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        padding: 0;
-        margin: -1px;
-        overflow: hidden;
-        clip: rect(0, 0, 0, 0);
-        white-space: nowrap;
-        border-width: 0;
-    }
-
-    /* Reduced motion support */
-    @media (prefers-reduced-motion: reduce) {
-        .calendar-day {
-            transition: none;
-        }
-    }
-
-    /* High contrast mode support */
-    @media (prefers-contrast: high) {
-        .calendar-day {
-            border: 1px solid #000;
-        }
-
-        .calendar-day.selected {
-            border-width: 2px;
-        }
-
-        .calendar-day.holiday {
-            border-width: 2px;
-        }
     }
 </style>

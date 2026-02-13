@@ -1,4 +1,6 @@
 ---
+import '/src/styles/utilities.css';
+
 interface Props {
     id?: string;
 }
@@ -16,7 +18,7 @@ const { id = "settings-modal" } = Astro.props;
         <header class="modal-header">
             <h2 id={`${id}-title`} class="modal-title">Settings</h2>
             <button
-                class="close-button"
+                class="close-button focus-visible-outline focus-reset no-reduced-motion"
                 type="button"
                 aria-label="Close settings"
                 id={`${id}-close`}
@@ -30,8 +32,8 @@ const { id = "settings-modal" } = Astro.props;
         </p>
 
         <div class="modal-body">
-            <details class="settings-group" open>
-                <summary class="group-toggle">
+                <details class="settings-group" open>
+                <summary class="group-toggle focus-visible-outline focus-reset no-reduced-motion">
                     <span>Validation Settings</span>
                     <span class="toggle-icon">▼</span>
                 </summary>
@@ -48,7 +50,7 @@ const { id = "settings-modal" } = Astro.props;
                         <div class="setting-control">
                             <select
                                 id="validation-strategy"
-                                class="setting-select"
+                                class="setting-select focus-visible-outline focus-reset no-reduced-motion"
                                 aria-label="Select validation strategy"
                             >
                                 <option value="rolling-period">Rolling Period</option>
@@ -71,7 +73,7 @@ const { id = "settings-modal" } = Astro.props;
                             <input
                                 type="number"
                                 id="min-office-days"
-                                class="setting-input"
+                                class="setting-input focus-visible-outline focus-reset no-reduced-motion"
                                 min="0"
                                 max="5"
                                 step="1"
@@ -104,16 +106,16 @@ const { id = "settings-modal" } = Astro.props;
                                     <span class="sr-only">Select default pattern days</span>
                                 </div>
                                 <div class="pattern-days-row">
-                                    <button type="button" class="pattern-day" data-day="0" aria-label="Sunday" aria-pressed="false">Sun</button>
-                                    <button type="button" class="pattern-day" data-day="1" aria-label="Monday" aria-pressed="false">Mon</button>
-                                    <button type="button" class="pattern-day" data-day="2" aria-label="Tuesday" aria-pressed="false">Tue</button>
-                                    <button type="button" class="pattern-day" data-day="3" aria-label="Wednesday" aria-pressed="false">Wed</button>
-                                    <button type="button" class="pattern-day" data-day="4" aria-label="Thursday" aria-pressed="false">Thu</button>
-                                    <button type="button" class="pattern-day" data-day="5" aria-label="Friday" aria-pressed="false">Fri</button>
-                                    <button type="button" class="pattern-day" data-day="6" aria-label="Saturday" aria-pressed="false">Sat</button>
+                                    <button type="button" class="pattern-day focus-visible-outline focus-reset no-reduced-motion" data-day="0" aria-label="Sunday" aria-pressed="false">Sun</button>
+                                    <button type="button" class="pattern-day focus-visible-outline focus-reset no-reduced-motion" data-day="1" aria-label="Monday" aria-pressed="false">Mon</button>
+                                    <button type="button" class="pattern-day focus-visible-outline focus-reset no-reduced-motion" data-day="2" aria-label="Tuesday" aria-pressed="false">Tue</button>
+                                    <button type="button" class="pattern-day focus-visible-outline focus-reset no-reduced-motion" data-day="3" aria-label="Wednesday" aria-pressed="false">Wed</button>
+                                    <button type="button" class="pattern-day focus-visible-outline focus-reset no-reduced-motion" data-day="4" aria-label="Thursday" aria-pressed="false">Thu</button>
+                                    <button type="button" class="pattern-day focus-visible-outline focus-reset no-reduced-motion" data-day="5" aria-label="Friday" aria-pressed="false">Fri</button>
+                                    <button type="button" class="pattern-day focus-visible-outline focus-reset no-reduced-motion" data-day="6" aria-label="Saturday" aria-pressed="false">Sat</button>
                                 </div>
                                 <div class="pattern-actions">
-                                    <button type="button" id="clear-pattern-button" class="button button-secondary" aria-label="Clear pattern selection">
+                                    <button type="button" id="clear-pattern-button" class="button button-secondary focus-visible-outline focus-reset no-reduced-motion" aria-label="Clear pattern selection">
                                         Clear Pattern
                                     </button>
                                 </div>
@@ -142,7 +144,7 @@ const { id = "settings-modal" } = Astro.props;
                             </p>
                         </div>
                         <div class="setting-control">
-                            <select id="country-select" class="setting-select" aria-label="Select country for holidays">
+                            <select id="country-select" class="setting-select focus-visible-outline focus-reset no-reduced-motion" aria-label="Select country for holidays">
                                 <option value="">None</option>
                             </select>
                         </div>
@@ -166,11 +168,11 @@ const { id = "settings-modal" } = Astro.props;
                             </p>
                         </div>
                         <div class="setting-control">
-                            <button id="save-data-toggle" type="button" role="switch" aria-checked="false" aria-label="Toggle data saving" class="toggle-button">
-                                <span class="toggle-slider"></span>
-                            </button>
-                        </div>
+                            <button id="save-data-toggle" type="button" role="switch" aria-checked="false" aria-label="Toggle data saving" class="toggle-button focus-visible-outline focus-reset no-reduced-motion">
+                            <span class="toggle-slider"></span>
+                        </button>
                     </div>
+                </div>
 
                     <div class="setting-item">
                         <div class="setting-info">
@@ -182,7 +184,7 @@ const { id = "settings-modal" } = Astro.props;
                             </p>
                         </div>
                         <div class="setting-control">
-                            <button id="debug-toggle" type="button" role="switch" aria-checked="false" aria-label="Toggle debug mode" class="toggle-button">
+                            <button id="debug-toggle" type="button" role="switch" aria-checked="false" aria-label="Toggle debug mode" class="toggle-button focus-visible-outline focus-reset no-reduced-motion">
                                 <span class="toggle-slider"></span>
                             </button>
                         </div>
@@ -195,14 +197,14 @@ const { id = "settings-modal" } = Astro.props;
             <button
                 type="button"
                 id={`${id}-reset`}
-                class="button button-secondary"
+                class="button button-secondary focus-visible-outline focus-reset no-reduced-motion"
             >
                 Reset to Defaults
             </button>
             <button
                 type="button"
                 id={`${id}-save`}
-                class="button button-primary"
+                class="button button-primary focus-visible-outline focus-reset no-reduced-motion"
             >
                 Save Changes
             </button>
@@ -269,11 +271,6 @@ const { id = "settings-modal" } = Astro.props;
         color: #333;
     }
 
-    .close-button:focus {
-        outline: 2px solid #1890ff;
-        outline-offset: 2px;
-    }
-
     .modal-body {
         padding: 1.5rem;
         max-height: 60vh;
@@ -305,11 +302,6 @@ const { id = "settings-modal" } = Astro.props;
 
     .group-toggle:hover {
         background-color: #f0f0f0;
-    }
-
-    .group-toggle:focus {
-        outline: 2px solid #1890ff;
-        outline-offset: -2px;
     }
 
     .group-toggle span:first-child {
@@ -395,10 +387,7 @@ const { id = "settings-modal" } = Astro.props;
         padding: 0;
     }
 
-    .toggle-button:focus {
-        outline: 2px solid #1890ff;
-        outline-offset: 2px;
-    }
+
 
     .toggle-button[aria-checked="true"] {
         background-color: #52c41a;
@@ -441,12 +430,6 @@ const { id = "settings-modal" } = Astro.props;
         border-color: #40a9ff;
     }
 
-    .setting-select:focus {
-        outline: 2px solid #1890ff;
-        outline-offset: 2px;
-        border-color: #40a9ff;
-    }
-
     /* Number input */
     .setting-input {
         padding: 0.5rem 0.75rem;
@@ -460,12 +443,6 @@ const { id = "settings-modal" } = Astro.props;
     }
 
     .setting-input:hover {
-        border-color: #40a9ff;
-    }
-
-    .setting-input:focus {
-        outline: 2px solid #1890ff;
-        outline-offset: 2px;
         border-color: #40a9ff;
     }
 
@@ -519,11 +496,6 @@ const { id = "settings-modal" } = Astro.props;
     .pattern-day:hover {
         background-color: #f0f0f0;
         border-color: #40a9ff;
-    }
-
-    .pattern-day:focus {
-        outline: 2px solid #1890ff;
-        outline-offset: 2px;
     }
 
     .pattern-day[aria-pressed="true"] {
@@ -610,24 +582,6 @@ const { id = "settings-modal" } = Astro.props;
         transform: scale(0.98);
     }
 
-    .button:focus {
-        outline: 2px solid #1890ff;
-        outline-offset: 2px;
-    }
-
-    /* Screen reader only content */
-    .sr-only {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        padding: 0;
-        margin: -1px;
-        overflow: hidden;
-        clip: rect(0, 0, 0, 0);
-        white-space: nowrap;
-        border-width: 0;
-    }
-
     /* Responsive adjustments */
     @media (max-width: 768px) {
         .settings-modal {
@@ -669,34 +623,6 @@ const { id = "settings-modal" } = Astro.props;
 
         .button {
             width: 100%;
-        }
-    }
-
-    /* Reduced motion support */
-    @media (prefers-reduced-motion: reduce) {
-        .close-button,
-        .toggle-button,
-        .toggle-slider,
-        .setting-select,
-        .setting-input,
-        .button {
-            transition: none;
-        }
-    }
-
-    /* High contrast mode support */
-    @media (prefers-contrast: high) {
-        .settings-modal {
-            border: 2px solid #000;
-        }
-
-        .setting-item {
-            border-bottom: 2px solid #000;
-        }
-
-        .setting-select,
-        .setting-input {
-            border: 2px solid #000;
         }
     }
 </style>

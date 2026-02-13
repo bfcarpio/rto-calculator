@@ -5,6 +5,7 @@ import SettingsButton from "../components/SettingsButton.astro";
 import SettingsModal from "../components/SettingsModal.astro";
 import Layout from "../layouts/Layout.astro";
 import "../styles/global.css";
+import "/src/styles/utilities.css";
 import "../styles/pages/index.css"
 
 // Page metadata
@@ -126,19 +127,6 @@ const months = Array.from({ length: 12 }, (_, index) => {
                     grid-template-columns: 1fr;
                     gap: 0.25rem;
                 }
-            }
-
-            /* Screen reader only content */
-            .sr-only {
-                position: absolute;
-                width: 1px;
-                height: 1px;
-                padding: 0;
-                margin: -1px;
-                overflow: hidden;
-                clip: rect(0, 0, 0, 0);
-                white-space: nowrap;
-                border-width: 0;
             }
 
     /* Legend color styles */
