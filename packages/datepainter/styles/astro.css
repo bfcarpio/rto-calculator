@@ -122,31 +122,8 @@
 	}
 }
 
-/* ============================================
-   Day State Classes (Astro-scoped)
-   ============================================ */
-
-/* Working state (enhanced for Astro) */
-.datepainter :scope .datepainter-day--working {
-	background-color: var(--datepainter-primary-light);
-	border-color: var(--datepainter-primary);
-	color: var(--datepainter-primary);
-}
-
-/* OOF state (enhanced for Astro) */
-.datepainter :scope .datepainter-day--oof {
-	background-color: var(--datepainter-secondary-light);
-	border-color: var(--datepainter-secondary);
-	color: var(--datepainter-secondary);
-}
-
-/* Holiday state (enhanced for Astro) */
-.datepainter :scope .datepainter-day--holiday {
-	background-color: var(--datepainter-holiday-bg);
-	border-color: var(--datepainter-holiday-border);
-	color: var(--datepainter-holiday-text);
-	font-weight: var(--datepainter-font-weight-semibold);
-}
+/* State colors are defined in base.css using CSS variables from themes.css.
+   No need to re-declare them in Astro-specific styles. */
 
 /* Today indicator */
 .datepainter :scope .datepainter-day--today::after {
@@ -211,38 +188,4 @@
 	color: var(--datepainter-text-muted);
 }
 
-/* ============================================
-   Print Styles (Astro)
-   ============================================ */
-
-@media print {
-	.datepainter {
-		break-inside: avoid;
-	}
-
-	.datepainter__day {
-		border: 1px solid #ccc;
-		transition: none;
-	}
-
-	.datepainter__day:hover {
-		transform: none;
-		box-shadow: none;
-	}
-}
-
-/* ============================================
-   High Contrast Mode (Astro)
-   ============================================ */
-
-@media (prefers-contrast: high) {
-	.datepainter__day {
-		border-width: 2px;
-	}
-
-	.datepainter-day--working,
-	.datepainter-day--oof,
-	.datepainter-day--holiday {
-		border-width: 3px;
-	}
-}
+/* Print, high-contrast, and reduced-motion styles are in base.css */

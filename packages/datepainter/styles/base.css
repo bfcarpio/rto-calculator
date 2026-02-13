@@ -3,6 +3,12 @@
  * Contains CSS custom properties, reset styles, and base layout
  *
  * Philosophy: Distinctive, accessible, maintainable styling system
+ *
+ * BEM Naming Convention:
+ *   .datepainter__*          — structural layout elements (nav, month, days, weekday)
+ *   .datepainter__day--*     — structural modifiers (empty, disabled, past, weekend)
+ *   .datepainter-day--*      — state modifiers on day cells (oof, holiday, sick, today, working)
+ *   .datepainter-day__icon   — icon element within a day cell
  */
 
 /* ============================================
@@ -278,17 +284,24 @@
 
 /* OOF (Out of Office) state */
 .datepainter-day--oof {
-	background-color: var(--datepainter-secondary-light);
-	border-color: var(--datepainter-secondary);
-	color: var(--datepainter-secondary);
+	background-color: var(--datepainter-oof, #f5222d);
+	border-color: var(--datepainter-oof-border, #dc2626);
+	color: var(--datepainter-oof-text, #ffffff);
 }
 
 /* Holiday state */
 .datepainter-day--holiday {
-	background-color: var(--datepainter-holiday-bg);
-	border-color: var(--datepainter-holiday-border);
-	color: var(--datepainter-holiday-text);
+	background-color: var(--datepainter-holiday-bg, #fffbeb);
+	border-color: var(--datepainter-holiday-border, #fcd34d);
+	color: var(--datepainter-holiday-text, #92400e);
 	font-weight: var(--datepainter-font-weight-semibold);
+}
+
+/* Sick Day state */
+.datepainter-day--sick {
+	background-color: var(--datepainter-sick, #1890ff);
+	border-color: var(--datepainter-sick-border, #096dd9);
+	color: var(--datepainter-sick-text, #ffffff);
 }
 
 /* ============================================

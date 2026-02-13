@@ -27,11 +27,21 @@
 	--datepainter-error-bg: #f1f5f9; /* Slate-100 */
 	--datepainter-warning: #94a3b8; /* Slate-400 */
 
+	/* OOF (Out of Office) colors */
+	--datepainter-oof: #f5222d;
+	--datepainter-oof-text: #ffffff;
+	--datepainter-oof-border: #dc2626;
+
 	/* Holiday colors (distinct from slate) */
 	--datepainter-holiday: #d97706; /* Amber-600 */
 	--datepainter-holiday-bg: #fffbeb; /* Amber-50 */
 	--datepainter-holiday-border: #fcd34d; /* Amber-300 */
 	--datepainter-holiday-text: #92400e; /* Amber-800 */
+
+	/* Sick Day colors */
+	--datepainter-sick: #1890ff;
+	--datepainter-sick-text: #ffffff;
+	--datepainter-sick-border: #096dd9;
 
 	/* Text colors */
 	--datepainter-text: #1e293b; /* Slate-800 */
