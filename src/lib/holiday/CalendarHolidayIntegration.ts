@@ -12,6 +12,7 @@ import {
 	isDebugEnabled as isLoggerDebugEnabled,
 	logger,
 } from "../../utils/logger";
+import { readSettings } from "../settings-reader";
 import { getHolidayManager } from "./HolidayManager";
 
 /**
@@ -96,15 +97,7 @@ export function getCalendarYears(): number[] {
 export async function applySavedHolidays(): Promise<void> {
 	try {
 		// Load saved settings
-		const savedSettings = localStorage.getItem("rto-calculator-settings");
-		if (!savedSettings) {
-			if (isDebugEnabled()) {
-				logger.debug("[HolidayIntegration] No saved settings found");
-			}
-			return;
-		}
-
-		const settings = JSON.parse(savedSettings);
+		const settings = readSettings();
 
 		// Check if data saving is enabled before applying saved holidays
 		if (settings.saveData !== true) {
@@ -137,7 +130,7 @@ export async function applySavedHolidays(): Promise<void> {
 		// Apply holidays to calendar
 		await applyHolidaysToCalendar({
 			countryCode: holidayConfig.countryCode,
-			companyName: holidayConfig.companyName,
+			companyName: holidayConfig.companyName ?? null,
 			calendarYears,
 		});
 	} catch (error) {
@@ -279,12 +272,7 @@ async function handleCalendarLoaded(): Promise<void> {
  */
 export async function getHolidayDatesForValidation(): Promise<Set<Date>> {
 	try {
-		const savedSettings = localStorage.getItem("rto-calculator-settings");
-		if (!savedSettings) {
-			return new Set();
-		}
-
-		const settings = JSON.parse(savedSettings);
+		const settings = readSettings();
 
 		// Check if data saving is enabled before using saved holiday settings
 		if (settings.saveData !== true) {

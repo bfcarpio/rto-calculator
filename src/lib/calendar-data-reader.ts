@@ -85,33 +85,7 @@ export interface CalendarDataResult {
 	readTimeMs: number;
 }
 
-/**
- * Read the sickDaysPenalize setting from localStorage
- */
-function getSickDaysPenalizeSetting(): boolean {
-	try {
-		const saved = localStorage.getItem("rto-calculator-settings");
-		if (!saved) return true; // default: sick days penalize
-		const settings = JSON.parse(saved);
-		return settings.sickDaysPenalize !== false; // default true
-	} catch {
-		return true;
-	}
-}
-
-/**
- * Read the holidayPenalize setting from localStorage
- */
-function getHolidayPenalizeSetting(): boolean {
-	try {
-		const saved = localStorage.getItem("rto-calculator-settings");
-		if (!saved) return true; // default: holidays penalize
-		const settings = JSON.parse(saved);
-		return settings.holidayPenalize !== false; // default true
-	} catch {
-		return true;
-	}
-}
+import { readSettings } from "./settings-reader";
 
 /**
  * Read calendar data from datepainter API into pure data structure
@@ -154,8 +128,9 @@ export async function readCalendarData(
 	const range = getDateRange();
 
 	// Read penalize settings
-	const sickDaysPenalize = getSickDaysPenalizeSetting();
-	const holidayPenalize = getHolidayPenalizeSetting();
+	const appSettings = readSettings();
+	const sickDaysPenalize = appSettings.sickDaysPenalize;
+	const holidayPenalize = appSettings.holidayPenalize;
 
 	// Iterate through ALL Monday-aligned weeks in the calendar range
 	const weeks: WeekInfo[] = [];
