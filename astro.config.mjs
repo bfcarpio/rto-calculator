@@ -10,6 +10,7 @@ export default defineConfig({
 		format: "directory",
 	},
 	compressHTML: true,
+	scopedStyleStrategy: "where",
 	vite: {
 		build: {
 			target: "esnext",
