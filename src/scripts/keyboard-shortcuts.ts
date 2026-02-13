@@ -1,7 +1,7 @@
 /**
  * KeyboardShortcuts - Manages keyboard shortcuts for calendar interactions
  *
- * Handles Ctrl+Z (undo), Ctrl+S (validate), and Enter key for buttons.
+ * Handles Ctrl+Z (undo) and Enter key for buttons.
  * Integrates with HistoryManager, CalendarManager, and ValidationManager.
  *
  * @module KeyboardShortcuts
@@ -14,11 +14,7 @@ import type {
 } from "../../packages/datepainter/src/types";
 import type { HistoryManager } from "../lib/history/HistoryManager";
 import type { ValidationMode } from "../lib/validation";
-import type {
-	DaySelectionType,
-	SelectedDay,
-	ValidationConfig,
-} from "../types/validation-strategy";
+import type { ValidationConfig } from "../types/validation-strategy";
 import type { ValidationManager } from "./ValidationManager";
 
 /**
@@ -153,7 +149,7 @@ export class KeyboardShortcuts {
 	/**
 	 * Attaches keyboard event listeners for global shortcuts
 	 *
-	 * Handles Ctrl+Z (undo), Ctrl+S (validate).
+	 * Handles Ctrl+Z (undo).
 	 * Supports both Ctrl and Meta (Cmd on Mac) keys.
 	 *
 	 * @private
@@ -173,13 +169,6 @@ export class KeyboardShortcuts {
 			if (e.key === "z" && !e.shiftKey) {
 				e.preventDefault();
 				this.handleUndo();
-				return;
-			}
-
-			// Ctrl+S / Cmd+S - Save/Validate
-			if (e.key === "s") {
-				e.preventDefault();
-				this.handleSave();
 				return;
 			}
 		};
@@ -371,45 +360,6 @@ export class KeyboardShortcuts {
 		this.validationManager.updateConfig(snapshot.validationConfig);
 	}
 
-	/**
-	 * Handles save operation (Ctrl+S / Cmd+S)
-	 *
-	 * Triggers validation using the ValidationManager.
-	 *
-	 * @private
-	 */
-	private handleSave(): void {
-		// Extract selected days from calendar
-		const validationManagerWithMethods = this.validationManager as {
-			getSelectedDaysFromDOM?: () => Array<{
-				year: number;
-				month: number;
-				day: number;
-				type: string;
-			}>;
-		};
-
-		if (
-			typeof validationManagerWithMethods.getSelectedDaysFromDOM !== "function"
-		) {
-			console.warn("ValidationManager does not support getSelectedDaysFromDOM");
-			return;
-		}
-
-		const rawSelectedDays =
-			validationManagerWithMethods.getSelectedDaysFromDOM();
-
-		// Map string type to DaySelectionType for type safety
-		const selectedDays: SelectedDay[] = rawSelectedDays.map((day) => ({
-			...day,
-			type: ((day.type as string) === "out-of-office"
-				? "out-of-office"
-				: "none") satisfies DaySelectionType,
-		}));
-
-		// Trigger validation
-		void this.validationManager.validate(selectedDays);
-	}
 }
 
 export default KeyboardShortcuts;

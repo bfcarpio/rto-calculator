@@ -124,11 +124,6 @@ test.describe("Responsive Navigation", () => {
 			await expect(dayCell).toBeVisible();
 		});
 
-		test("validate button should have data-testid", async ({ page }) => {
-			const validateButton = page.locator("[data-testid='validate-button']");
-			await expect(validateButton.first()).toBeVisible();
-		});
-
 		test("clear-all button should have data-testid", async ({ page }) => {
 			const clearButton = page.locator("[data-testid='clear-all-button']");
 			await expect(clearButton.first()).toBeVisible();

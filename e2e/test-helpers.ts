@@ -152,41 +152,38 @@ export async function setupValidationScenario(
 }
 
 /**
- * Run validation and wait for completion
+ * Wait for auto-compliance to finish computing
  *
- * Clicks the validate button and waits for validation results
- * to be displayed in the UI.
+ * Auto-compliance runs reactively on state changes with a 1.5s debounce.
+ * This helper waits for the computing state to clear and results to appear.
  *
  * @param page - Playwright page object
- * @returns Promise that resolves when validation is complete
- * @throws Error if validation button not found or validation fails
+ * @returns Promise that resolves when compliance computation is complete
  *
  * @example
  * ```typescript
- * await runValidation(page);
+ * await waitForCompliance(page);
  * ```
  */
-export async function runValidation(page: Page): Promise<void> {
-	const validateButton = page
-		.locator('[data-testid="validate-button"]')
-		.first();
+export async function waitForCompliance(page: Page): Promise<void> {
+	// Wait for the debounce (1.5s) + computation time
+	// The .computing class is removed when done, so wait for that
+	await page.waitForFunction(
+		() => !document.querySelector(".status-details.computing"),
+		{ timeout: 5000 },
+	).catch(() => {
+		// Fallback: just wait for status boxes to be visible
+	});
 
-	if (!(await validateButton.isVisible())) {
-		throw new Error("Validate button not found");
-	}
-
-	// Click validate button
-	await validateButton.click();
-
-	// Wait for validation to complete - check for UI updates in StatusDetails
-	// The validation updates the status boxes, so we wait for them to be visible
-	await Promise.race([
-		page.waitForSelector(".status-details .box", {
-			timeout: 5000,
-		}),
-		page.waitForTimeout(3000), // Fallback wait
-	]);
+	await page.waitForSelector(".status-details .box", {
+		timeout: 5000,
+	}).catch(() => {});
 }
+
+/**
+ * @deprecated Use waitForCompliance() instead. Validation is now automatic.
+ */
+export const runValidation = waitForCompliance;
 
 /**
  * Select specific work-from-home days on the calendar
@@ -380,25 +377,6 @@ export function getCalendarDayByDate(
 ): Locator {
 	return page.locator(
 		`[data-testid="calendar-day"][data-year="${year}"][data-month="${month}"][data-day="${day}"]`,
-	);
-}
-
-/**
- * Get week status cell by week start date
- *
- * @param page - Playwright page object
- * @param weekStart - Week start date (Monday)
- * @returns Locator for the week status cell
- *
- * @example
- * ```typescript
- * const statusCell = getWeekStatusCell(page, new Date('2025-01-06'));
- * ```
- */
-export function getWeekStatusCell(page: Page, weekStart: Date): Locator {
-	const weekStartTimestamp = weekStart.getTime();
-	return page.locator(
-		`[data-testid="week-status"][data-week-start="${weekStartTimestamp}"]`,
 	);
 }
 
