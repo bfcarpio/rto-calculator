@@ -1,15 +1,16 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import SummaryBar from '../components/SummaryBar.astro';
-import Month from '../components/month.astro';
-import StatusDetails from '../components/StatusDetails.astro';
-import PanelToggle from '../components/PanelToggle.astro';
-import MobileMenu from '../components/MobileMenu.astro';
-import SettingsModal from '../components/SettingsModal.astro';
+import MobileMenu from "../components/MobileMenu.astro";
+import Month from "../components/month.astro";
+import PanelToggle from "../components/PanelToggle.astro";
+import SettingsModal from "../components/SettingsModal.astro";
+import StatusDetails from "../components/StatusDetails.astro";
+import SummaryBar from "../components/SummaryBar.astro";
+import Layout from "../layouts/Layout.astro";
 
 // Page metadata
 const title = "RTO Calculator - Plan Your Time Off";
-const description = "Plan your vacation for the next 365 days while ensuring compliance with RTO policies";
+const description =
+	"Plan your vacation for the next 365 days while ensuring compliance with RTO policies";
 
 // Get current date for single month display
 const now = new Date();
@@ -39,7 +40,7 @@ const currentYear = now.getFullYear();
 		<div class="columns is-desktop">
 			<div class="column is-three-fifths">
 				<!-- Calendar Section -->
-				<section class="section py-4">
+				<section class="section py-4" id="calendar-container">
 					<div class="box">
 						<Month month={currentMonth} year={currentYear} />
 					</div>
@@ -62,7 +63,7 @@ const currentYear = now.getFullYear();
 		</PanelToggle>
 
 		<PanelToggle title="📅 Calendar" open={false}>
-			<div class="box">
+			<div class="box" id="calendar-container-mobile">
 				<Month month={currentMonth} year={currentYear} />
 			</div>
 		</PanelToggle>

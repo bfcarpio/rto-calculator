@@ -8,8 +8,9 @@
  */
 import { defineConfig, devices } from "@playwright/test";
 
-// Base URL for the application (hostname only, path is handled in tests)
-const BASE_URL = process.env.PLAYWRIGHT_BASE_URL || "http://localhost:4321";
+// Base URL for the application (includes subdirectory path for DRY test URLs)
+const BASE_URL =
+	process.env.PLAYWRIGHT_BASE_URL || "http://localhost:4321/rto-calculator";
 
 // Timeout configurations
 const TEST_TIMEOUT = 30000;

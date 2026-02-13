@@ -11,7 +11,6 @@ import { expect, test } from "@playwright/test";
 import {
 	navigateCalendarKeyboard,
 	openMobileMenu,
-	selectFocusedDay,
 	toggleMobilePanel,
 	waitForCalendarReady,
 } from "./test-helpers";
@@ -25,12 +24,9 @@ test.describe("Mobile Edge Cases", () => {
 	});
 	test.describe("Touch Scrolling", () => {
 		test("should handle touch scroll during selection", async ({ page }) => {
-			// Select a few days
-			const dayCells = page.locator("[data-testid='calendar-day']").slice(0, 5);
-
-			// Simulate touch interactions
-			const firstCell = dayCells.nth(0);
-			const lastCell = dayCells.nth(4);
+			// Get first and fifth day cells for touch interactions
+			const firstCell = page.locator("[data-testid='calendar-day']").nth(0);
+			const lastCell = page.locator("[data-testid='calendar-day']").nth(4);
 
 			const firstBox = await firstCell.boundingBox();
 			const lastBox = await lastCell.boundingBox();

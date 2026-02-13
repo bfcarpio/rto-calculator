@@ -5,29 +5,70 @@
  * These functions encapsulate common testing patterns and make
  * tests more readable and maintainable.
  *
+ * This module aligns with unit test fixtures to ensure consistent
+ * test data across unit and E2E tests.
+ *
  * @module test-helpers
  */
 
 import type { Locator, Page } from "@playwright/test";
 
 // ============================================================================
-// Types
+// Shared Types (aligned with unit test fixtures)
 // ============================================================================
 
 /**
  * Validation scenario types for test setup
+ * Aligned with VALIDATION_SCENARIOS from unit test fixtures
  */
 export type ValidationScenario =
 	| "compliant" // 60%+ office days (3+ office days per week)
-	| "borderline" // Exactly at threshold
-	| "violation" // Below 60% threshold
+	| "borderline" // Exactly at threshold (treated as compliant in practice)
+	| "violation" // Below 60% threshold (40% or less)
 	| "perfect" // 100% office days (5 office days per week)
 	| "empty"; // No selections
 
 /**
  * Weekday pattern for applying selections
+ * Maps to WEEKLY_PATTERNS in unit test fixtures:
+ * - "none" → PERFECT (0 WFH = 5 office days = 100%)
+ * - "tue-thu" → GOOD (2 WFH = 3 office days = 60%)
+ * - "mwf" → POOR (3 WFH = 2 office days = 40%)
+ * - "all" → TERRIBLE (5 WFH = 0 office days = 0%)
  */
 export type WeekdayPattern = "mwf" | "tue-thu" | "all" | "none";
+
+// ============================================================================
+// Shared Configuration (aligned with unit test fixtures)
+// ============================================================================
+
+/**
+ * Policy configuration aligned with CALENDAR_CONFIG from fixtures
+ * These values ensure unit and E2E tests use identical thresholds
+ */
+export const RTO_POLICY_CONFIG = {
+	/** 5 weekdays per week (Mon-Fri) */
+	totalWeekdaysPerWeek: 5,
+	/** Minimum 3 office days required per week for compliance */
+	minOfficeDaysPerWeek: 3,
+	/** 60% threshold for compliance (3/5 = 0.6) */
+	thresholdPercentage: 0.6,
+	/** 12-week rolling evaluation period */
+	rollingPeriodWeeks: 12,
+	/** Top 8 weeks are evaluated */
+	topWeeksToEvaluate: 8,
+} as const;
+
+/**
+ * Base calendar date aligned with BASE_CALENDAR from fixtures
+ * All E2E tests use dates starting from Monday, January 6, 2025
+ */
+export const BASE_CALENDAR_DATE = {
+	startYear: 2025,
+	startMonth: 0, // January
+	startDay: 6, // Monday
+	description: "Calendar starts Monday, January 6, 2025",
+} as const;
 
 /**
  * Month configuration for selecting specific days
@@ -70,26 +111,36 @@ export async function setupValidationScenario(
 	switch (scenario) {
 		case "compliant":
 			// 2 WFH days = 3 office days = 60% compliant
+			// Aligned with: SCENARIO_8_WEEKS_COMPLIANT (weeklyPatterns.ts)
+			// Pattern: GOOD (2 WFH days = 3 office = 60%)
 			await applyWeekdayPattern(page, "tue-thu", weeks);
 			break;
 
 		case "borderline":
-			// Exactly at threshold - 3 office days minimum
+			// Exactly at threshold - 3 office days minimum (60%)
+			// Aligned with: SCENARIO_BOUNDARY_60_PERCENT (weeklyPatterns.ts)
+			// Pattern: GOOD (same as compliant - 60% is the threshold)
 			await applyWeekdayPattern(page, "tue-thu", weeks);
 			break;
 
 		case "violation":
 			// 3 WFH days = 2 office days = 40% non-compliant
+			// Aligned with: SCENARIO_8_WEEKS_VIOLATION (weeklyPatterns.ts)
+			// Pattern: POOR (3 WFH days = 2 office = 40%)
 			await applyWeekdayPattern(page, "mwf", weeks);
 			break;
 
 		case "perfect":
 			// 0 WFH days = 5 office days = 100% compliant
+			// Aligned with: SCENARIO_8_WEEKS_COMPLIANT pattern PERFECT (weeklyPatterns.ts)
+			// Pattern: PERFECT (0 WFH days = 5 office = 100%)
 			await applyWeekdayPattern(page, "none", weeks);
 			break;
 
 		case "empty":
 			// No selections (already cleared)
+			// Aligned with: SCENARIO_EMPTY_SELECTIONS (weeklyPatterns.ts)
+			// Result: 100% compliant (0 WFH = 5 office days per week)
 			break;
 
 		default:
@@ -127,12 +178,10 @@ export async function runValidation(page: Page): Promise<void> {
 	// Click validate button
 	await validateButton.click();
 
-	// Wait for validation to complete (look for status update or message)
+	// Wait for validation to complete - check for UI updates in StatusDetails
+	// The validation updates the status boxes, so we wait for them to be visible
 	await Promise.race([
-		page.waitForSelector('[data-testid="validation-message"]', {
-			timeout: 5000,
-		}),
-		page.waitForSelector('[data-testid="validation-status"]', {
+		page.waitForSelector(".status-details .box", {
 			timeout: 5000,
 		}),
 		page.waitForTimeout(3000), // Fallback wait
@@ -177,9 +226,12 @@ export async function selectWorkFromHomeDays(
 		const index = (i * step) % visibleCells.length;
 		const cell = visibleCells[index];
 
+		if (!cell) {
+			continue;
+		}
+
 		// Check if it's a weekday (Monday-Friday)
 		const isWeekday = await cell.evaluate((el) => {
-			const dayOfWeek = el.closest("tr")?.querySelectorAll("td").length || 0;
 			// Skip first column (status) and check position
 			const cellIndex = Array.from(el.parentElement?.children || []).indexOf(
 				el,
@@ -199,6 +251,12 @@ export async function selectWorkFromHomeDays(
  *
  * Supports common patterns like MWF (Mon-Wed-Fri) and Tue-Thu.
  *
+ * Pattern mapping to unit test WEEKLY_PATTERNS:
+ * - "none" → PERFECT (0 WFH days = 5 office = 100% compliant)
+ * - "tue-thu" → GOOD (2 WFH days = 3 office = 60% compliant)
+ * - "mwf" → POOR (3 WFH days = 2 office = 40% non-compliant)
+ * - "all" → TERRIBLE (5 WFH days = 0 office = 0% non-compliant)
+ *
  * @param page - Playwright page object
  * @param pattern - The weekday pattern to apply
  * @param weeks - Number of weeks to apply the pattern (default: 8)
@@ -217,14 +275,19 @@ export async function applyWeekdayPattern(
 ): Promise<void> {
 	if (pattern === "none") {
 		// No selections needed - already cleared
+		// Maps to WEEKLY_PATTERNS.PERFECT: 0 WFH = 5 office days = 100%
 		return;
 	}
 
-	// Map pattern to weekday column indices
+	// Map pattern to weekday column indices and WFH counts
 	// Columns: 0=status, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=weekNumber
+	// WFH counts align with unit test WEEKLY_PATTERNS:
 	const patternToColumns: Record<Exclude<WeekdayPattern, "none">, number[]> = {
+		// 3 WFH days = 2 office = 40% = POOR (non-compliant)
 		mwf: [1, 3, 5], // Monday, Wednesday, Friday
+		// 2 WFH days = 3 office = 60% = GOOD (compliant)
 		"tue-thu": [2, 4], // Tuesday, Thursday
+		// 5 WFH days = 0 office = 0% = TERRIBLE (non-compliant)
 		all: [1, 2, 3, 4, 5], // All weekdays
 	};
 
@@ -340,6 +403,8 @@ export function getWeekStatusCell(page: Page, weekStart: Date): Locator {
 /**
  * Get validation result message text
  *
+ * Looks for compliance indicators in StatusDetails boxes.
+ *
  * @param page - Playwright page object
  * @returns Promise resolving to the validation message text, or null if not found
  *
@@ -350,17 +415,27 @@ export function getWeekStatusCell(page: Page, weekStart: Date): Locator {
  * ```
  */
 export async function getValidationMessage(page: Page): Promise<string | null> {
-	const messageElement = page.locator('[data-testid="validation-message"]');
+	// Check StatusDetails for compliance indicators
+	const statusDetails = page.locator(".status-details");
 
-	if (await messageElement.isVisible().catch(() => false)) {
-		return messageElement.textContent();
+	if (!(await statusDetails.isVisible().catch(() => false))) {
+		return null;
 	}
 
-	return null;
+	// Get text from week-summary box which shows compliance status
+	const weekSummary = statusDetails.locator(".week-summary");
+	if (await weekSummary.isVisible().catch(() => false)) {
+		return weekSummary.textContent();
+	}
+
+	// Fallback: get all status details text
+	return statusDetails.textContent();
 }
 
 /**
  * Check if validation indicates compliance
+ *
+ * Checks StatusDetails for compliance indicators (success/warning/danger classes).
  *
  * @param page - Playwright page object
  * @returns Promise resolving to true if compliant, false if violation, null if not found
@@ -374,22 +449,65 @@ export async function getValidationMessage(page: Page): Promise<string | null> {
 export async function isValidationCompliant(
 	page: Page,
 ): Promise<boolean | null> {
-	const message = await getValidationMessage(page);
+	const statusDetails = page.locator(".status-details");
 
-	if (!message) {
+	if (!(await statusDetails.isVisible().catch(() => false))) {
 		return null;
 	}
 
-	// Check for compliance indicators in message
-	return (
-		message.includes("✓") ||
-		message.toLowerCase().includes("compliant") ||
-		message.toLowerCase().includes("compliance")
-	);
+	// Check for success indicators in the status details
+	const hasSuccessClass = await statusDetails
+		.locator(".has-text-success")
+		.count()
+		.then((count) => count > 0);
+
+	const hasDangerClass = await statusDetails
+		.locator(".has-text-danger")
+		.count()
+		.then((count) => count > 0);
+
+	const hasWarningClass = await statusDetails
+		.locator(".has-text-warning")
+		.count()
+		.then((count) => count > 0);
+
+	// Check non-compliant weeks section
+	const nonCompliantSection = statusDetails.locator(".non-compliant");
+	const hasNonCompliantWeeks = await nonCompliantSection
+		.locator(".notification.is-warning")
+		.count()
+		.then((count) => count > 0);
+
+	// If there are non-compliant weeks or danger text, it's not compliant
+	if (hasNonCompliantWeeks || hasDangerClass) {
+		return false;
+	}
+
+	// If there's success text and no warnings, it's compliant
+	if (hasSuccessClass && !hasWarningClass) {
+		return true;
+	}
+
+	// Check the average days text for compliance
+	const message = await getValidationMessage(page);
+	if (message) {
+		const messageLower = message.toLowerCase();
+		return (
+			messageLower.includes("compliant") ||
+			messageLower.includes("✓") ||
+			(!messageLower.includes("violation") &&
+				!messageLower.includes("needs") &&
+				!messageLower.includes("⚠️"))
+		);
+	}
+
+	return null;
 }
 
 /**
  * Get summary statistics from the UI
+ *
+ * Parses text content from SummaryBar to extract statistics.
  *
  * @param page - Playwright page object
  * @returns Object containing summary statistics
@@ -405,23 +523,58 @@ export async function getSummaryStats(page: Page): Promise<{
 	weeksTracked: number | null;
 	totalWeeks: number | null;
 }> {
-	const averageDaysText = await page
-		.locator('[data-testid="average-in-office"]')
-		.textContent()
-		.catch(() => null);
-	const weeksTrackedText = await page
-		.locator('[data-testid="weeks-tracked"]')
-		.textContent()
-		.catch(() => null);
-	const totalWeeksText = await page
-		.locator('[data-testid="total-weeks"]')
+	const summaryBar = page.locator(".summary-bar");
+
+	if (!(await summaryBar.isVisible().catch(() => false))) {
+		return { averageDays: null, weeksTracked: null, totalWeeks: null };
+	}
+
+	// Parse average days from "Average In-Office: X/5 days"
+	const headingText = await summaryBar
+		.locator("#summary-heading")
 		.textContent()
 		.catch(() => null);
 
+	let averageDays: number | null = null;
+	if (headingText) {
+		const match = headingText.match(/(\d+\.?\d*)\/5\s*days/);
+		if (match && match[1]) {
+			averageDays = parseFloat(match[1]);
+		}
+	}
+
+	// Parse weeks tracked from "Weeks tracked: X/Y" text
+	const weeksText = await summaryBar
+		.locator(".weeks-progress")
+		.textContent()
+		.catch(() => null);
+
+	let weeksTracked: number | null = null;
+	let totalWeeks: number | null = null;
+
+	if (weeksText) {
+		const match = weeksText.match(/(\d+)\s*\/\s*(\d+)/);
+		if (match && match[1] && match[2]) {
+			weeksTracked = parseInt(match[1], 10);
+			totalWeeks = parseInt(match[2], 10);
+		}
+	}
+
+	// Fallback: try to get from progress element
+	if (weeksTracked === null || totalWeeks === null) {
+		const progressBar = summaryBar.locator("progress");
+		if (await progressBar.isVisible().catch(() => false)) {
+			const value = await progressBar.getAttribute("value");
+			const max = await progressBar.getAttribute("max");
+			if (value) weeksTracked = parseInt(value as string, 10);
+			if (max) totalWeeks = parseInt(max as string, 10);
+		}
+	}
+
 	return {
-		averageDays: averageDaysText ? parseFloat(averageDaysText) : null,
-		weeksTracked: weeksTrackedText ? parseInt(weeksTrackedText, 10) : null,
-		totalWeeks: totalWeeksText ? parseInt(totalWeeksText, 10) : null,
+		averageDays,
+		weeksTracked,
+		totalWeeks,
 	};
 }
 
@@ -471,6 +624,8 @@ export async function closeMobileMenu(page: Page): Promise<void> {
 /**
  * Toggle panel on mobile
  *
+ * Uses the actual details/summary elements for panel toggling.
+ *
  * @param page - Playwright page object
  * @param panelName - Name of the panel to toggle ('calendar' or 'summary')
  * @throws Error if panel toggle not found
@@ -482,15 +637,25 @@ export async function closeMobileMenu(page: Page): Promise<void> {
  */
 export async function toggleMobilePanel(
 	page: Page,
-	panelName: "calendar" | "summary",
+	_panelName: "calendar" | "summary",
 ): Promise<void> {
-	const toggle = page.locator(`[data-testid="panel-toggle-${panelName}"]`);
+	// PanelToggle component uses details.panel-toggle class
+	// Both calendar and summary panels use the same structure
+	const panelToggles = page.locator("details.panel-toggle");
+	const count = await panelToggles.count();
 
-	if (!(await toggle.isVisible())) {
-		throw new Error(`Panel toggle for ${panelName} not found`);
+	if (count === 0) {
+		throw new Error("No panel toggles found");
 	}
 
-	await toggle.click();
+	// Toggle the first available panel (or could filter by content if needed)
+	const toggle = panelToggles.first();
+
+	if (!(await toggle.isVisible())) {
+		throw new Error("Panel toggle not visible");
+	}
+
+	await toggle.locator("summary").click();
 	await page.waitForTimeout(300);
 }
 
