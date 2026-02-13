@@ -7,6 +7,8 @@ Write brief and consise text with minimal code output in the chat.
 
 Before making commits make sure that the changes pass lints, checks, and tests to ensure there are no regressions and continual code quality. Update tests as needed if the new result is the intended one.
 
+Prefer Typescript files to Javascript files.
+
 ## Build / Lint / Test Commands
 
 Never ever run `npm run dev` to start a dev server. Use `scripts/start-playwright-server.sh` and the playwright mcp to navigate the website.
