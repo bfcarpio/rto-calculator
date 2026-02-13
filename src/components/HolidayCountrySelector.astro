@@ -17,6 +17,7 @@
     <select id="country-select" class="holiday-drawer__select">
       <option value="">Select a country...</option>
     </select>
+    <label id="company-label" class="holiday-drawer__label" for="company-select" style="display: none;">Filter by company holiday policy</label>
     <select id="company-select" class="holiday-drawer__select holiday-drawer__select--company" style="display: none;">
       <option value="">All public holidays</option>
     </select>
@@ -107,8 +108,16 @@
     cursor: pointer;
   }
 
-  .holiday-drawer__select--company {
+  .holiday-drawer__label {
+    display: block;
     margin-top: 0.5rem;
+    margin-bottom: 0.25rem;
+    font-size: 0.8rem;
+    color: #64748b;
+  }
+
+  .holiday-drawer__select--company {
+    margin-top: 0;
   }
 
   .holiday-drawer__select:disabled {
@@ -164,6 +173,10 @@
     color: #94a3b8;
   }
 
+  body.dark-mode .holiday-drawer__label {
+    color: #94a3b8;
+  }
+
   body.dark-mode .holiday-drawer__select {
     background: #1e293b;
     border-color: #334155;
@@ -185,6 +198,7 @@
   const autoAddedHolidays = new Set<DateString>();
 
   const countrySelect = document.getElementById('country-select') as HTMLSelectElement;
+  const companyLabel = document.getElementById('company-label') as HTMLLabelElement;
   const companySelect = document.getElementById('company-select') as HTMLSelectElement;
   const statusDiv = document.getElementById('holiday-status') as HTMLElement;
 
@@ -216,10 +230,12 @@
       companySelect.appendChild(option);
     }
     companySelect.value = '';
+    companyLabel.style.display = '';
     companySelect.style.display = '';
   }
 
   function hideCompanySelect(): void {
+    companyLabel.style.display = 'none';
     companySelect.style.display = 'none';
     companySelect.value = '';
   }
