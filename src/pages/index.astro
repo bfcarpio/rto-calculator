@@ -4,6 +4,7 @@ import Datepainter from "../components/Datepainter.astro";
 // import HolidayCountrySelector from "../components/HolidayCountrySelector.astro";
 import MobileMenu from "../components/MobileMenu.astro";
 import SettingsModal from "../components/SettingsModal.astro";
+import ShortcutsModal from "../components/ShortcutsModal.astro";
 import StatusDetails from "../components/StatusDetails.astro";
 import StatusLegend from "../components/StatusLegend.astro";
 import SummaryBar from "../components/SummaryBar.astro";
@@ -26,37 +27,52 @@ const description =
 							Plan your time off while staying compliant with office attendance policies
 						</p>
 					</div>
-					<button
-						id="settings-button"
-						class="settings-button"
-						data-testid="settings-button"
-						aria-label="Open settings"
-						title="Settings"
-					>
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							width="24"
-							height="24"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							class="gear-icon"
+					<div class="header-buttons">
+						<button
+							id="help-button"
+							class="help-button"
+							aria-label="Keyboard shortcuts"
+							title="Keyboard shortcuts (?)"
 						>
-							<path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z" />
-							<path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" />
-							<path d="M12 2v2" />
-							<path d="M12 20v2" />
-							<path d="m4.93 4.93 1.41 1.41" />
-							<path d="m17.66 17.66 1.41 1.41" />
-							<path d="M2 12h2" />
-							<path d="M20 12h2" />
-							<path d="m6.34 17.66-1.41 1.41" />
-							<path d="m19.07 4.93-1.41 1.41" />
-						</svg>
-					</button>
+							<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+								fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<circle cx="12" cy="12" r="10"/>
+								<path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+								<line x1="12" y1="17" x2="12.01" y2="17"/>
+							</svg>
+						</button>
+						<button
+							id="settings-button"
+							class="settings-button"
+							data-testid="settings-button"
+							aria-label="Open settings"
+							title="Settings"
+						>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								width="24"
+								height="24"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								class="gear-icon"
+							>
+								<path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z" />
+								<path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" />
+								<path d="M12 2v2" />
+								<path d="M12 20v2" />
+								<path d="m4.93 4.93 1.41 1.41" />
+								<path d="m17.66 17.66 1.41 1.41" />
+								<path d="M2 12h2" />
+								<path d="M20 12h2" />
+								<path d="m6.34 17.66-1.41 1.41" />
+								<path d="m19.07 4.93-1.41 1.41" />
+							</svg>
+						</button>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -102,6 +118,7 @@ const description =
 
 	<MobileMenu />
 	<SettingsModal />
+	<ShortcutsModal />
 </Layout>
 
 <style>
@@ -120,6 +137,43 @@ const description =
 
 	.header-text {
 		flex: 1;
+	}
+
+	.header-buttons {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		flex-shrink: 0;
+	}
+
+	.help-button {
+		width: 36px;
+		height: 36px;
+		border-radius: 50%;
+		border: none;
+		background: rgba(255, 255, 255, 0.85);
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+		transition: transform 0.2s ease, box-shadow 0.2s ease;
+		flex-shrink: 0;
+		color: #475569;
+	}
+
+	.help-button:hover {
+		transform: scale(1.1);
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+	}
+
+	.help-button:active {
+		transform: scale(0.95);
+	}
+
+	:global(body.dark-mode) .help-button {
+		background: #1e293b;
+		color: #cbd5e1;
 	}
 
 	.settings-button {
@@ -187,6 +241,9 @@ const description =
 </style>
 
 <script>
+	// Import auto-compliance to initialize the singleton
+	import '../lib/auto-compliance';
+
 	/**
 	 * Wire up settings button to open modal
 	 */
@@ -198,4 +255,29 @@ const description =
 			settingsDialog.showModal();
 		});
 	}
+
+	/**
+	 * Wire up help button + ? shortcut to open shortcuts modal
+	 */
+	const helpButton = document.getElementById("help-button");
+	const shortcutsDialog = document.getElementById("shortcuts-dialog") as HTMLDialogElement | null;
+
+	if (helpButton && shortcutsDialog) {
+		helpButton.addEventListener("click", () => {
+			shortcutsDialog.showModal();
+		});
+	}
+
+	document.addEventListener("keydown", (e) => {
+		if (
+			e.target instanceof HTMLElement &&
+			(e.target.tagName === "INPUT" ||
+				e.target.tagName === "TEXTAREA" ||
+				e.target.tagName === "SELECT")
+		)
+			return;
+		if (e.key === "?" && shortcutsDialog && !shortcutsDialog.open) {
+			shortcutsDialog.showModal();
+		}
+	});
 </script>
