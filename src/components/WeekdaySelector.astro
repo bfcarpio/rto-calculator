@@ -1,21 +1,105 @@
 ---
 ---
 
-<div class="weekday-selector" id="weekday-selector">
-  <button class="weekday-btn" data-day="1">Mon</button>
-  <button class="weekday-btn" data-day="2">Tue</button>
-  <button class="weekday-btn" data-day="3">Wed</button>
-  <button class="weekday-btn" data-day="4">Thu</button>
-  <button class="weekday-btn" data-day="5">Fri</button>
-</div>
+<details class="weekday-drawer" id="weekday-drawer">
+  <summary class="weekday-drawer__summary">
+    <span class="weekday-drawer__title">Quick-Select Weekdays</span>
+    <span class="weekday-drawer__chevron" aria-hidden="true">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4.646 6.646a.5.5 0 0 1 .708 0L8 9.293l2.646-2.647a.5.5 0 0 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-3-3a.5.5 0 0 1 0-.708z" />
+      </svg>
+    </span>
+  </summary>
+
+  <div class="weekday-drawer__content">
+    <p class="weekday-drawer__description">
+      Toggle a weekday to mark or clear every instance of that day as WFH across the full calendar.
+    </p>
+    <div class="weekday-selector" id="weekday-selector">
+      <button class="weekday-btn" data-day="1">Mon</button>
+      <button class="weekday-btn" data-day="2">Tue</button>
+      <button class="weekday-btn" data-day="3">Wed</button>
+      <button class="weekday-btn" data-day="4">Thu</button>
+      <button class="weekday-btn" data-day="5">Fri</button>
+    </div>
+  </div>
+</details>
 
 <style>
+  .weekday-drawer {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .weekday-drawer__summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+    background: #f8fafc;
+    transition: background-color 0.2s ease;
+  }
+
+  .weekday-drawer__summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .weekday-drawer__summary::marker {
+    display: none;
+  }
+
+  .weekday-drawer__summary:hover {
+    background: #f1f5f9;
+  }
+
+  .weekday-drawer__summary:focus-visible {
+    outline: 2px solid #485fc7;
+    outline-offset: -2px;
+  }
+
+  .weekday-drawer[open] .weekday-drawer__summary {
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .weekday-drawer__title {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #334155;
+  }
+
+  .weekday-drawer__chevron {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s ease;
+    color: #64748b;
+  }
+
+  .weekday-drawer[open] .weekday-drawer__chevron {
+    transform: rotate(180deg);
+  }
+
+  .weekday-drawer__content {
+    padding: 0.75rem 1rem;
+  }
+
+  .weekday-drawer__description {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.8rem;
+    color: #64748b;
+    line-height: 1.4;
+  }
+
   .weekday-selector {
     display: flex;
     justify-content: center;
     flex-wrap: wrap;
     gap: 0.5rem;
-    padding: 0.5rem;
+    padding: 0.25rem 0;
   }
 
   .weekday-btn {
@@ -41,6 +125,35 @@
     border-color: #475569;
     background: #e2e8f0;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Dark mode */
+  body.dark-mode .weekday-drawer {
+    border-color: #334155;
+  }
+
+  body.dark-mode .weekday-drawer__summary {
+    background: #1e293b;
+  }
+
+  body.dark-mode .weekday-drawer__summary:hover {
+    background: #334155;
+  }
+
+  body.dark-mode .weekday-drawer[open] .weekday-drawer__summary {
+    border-bottom-color: #334155;
+  }
+
+  body.dark-mode .weekday-drawer__title {
+    color: #e2e8f0;
+  }
+
+  body.dark-mode .weekday-drawer__chevron {
+    color: #94a3b8;
+  }
+
+  body.dark-mode .weekday-drawer__description {
+    color: #94a3b8;
   }
 
   body.dark-mode .weekday-btn {
