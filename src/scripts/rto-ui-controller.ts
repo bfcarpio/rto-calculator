@@ -19,6 +19,7 @@ import {
 	type RTOOrchestratorConfig,
 } from "../lib/validation/ValidationOrchestrator";
 import type { ValidationResult } from "../types/validation-strategy";
+import { logger } from "../utils/logger";
 import {
 	clearValidationMessage,
 	displayValidationResults,
@@ -56,18 +57,18 @@ const ORCHESTRATOR_CONFIG: RTOOrchestratorConfig = {
  */
 export async function runValidationWithHighlights(): Promise<void> {
 	try {
-		console.log(
+		logger.info(
 			"[RTO Validation UI] ==================== Validation Started ====================",
 		);
 
 		// Step 1: Read DOM once into pure data structure (holiday-aware)
-		console.log(
+		logger.info(
 			"[RTO Validation UI] Step 1: Reading calendar data from DOM...",
 		);
 		const calendarData = await readCalendarData({ DEBUG: CONFIG.DEBUG });
 
 		if (calendarData.totalWeeks === 0) {
-			console.warn(
+			logger.warn(
 				"[RTO Validation UI] WARNING: No weeks data found in calendar!",
 			);
 			alert(
@@ -77,31 +78,31 @@ export async function runValidationWithHighlights(): Promise<void> {
 		}
 
 		// Step 2: Clear previous highlights
-		console.log("[RTO Validation UI] Step 2: Clearing previous highlights...");
+		logger.info("[RTO Validation UI] Step 2: Clearing previous highlights...");
 		clearAllValidationHighlights();
 
 		// Step 3: Orchestrate validation (no DOM access here)
-		console.log(
+		logger.info(
 			"[RTO Validation UI] Step 3: Running sliding window validation...",
 		);
 		const result = orchestrateValidation(calendarData, ORCHESTRATOR_CONFIG);
 
-		console.log(
+		logger.info(
 			`[RTO Validation UI]   Validation result: ${result.isValid ? "VALID" : "INVALID"}`,
 		);
-		console.log(
+		logger.info(
 			`[RTO Validation UI]   Overall compliance: ${result.compliancePercentage.toFixed(1)}%`,
 		);
 
 		// Step 4: Update week status cells in DOM
-		console.log("[RTO Validation UI] Step 4: Updating week statuses...");
+		logger.info("[RTO Validation UI] Step 4: Updating week statuses...");
 		const { updateWeekStatusCells } = await import(
 			"../lib/validation/ValidationOrchestrator"
 		);
 		updateWeekStatusCells(result.evaluatedWeeks);
 
 		// Step 5: Display validation results to user
-		console.log("[RTO Validation UI] Step 5: Displaying results...");
+		logger.info("[RTO Validation UI] Step 5: Displaying results...");
 		clearValidationMessage();
 
 		displayValidationResults({
@@ -114,10 +115,10 @@ export async function runValidationWithHighlights(): Promise<void> {
 		} as ValidationResult);
 
 		if (CONFIG.DEBUG) {
-			console.log("[RTO Validation UI] Validation completed successfully");
+			logger.debug("[RTO Validation UI] Validation completed successfully");
 		}
 	} catch (error) {
-		console.error("[RTO Validation UI] Error during validation:", error);
+		logger.error("[RTO Validation UI] Error during validation:", error);
 		alert("An error occurred during validation. Please try again.");
 	}
 }
@@ -136,17 +137,17 @@ export function clearAllValidationHighlightsUI(): void {
  */
 function attachValidateButtonListeners(): void {
 	const validateButtons = document.querySelectorAll('[id^="validate-button-"]');
-	console.log(
+	logger.info(
 		`[RTO Validation UI] Found ${validateButtons.length} validate button(s)`,
 	);
 
 	validateButtons.forEach((button) => {
 		const buttonElement = button as HTMLElement;
 		buttonElement.addEventListener("click", () => {
-			console.log("[RTO Validation UI] Validate button clicked");
+			logger.debug("[RTO Validation UI] Validate button clicked");
 			runValidationWithHighlights();
 		});
-		console.log(
+		logger.debug(
 			`[RTO Validation UI] Attached click listener to validate button: ${buttonElement.id}`,
 		);
 	});
@@ -175,5 +176,5 @@ if (typeof window !== "undefined") {
 }
 
 if (CONFIG.DEBUG) {
-	console.log("[RTO Validation UI] Attached validate button event listeners");
+	logger.debug("[RTO Validation UI] Attached validate button event listeners");
 }

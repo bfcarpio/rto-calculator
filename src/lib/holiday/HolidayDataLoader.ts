@@ -7,6 +7,10 @@
  * It loads countries data and the holiday manager onto the window object.
  */
 
+import {
+	isDebugEnabled as isLoggerDebugEnabled,
+	logger,
+} from "../../utils/logger";
 import type { Country } from "./data/countries";
 import { sortCountriesByName } from "./data/countries";
 import type { HolidayManager } from "./HolidayManager";
@@ -16,11 +20,7 @@ import { getHolidayManager } from "./HolidayManager";
  * Check if debug mode is enabled
  */
 function isDebugEnabled(): boolean {
-	if (typeof window === "undefined") return false;
-	return (
-		localStorage.getItem("rto-debug") === "true" ||
-		window.__RTO_DEBUG__ === true
-	);
+	return isLoggerDebugEnabled();
 }
 
 /**
@@ -31,7 +31,7 @@ export function initHolidayDataLoader(): void {
 	// Only run in browser environment
 	if (typeof window === "undefined") {
 		if (isDebugEnabled()) {
-			console.log(
+			logger.debug(
 				"[HolidayDataLoader] Skipping initialization - not in browser environment",
 			);
 		}
@@ -39,14 +39,14 @@ export function initHolidayDataLoader(): void {
 	}
 
 	if (isDebugEnabled()) {
-		console.log("[HolidayDataLoader] Initializing holiday data loader...");
-		console.log(
+		logger.debug("[HolidayDataLoader] Initializing holiday data loader...");
+		logger.debug(
 			`[HolidayDataLoader] Document ready state: ${document.readyState}`,
 		);
-		console.log(
+		logger.debug(
 			`[HolidayDataLoader] Window.__holidayCountries exists: ${!!window.__holidayCountries}`,
 		);
-		console.log(
+		logger.debug(
 			`[HolidayDataLoader] Window.__getHolidayManager exists: ${!!window.__getHolidayManager}`,
 		);
 	}
@@ -54,11 +54,11 @@ export function initHolidayDataLoader(): void {
 	// Load countries onto window
 	try {
 		if (isDebugEnabled()) {
-			console.log("[HolidayDataLoader] Starting to load countries data...");
+			logger.debug("[HolidayDataLoader] Starting to load countries data...");
 		}
 		const sortedCountries = sortCountriesByName();
 		if (isDebugEnabled()) {
-			console.log(
+			logger.debug(
 				`[HolidayDataLoader] Sorted ${sortedCountries.length} countries alphabetically`,
 			);
 		}
@@ -67,16 +67,16 @@ export function initHolidayDataLoader(): void {
 		window.__getHolidayManager = getHolidayManager;
 
 		if (isDebugEnabled()) {
-			console.log(
+			logger.debug(
 				`[HolidayDataLoader] ✓ Successfully loaded ${sortedCountries.length} countries and holiday manager onto window`,
 			);
-			console.log(
+			logger.debug(
 				`[HolidayDataLoader] First 3 countries: ${sortedCountries
 					.slice(0, 3)
 					.map((c) => c.name)
 					.join(", ")}...`,
 			);
-			console.log(
+			logger.debug(
 				`[HolidayDataLoader] Last 3 countries: ...${sortedCountries
 					.slice(-3)
 					.map((c) => c.name)
@@ -93,11 +93,13 @@ export function initHolidayDataLoader(): void {
 		});
 		window.dispatchEvent(event);
 		if (isDebugEnabled()) {
-			console.log("[HolidayDataLoader] ✓ Dispatched holiday-data-loaded event");
+			logger.debug(
+				"[HolidayDataLoader] ✓ Dispatched holiday-data-loaded event",
+			);
 		}
 	} catch (error) {
-		console.error("[HolidayDataLoader] ✗ Failed to load holiday data:", error);
-		console.error("[HolidayDataLoader] Error details:", {
+		logger.error("[HolidayDataLoader] ✗ Failed to load holiday data:", error);
+		logger.error("[HolidayDataLoader] Error details:", {
 			message: error instanceof Error ? error.message : String(error),
 			stack: error instanceof Error ? error.stack : undefined,
 		});
@@ -110,7 +112,7 @@ export function initHolidayDataLoader(): void {
 export function getHolidayCountries(): Country[] {
 	if (typeof window === "undefined") {
 		if (isDebugEnabled()) {
-			console.log(
+			logger.debug(
 				"[HolidayDataLoader] getHolidayCountries: Not in browser environment, returning empty array",
 			);
 		}
@@ -118,7 +120,7 @@ export function getHolidayCountries(): Country[] {
 	}
 	const countries = window.__holidayCountries || [];
 	if (isDebugEnabled()) {
-		console.log(
+		logger.debug(
 			`[HolidayDataLoader] getHolidayCountries: Returning ${countries.length} countries`,
 		);
 	}
@@ -133,7 +135,7 @@ export function getGlobalHolidayManager():
 	| null {
 	if (typeof window === "undefined") {
 		if (isDebugEnabled()) {
-			console.log(
+			logger.debug(
 				"[HolidayDataLoader] getGlobalHolidayManager: Not in browser environment, returning null",
 			);
 		}
@@ -141,7 +143,7 @@ export function getGlobalHolidayManager():
 	}
 	const manager = window.__getHolidayManager || null;
 	if (isDebugEnabled()) {
-		console.log(
+		logger.debug(
 			`[HolidayDataLoader] getGlobalHolidayManager: Returning ${manager ? "holiday manager getter" : "null"}`,
 		);
 	}
@@ -154,7 +156,7 @@ export function getGlobalHolidayManager():
 export function isHolidayDataLoaded(): boolean {
 	if (typeof window === "undefined") {
 		if (isDebugEnabled()) {
-			console.log(
+			logger.debug(
 				"[HolidayDataLoader] isHolidayDataLoaded: Not in browser environment, returning false",
 			);
 		}
@@ -164,7 +166,7 @@ export function isHolidayDataLoaded(): boolean {
 	const hasManager = !!window.__getHolidayManager;
 	const isLoaded = hasCountries && hasManager;
 	if (isDebugEnabled()) {
-		console.log(
+		logger.debug(
 			`[HolidayDataLoader] isHolidayDataLoaded: ${isLoaded} (countries: ${hasCountries}, manager: ${hasManager})`,
 		);
 	}

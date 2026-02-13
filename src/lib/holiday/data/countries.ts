@@ -1,12 +1,13 @@
+import {
+	isDebugEnabled as isLoggerDebugEnabled,
+	logger,
+} from "../../../utils/logger";
+
 /**
  * Check if debug mode is enabled
  */
 function isDebugEnabled(): boolean {
-	if (typeof window === "undefined") return false;
-	return (
-		localStorage.getItem("rto-debug") === "true" ||
-		(window as { __RTO_DEBUG__?: boolean }).__RTO_DEBUG__ === true
-	);
+	return isLoggerDebugEnabled();
 }
 
 /**
@@ -165,20 +166,20 @@ export function getCountryByName(name: string): Country | undefined {
  */
 export function sortCountriesByName(): Country[] {
 	if (isDebugEnabled()) {
-		console.log(
+		logger.debug(
 			`[Countries] sortCountriesByName: COUNTRIES array length = ${COUNTRIES.length}`,
 		);
 	}
 
 	if (COUNTRIES.length === 0) {
-		console.error("[Countries] sortCountriesByName: COUNTRIES array is empty!");
+		logger.error("[Countries] sortCountriesByName: COUNTRIES array is empty!");
 	} else if (isDebugEnabled()) {
-		console.log(
+		logger.debug(
 			`[Countries] First 3 countries: ${COUNTRIES.slice(0, 3)
 				.map((c) => `${c.flag} ${c.name}`)
 				.join(", ")}`,
 		);
-		console.log(
+		logger.debug(
 			`[Countries] Last 3 countries: ${COUNTRIES.slice(-3)
 				.map((c) => `${c.flag} ${c.name}`)
 				.join(", ")}`,
@@ -187,7 +188,7 @@ export function sortCountriesByName(): Country[] {
 
 	const sorted = [...COUNTRIES].sort((a, b) => a.name.localeCompare(b.name));
 	if (isDebugEnabled()) {
-		console.log(
+		logger.debug(
 			`[Countries] sortCountriesByName: Returning ${sorted.length} sorted countries`,
 		);
 	}

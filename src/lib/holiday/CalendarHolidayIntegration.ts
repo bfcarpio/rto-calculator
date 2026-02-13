@@ -8,6 +8,10 @@
  * @module calendar-holiday-integration
  */
 
+import {
+	isDebugEnabled as isLoggerDebugEnabled,
+	logger,
+} from "../../utils/logger";
 import { getHolidayManager } from "./HolidayManager";
 
 /**
@@ -15,11 +19,7 @@ import { getHolidayManager } from "./HolidayManager";
  * Debug mode can be enabled via localStorage or a global window flag
  */
 function isDebugEnabled(): boolean {
-	if (typeof window === "undefined") return false;
-	return (
-		localStorage.getItem("rto-debug") === "true" ||
-		(window as { __RTO_DEBUG__?: boolean }).__RTO_DEBUG__ === true
-	);
+	return isLoggerDebugEnabled();
 }
 
 /**
@@ -37,7 +37,7 @@ export interface CalendarHolidayConfig {
  */
 export function initializeHolidayIntegration(): void {
 	if (isDebugEnabled()) {
-		console.log(
+		logger.debug(
 			"[HolidayIntegration] Initializing calendar holiday integration",
 		);
 	}
@@ -99,7 +99,7 @@ export async function applySavedHolidays(): Promise<void> {
 		const savedSettings = localStorage.getItem("rto-calculator-settings");
 		if (!savedSettings) {
 			if (isDebugEnabled()) {
-				console.log("[HolidayIntegration] No saved settings found");
+				logger.debug("[HolidayIntegration] No saved settings found");
 			}
 			return;
 		}
@@ -109,7 +109,7 @@ export async function applySavedHolidays(): Promise<void> {
 		// Check if data saving is enabled before applying saved holidays
 		if (settings.saveData !== true) {
 			if (isDebugEnabled()) {
-				console.log(
+				logger.debug(
 					"[HolidayIntegration] Data saving disabled, skipping saved holidays",
 				);
 			}
@@ -120,13 +120,13 @@ export async function applySavedHolidays(): Promise<void> {
 
 		if (!holidayConfig || !holidayConfig.countryCode) {
 			if (isDebugEnabled()) {
-				console.log("[HolidayIntegration] No country selected in settings");
+				logger.debug("[HolidayIntegration] No country selected in settings");
 			}
 			return;
 		}
 
 		if (isDebugEnabled()) {
-			console.log(
+			logger.debug(
 				`[HolidayIntegration] Applying holidays for ${holidayConfig.countryCode}`,
 			);
 		}
@@ -141,7 +141,7 @@ export async function applySavedHolidays(): Promise<void> {
 			calendarYears,
 		});
 	} catch (error) {
-		console.error("[HolidayIntegration] Error applying saved holidays:", error);
+		logger.error("[HolidayIntegration] Error applying saved holidays:", error);
 	}
 }
 
@@ -155,14 +155,14 @@ export async function applyHolidaysToCalendar(
 
 	if (!countryCode) {
 		if (isDebugEnabled()) {
-			console.log("[HolidayIntegration] No country code provided");
+			logger.debug("[HolidayIntegration] No country code provided");
 		}
 		return;
 	}
 
 	const companyDisplay = companyName ? companyName : "all holidays";
 	if (isDebugEnabled()) {
-		console.log(
+		logger.debug(
 			`[HolidayIntegration] Fetching holidays for ${countryCode} (${companyDisplay}), years: ${calendarYears.join(", ")}`,
 		);
 	}
@@ -187,10 +187,10 @@ export async function applyHolidaysToCalendar(
 		document.dispatchEvent(validationEvent);
 
 		if (isDebugEnabled()) {
-			console.log("[HolidayIntegration] Holidays applied successfully");
+			logger.debug("[HolidayIntegration] Holidays applied successfully");
 		}
 	} catch (error) {
-		console.error("[HolidayIntegration] Error applying holidays:", error);
+		logger.error("[HolidayIntegration] Error applying holidays:", error);
 	}
 }
 
@@ -209,10 +209,10 @@ export async function removeHolidaysFromCalendar(): Promise<void> {
 		document.dispatchEvent(validationEvent);
 
 		if (isDebugEnabled()) {
-			console.log("[HolidayIntegration] Holidays removed successfully");
+			logger.debug("[HolidayIntegration] Holidays removed successfully");
 		}
 	} catch (error) {
-		console.error("[HolidayIntegration] Error removing holidays:", error);
+		logger.error("[HolidayIntegration] Error removing holidays:", error);
 	}
 }
 
@@ -222,7 +222,7 @@ export async function removeHolidaysFromCalendar(): Promise<void> {
  */
 export async function refreshCalendarHolidays(): Promise<void> {
 	if (isDebugEnabled()) {
-		console.log("[HolidayIntegration] Refreshing calendar holidays");
+		logger.debug("[HolidayIntegration] Refreshing calendar holidays");
 	}
 
 	// Remove existing holidays first
@@ -244,7 +244,7 @@ async function handleSettingsChanged(event: Event): Promise<void> {
 	}
 
 	if (isDebugEnabled()) {
-		console.log(
+		logger.debug(
 			`[HolidayIntegration] Settings changed: country=${holidays.countryCode}, company=${holidays.companyName}`,
 		);
 	}
@@ -268,7 +268,7 @@ async function handleSettingsChanged(event: Event): Promise<void> {
  */
 async function handleCalendarLoaded(): Promise<void> {
 	if (isDebugEnabled()) {
-		console.log("[HolidayIntegration] Calendar loaded, applying holidays");
+		logger.debug("[HolidayIntegration] Calendar loaded, applying holidays");
 	}
 	await applySavedHolidays();
 }
@@ -289,7 +289,7 @@ export async function getHolidayDatesForValidation(): Promise<Set<Date>> {
 		// Check if data saving is enabled before using saved holiday settings
 		if (settings.saveData !== true) {
 			if (isDebugEnabled()) {
-				console.log(
+				logger.debug(
 					"[HolidayIntegration] Data saving disabled, returning empty holiday set for validation",
 				);
 			}
@@ -321,7 +321,7 @@ export async function getHolidayDatesForValidation(): Promise<Set<Date>> {
 
 		return holidayDates;
 	} catch (error) {
-		console.error(
+		logger.error(
 			"[HolidayIntegration] Error getting holiday dates for validation:",
 			error,
 		);

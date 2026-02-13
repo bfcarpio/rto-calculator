@@ -4,6 +4,7 @@
  */
 
 import type { CalendarState, UserPreferences } from "../types";
+import { logger } from "./logger";
 
 const STORAGE_KEYS = {
 	SELECTED_DATES: "rto-calculator-selected-dates",
@@ -23,7 +24,7 @@ export function saveSelectedDates(selectedDates: Set<string>): void {
 		};
 		localStorage.setItem(STORAGE_KEYS.SELECTED_DATES, JSON.stringify(state));
 	} catch (error) {
-		console.error("Error saving selected dates to localStorage:", error);
+		logger.error("Error saving selected dates to localStorage:", error);
 	}
 }
 
@@ -39,7 +40,7 @@ export function loadSelectedDates(): Set<string> {
 			return new Set(state.selectedDates);
 		}
 	} catch (error) {
-		console.error("Error loading selected dates from localStorage:", error);
+		logger.error("Error loading selected dates from localStorage:", error);
 	}
 	return new Set();
 }
@@ -55,7 +56,7 @@ export function saveUserPreferences(preferences: UserPreferences): void {
 			JSON.stringify(preferences),
 		);
 	} catch (error) {
-		console.error("Error saving user preferences to localStorage:", error);
+		logger.error("Error saving user preferences to localStorage:", error);
 	}
 }
 
@@ -70,7 +71,7 @@ export function loadUserPreferences(): UserPreferences {
 			return JSON.parse(stored);
 		}
 	} catch (error) {
-		console.error("Error loading user preferences from localStorage:", error);
+		logger.error("Error loading user preferences from localStorage:", error);
 	}
 
 	// Return default preferences
@@ -93,7 +94,7 @@ export function clearAllData(): void {
 		localStorage.removeItem(STORAGE_KEYS.USER_PREFERENCES);
 		localStorage.removeItem(STORAGE_KEYS.LAST_UPDATED);
 	} catch (error) {
-		console.error("Error clearing data from localStorage:", error);
+		logger.error("Error clearing data from localStorage:", error);
 	}
 }
 
@@ -104,7 +105,7 @@ export function clearSelectedDates(): void {
 	try {
 		localStorage.removeItem(STORAGE_KEYS.SELECTED_DATES);
 	} catch (error) {
-		console.error("Error clearing selected dates from localStorage:", error);
+		logger.error("Error clearing selected dates from localStorage:", error);
 	}
 }
 
@@ -120,7 +121,7 @@ export function getLastUpdated(): string | null {
 			return state.lastUpdated;
 		}
 	} catch (error) {
-		console.error("Error getting last updated timestamp:", error);
+		logger.error("Error getting last updated timestamp:", error);
 	}
 	return null;
 }
@@ -167,7 +168,7 @@ export function getStorageInfo(): {
 			percentage,
 		};
 	} catch (error) {
-		console.error("Error getting storage info:", error);
+		logger.error("Error getting storage info:", error);
 		return { used: 0, available: 0, percentage: 0 };
 	}
 }
@@ -197,7 +198,7 @@ export function exportData(): string {
 		};
 		return JSON.stringify(data, null, 2);
 	} catch (error) {
-		console.error("Error exporting data:", error);
+		logger.error("Error exporting data:", error);
 		return "{}";
 	}
 }
@@ -235,7 +236,7 @@ export function importData(jsonData: string): boolean {
 
 		return true;
 	} catch (error) {
-		console.error("Error importing data:", error);
+		logger.error("Error importing data:", error);
 		return false;
 	}
 }

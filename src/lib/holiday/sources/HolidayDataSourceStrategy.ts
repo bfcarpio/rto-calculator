@@ -4,6 +4,7 @@
  * Implements the HolidayDataSource interface
  */
 
+import { logger } from "../../../utils/logger";
 import type {
 	DataSourceStatistics,
 	DataSourceStatus,
@@ -14,6 +15,7 @@ import type {
 	HolidayDataSourceConfig,
 	HolidayQueryOptions,
 	HolidayQueryResult,
+	HolidayType,
 } from "./types";
 
 abstract class HolidayDataSourceStrategy implements HolidayDataSource {
@@ -99,14 +101,14 @@ abstract class HolidayDataSourceStrategy implements HolidayDataSource {
 			const cached = this._getFromCache(cacheKey);
 			if (cached) {
 				if (this.config.debug) {
-					console.log(`[HolidayDataSource] Cache hit for ${cacheKey}`);
+					logger.debug(`[HolidayDataSource] Cache hit for ${cacheKey}`);
 				}
 				return cached;
 			}
 		}
 
 		if (this.config.debug) {
-			console.log(
+			logger.debug(
 				`[HolidayDataSource] Fetching holidays for ${countryCode} ${year}`,
 			);
 		}
@@ -285,7 +287,7 @@ abstract class HolidayDataSourceStrategy implements HolidayDataSource {
 		this.cache.clear();
 		this.cacheTimestamps.clear();
 		if (this.config.debug) {
-			console.log(`[HolidayDataSource] Cache cleared`);
+			logger.debug(`[HolidayDataSource] Cache cleared`);
 		}
 	}
 
@@ -319,7 +321,7 @@ abstract class HolidayDataSourceStrategy implements HolidayDataSource {
 		this.clearCache();
 		this.config = { ...this.defaultConfig };
 		if (this.config.debug) {
-			console.log(`[HolidayDataSource] Reset complete`);
+			logger.debug(`[HolidayDataSource] Reset complete`);
 		}
 	}
 
@@ -330,7 +332,7 @@ abstract class HolidayDataSourceStrategy implements HolidayDataSource {
 	updateConfig(config: Partial<HolidayDataSourceConfig>): void {
 		this.config = { ...this.config, ...config };
 		if (this.config.debug) {
-			console.log(`[HolidayDataSource] Configuration updated`);
+			logger.debug(`[HolidayDataSource] Configuration updated`);
 		}
 	}
 
@@ -414,19 +416,37 @@ abstract class HolidayDataSourceStrategy implements HolidayDataSource {
 	 * @protected
 	 */
 	protected _normalizeHoliday(apiHoliday: unknown): Holiday {
-		// Default implementation, should be overridden or used if structure matches
-		const h = apiHoliday as any;
-		return {
-			date: new Date(h.date),
-			localName: h.localName,
-			name: h.name,
-			countryCode: h.countryCode,
-			types: h.types || [],
-			fixed: h.fixed,
-			global: h.global,
-			counties: h.counties,
-			launchYear: h.launchYear,
+		if (!this._isHolidayPayload(apiHoliday)) {
+			throw new Error("Invalid holiday payload received from data source");
+		}
+
+		const dateValue =
+			apiHoliday.date instanceof Date
+				? apiHoliday.date
+				: new Date(apiHoliday.date);
+
+		const result: Holiday = {
+			date: dateValue,
+			localName: apiHoliday.localName,
+			name: apiHoliday.name,
+			countryCode: apiHoliday.countryCode,
+			types: (apiHoliday.types ?? []) as HolidayType[],
 		};
+
+		if (apiHoliday.fixed !== undefined) {
+			result.fixed = apiHoliday.fixed;
+		}
+		if (apiHoliday.global !== undefined) {
+			result.global = apiHoliday.global;
+		}
+		if (apiHoliday.counties !== undefined) {
+			result.counties = apiHoliday.counties;
+		}
+		if (apiHoliday.launchYear !== undefined) {
+			result.launchYear = apiHoliday.launchYear;
+		}
+
+		return result;
 	}
 
 	/**
@@ -436,8 +456,29 @@ abstract class HolidayDataSourceStrategy implements HolidayDataSource {
 	 */
 	protected _debug(message: string): void {
 		if (this.config.debug) {
-			console.log(`[HolidayDataSource:${this.name}] ${message}`);
+			logger.debug(`[HolidayDataSource:${this.name}] ${message}`);
 		}
+	}
+
+	private _isHolidayPayload(value: unknown): value is {
+		date: string | Date;
+		localName: string;
+		name: string;
+		countryCode: string;
+		types?: string[] | HolidayType[];
+		fixed?: boolean;
+		global?: boolean;
+		counties?: string[];
+		launchYear?: number;
+	} {
+		if (typeof value !== "object" || value === null) return false;
+		const candidate = value as Record<string, unknown>;
+		return (
+			"date" in candidate &&
+			"localName" in candidate &&
+			"name" in candidate &&
+			"countryCode" in candidate
+		);
 	}
 }
 

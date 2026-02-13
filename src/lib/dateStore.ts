@@ -4,6 +4,7 @@
  * Priority: Holiday > OOF > Working
  */
 
+import { logger } from "../utils/logger";
 import {
 	type DateRange,
 	formatDateISO,
@@ -284,7 +285,7 @@ export class DateStore {
 			try {
 				callback(stateSnapshot, stats);
 			} catch (error) {
-				console.error("DateStore listener error:", error);
+				logger.error("DateStore listener error:", error);
 			}
 		});
 	}

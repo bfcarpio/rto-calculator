@@ -3,6 +3,8 @@
  * Simplified model: Left-click toggles OOF selection only
  */
 
+import { logger } from "../utils/logger";
+
 interface DragState {
 	isDragging: boolean;
 	startCell: HTMLElement | null;
@@ -23,14 +25,14 @@ class CalendarEventManager {
 		this.attachClearButtonHandlers();
 		this.updateTodayHighlight();
 		this.startTodayTimer();
-		console.log("[CalendarEvents] Initialized with OOF-only selection");
+		logger.info("[CalendarEvents] Initialized with OOF-only selection");
 	}
 
 	// Event delegation for calendar grid
 	private attachCalendarGridEvents(): void {
 		const grid = document.querySelector(".months-grid");
 		if (!grid) {
-			console.warn("[CalendarEvents] Calendar grid not found");
+			logger.warn("[CalendarEvents] Calendar grid not found");
 			return;
 		}
 
@@ -52,7 +54,7 @@ class CalendarEventManager {
 			this.handleGridKeyDown.bind(this) as EventListener,
 		);
 
-		console.log("[CalendarEvents] Attached event listeners to calendar grid");
+		logger.info("[CalendarEvents] Attached event listeners to calendar grid");
 	}
 
 	// Handle global document events
