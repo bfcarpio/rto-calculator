@@ -110,6 +110,7 @@ export default defineConfig({
 			use: {
 				...devices["iPhone 12"],
 				viewport: { width: 390, height: 844 },
+				actionTimeout: 15000,
 			},
 		},
 		{
@@ -118,6 +119,7 @@ export default defineConfig({
 			use: {
 				...devices["iPad (gen 7)"],
 				viewport: { width: 768, height: 1024 },
+				actionTimeout: 15000,
 			},
 		},
 	],

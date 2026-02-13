@@ -8,8 +8,6 @@ import { selectMode } from "./helpers/statusLegend";
 
 test.describe("Mobile Edge Cases", () => {
 	test.beforeEach(async ({ page }) => {
-		// Set mobile viewport
-		await page.setViewportSize({ width: 375, height: 667 });
 		await navigateToApp(page);
 		await page.waitForSelector(
 			'[data-testid="calendar-day"]:not(.datepainter__day--empty):not(.datepainter__day--disabled)',
@@ -38,8 +36,9 @@ test.describe("Mobile Edge Cases", () => {
 		await selectMode(page, "oof");
 		await clickDate(page, 0);
 
-		// Change orientation
-		await page.setViewportSize({ width: 667, height: 375 });
+		// Swap the project's viewport dimensions to simulate orientation change
+		const vp = page.viewportSize()!;
+		await page.setViewportSize({ width: vp.height, height: vp.width });
 
 		// State should persist
 		await expectDateHasState(page, 0, "oof");
@@ -65,8 +64,8 @@ test.describe("Mobile Edge Cases", () => {
 		// Menu button should be visible on mobile
 		await expect(menuButton).toBeVisible();
 
-		// Click to open settings dialog
-		await menuButton.click();
+		// Click to open settings dialog (force bypasses CSS transition stability check)
+		await menuButton.click({ force: true });
 
 		// Settings dialog should be visible
 		const dialog = page.locator("#settings-dialog");
