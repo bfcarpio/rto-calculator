@@ -21,7 +21,7 @@ describe("calendar-state", () => {
 		setDateState("2026-02-07" as DateString, "oof" as DateState);
 		setDateState("2026-02-08" as DateString, "oof" as DateState);
 
-		// Sync to validation
+		// Sync to validation - count OOF days (currently 2)
 		const dates = getAllDates();
 		const markedDays = Array.from(dates.values()).filter(
 			(state) => state === "oof",
@@ -31,19 +31,19 @@ describe("calendar-state", () => {
 			isValid: markedDays >= 3,
 			message:
 				markedDays >= 3
-					? "Sufficient office days selected"
-					: "Insufficient office days selected",
+					? "Sufficient OOF days selected"
+					: "Insufficient OOF days selected",
 		});
 
-		// Verify sync
+		// Verify sync - should be invalid with only 2 OOF days
 		const result = validationResult.get();
-		expect(result?.isValid).toBe(true);
-		expect(result?.message).toBe("Sufficient office days selected");
+		expect(result?.isValid).toBe(false);
+		expect(result?.message).toBe("Insufficient OOF days selected");
 
-		// Remove one marked day
-		clearDateState("2026-02-08" as DateString);
+		// Add another OOF day to reach threshold
+		setDateState("2026-02-09" as DateString, "oof" as DateState);
 
-		// Re-sync to validation
+		// Re-sync to validation - now 3 OOF days
 		const updatedDates = getAllDates();
 		const updatedMarkedDays = Array.from(updatedDates.values()).filter(
 			(state) => state === "oof",
@@ -53,13 +53,13 @@ describe("calendar-state", () => {
 			isValid: updatedMarkedDays >= 3,
 			message:
 				updatedMarkedDays >= 3
-					? "Sufficient office days selected"
-					: "Insufficient office days selected",
+					? "Sufficient OOF days selected"
+					: "Insufficient OOF days selected",
 		});
 
 		const updatedResult = validationResult.get();
-		expect(updatedResult?.isValid).toBe(false);
-		expect(updatedResult?.message).toBe("Insufficient office days selected");
+		expect(updatedResult?.isValid).toBe(true);
+		expect(updatedResult?.message).toBe("Sufficient OOF days selected");
 	});
 
 	it("should update derived state on date toggle", () => {

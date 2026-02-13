@@ -3,15 +3,15 @@
 
 <div class="status-legend" id="status-legend">
   <button class="legend-item" data-mode="oof" data-testid="mode-oof" data-shortcut="1">
-    <span class="dot is-oof"></span>
+    <span class="icon is-oof">❌</span>
     <span class="label">OOF (1)</span>
   </button>
   <button class="legend-item" data-mode="holiday" data-testid="mode-holiday" data-shortcut="2">
-    <span class="dot is-holiday"></span>
+    <span class="icon is-holiday">☀️</span>
     <span class="label">Holiday (2)</span>
   </button>
   <button class="legend-item" data-mode="sick" data-testid="mode-sick" data-shortcut="3">
-    <span class="dot is-sick"></span>
+    <span class="icon is-sick">💊</span>
     <span class="label">Sick (3)</span>
   </button>
 </div>
@@ -66,23 +66,23 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   }
 
-  .dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
+  .icon {
+    font-size: 1rem;
     display: inline-block;
+    width: 1.2em;
+    text-align: center;
   }
 
-  .dot.is-oof {
-    background-color: var(--color-violation);
+  .icon.is-oof {
+    color: var(--color-violation);
   }
 
-  .dot.is-holiday {
-    background-color: var(--color-holiday);
+  .icon.is-holiday {
+    color: var(--color-holiday);
   }
 
-  .dot.is-sick {
-    background-color: #1890ff;
+  .icon.is-sick {
+    color: #1890ff;
   }
 </style>
 
