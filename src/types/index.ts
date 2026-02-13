@@ -1,3 +1,40 @@
+// Import holiday data source types and classes
+import type {
+  HolidayType,
+  Holiday as DataSourceHoliday,
+  DateRange as HolidayDateRange,
+  HolidayDataSourceConfig,
+  HolidayQueryOptions,
+  HolidayCheckResult,
+  HolidayQueryResult,
+  DataSourceStatus,
+  HolidayDataSource,
+  HolidayDataSourceFactory as HolidayDataSourceFactoryType,
+  HolidayDataSourceErrorType,
+  HolidayDataSourceProgressCallback,
+} from "./holiday-data-source";
+
+import { HolidayDataSourceError } from "./holiday-data-source";
+
+// Re-export types
+export type {
+  HolidayType,
+  DataSourceHoliday,
+  HolidayDateRange,
+  HolidayDataSourceConfig,
+  HolidayQueryOptions,
+  HolidayCheckResult,
+  HolidayQueryResult,
+  DataSourceStatus,
+  HolidayDataSource,
+  HolidayDataSourceFactoryType,
+  HolidayDataSourceErrorType,
+  HolidayDataSourceProgressCallback,
+};
+
+// Re-export error class
+export { HolidayDataSourceError };
+
 /**
  * Represents a single day in the calendar
  */
@@ -85,13 +122,17 @@ export interface RTOPolicy {
 }
 
 /**
- * Holiday data structure
+ * RTO-specific holiday data structure (for calendar display and validation)
+ * This is different from DataSourceHoliday which is used for API data
  */
-export interface Holiday {
+export interface RTOHoliday {
   date: Date;
   name: string;
   type: "company" | "public";
   recurring?: boolean;
+  countryCode?: string; // ISO 3166-1 alpha-2 country code
+  localName?: string; // Local name of the holiday
+  source?: "nager-date" | "manual" | "company"; // Where this holiday data came from
 }
 
 /**
