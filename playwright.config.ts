@@ -91,6 +91,7 @@ export default defineConfig({
 	projects: [
 		{
 			name: "firefox-desktop",
+			testIgnore: MOBILE_TEST_FILES,
 			use: {
 				...devices["Desktop Firefox"],
 				viewport: { width: 1920, height: 1080 },
@@ -107,6 +108,7 @@ export default defineConfig({
 		{
 			name: "chromium-mobile",
 			testMatch: MOBILE_TEST_FILES,
+			dependencies: ["chromium-desktop"],
 			use: {
 				...devices["iPhone 12"],
 				viewport: { width: 390, height: 844 },
@@ -116,6 +118,7 @@ export default defineConfig({
 		{
 			name: "tablet",
 			testMatch: MOBILE_TEST_FILES,
+			dependencies: ["chromium-desktop"],
 			use: {
 				...devices["iPad (gen 7)"],
 				viewport: { width: 768, height: 1024 },
