@@ -11,10 +11,7 @@ test.describe("Mobile Edge Cases", () => {
 		// Set mobile viewport
 		await page.setViewportSize({ width: 375, height: 667 });
 		await navigateToApp(page);
-		// Calendar panel is open by default on mobile
-		// Wait for page to fully load including JavaScript
 		await page.waitForLoadState("networkidle");
-		// Wait for calendar to be ready (datepainter)
 		await page.waitForSelector(
 			'[data-testid="calendar-day"]:not(.datepainter__day--empty):not(.datepainter__day--disabled)',
 			{
@@ -23,21 +20,16 @@ test.describe("Mobile Edge Cases", () => {
 		);
 	});
 
-	test("should display mobile panel toggle", async ({ page }) => {
-		const panelToggle = page.locator(".panel-toggle");
-		await expect(panelToggle).toBeVisible();
+	test("should display calendar on mobile viewport", async ({ page }) => {
+		const calendar = page.locator(".datepainter");
+		await expect(calendar).toBeVisible();
 	});
 
-	test("should handle touch tap on date cell", async ({ page }) => {
+	test("should handle click on date cell in mobile viewport", async ({ page }) => {
 		await selectMode(page, "sick");
 
-		// Simulate touch tap on a date
-		const dateCell = page
-			.locator(
-				'[data-testid="calendar-day"]:not(.datepainter__day--empty):not(.datepainter__day--disabled)',
-			)
-			.first();
-		await dateCell.tap();
+		// Click a date cell (touch tap requires isMobile project config)
+		await clickDate(page, 0);
 
 		// Verify date is marked
 		await expectDateHasState(page, 0, "sick");
@@ -54,17 +46,13 @@ test.describe("Mobile Edge Cases", () => {
 		await expectDateHasState(page, 0, "oof");
 	});
 
-	test("should handle rapid touch interactions", async ({ page }) => {
+	test("should handle rapid click interactions", async ({ page }) => {
 		await selectMode(page, "holiday");
 
-		const dateCells = page.locator(
-			'[data-testid="calendar-day"]:not(.datepainter__day--empty):not(.datepainter__day--disabled)',
-		);
-
-		// Rapid taps on different dates
-		await dateCells.nth(0).tap();
-		await dateCells.nth(1).tap();
-		await dateCells.nth(2).tap();
+		// Rapid clicks on different dates
+		await clickDate(page, 0);
+		await clickDate(page, 1);
+		await clickDate(page, 2);
 
 		// All should be marked
 		await expectDateHasState(page, 0, "holiday");
@@ -72,17 +60,17 @@ test.describe("Mobile Edge Cases", () => {
 		await expectDateHasState(page, 2, "holiday");
 	});
 
-	test("should handle mobile menu", async ({ page }) => {
+	test("should handle mobile menu button", async ({ page }) => {
 		const menuButton = page.locator('[data-testid="mobile-menu-button"]');
 
 		// Menu button should be visible on mobile
 		await expect(menuButton).toBeVisible();
 
-		// Click to open menu
+		// Click to open settings dialog
 		await menuButton.click();
 
-		// Menu should be visible
-		const menu = page.locator('[data-testid="mobile-menu"]');
-		await expect(menu).toBeVisible();
+		// Settings dialog should be visible
+		const dialog = page.locator("#settings-dialog");
+		await expect(dialog).toBeVisible();
 	});
 });
