@@ -4,8 +4,8 @@
  * across all possible 12-week windows
  */
 
-import type { DaySelection } from "../../rtoValidation";
-import { createDaySelection } from "../../rtoValidation";
+import type { DaySelection } from "../../../../lib/rtoValidation";
+import { createDaySelection } from "../../../../lib/rtoValidation";
 
 /**
  * Sliding window scenario configuration

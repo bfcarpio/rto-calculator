@@ -2,7 +2,7 @@
 
 **Date:** January 2025  
 **Status:** ✅ Implemented  
-**Location:** `src/scripts/rtoValidation.ts`
+**Location:** `src/lib/rtoValidation.ts` (core library) and `src/scripts/rtoValidation.ts` (UI integration)
 
 ---
 
@@ -716,7 +716,8 @@ CONFIG.ROLLING_PERIOD_WEEKS = 8;
 
 ### Related Files
 
-- **`src/scripts/rtoValidation.ts`** - Main validation implementation with embedded element references
+- **`src/lib/rtoValidation.ts`** - Core validation library with pure functions (no DOM dependencies)
+- **`src/scripts/rtoValidation.ts`** - UI integration layer handling DOM reading and updates
 - **`src/components/month.astro`** - Status column HTML structure
 - **`src/components/day.astro`** - Day cell HTML structure
 - **`src/utils/validation.ts`** - Pure validation utilities

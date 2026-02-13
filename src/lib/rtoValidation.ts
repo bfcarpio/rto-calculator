@@ -1,9 +1,12 @@
 /**
- * RTO Validation Module
+ * RTO Validation Library
  *
- * Validates that the top 8 weeks of the first 12-week period
- * have an average of 3/5 (60%) days in office.
+ * Core validation logic for RTO (Return to Office) compliance checking.
+ * This library provides pure functions for validating office day requirements
+ * without any DOM dependencies.
  */
+
+// ==================== Type Definitions ====================
 
 /**
  * RTO policy configuration
@@ -55,6 +58,18 @@ export interface ValidationResult {
 }
 
 /**
+ * Compliance result from sliding window validation
+ */
+export interface SlidingWindowResult {
+  isValid: boolean;
+  message: string;
+  overallCompliance: number;
+  evaluatedWeekStarts: number[];
+}
+
+// ==================== Configuration ====================
+
+/**
  * Default RTO policy configuration
  */
 export const DEFAULT_RTO_POLICY: RTOPolicyConfig = {
@@ -64,6 +79,8 @@ export const DEFAULT_RTO_POLICY: RTOPolicyConfig = {
   rollingPeriodWeeks: 12,
   topWeeksToCheck: 8,
 };
+
+// ==================== Date Utilities ====================
 
 /**
  * Get the start of the week (Monday) for a given date
@@ -113,6 +130,18 @@ export function getWeekDates(weekStart: Date): Date[] {
 }
 
 /**
+ * Check if a date is a weekday (Monday-Friday)
+ * @param date - Date to check
+ * @returns true if weekday, false if weekend
+ */
+export function isWeekday(date: Date): boolean {
+  const day = date.getDay();
+  return day >= 1 && day <= 5; // 1 = Monday, 5 = Friday
+}
+
+// ==================== Data Processing ====================
+
+/**
  * Filter and transform day selections to work-from-home dates
  * @param selections - Array of day selections
  * @returns Array of Date objects for work-from-home selections
@@ -145,18 +174,19 @@ export function groupDatesByWeek(
 /**
  * Calculate office days for a specific week
  * Office days = total weekdays - work-from-home days
- * @param weekDates - Weekday dates for the week
  * @param weeksByWFH - Map of week start to WFH day count
  * @param weekStart - Start date of the week
+ * @param policy - RTO policy configuration
  * @returns Number of office days in the week
  */
 export function calculateOfficeDaysInWeek(
   weeksByWFH: Map<number, number>,
   weekStart: Date,
+  policy: RTOPolicyConfig = DEFAULT_RTO_POLICY,
 ): number {
   const weekKey = weekStart.getTime();
   const wfhDays = weeksByWFH.get(weekKey) || 0;
-  return DEFAULT_RTO_POLICY.totalWeekdaysPerWeek - wfhDays;
+  return policy.totalWeekdaysPerWeek - wfhDays;
 }
 
 /**
@@ -188,8 +218,11 @@ export function calculateWeekCompliance(
   };
 }
 
+// ==================== Validation Methods ====================
+
 /**
  * Validate the top 8 weeks of the first 12-week period
+ * This is a static validation that checks the first N weeks from calendar start
  * @param selections - Array of day selections
  * @param calendarStartDate - Start date of the calendar (first day)
  * @param policy - RTO policy configuration (optional, uses default if not provided)
@@ -264,6 +297,88 @@ export function validateTop8Weeks(
 }
 
 /**
+ * Calculate rolling window compliance
+ * This validation slides through all 12-week windows and finds the first invalid one
+ * @param weeksData - Array of week compliance data
+ * @param policy - RTO policy configuration (optional, uses default if not provided)
+ * @returns Sliding window validation result
+ */
+export function validateSlidingWindow(
+  weeksData: WeekCompliance[],
+  policy: RTOPolicyConfig = DEFAULT_RTO_POLICY,
+): SlidingWindowResult {
+  const windowSize = policy.rollingPeriodWeeks;
+  const weeksToEvaluate = policy.topWeeksToCheck;
+
+  // Slide through 12-week windows until we find an invalid one
+  for (
+    let windowStart = 0;
+    windowStart <= weeksData.length - windowSize;
+    windowStart++
+  ) {
+    // Get 12-week window
+    const windowWeeks = weeksData.slice(windowStart, windowStart + windowSize);
+
+    // Sort by office days descending to find best weeks
+    const sortedByOfficeDays = [...windowWeeks].sort(
+      (a, b) => b.officeDays - a.officeDays,
+    );
+
+    // Take top N weeks (the best weeks)
+    const bestWeeks = sortedByOfficeDays.slice(0, weeksToEvaluate);
+
+    // Calculate average and validity for this window
+    const totalOfficeDays = bestWeeks.reduce(
+      (sum, week) => sum + week.officeDays,
+      0,
+    );
+    const averageOfficeDays = totalOfficeDays / weeksToEvaluate;
+    const averageOfficePercentage =
+      (averageOfficeDays / policy.totalWeekdaysPerWeek) * 100;
+    const requiredPercentage = policy.thresholdPercentage * 100;
+    const isValid = averageOfficePercentage >= requiredPercentage;
+
+    // Return immediately if invalid (break on first invalid window)
+    if (!isValid) {
+      const evaluatedWeekStarts = bestWeeks.map((w) => w.weekStart.getTime());
+      return {
+        isValid: false,
+        message: `✗ RTO Violation: Best ${weeksToEvaluate} of ${windowSize} weeks average ${averageOfficeDays.toFixed(1)} office days (${averageOfficePercentage.toFixed(0)}%) of ${policy.totalWeekdaysPerWeek} weekdays. Required: ${requiredPercentage.toFixed(0)}%`,
+        overallCompliance: averageOfficePercentage,
+        evaluatedWeekStarts,
+      };
+    }
+  }
+
+  // All windows are valid, return the last valid window
+  const lastWindowStart = Math.max(0, weeksData.length - windowSize);
+  const lastWindowWeeks = weeksData.slice(
+    lastWindowStart,
+    lastWindowStart + windowSize,
+  );
+  const sortedByOfficeDays = [...lastWindowWeeks].sort(
+    (a, b) => b.officeDays - a.officeDays,
+  );
+  const bestWeeks = sortedByOfficeDays.slice(0, weeksToEvaluate);
+  const totalOfficeDays = bestWeeks.reduce(
+    (sum, week) => sum + week.officeDays,
+    0,
+  );
+  const averageOfficeDays = totalOfficeDays / weeksToEvaluate;
+  const averageOfficePercentage =
+    (averageOfficeDays / policy.totalWeekdaysPerWeek) * 100;
+  const requiredPercentage = policy.thresholdPercentage * 100;
+  const evaluatedWeekStarts = bestWeeks.map((w) => w.weekStart.getTime());
+
+  return {
+    isValid: true,
+    message: `✓ RTO Compliant: Best ${weeksToEvaluate} of ${windowSize} weeks average ${averageOfficeDays.toFixed(1)} office days (${averageOfficePercentage.toFixed(0)}%) of ${policy.totalWeekdaysPerWeek} weekdays. Required: ${requiredPercentage.toFixed(0)}%`,
+    overallCompliance: averageOfficePercentage,
+    evaluatedWeekStarts,
+  };
+}
+
+/**
  * Get compliance status for a specific week
  * @param weekStart - Start date of the week
  * @param selections - Array of day selections
@@ -299,6 +414,8 @@ export function isInEvaluationPeriod(
   );
   return weekDiff >= 0 && weekDiff < policy.topWeeksToCheck;
 }
+
+// ==================== Utility Functions ====================
 
 /**
  * Create a day selection object

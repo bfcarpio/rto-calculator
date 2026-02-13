@@ -523,11 +523,8 @@ const { id = "settings-modal" } = Astro.props;
                     validationManager.setDebugMode(newState);
                 }
 
-                // Update existing validation script config
-                const rtoValidation = (window as any).RTOValidation;
-                if (rtoValidation && rtoValidation.CONFIG) {
-                    rtoValidation.CONFIG.DEBUG = newState;
-                }
+                // Note: Debug mode is now handled by the validation library
+                // The UI module uses internal CONFIG for its own debug logging
 
                 console.log(
                     `[Settings] Debug mode ${newState ? "enabled" : "disabled"}`,

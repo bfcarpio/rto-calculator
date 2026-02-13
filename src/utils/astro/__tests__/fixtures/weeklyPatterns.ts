@@ -3,8 +3,8 @@
  * Makes tests clearer and easier to edit by providing reusable patterns
  */
 
-import type { DaySelection } from "../../rtoValidation";
-import { createDaySelection } from "../../rtoValidation";
+import type { DaySelection } from "../../../../lib/rtoValidation";
+import { createDaySelection } from "../../../../lib/rtoValidation";
 
 /**
  * Weekly WFH pattern types
