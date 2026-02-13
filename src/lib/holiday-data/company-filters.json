@@ -1,0 +1,555 @@
+{
+  "US": {
+    "name": "United States",
+    "companies": {
+      "Acme Corp": [
+        "New Year's Day",
+        "Martin Luther King, Jr. Day",
+        "Presidents' Day",
+        "Memorial Day",
+        "Juneteenth",
+        "Independence Day",
+        "Labor Day",
+        "Columbus Day",
+        "Veterans Day",
+        "Thanksgiving Day",
+        "Christmas Day"
+      ],
+      "TechCo": [
+        "New Year's Day",
+        "Memorial Day",
+        "Juneteenth",
+        "Independence Day",
+        "Labor Day",
+        "Thanksgiving Day",
+        "Christmas Day"
+      ],
+      "FinanceHub": [
+        "New Year's Day",
+        "Martin Luther King, Jr. Day",
+        "Presidents' Day",
+        "Good Friday",
+        "Memorial Day",
+        "Juneteenth",
+        "Independence Day",
+        "Labor Day",
+        "Thanksgiving Day",
+        "Christmas Day"
+      ],
+      "RetailGiant": [
+        "New Year's Day",
+        "Memorial Day",
+        "Independence Day",
+        "Labor Day",
+        "Thanksgiving Day",
+        "Christmas Day"
+      ]
+    }
+  },
+  "CA": {
+    "name": "Canada",
+    "companies": {
+      "Acme Corp": [
+        "New Year's Day",
+        "Family Day",
+        "Good Friday",
+        "Victoria Day",
+        "Canada Day",
+        "Civic Holiday",
+        "Labour Day",
+        "National Day for Truth and Reconciliation",
+        "Thanksgiving",
+        "Remembrance Day",
+        "Christmas Day",
+        "Boxing Day"
+      ],
+      "TechCo": [
+        "New Year's Day",
+        "Good Friday",
+        "Victoria Day",
+        "Canada Day",
+        "Labour Day",
+        "Thanksgiving",
+        "Christmas Day",
+        "Boxing Day"
+      ]
+    }
+  },
+  "GB": {
+    "name": "United Kingdom",
+    "companies": {
+      "Acme Corp": [
+        "New Year's Day",
+        "Good Friday",
+        "Easter Monday",
+        "Early May Bank Holiday",
+        "Spring Bank Holiday",
+        "Summer Bank Holiday",
+        "Christmas Day",
+        "Boxing Day"
+      ],
+      "TechCo": [
+        "New Year's Day",
+        "Good Friday",
+        "Easter Monday",
+        "Early May Bank Holiday",
+        "Spring Bank Holiday",
+        "Summer Bank Holiday",
+        "Christmas Day",
+        "Boxing Day"
+      ],
+      "FinanceHub": [
+        "New Year's Day",
+        "Good Friday",
+        "Easter Monday",
+        "Early May Bank Holiday",
+        "Spring Bank Holiday",
+        "Summer Bank Holiday",
+        "Christmas Day",
+        "Boxing Day"
+      ]
+    }
+  },
+  "DE": {
+    "name": "Germany",
+    "companies": {
+      "Acme Corp": [
+        "New Year's Day",
+        "Good Friday",
+        "Easter Monday",
+        "Labour Day",
+        "Ascension Day",
+        "Whit Monday",
+        "German Unity Day",
+        "Christmas Day",
+        "Second Christmas Day"
+      ],
+      "TechCo": [
+        "New Year's Day",
+        "Good Friday",
+        "Easter Monday",
+        "Labour Day",
+        "Christmas Day",
+        "Second Christmas Day"
+      ]
+    }
+  },
+  "FR": {
+    "name": "France",
+    "companies": {
+      "Acme Corp": [
+        "New Year's Day",
+        "Easter Monday",
+        "Labour Day",
+        "Victory in Europe Day",
+        "Ascension Day",
+        "Whit Monday",
+        "Bastille Day",
+        "Assumption of Mary",
+        "All Saints' Day",
+        "Armistice Day",
+        "Christmas Day"
+      ],
+      "TechCo": [
+        "New Year's Day",
+        "Easter Monday",
+        "Labour Day",
+        "Ascension Day",
+        "Whit Monday",
+        "Bastille Day",
+        "Assumption of Mary",
+        "All Saints' Day",
+        "Armistice Day",
+        "Christmas Day"
+      ]
+    }
+  },
+  "AU": {
+    "name": "Australia",
+    "companies": {
+      "Acme Corp": [
+        "New Year's Day",
+        "Australia Day",
+        "Good Friday",
+        "Easter Saturday",
+        "Easter Monday",
+        "Anzac Day",
+        "King's Birthday",
+        "Christmas Day",
+        "Boxing Day"
+      ],
+      "TechCo": [
+        "New Year's Day",
+        "Australia Day",
+        "Good Friday",
+        "Easter Monday",
+        "Anzac Day",
+        "King's Birthday",
+        "Christmas Day",
+        "Boxing Day"
+      ]
+    }
+  },
+  "JP": {
+    "name": "Japan",
+    "companies": {
+      "Acme Corp": [
+        "New Year's Day",
+        "Coming of Age Day",
+        "National Foundation Day",
+        "Vernal Equinox Day",
+        "Showa Day",
+        "Constitution Memorial Day",
+        "Greenery Day",
+        "Children's Day",
+        "Marine Day",
+        "Mountain Day",
+        "Respect for the Aged Day",
+        "Autumnal Equinox Day",
+        "Sports Day",
+        "Culture Day",
+        "Labor Thanksgiving Day"
+      ],
+      "TechCo": [
+        "New Year's Day",
+        "Coming of Age Day",
+        "Vernal Equinox Day",
+        "Showa Day",
+        "Children's Day",
+        "Marine Day",
+        "Mountain Day",
+        "Respect for the Aged Day",
+        "Sports Day",
+        "Culture Day",
+        "Labor Thanksgiving Day"
+      ]
+    }
+  },
+  "BR": {
+    "name": "Brazil",
+    "companies": {
+      "Acme Corp": [
+        "New Year's Day",
+        "Carnival",
+        "Ash Wednesday",
+        "Good Friday",
+        "Tiradentes' Day",
+        "Labour Day",
+        "Corpus Christi",
+        "Independence Day",
+        "Our Lady of Aparecida",
+        "All Souls' Day",
+        "Proclamation of the Republic",
+        "Christmas Day"
+      ],
+      "TechCo": [
+        "New Year's Day",
+        "Carnival",
+        "Good Friday",
+        "Labour Day",
+        "Independence Day",
+        "Christmas Day"
+      ]
+    }
+  },
+  "IN": {
+    "name": "India",
+    "companies": {
+      "Acme Corp": [
+        "Republic Day",
+        "Holi",
+        "Mahavir Jayanti",
+        "Good Friday",
+        "Eid al-Fitr",
+        "Buddha Purnima",
+        "Independence Day",
+        "Eid al-Adha",
+        "Gandhi Jayanti",
+        "Dussehra",
+        "Diwali",
+        "Christmas Day"
+      ],
+      "TechCo": [
+        "Republic Day",
+        "Good Friday",
+        "Independence Day",
+        "Gandhi Jayanti",
+        "Diwali",
+        "Christmas Day"
+      ]
+    }
+  },
+  "MX": {
+    "name": "Mexico",
+    "companies": {
+      "Acme Corp": [
+        "New Year's Day",
+        "Constitution Day",
+        "Benito Juárez's Birthday",
+        "Labour Day",
+        "Mother's Day",
+        "Independence Day",
+        "Revolution Day",
+        "Change of Federal Government",
+        "Christmas Day"
+      ],
+      "TechCo": [
+        "New Year's Day",
+        "Labour Day",
+        "Independence Day",
+        "Christmas Day"
+      ]
+    }
+  },
+  "IT": {
+    "name": "Italy",
+    "companies": {
+      "Acme Corp": [
+        "New Year's Day",
+        "Epiphany",
+        "Easter Monday",
+        "Liberation Day",
+        "Labour Day",
+        "Republic Day",
+        "Ferragosto",
+        "All Saints' Day",
+        "Immaculate Conception",
+        "Christmas Day",
+        "Saint Stephen's Day"
+      ],
+      "TechCo": [
+        "New Year's Day",
+        "Easter Monday",
+        "Labour Day",
+        "Republic Day",
+        "Ferragosto",
+        "All Saints' Day",
+        "Immaculate Conception",
+        "Christmas Day",
+        "Saint Stephen's Day"
+      ]
+    }
+  },
+  "ES": {
+    "name": "Spain",
+    "companies": {
+      "Acme Corp": [
+        "New Year's Day",
+        "Epiphany",
+        "Good Friday",
+        "Labour Day",
+        "Assumption of Mary",
+        "National Day",
+        "All Saints' Day",
+        "Constitution Day",
+        "Immaculate Conception",
+        "Christmas Day"
+      ],
+      "TechCo": [
+        "New Year's Day",
+        "Epiphany",
+        "Good Friday",
+        "Labour Day",
+        "All Saints' Day",
+        "Constitution Day",
+        "Immaculate Conception",
+        "Christmas Day"
+      ]
+    }
+  },
+  "NL": {
+    "name": "Netherlands",
+    "companies": {
+      "Acme Corp": [
+        "New Year's Day",
+        "Good Friday",
+        "Easter Monday",
+        "King's Day",
+        "Liberation Day",
+        "Ascension Day",
+        "Whit Monday",
+        "Christmas Day",
+        "Boxing Day"
+      ],
+      "TechCo": [
+        "New Year's Day",
+        "Good Friday",
+        "Easter Monday",
+        "King's Day",
+        "Ascension Day",
+        "Whit Monday",
+        "Christmas Day",
+        "Boxing Day"
+      ]
+    }
+  },
+  "SE": {
+    "name": "Sweden",
+    "companies": {
+      "Acme Corp": [
+        "New Year's Day",
+        "Epiphany",
+        "Good Friday",
+        "Easter Sunday",
+        "Easter Monday",
+        "Labour Day",
+        "Ascension Day",
+        "National Day",
+        "Midsummer Day",
+        "All Saints' Day",
+        "Christmas Day",
+        "Boxing Day",
+        "New Year's Eve"
+      ],
+      "TechCo": [
+        "New Year's Day",
+        "Good Friday",
+        "Easter Monday",
+        "Labour Day",
+        "National Day",
+        "Midsummer Day",
+        "Christmas Day",
+        "Boxing Day"
+      ]
+    }
+  },
+  "CH": {
+    "name": "Switzerland",
+    "companies": {
+      "Acme Corp": [
+        "New Year's Day",
+        "Good Friday",
+        "Easter Monday",
+        "Labour Day",
+        "Ascension Day",
+        "Whit Monday",
+        "National Day",
+        "Christmas Day",
+        "Boxing Day"
+      ],
+      "TechCo": [
+        "New Year's Day",
+        "Good Friday",
+        "Easter Monday",
+        "Labour Day",
+        "National Day",
+        "Christmas Day",
+        "Boxing Day"
+      ]
+    }
+  },
+  "AT": {
+    "name": "Austria",
+    "companies": {
+      "Acme Corp": [
+        "New Year's Day",
+        "Epiphany",
+        "Easter Monday",
+        "Labour Day",
+        "Ascension Day",
+        "Whit Monday",
+        "Corpus Christi",
+        "Assumption of Mary",
+        "National Day",
+        "All Saints' Day",
+        "Immaculate Conception",
+        "Christmas Day",
+        "Saint Stephen's Day"
+      ],
+      "TechCo": [
+        "New Year's Day",
+        "Easter Monday",
+        "Labour Day",
+        "Ascension Day",
+        "Whit Monday",
+        "National Day",
+        "All Saints' Day",
+        "Christmas Day",
+        "Saint Stephen's Day"
+      ]
+    }
+  },
+  "BE": {
+    "name": "Belgium",
+    "companies": {
+      "Acme Corp": [
+        "New Year's Day",
+        "Easter Monday",
+        "Labour Day",
+        "Ascension Day",
+        "Whit Monday",
+        "National Day",
+        "Assumption of Mary",
+        "All Saints' Day",
+        "Armistice Day",
+        "Christmas Day"
+      ],
+      "TechCo": [
+        "New Year's Day",
+        "Easter Monday",
+        "Labour Day",
+        "Ascension Day",
+        "Whit Monday",
+        "National Day",
+        "Christmas Day"
+      ]
+    }
+  },
+  "PL": {
+    "name": "Poland",
+    "companies": {
+      "Acme Corp": [
+        "New Year's Day",
+        "Epiphany",
+        "Easter Sunday",
+        "Easter Monday",
+        "Labour Day",
+        "Constitution Day",
+        "Corpus Christi",
+        "Assumption of Mary",
+        "All Saints' Day",
+        "Independence Day",
+        "Christmas Day",
+        "Boxing Day"
+      ],
+      "TechCo": [
+        "New Year's Day",
+        "Easter Monday",
+        "Labour Day",
+        "Constitution Day",
+        "Corpus Christi",
+        "Christmas Day",
+        "Boxing Day"
+      ]
+    }
+  },
+  "ZA": {
+    "name": "South Africa",
+    "companies": {
+      "Acme Corp": [
+        "New Year's Day",
+        "Human Rights Day",
+        "Good Friday",
+        "Family Day",
+        "Freedom Day",
+        "Workers' Day",
+        "Youth Day",
+        "National Women's Day",
+        "Heritage Day",
+        "Day of Reconciliation",
+        "Christmas Day",
+        "Boxing Day"
+      ],
+      "TechCo": [
+        "New Year's Day",
+        "Good Friday",
+        "Family Day",
+        "Freedom Day",
+        "Workers' Day",
+        "Heritage Day",
+        "Christmas Day",
+        "Boxing Day"
+      ]
+    }
+  }
+}
