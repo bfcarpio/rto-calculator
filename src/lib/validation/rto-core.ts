@@ -319,6 +319,51 @@ export function isInEvaluationPeriod(
 	return weekDiff >= 0 && weekDiff < policy.topWeeksToCheck;
 }
 
+// ==================== Single Window Evaluation ====================
+
+export interface SingleWindowEvaluation {
+	isValid: boolean;
+	averageOfficeDays: number;
+	averageOfficePercentage: number;
+	bestWeeks: WeekCompliance[];
+}
+
+/**
+ * Evaluate a single window of weeks using the best-K selection algorithm.
+ * Sorts weeks by office days (descending), picks top K, and checks if
+ * the average meets the minimum requirement.
+ */
+export function evaluateSingleWindow(
+	windowWeeks: WeekCompliance[],
+	policy: RTOPolicyConfig,
+): SingleWindowEvaluation {
+	const sorted = [...windowWeeks].sort(
+		(a, b) =>
+			b.officeDays - a.officeDays ||
+			b.weekStart.getTime() - a.weekStart.getTime(),
+	);
+	// For partial windows (< W weeks), evaluate all available weeks
+	const evalCount = Math.min(policy.topWeeksToCheck, sorted.length);
+	const bestWeeks = sorted.slice(0, evalCount);
+
+	const totalOfficeDays = bestWeeks.reduce(
+		(sum, week) => sum + week.officeDays,
+		0,
+	);
+	const averageOfficeDays = evalCount > 0 ? totalOfficeDays / evalCount : 0;
+	const totalDays = bestWeeks.reduce((sum, week) => sum + week.totalDays, 0);
+	const averageOfficePercentage =
+		totalDays > 0 ? (totalOfficeDays / totalDays) * 100 : 0;
+
+	// Primary check: average office days must meet the minimum.
+	// This handles holiday weeks correctly — a week with 5 holidays
+	// has 0 officeDays and 0 totalDays, so it correctly counts as
+	// 0 office days rather than getting a free pass via percentage.
+	const isValid = averageOfficeDays >= policy.minOfficeDaysPerWeek;
+
+	return { isValid, averageOfficeDays, averageOfficePercentage, bestWeeks };
+}
+
 // ==================== Validation ====================
 
 /**
@@ -332,44 +377,10 @@ export function validateSlidingWindow(
 	const windowSize = policy.rollingPeriodWeeks;
 	const weeksToEvaluate = policy.topWeeksToCheck;
 
-	// Helper to evaluate a single window of weeks
-	function evaluateWindow(windowWeeks: WeekCompliance[]): {
-		isValid: boolean;
-		averageOfficeDays: number;
-		averageOfficePercentage: number;
-		bestWeeks: WeekCompliance[];
-	} {
-		const sorted = [...windowWeeks].sort(
-			(a, b) =>
-				b.officeDays - a.officeDays ||
-				b.weekStart.getTime() - a.weekStart.getTime(),
-		);
-		// For partial windows (< 12 weeks), evaluate all available weeks
-		const evalCount = Math.min(weeksToEvaluate, sorted.length);
-		const bestWeeks = sorted.slice(0, evalCount);
-
-		const totalOfficeDays = bestWeeks.reduce(
-			(sum, week) => sum + week.officeDays,
-			0,
-		);
-		const averageOfficeDays = evalCount > 0 ? totalOfficeDays / evalCount : 0;
-		const totalDays = bestWeeks.reduce((sum, week) => sum + week.totalDays, 0);
-		const averageOfficePercentage =
-			totalDays > 0 ? (totalOfficeDays / totalDays) * 100 : 0;
-
-		// Primary check: average office days must meet the minimum.
-		// This handles holiday weeks correctly — a week with 5 holidays
-		// has 0 officeDays and 0 totalDays, so it correctly counts as
-		// 0 office days rather than getting a free pass via percentage.
-		const isValid = averageOfficeDays >= policy.minOfficeDaysPerWeek;
-
-		return { isValid, averageOfficeDays, averageOfficePercentage, bestWeeks };
-	}
-
 	// If fewer weeks than a full window, evaluate as a single partial window
 	if (weeksData.length > 0 && weeksData.length < windowSize) {
 		const { isValid, averageOfficeDays, averageOfficePercentage, bestWeeks } =
-			evaluateWindow(weeksData);
+			evaluateSingleWindow(weeksData, policy);
 		const evaluatedWeekStarts = bestWeeks.map((w) => w.weekStart.getTime());
 		const windowWeekStarts = weeksData.map((w) => w.weekStart.getTime());
 		const windowStartTimestamp = weeksData[0]?.weekStart.getTime() ?? null;
@@ -396,7 +407,7 @@ export function validateSlidingWindow(
 	) {
 		const windowWeeks = weeksData.slice(windowStart, windowStart + windowSize);
 		const { isValid, averageOfficeDays, averageOfficePercentage, bestWeeks } =
-			evaluateWindow(windowWeeks);
+			evaluateSingleWindow(windowWeeks, policy);
 
 		if (!isValid) {
 			const evaluatedWeekStarts = bestWeeks.map((w) => w.weekStart.getTime());
@@ -425,7 +436,7 @@ export function validateSlidingWindow(
 		lastWindowStart + windowSize,
 	);
 	const { averageOfficeDays, averageOfficePercentage, bestWeeks } =
-		evaluateWindow(lastWindowWeeks);
+		evaluateSingleWindow(lastWindowWeeks, policy);
 	const evaluatedWeekStarts = bestWeeks.map((w) => w.weekStart.getTime());
 	const windowWeekStarts = lastWindowWeeks.map((w) => w.weekStart.getTime());
 	const lastWindowWeek = weeksData[lastWindowStart];
