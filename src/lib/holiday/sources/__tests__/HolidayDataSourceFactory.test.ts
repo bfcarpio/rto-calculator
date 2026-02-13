@@ -332,7 +332,7 @@ describe("HolidayDataSourceFactory", () => {
 			const statusMap = await factory.checkAllDataSources();
 			expect(statusMap).toBeInstanceOf(Map);
 			expect(statusMap.size).toBeGreaterThan(0);
-		});
+		}, 15000); // Increase timeout for async network operations
 
 		it("should check all registered data sources", async () => {
 			const source1 = new NagerDateHolidayDataSource();

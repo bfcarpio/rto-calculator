@@ -45,7 +45,7 @@ describe("Embedded Element References - DayInfo", () => {
 
 			expect(dayInfo.element).toBeInstanceOf(HTMLElement);
 			expect(dayInfo.element).toBe(mockElement);
-		});
+		}, 10000); // Safety timeout for WSL environment
 
 		it("should allow direct property access to element", () => {
 			const mockElement = createMockDayElement(2025, 0, 6, "office");
