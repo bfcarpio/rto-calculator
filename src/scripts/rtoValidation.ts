@@ -106,6 +106,22 @@ async function readCalendarData(): Promise<WeekInfo[]> {
 		".calendar-day:not(.empty)[data-year][data-month][data-day]",
 	);
 
+	// Query all status cells and build lookup map keyed by week start timestamp
+	const statusCellElements = document.querySelectorAll(
+		".week-status-cell[data-week-start]",
+	);
+	const statusCellMap = new Map<number, HTMLElement>();
+	for (const cell of statusCellElements) {
+		const element = cell as HTMLElement;
+		const weekStartAttr = element.dataset.weekStart;
+		if (!weekStartAttr) continue;
+
+		const weekStartTimestamp = parseInt(weekStartAttr, 10);
+		if (Number.isNaN(weekStartTimestamp)) continue;
+
+		statusCellMap.set(weekStartTimestamp, element);
+	}
+
 	// Group cells by week - element references stored in DayInfo objects
 	const weekMap = new Map<number, DayInfo[]>();
 	const dayCountPerWeek = new Map<number, number>();

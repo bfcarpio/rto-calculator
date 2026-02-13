@@ -62,15 +62,28 @@ export interface FetchHolidaysOptions {
  */
 export class HolidayManager {
 	private static instance: HolidayManager | null = null;
-	private dataSource: HolidayDataSource;
+	private dataSource: HolidayDataSource | null = null;
 	private cache: Map<string, HolidayResult> = new Map();
 	private currentConfig: HolidayFilterConfig = {
 		countryCode: null,
 		companyName: null,
 	};
+	private initialized = false;
 
 	private constructor() {
-		const factory = HolidayDataSourceFactory.getInstance();
+		// Async initialization moved to initialize() method
+	}
+
+	/**
+	 * Initialize the holiday manager with a data source
+	 * @private
+	 */
+	private async initialize(): Promise<void> {
+		if (this.initialized) {
+			return;
+		}
+
+		const factory = await HolidayDataSourceFactory.getInstance();
 		const dataSource = factory.getDataSource("nager-date");
 
 		// Type guard to ensure it's a valid HolidayDataSource
@@ -79,16 +92,29 @@ export class HolidayManager {
 		}
 
 		this.dataSource = dataSource as HolidayDataSource;
+		this.initialized = true;
 	}
 
 	/**
 	 * Get the singleton instance
 	 */
-	public static getInstance(): HolidayManager {
+	public static async getInstance(): Promise<HolidayManager> {
 		if (!HolidayManager.instance) {
 			HolidayManager.instance = new HolidayManager();
+			await HolidayManager.instance.initialize();
 		}
 		return HolidayManager.instance;
+	}
+
+	/**
+	 * Ensure the manager is initialized before accessing data source
+	 * @private
+	 */
+	private ensureInitialized(): HolidayDataSource {
+		if (!this.initialized || !this.dataSource) {
+			throw new Error("HolidayManager not initialized");
+		}
+		return this.dataSource;
 	}
 
 	/**
@@ -304,6 +330,7 @@ export class HolidayManager {
 		countryCode: string,
 		companyName: string | null,
 		calendarYears: number[],
+		holidaysAsOOF: boolean = true,
 	): Promise<void> {
 		const result = await this.fetchHolidays({
 			countryCode,
@@ -322,28 +349,33 @@ export class HolidayManager {
 				`.calendar-day[data-year="${year}"][data-month="${month}"][data-day="${day}"]`,
 			) as HTMLElement;
 
-			if (cell) {
-				// Add holiday class for visual styling
-				cell.classList.add("holiday");
+			if (!cell) return;
 
-				// Mark holiday as OOF day for validation (holidays count as OOF algorithmically)
+			// Skip if already marked as a holiday to prevent duplicate processing
+			if (cell.classList.contains("holiday")) return;
+
+			// Always add holiday class for visual styling
+			cell.classList.add("holiday");
+
+			// Only mark as OOF if holidaysAsOOF is enabled
+			if (holidaysAsOOF) {
 				cell.dataset.selected = "true";
 				cell.dataset.selectionType = "out-of-office";
 				cell.classList.add("selected", "out-of-office");
-
-				// Add data attribute for holiday info
-				cell.dataset.holiday = "true";
-				cell.dataset.holidayName = holiday.name;
-				cell.dataset.holidayCountry = holiday.countryCode;
-
-				// Update aria-label for accessibility
-				const currentLabel = cell.getAttribute("aria-label") || "";
-				const holidayLabel = ` - ${holiday.name} (Holiday)`;
-				cell.setAttribute("aria-label", currentLabel + holidayLabel);
-
-				// Add title for hover tooltip
-				cell.title = `${holiday.name} (${holiday.countryCode})`;
 			}
+
+			// Add data attribute for holiday info
+			cell.dataset.holiday = "true";
+			cell.dataset.holidayName = holiday.name;
+			cell.dataset.holidayCountry = holiday.countryCode;
+
+			// Update aria-label for accessibility
+			const currentLabel = cell.getAttribute("aria-label") || "";
+			const holidayLabel = ` - ${holiday.name} (Holiday)`;
+			cell.setAttribute("aria-label", currentLabel + holidayLabel);
+
+			// Add title for hover tooltip
+			cell.title = `${holiday.name} (${holiday.countryCode})`;
 		});
 	}
 
@@ -384,7 +416,10 @@ export class HolidayManager {
 	/**
 	 * Refresh holidays on the calendar based on current config
 	 */
-	public async refreshCalendarHolidays(calendarYears: number[]): Promise<void> {
+	public async refreshCalendarHolidays(
+		calendarYears: number[],
+		holidaysAsOOF: boolean = true,
+	): Promise<void> {
 		// Remove existing holidays first
 		this.removeHolidaysFromCalendar();
 
@@ -394,6 +429,7 @@ export class HolidayManager {
 				this.currentConfig.countryCode,
 				this.currentConfig.companyName ?? null,
 				calendarYears,
+				holidaysAsOOF,
 			);
 		}
 	}
@@ -443,14 +479,14 @@ export class HolidayManager {
 }
 
 // Export convenience functions
-export function getHolidayManager(): HolidayManager {
+export async function getHolidayManager(): Promise<HolidayManager> {
 	return HolidayManager.getInstance();
 }
 
 export async function fetchHolidays(
 	options: FetchHolidaysOptions,
 ): Promise<HolidayResult> {
-	const manager = HolidayManager.getInstance();
+	const manager = await getHolidayManager();
 	return manager.fetchHolidays(options);
 }
 
@@ -460,7 +496,7 @@ export async function getHolidayDates(
 	years: number[],
 	onlyWeekdays: boolean = false,
 ): Promise<Set<Date>> {
-	const manager = HolidayManager.getInstance();
+	const manager = await getHolidayManager();
 	return manager.getHolidayDates(countryCode, companyName, years, onlyWeekdays);
 }
 
@@ -469,7 +505,7 @@ export async function isHoliday(
 	countryCode: string,
 	companyName: string | null = null,
 ): Promise<boolean> {
-	const manager = HolidayManager.getInstance();
+	const manager = await getHolidayManager();
 	return manager.isHoliday(date, countryCode, companyName);
 }
 
@@ -477,16 +513,20 @@ export async function applyHolidaysToCalendar(
 	countryCode: string,
 	companyName: string | null,
 	calendarYears: number[],
+	holidaysAsOOF: boolean = true,
 ): Promise<void> {
-	const manager = HolidayManager.getInstance();
+	const manager = await getHolidayManager();
 	return manager.applyHolidaysToCalendar(
 		countryCode,
 		companyName,
 		calendarYears,
+		holidaysAsOOF,
 	);
 }
 
-export function getAvailableCompanies(countryCode: string): string[] {
-	const manager = HolidayManager.getInstance();
+export async function getAvailableCompanies(
+	countryCode: string,
+): Promise<string[]> {
+	const manager = await getHolidayManager();
 	return manager.getAvailableCompanies(countryCode);
 }
