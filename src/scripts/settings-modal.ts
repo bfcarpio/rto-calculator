@@ -1,3 +1,5 @@
+import { debugLog } from "./debug";
+
 type HolidayCountry = { code: string; name: string; flag: string };
 
 interface Settings {
@@ -24,8 +26,6 @@ declare global {
 		};
 	}
 }
-
-export {};
 
 class SettingsModal {
 	private modal: HTMLDialogElement | null = null;
@@ -133,7 +133,7 @@ class SettingsModal {
 		this.debugToggle.setAttribute("aria-checked", newState.toString());
 
 		window.validationManager?.setDebugMode(newState);
-		console.log(`[Settings] Debug mode ${newState ? "enabled" : "disabled"}`);
+		debugLog(`[Settings] Debug mode ${newState ? "enabled" : "disabled"}`);
 	}
 
 	private toggleSaveData(): void {
@@ -144,26 +144,26 @@ class SettingsModal {
 		this.saveDataToggle.setAttribute("aria-checked", newState.toString());
 
 		window.storageManager?.setDataSavingEnabled(newState);
-		console.log(`[Settings] Data saving ${newState ? "enabled" : "disabled"}`);
+		debugLog(`[Settings] Data saving ${newState ? "enabled" : "disabled"}`);
 	}
 
 	private onStrategyChange(e: Event): void {
 		const strategy = (e.target as HTMLSelectElement).value;
-		console.log(`[Settings] Strategy changed to: ${strategy}`);
+		debugLog(`[Settings] Strategy changed to: ${strategy}`);
 		window.validationManager?.SetValidator(strategy);
 	}
 
 	private onMinOfficeDaysChange(e: Event): void {
 		const value = parseInt((e.target as HTMLInputElement).value);
 		if (value >= 0 && value <= 5) {
-			console.log(`[Settings] Min office days changed to: ${value}`);
+			debugLog(`[Settings] Min office days changed to: ${value}`);
 			window.validationManager?.updateConfig({ minOfficeDaysPerWeek: value });
 		}
 	}
 
 	private onCountryChange(e: Event): void {
 		const countryCode = (e.target as HTMLSelectElement).value;
-		console.log(`[Settings] Country changed to: ${countryCode}`);
+		debugLog(`[Settings] Country changed to: ${countryCode}`);
 
 		document.dispatchEvent(
 			new CustomEvent("settings-changed", {
@@ -204,7 +204,7 @@ class SettingsModal {
 		if (this.selectedPattern.length > 0) {
 			const appliedCount = this.applyPatternToCalendar();
 			if (appliedCount > 0) {
-				console.log(`[Settings] Pattern applied to ${appliedCount} day(s)`);
+				debugLog(`[Settings] Pattern applied to ${appliedCount} day(s)`);
 				this.announceToScreenReader(
 					`Pattern applied to ${appliedCount} day(s). Settings saved`,
 				);
@@ -238,7 +238,7 @@ class SettingsModal {
 			this.countrySelect.value = "";
 		}
 		localStorage.removeItem("rto-calculator-settings");
-		console.log("[Settings] Settings reset to defaults");
+		debugLog("[Settings] Settings reset to defaults");
 
 		this.modal?.close();
 		this.announceToScreenReader("Settings reset to defaults");
@@ -371,7 +371,7 @@ class SettingsModal {
 		};
 
 		localStorage.setItem("rto-calculator-settings", JSON.stringify(settings));
-		console.log("[Settings] Settings saved to localStorage:", settings);
+		debugLog("[Settings] Settings saved to localStorage:", settings);
 	}
 
 	private loadSettingsFromLocalStorage(): void {
@@ -382,7 +382,7 @@ class SettingsModal {
 			const settings = JSON.parse(saved) as Settings;
 
 			if (settings.saveData !== true) {
-				console.log("[Settings] Data saving disabled, using default settings");
+				debugLog("[Settings] Data saving disabled, using default settings");
 				return;
 			}
 
@@ -425,7 +425,7 @@ class SettingsModal {
 				this.countrySelect.value = settings.holidays.countryCode ?? "";
 			}
 
-			console.log("[Settings] Settings loaded from localStorage:", settings);
+			debugLog("[Settings] Settings loaded from localStorage:", settings);
 		} catch (error) {
 			console.error("[Settings] Error loading settings:", error);
 		}
@@ -455,8 +455,8 @@ class SettingsModal {
 	}
 
 	private initializeHolidaySettings(): void {
-		console.log("[SettingsModal] Initializing holiday settings...");
-		console.log(
+		debugLog("[SettingsModal] Initializing holiday settings...");
+		debugLog(
 			`[SettingsModal] Window.__holidayCountries exists: ${!!window.__holidayCountries}`,
 		);
 	}

@@ -8,10 +8,18 @@ import {
 } from "../scripts/validation-result-display";
 import { setupEventListeners } from "../utils/astro/calendarFunctions";
 import "../scripts/rtoValidation";
+import { debugLog, getDebugEnabled } from "./debug";
 
 declare global {
 	interface Window {
 		displayValidationResults?: (validationResult: any) => void;
+		validationManager?: {
+			setDebugMode(enabled: boolean): void;
+			getDebugMode(): boolean;
+			SetValidator(strategy: string): void;
+			updateConfig(config: { minOfficeDaysPerWeek: number }): void;
+			getConfig(): { minOfficeDaysPerWeek?: number };
+		};
 	}
 }
 
@@ -24,7 +32,7 @@ function dispatchCalendarLoadedEvent() {
 		},
 	});
 	document.dispatchEvent(event);
-	console.log("[Index] Dispatched calendar-loaded event");
+	debugLog("[Index] Dispatched calendar-loaded event");
 }
 
 export function initializeIndex() {
@@ -50,7 +58,12 @@ export function initializeIndex() {
 	};
 
 	displayInitialPrompt();
-	console.log("[Index] Calendar initialized.");
+
+	const isDebugEnabled =
+		window.validationManager?.getDebugMode() ?? getDebugEnabled();
+	if (isDebugEnabled) {
+		debugLog("[Index] Calendar initialized.");
+	}
 
 	if (document.readyState === "loading") {
 		document.addEventListener("DOMContentLoaded", dispatchCalendarLoadedEvent);
@@ -58,5 +71,7 @@ export function initializeIndex() {
 		dispatchCalendarLoadedEvent();
 	}
 
-	console.log("[Index] Calendar initialized.");
+	if (isDebugEnabled) {
+		debugLog("[Index] Calendar initialized.");
+	}
 }
