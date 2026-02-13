@@ -103,6 +103,7 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md#the-3-layer-validation-flow) for detaile
 - **SummaryBar** - Average in-office, working days, WFH/holiday counts
 - **StatusDetails** - Week summary, capacity, current week, non-compliant weeks (with ignored/dropped distinction)
 - **StatusLegend** - Count badges for WFH/holiday/sick (directly subscribes to `onStateChange`)
+- **WeekdaySelector** - Bulk weekday toggle buttons; subscribes to `onStateChange` for sync
 
 ---
 

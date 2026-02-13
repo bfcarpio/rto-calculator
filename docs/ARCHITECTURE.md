@@ -342,6 +342,7 @@ src/
 │   ├── ShortcutsModal.astro           # Keyboard shortcuts help dialog
 │   ├── StatusDetails.astro            # Week status visualization
 │   ├── StatusLegend.astro             # Legend for status indicators
+│   ├── WeekdaySelector.astro          # Bulk weekday WFH toggle buttons
 │   ├── ActionButtons.astro            # Action buttons
 │   ├── SummaryBar.astro               # Compliance summary
 │   ├── PanelToggle.astro              # Collapsible panels
@@ -564,6 +565,13 @@ interface Holiday {
 - Week summary, capacity, current week status, non-compliant weeks
 - Non-compliant weeks show "Ignored" (dimmed) for dropped weeks vs "Needs X more" for counted weeks
 - Updates after 1.5s debounce as dates are painted
+
+#### `components/WeekdaySelector.astro`
+- Row of 5 weekday toggle buttons (Mon–Fri) for bulk WFH marking
+- Toggling a day ON marks every instance of that weekday across the full calendar range as WFH
+- Toggling OFF clears all instances of that weekday
+- Subscribes to `onStateChange` to sync button states (active only if ALL instances are marked `oof`)
+- Uses `getDateRange()`, `getDateRangeArray()`, `formatDate()` from `dateUtils.ts`
 
 #### `components/SummaryBar.astro`
 - Consumes `compliance-updated` events from auto-compliance module

@@ -43,6 +43,11 @@ Follow this exact sequence for every change:
 
 **Critical:** Steps 3 (Test) and 4 (Document) MUST happen before commits.
 
+**End-of-workflow checklist** (applies to ALL workflows):
+- Tests MUST be updated or added to cover any changes
+- Documentation MUST be updated to reflect behavior changes
+- Commits MUST be focused and atomic (separate commits for feature, tests, docs)
+
 ## Documentation Reference
 
 Read these before making significant changes:

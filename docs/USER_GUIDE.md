@@ -37,6 +37,11 @@ Welcome to the RTO Calculator! This guide will help you track your Return-to-Off
 - Click and drag across multiple days to apply the same selection
 - Faster than clicking individual days
 
+**Weekday Quick-Select:**
+- Use the **Mon–Fri buttons** below the calendar to toggle all instances of a weekday
+- Click **Wed** to mark every Wednesday as WFH; click again to clear them all
+- Buttons show as active only when ALL instances of that weekday are marked WFH
+
 **Keyboard Navigation:**
 - Use **Arrow keys** to move between days
 - Press **Space** or **Enter** to toggle the focused day
