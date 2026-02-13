@@ -301,6 +301,21 @@ Transition from 4-state system (working/oof/holiday) to 3-state system (oof/holi
 3. `packages/datepainter/styles/vanilla.css` - Added state styling classes (--oof, --holiday, --sick)
 4. `src/scripts/eventHandlers.ts` - Screen reader labels for sick state
 
+### Additional Improvements
+
+**Icons for Visual Recognition:**
+- Added emoji state icons to palette buttons:
+  - OOF: ❌ (red)
+  - Holiday: ☀️ (yellow)
+  - Sick: 💊 (blue)
+- Replaced colored dots with icons for better state identification
+- Updated both main app (StatusLegend.astro) and vanilla example
+
+**Test Fixes:**
+- Fixed integration test "should sync selection changes to validation" to work with 3-state system
+- Updated validation expectations from "office days" to "OOF days"
+- All integration tests now passing (4/4)
+
 ### Smart Toggle Pattern
 
 **Interaction Flow:**
@@ -369,12 +384,14 @@ Transition from 4-state system (working/oof/holiday) to 3-state system (oof/holi
 1. `b4a62cb` - feat: implement 3-state calendar with smart toggle pattern
 2. `4663d34` - feat: add palette UI to vanilla example with keyboard shortcuts
 3. `24bb7a7` - fix: add state styling classes to vanilla example for oof, holiday, and sick states
+4. `c8a4e3f` - feat: add state icons to palette buttons and fix integration test
 
 ### Files Changed Summary
 
-**Total: 16 files**
-- 12 core package files
-- 4 example/documentation files
+**Updated total: 18 files**
+- 12 core package files (from initial implementation)
+- 4 additional files (examples, documentation)
+- 2 files for icons and test fixes
 - 962 insertions, 926 deletions
 
 ### Next Steps
