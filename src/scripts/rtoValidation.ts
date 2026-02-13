@@ -78,13 +78,6 @@ const cellCache = new Map<string, HTMLElement>();
 const statusCellCache = new Map<number, HTMLElement>();
 
 /**
- * Cache for week data to avoid recalculating
- * Key: week start timestamp
- * Value: WeekInfo
- */
-const weekDataCache = new Map<number, WeekInfo>();
-
-/**
  * Flag to track if cache has been initialized
  */
 let cacheInitialized = false;
@@ -98,6 +91,8 @@ let validationTimeout: number | null = null;
  * Current validation result
  */
 let currentResult: ComplianceResult | null = null;
+
+// Note: weekDataCache removed to prevent stale data issues
 
 // ==================== Initialization ====================
 
@@ -132,15 +127,43 @@ function initializeCellCache(): void {
   const statusCells = document.querySelectorAll(
     ".week-status-cell[data-week-start]",
   );
+
+  if (CONFIG.DEBUG) {
+    console.log(
+      `[RTO Validation] Found ${statusCells.length} status cells in DOM`,
+    );
+  }
+
   statusCells.forEach((statusCell) => {
     const element = statusCell as HTMLElement;
     const weekStart = element.dataset.weekStart;
+
+    if (CONFIG.DEBUG) {
+      console.log(
+        `[RTO Validation] Processing status cell with weekStart: ${weekStart}`,
+      );
+    }
+
     if (weekStart) {
       const statusContainer = element.querySelector(
         ".week-status-container",
       ) as HTMLElement;
+
+      if (CONFIG.DEBUG) {
+        console.log(
+          `[RTO Validation] Status container found: ${!!statusContainer}`,
+        );
+      }
+
       if (statusContainer) {
-        statusCellCache.set(parseInt(weekStart), statusContainer);
+        const weekKey = parseInt(weekStart);
+        statusCellCache.set(weekKey, statusContainer);
+
+        if (CONFIG.DEBUG) {
+          console.log(
+            `[RTO Validation] Cached status cell with key: ${weekKey}`,
+          );
+        }
       }
     }
   });
@@ -154,6 +177,13 @@ function initializeCellCache(): void {
   console.log(
     `[RTO Validation] Cached ${cellCache.size} cells and ${statusCellCache.size} status cells`,
   );
+
+  if (CONFIG.DEBUG) {
+    console.log(
+      "[RTO Validation] Status cell cache keys:",
+      Array.from(statusCellCache.keys()).slice(0, 10),
+    );
+  }
 }
 
 /**
@@ -162,7 +192,6 @@ function initializeCellCache(): void {
 function clearCaches(): void {
   cellCache.clear();
   statusCellCache.clear();
-  weekDataCache.clear();
   cacheInitialized = false;
   currentResult = null;
 }
@@ -277,18 +306,6 @@ function groupDaysByWeek(
  * @returns Week compliance information
  */
 function calculateWeekData(weekStart: Date, wfhDaysCount: number): WeekInfo {
-  const weekKey = weekStart.getTime();
-
-  // Check cache first
-  if (weekDataCache.has(weekKey)) {
-    if (CONFIG.DEBUG) {
-      console.log(
-        `[RTO Validation] Week ${weekStart.toISOString().split("T")[0]}: Using cached data`,
-      );
-    }
-    return weekDataCache.get(weekKey)!;
-  }
-
   const officeDays = CONFIG.TOTAL_WEEKDAYS_PER_WEEK - wfhDaysCount;
   const isCompliant = officeDays >= CONFIG.MIN_OFFICE_DAYS_PER_WEEK;
 
@@ -305,9 +322,6 @@ function calculateWeekData(weekStart: Date, wfhDaysCount: number): WeekInfo {
     officeDays,
     isCompliant,
   };
-
-  // Cache the result
-  weekDataCache.set(weekKey, weekInfo);
 
   return weekInfo;
 }
@@ -429,6 +443,13 @@ function updateWeekStatusIcon(
   const weekKey = weekStart.getTime();
   const statusCell = statusCellCache.get(weekKey);
 
+  if (CONFIG.DEBUG) {
+    console.log(
+      `[RTO Validation] updateWeekStatusIcon called for week: ${weekStart.toISOString().split("T")[0]}, key: ${weekKey}, underEval: ${isUnderEvaluation}, compliant: ${isCompliant}`,
+    );
+    console.log(`[RTO Validation] Status cell found in cache: ${!!statusCell}`);
+  }
+
   if (!statusCell) {
     if (CONFIG.DEBUG) {
       console.warn(
@@ -444,6 +465,11 @@ function updateWeekStatusIcon(
 
   const iconElement = statusCell.querySelector(".week-status-icon");
   const srElement = statusCell.querySelector(".sr-only");
+
+  if (CONFIG.DEBUG) {
+    console.log(`[RTO Validation] Icon element found: ${!!iconElement}`);
+    console.log(`[RTO Validation] SR element found: ${!!srElement}`);
+  }
 
   if (!iconElement || !srElement) {
     if (CONFIG.DEBUG) {
