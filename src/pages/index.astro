@@ -2,7 +2,6 @@
 import Datepainter from "../components/Datepainter.astro";
 import HolidayCountrySelector from "../components/HolidayCountrySelector.astro";
 import MobileMenu from "../components/MobileMenu.astro";
-import PanelToggle from "../components/PanelToggle.astro";
 import SettingsModal from "../components/SettingsModal.astro";
 import StatusDetails from "../components/StatusDetails.astro";
 import StatusLegend from "../components/StatusLegend.astro";
@@ -67,11 +66,10 @@ const description =
 		<SummaryBar />
 	</div>
 
-	<!-- Desktop: Two-column layout -->
-	<div class="container is-hidden-mobile">
+	<!-- Single responsive layout: side-by-side on desktop, stacked on mobile -->
+	<div class="container main-content">
 		<div class="columns is-desktop">
-			<div class="column is-three-fifths">
-				<!-- Calendar Section -->
+			<div class="column is-three-fifths-desktop">
 				<section class="section py-4" id="calendar-container">
 					<div class="box">
 						<Datepainter />
@@ -83,30 +81,12 @@ const description =
 				</section>
 			</div>
 
-			<div class="column is-two-fifths">
-				<!-- Status Details -->
+			<div class="column is-two-fifths-desktop">
 				<section class="section py-4">
 					<StatusDetails />
 				</section>
 			</div>
 		</div>
-	</div>
-
-	<!-- Mobile: Collapsible Panels -->
-	<div class="container is-hidden-tablet is-hidden-desktop">
-		<PanelToggle title="📊 Summary" open={true}>
-			<StatusDetails />
-		</PanelToggle>
-
-		<PanelToggle title="📅 Calendar" open={true}>
-			<div class="box" id="calendar-container-mobile">
-				<Datepainter />
-				<HolidayCountrySelector />
-				<div class="mt-4">
-					<StatusLegend />
-				</div>
-			</div>
-		</PanelToggle>
 	</div>
 
 	<footer class="footer mt-6">

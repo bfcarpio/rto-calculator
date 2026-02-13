@@ -27,22 +27,15 @@ test.describe("Responsive Navigation", () => {
 			await expect(mobileMenuButton.first()).toBeVisible();
 		});
 
-		test("should hide desktop layout on mobile", async ({ page }) => {
+		test("should show stacked layout on mobile", async ({ page }) => {
 			// Set mobile viewport
 			await page.setViewportSize({ width: 375, height: 667 });
 
-			// Desktop layout should be hidden
-			const desktopLayout = page.locator(".is-hidden-mobile").first();
-			await expect(desktopLayout).toBeHidden();
-		});
-
-		test("should show mobile panel toggles", async ({ page }) => {
-			// Set mobile viewport
-			await page.setViewportSize({ width: 375, height: 667 });
-
-			// Mobile panel toggles should be visible
-			const panelToggle = page.locator("details.panel-toggle").first();
-			await expect(panelToggle).toBeVisible();
+			// Calendar and status should both be visible (stacked vertically)
+			const calendar = page.locator(".datepainter");
+			const status = page.locator(".status-details");
+			await expect(calendar).toBeVisible();
+			await expect(status.first()).toBeVisible();
 		});
 
 		test("mobile menu button should have correct attributes", async ({
@@ -60,38 +53,15 @@ test.describe("Responsive Navigation", () => {
 			await expect(mobileMenuButton).toHaveAttribute("aria-haspopup");
 			await expect(mobileMenuButton).toHaveAttribute("aria-expanded");
 		});
-
-		test("should toggle mobile panel", async ({ page }) => {
-			// Set mobile viewport
-			await page.setViewportSize({ width: 375, height: 667 });
-
-			// Find panel toggle
-			const panelToggle = page.locator("details.panel-toggle").first();
-
-			// Check if initially closed (or open)
-			const initialOpen = await panelToggle.evaluate(
-				(el: HTMLDetailsElement) => el.open,
-			);
-
-			// Click to toggle
-			await panelToggle.locator("summary").click();
-			await page.waitForTimeout(300);
-
-			// Verify toggle state changed
-			const newOpen = await panelToggle.evaluate(
-				(el: HTMLDetailsElement) => el.open,
-			);
-			expect(newOpen).not.toBe(initialOpen);
-		});
 	});
 	test.describe("Desktop Viewport (1920px)", () => {
 		test("should show desktop layout", async ({ page }) => {
 			// Set desktop viewport
 			await page.setViewportSize({ width: 1920, height: 1080 });
 
-			// Desktop layout should be visible
-			const desktopLayout = page.locator(".is-hidden-mobile").first();
-			await expect(desktopLayout).toBeVisible();
+			// Unified responsive layout should be visible
+			const columns = page.locator(".columns.is-desktop");
+			await expect(columns).toBeVisible();
 		});
 
 		test("should hide mobile menu button on desktop", async ({ page }) => {
@@ -148,21 +118,9 @@ test.describe("Responsive Navigation", () => {
 			// Set tablet viewport
 			await page.setViewportSize({ width: 768, height: 1024 });
 
-			// Check which layout is shown based on breakpoint
-			const isTabletDesktopVisible = await page
-				.locator(".is-hidden-mobile")
-				.first()
-				.isVisible()
-				.catch(() => false);
-
-			const isTabletMobileVisible = await page
-				.locator(".is-hidden-tablet")
-				.first()
-				.isVisible()
-				.catch(() => false);
-
-			// One of the layouts should be visible
-			expect(isTabletDesktopVisible || isTabletMobileVisible).toBe(true);
+			// Unified layout should be visible with columns
+			const columns = page.locator(".columns.is-desktop");
+			await expect(columns).toBeVisible();
 		});
 
 		test("tablet should handle interactions correctly", async ({ page }) => {
@@ -236,7 +194,7 @@ test.describe("Responsive Navigation", () => {
 			await page.goto("/rto-calculator/");
 			await waitForCalendarReady(page);
 
-			// Verify mobile layout
+			// Verify mobile menu is visible
 			const mobileMenu = page.locator("[data-testid='mobile-menu-button']");
 			await expect(mobileMenu).toBeVisible();
 
@@ -244,9 +202,9 @@ test.describe("Responsive Navigation", () => {
 			await page.setViewportSize({ width: 1920, height: 1080 });
 			await page.waitForTimeout(300);
 
-			// Verify desktop layout
-			const desktopLayout = page.locator(".is-hidden-mobile").first();
-			await expect(desktopLayout).toBeVisible();
+			// Verify columns layout is visible
+			const columns = page.locator(".columns.is-desktop");
+			await expect(columns).toBeVisible();
 		});
 
 		test("should adapt when viewport changes from desktop to mobile", async ({
@@ -257,15 +215,15 @@ test.describe("Responsive Navigation", () => {
 			await page.goto("/rto-calculator/");
 			await waitForCalendarReady(page);
 
-			// Verify desktop layout
-			const desktopLayout = page.locator(".is-hidden-mobile").first();
-			await expect(desktopLayout).toBeVisible();
+			// Verify columns layout
+			const columns = page.locator(".columns.is-desktop");
+			await expect(columns).toBeVisible();
 
 			// Change to mobile viewport
 			await page.setViewportSize({ width: 375, height: 667 });
 			await page.waitForTimeout(300);
 
-			// Verify mobile layout
+			// Verify mobile menu is visible
 			const mobileMenu = page.locator("[data-testid='mobile-menu-button']");
 			await expect(mobileMenu).toBeVisible();
 		});

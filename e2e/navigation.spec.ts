@@ -130,20 +130,22 @@ test.describe("Navigation", () => {
 			await page.goto("/rto-calculator/");
 			await waitForCalendarReady(page);
 
-			// Verify desktop layout is visible
-			const desktopLayout = page.locator(".is-hidden-mobile");
-			await expect(desktopLayout.first()).toBeVisible();
+			// Verify unified responsive layout with columns
+			const columns = page.locator(".columns.is-desktop");
+			await expect(columns).toBeVisible();
 		});
 
-		test("mobile should show mobile layout", async ({ page }) => {
+		test("mobile should show stacked layout", async ({ page }) => {
 			// Set mobile viewport
 			await page.setViewportSize({ width: 375, height: 667 });
 			await page.goto("/rto-calculator/");
 			await waitForCalendarReady(page);
 
-			// Verify mobile layout is visible
-			const mobileLayout = page.locator(".is-hidden-tablet");
-			await expect(mobileLayout.first()).toBeVisible();
+			// Verify calendar and status are both visible (stacked)
+			const calendar = page.locator(".datepainter");
+			const status = page.locator(".status-details");
+			await expect(calendar).toBeVisible();
+			await expect(status.first()).toBeVisible();
 		});
 	});
 });
