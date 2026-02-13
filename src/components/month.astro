@@ -1,0 +1,138 @@
+---
+interface Props {
+    month: number; // 0-11 (January-December)
+    year: number;
+}
+
+const { month, year } = Astro.props;
+
+// Calculate days in month and offset using JavaScript standard library
+const date = new Date(year, month, 1);
+const daysInMonth = new Date(year, month + 1, 0).getDate();
+const offset = date.getDay(); // 0-6 (Sunday-Saturday)
+
+const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+];
+const shortDayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+// Fixed 5 rows and 7 columns
+const rows = 5;
+const cols = 7;
+---
+
+<div class="calendar-month">
+    <h2 class="month-year">{monthNames[month]} {year}</h2>
+    <table class="calendar-table">
+        <thead>
+            <tr>
+                {shortDayNames.map((day) => <th scope="col">{day}</th>)}
+            </tr>
+        </thead>
+        <tbody>
+            {
+                Array.from({ length: rows }).map((_, rowIndex) => (
+                    <tr>
+                        {Array.from({ length: cols }).map((_, colIndex) => {
+                            const cellIndex = rowIndex * cols + colIndex;
+                            const dayNumber = cellIndex - offset + 1;
+
+                            // Check if this cell should contain a day number
+                            if (
+                                cellIndex >= offset &&
+                                cellIndex < offset + daysInMonth
+                            ) {
+                                return (
+                                    <td
+                                        class="calendar-day"
+                                        data-day={dayNumber}
+                                    >
+                                        {dayNumber}
+                                    </td>
+                                );
+                            } else {
+                                return <td class="calendar-day empty" />;
+                            }
+                        })}
+                    </tr>
+                ))
+            }
+        </tbody>
+    </table>
+</div>
+
+<style>
+    .calendar-month {
+        margin: 0.5rem 0;
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        padding: 0.5rem;
+        display: inline-block;
+    }
+
+    .month-year {
+        text-align: center;
+        margin: 0 0 0.5rem 0;
+        color: #333;
+        font-size: 1.1rem;
+        line-height: 1.2;
+    }
+
+    .calendar-table {
+        border-collapse: collapse;
+        table-layout: fixed;
+    }
+
+    .calendar-table th,
+    .calendar-table td {
+        border: 1px solid #ddd;
+        text-align: center;
+        padding: 0;
+    }
+
+    .calendar-table th {
+        background-color: #f5f5f5;
+        font-weight: bold;
+        color: #555;
+        width: 2rem;
+        height: 2rem;
+        font-size: 0.8rem;
+    }
+
+    .calendar-table td {
+        width: 2rem;
+        height: 2rem;
+    }
+
+    .calendar-day {
+        font-size: 0.9rem;
+        vertical-align: middle;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .calendar-day:hover {
+        transform: scale(1.1);
+        background-color: #e6f7ff;
+        border: 1px solid #1890ff;
+        z-index: 1;
+        position: relative;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .calendar-day.empty {
+        background-color: #f9f9f9;
+    }
+</style>
