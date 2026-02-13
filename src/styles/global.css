@@ -13,8 +13,7 @@
   --color-compliant-bg: #f6ffed;
 
   /* Colors - Calendar Day States */
-  --calendar-day-work-from-home: #1890ff;
-  --calendar-day-office: #52c41a;
+  --calendar-day-out-of-office: #1890ff;
   --calendar-day-focus-outline: #3b82f6;
   --calendar-day-hover-border: #40a9ff;
 
@@ -39,6 +38,12 @@
   --color-border: #d1d5db;
   --color-weekend: #e5e7eb;
   --color-past: #9ca3af;
+
+  /* Colors - Holidays */
+  --color-holiday: #fa8c16;
+  --color-holiday-bg: #fff7e6;
+  --color-holiday-border: #ffd591;
+  --color-holiday-text: #873800;
 
   /* Dimensions */
   --border-radius: 6px;
