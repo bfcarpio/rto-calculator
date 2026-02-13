@@ -2,7 +2,7 @@
 
 Welcome to the RTO Calculator documentation! This directory contains comprehensive documentation for developers and users.
 
-## 📚 Documentation Overview
+## Documentation Overview
 
 ### Getting Started
 
@@ -15,40 +15,16 @@ Welcome to the RTO Calculator documentation! This directory contains comprehensi
 - **[ARCHITECTURE.md](./ARCHITECTURE.md)** - Complete architecture documentation
   *Deep dive into system design, patterns, and data flow*
 
-### Core Documentation
+### Testing
 
-#### Architecture & Design
-- **[ARCHITECTURE.md](./ARCHITECTURE.md)** - 3-layer validation flow, Strategy pattern, Holiday system, State management
-- **[StatusColumn.md](./StatusColumn.md)** - Week status column implementation (✓, ✗, ⏳, empty states)
-
-#### Testing
 - **[TestingBestPractices.md](./TestingBestPractices.md)** - Unit and E2E testing best practices
   *Wait strategies, selectors, helpers, anti-patterns, browser scoping*
 - **[PlaywrightTesting.md](./PlaywrightTesting.md)** - E2E testing commands and debugging
   *Quick start, CLI commands, debugging tools, troubleshooting*
 
-### Feature Documentation
+### Project Planning
 
-#### Holiday Management
-- **[HolidayImplementation.md](./HolidayImplementation.md)** - Complete holiday management system implementation
-- **[CountryDropdownFix.md](./CountryDropdownFix.md)** - Country dropdown timing fix (event-driven architecture)
-- **[HolidayIntegrationFixes.md](./HolidayIntegrationFixes.md)** - Holiday validation integration bug fixes
-
-#### Validation System
-- **[RollingValidation.md](./RollingValidation.md)** - Rolling period validation algorithm details
-
-### Historical Documentation (Bug Fixes)
-
-These documents provide valuable historical context about bugs that were fixed:
-
-- **[StatusColumnFixes.md](./StatusColumnFixes.md)** - Status column empty cells, week numbering, evaluation window fixes
-- **[ValidationBugFix.md](./ValidationBugFix.md)** - Individual week compliance bug fix
-- **[ClearAllFix.md](./ClearAllFix.md)** - Clear all button state reset fix
-
-### Project Planning & Releases
-
-- **[Release1.0.md](./Release1.0.md)** - Version 1.0 release notes
-- **[ExtractCalendar.md](./ExtractCalendar.md)** - Calendar extraction and packaging documentation
+- **[Release1.0.md](./Release1.0.md)** - Version 1.0 release checklist
 
 ---
 
@@ -57,7 +33,7 @@ These documents provide valuable historical context about bugs that were fixed:
 ### For New Users
 1. Read [USER_GUIDE.md](./USER_GUIDE.md) to learn how to use the application
 2. Open the Settings modal to configure holidays and validation mode
-3. Start marking out-of-office days and run validation
+3. Start marking out-of-office days — compliance is computed automatically
 
 ### For New Developers
 1. Read [DEVELOPER_GUIDE.md](./DEVELOPER_GUIDE.md) for development workflows
@@ -83,25 +59,14 @@ docs/
 ├── Core Documentation
 │   ├── ARCHITECTURE.md                # System architecture
 │   ├── DEVELOPER_GUIDE.md             # Developer workflows
-│   ├── USER_GUIDE.md                  # End-user guide
+│   └── USER_GUIDE.md                  # End-user guide
+│
+├── Testing
 │   ├── TestingBestPractices.md         # Testing best practices
 │   └── PlaywrightTesting.md           # E2E commands & debugging
 │
-├── Feature Documentation
-│   ├── StatusColumn.md                # Status column details
-│   ├── HolidayImplementation.md       # Holiday system
-│   ├── CountryDropdownFix.md          # Country dropdown fix
-│   ├── HolidayIntegrationFixes.md     # Holiday validation fixes
-│   └── RollingValidation.md           # Validation algorithm
-│
-├── Historical Documentation
-│   ├── StatusColumnFixes.md           # Status bugs fixed
-│   ├── ValidationBugFix.md            # Validation bugs fixed
-│   └── ClearAllFix.md                 # Clear button fix
-│
-└── Project Documentation
-    ├── Release1.0.md                  # Release notes
-    └── ExtractCalendar.md             # Calendar extraction
+└── Project
+    └── Release1.0.md                  # Release checklist
 ```
 
 ---
@@ -116,13 +81,12 @@ docs/
 
 ### Strategy Pattern for Validation
 - **StrictDayCountValidator** - Each week must individually meet 3-day minimum
-- **AverageWindowValidator** - 12-week rolling window, average of best 8 weeks ≥ 60%
+- **AverageWindowValidator** - 12-week rolling window, average of best 8 weeks >= 60%
 
 ### Holiday Management
 - Pluggable data source architecture (currently using Nager.Date API)
 - Company-specific holiday filtering
 - Treats holidays as non-office days in validation
-- Visual distinction with orange background and 🎄 emoji
 
 ### State Management
 - **datepainter** - Primary calendar state management
@@ -138,6 +102,7 @@ See [../AGENTS.md](../AGENTS.md) for complete command reference. Quick commands:
 
 ```bash
 # Development
+npm run dev             # Start dev server
 npm run build           # Build for production
 npm run preview         # Preview production build
 
@@ -161,7 +126,7 @@ npm run check           # Run all checks (lint + types)
 - **Language**: TypeScript (strict mode)
 - **Calendar**: datepainter library
 - **State**: DOM-based with datepainter API + localStorage
-- **Styling**: Scoped CSS with custom properties
+- **Styling**: Scoped CSS with custom properties + Bulma
 - **Testing**: Vitest (unit) + Playwright (E2E)
 - **Build**: Astro CLI / Vite
 
@@ -180,42 +145,6 @@ npm run check           # Run all checks (lint + types)
 - Linting must pass: `npm run lint`
 - Type checking must pass: `npm run check`
 - Build must succeed: `npm run build`
-
-### Documentation Requirements
-- Update relevant docs in `docs/` for new features
-- Add historical bug fix docs for significant bug fixes
-- Keep [ARCHITECTURE.md](./ARCHITECTURE.md) up to date with architectural changes
-
----
-
-## Getting Help
-
-- **User Questions**: See [USER_GUIDE.md](./USER_GUIDE.md) → "Error messages and what to do"
-- **Developer Questions**: See [DEVELOPER_GUIDE.md](./DEVELOPER_GUIDE.md) or [ARCHITECTURE.md](./ARCHITECTURE.md)
-- **Test Issues**: See [PlaywrightTesting.md](./PlaywrightTesting.md) → "Troubleshooting"
-- **AI Agent Issues**: See [../AGENTS.md](../AGENTS.md)
-
----
-
-## Document Maintenance
-
-### When to Update Documentation
-
-- **ARCHITECTURE.md**: Architectural changes, new patterns, new systems
-- **DEVELOPER_GUIDE.md**: New workflows, new tools, new conventions
-- **USER_GUIDE.md**: New features, UI changes, new workflows
-- **Feature Docs**: When implementing new features
-- **Bug Fix Docs**: When fixing significant bugs (create new doc)
-- **README.md**: When adding new docs or reorganizing structure
-
-### Documentation Standards
-
-- Use clear headings and subheadings
-- Include code examples where helpful
-- Link to related documentation
-- Keep historical docs for reference (don't delete)
-- Use diagrams for complex flows (ASCII art is fine)
-- Update the docs/ README when adding new documentation
 
 ---
 
