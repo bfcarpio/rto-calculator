@@ -1,4 +1,5 @@
 import { atom, type WritableAtom } from "nanostores";
+import { persistentAtom } from "@nanostores/persistent";
 import type { DateState, DateString } from "../types";
 
 /**
@@ -14,9 +15,15 @@ import type { DateState, DateString } from "../types";
  * const dates = selectedDates.get(); // Map<DateString, DateState> { '2026-02-06' => 'oof' }
  * ```
  */
-export const selectedDates: WritableAtom<Map<DateString, DateState>> = atom<
-	Map<DateString, DateState>
->(new Map());
+export const selectedDates: WritableAtom<Map<DateString, DateState>> =
+	persistentAtom<Map<DateString, DateState>>(
+		"datepainter:selectedDates",
+		new Map(),
+		{
+			encode: (map) => JSON.stringify(Array.from(map.entries())),
+			decode: (str) => new Map(JSON.parse(str)),
+		},
+	);
 
 /**
  * Atom store for the currently displayed month in the calendar.
