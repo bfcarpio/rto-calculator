@@ -32,10 +32,23 @@ const shortDayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 // Fixed 5 rows and 7 columns
 const rows = 5;
 const cols = 7;
+
+// Create unique IDs for this month
+const monthId = `month-${year}-${month}`;
+const clearButtonId = `clear-${year}-${month}`;
 ---
 
-<div class="calendar-month">
-    <h2 class="month-year">{monthNames[month]} {year}</h2>
+<div class="calendar-month" id={monthId}>
+    <div class="month-header">
+        <h2 class="month-year">{monthNames[month]} {year}</h2>
+        <button
+            id={clearButtonId}
+            class="clear-button"
+            aria-label={`Clear selections for ${monthNames[month]} ${year}`}
+        >
+            ×
+        </button>
+    </div>
     <table class="calendar-table">
         <thead>
             <tr>
@@ -73,6 +86,50 @@ const cols = 7;
     </table>
 </div>
 
+<script define:vars={{ monthId, clearButtonId, year, month }}>
+    function initClearButton() {
+        const clearButton = document.getElementById(clearButtonId);
+        const monthContainer = document.getElementById(monthId);
+
+        if (!clearButton || !monthContainer) {
+            console.warn(
+                `Clear button or month container not found: ${clearButtonId}, ${monthId}`,
+            );
+            return;
+        }
+
+        clearButton.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            // Find all day cells in this month
+            const dayCells = monthContainer.querySelectorAll(
+                ".calendar-day[data-year][data-month]",
+            );
+
+            // Clear all selections
+            dayCells.forEach((cell) => {
+                const cellYear = parseInt(cell.dataset.year);
+                const cellMonth = parseInt(cell.dataset.month);
+
+                // Only clear cells that belong to this month/year
+                if (cellYear === year && cellMonth === month) {
+                    cell.dataset.selected = "false";
+                    cell.dataset.selectionType = "";
+                    cell.style.backgroundColor = "transparent";
+                }
+            });
+        });
+    }
+
+    // Initialize when DOM is ready
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initClearButton);
+    } else {
+        initClearButton();
+    }
+</script>
+
 <style>
     .calendar-month {
         margin: 0.5rem 0;
@@ -81,14 +138,54 @@ const cols = 7;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         padding: 0.5rem;
         display: inline-block;
+        position: relative;
+    }
+
+    .month-header {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        margin-bottom: 0.5rem;
     }
 
     .month-year {
         text-align: center;
-        margin: 0 0 0.5rem 0;
+        margin: 0;
         color: #333;
         font-size: 1.1rem;
         line-height: 1.2;
+    }
+
+    .clear-button {
+        position: absolute;
+        top: 50%;
+        right: 0;
+        transform: translateY(-50%);
+        background-color: #ff4d4f;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        font-size: 16px;
+        line-height: 1;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        padding: 0;
+    }
+
+    .clear-button:hover {
+        background-color: #ff7875;
+        transform: translateY(-50%) scale(1.1);
+    }
+
+    .clear-button:active {
+        background-color: #d9363e;
+        transform: translateY(-50%) scale(0.95);
     }
 
     .calendar-table {
