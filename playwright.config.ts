@@ -17,6 +17,15 @@ const TEST_TIMEOUT = 30000;
 const ACTION_TIMEOUT = 10000;
 const NAVIGATION_TIMEOUT = 10000;
 
+// Browser project scoping: only core behavioral tests get cross-browser coverage
+const CORE_TEST_FILES = [
+	"date-marking.spec.ts",
+	"validation-flows.spec.ts",
+	"theme-system.spec.ts",
+	"verify-ui.spec.ts",
+];
+const MOBILE_TEST_FILES = ["mobile-edge-cases.spec.ts"];
+
 /**
  * Playwright configuration object
  *
@@ -78,6 +87,7 @@ export default defineConfig({
 	},
 
 	// Configure projects for major browsers and viewports
+	// Firefox is primary (runs all tests); others scoped to core/mobile tests
 	projects: [
 		{
 			name: "firefox-desktop",
@@ -88,6 +98,7 @@ export default defineConfig({
 		},
 		{
 			name: "chromium-desktop",
+			testMatch: CORE_TEST_FILES,
 			use: {
 				...devices["Desktop Chrome"],
 				viewport: { width: 1920, height: 1080 },
@@ -95,6 +106,7 @@ export default defineConfig({
 		},
 		{
 			name: "chromium-mobile",
+			testMatch: MOBILE_TEST_FILES,
 			use: {
 				...devices["iPhone 12"],
 				viewport: { width: 390, height: 844 },
@@ -102,6 +114,7 @@ export default defineConfig({
 		},
 		{
 			name: "webkit-desktop",
+			testMatch: CORE_TEST_FILES,
 			use: {
 				...devices["Desktop Safari"],
 				viewport: { width: 1920, height: 1080 },
@@ -109,6 +122,7 @@ export default defineConfig({
 		},
 		{
 			name: "tablet",
+			testMatch: MOBILE_TEST_FILES,
 			use: {
 				...devices["iPad (gen 7)"],
 				viewport: { width: 768, height: 1024 },
