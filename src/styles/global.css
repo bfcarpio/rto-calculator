@@ -111,6 +111,11 @@ body.dark-mode .hero.is-small {
 	background-color: #1e293b;
 }
 
+body.dark-mode .box {
+	background-color: #1e293b;
+	color: #e2e8f0;
+}
+
 body.dark-mode .title,
 body.dark-mode .subtitle {
 	color: #f1f5f9;

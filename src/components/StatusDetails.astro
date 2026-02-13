@@ -212,6 +212,57 @@ const BEST_WEEKS_REQUIRED = 8;
 		overflow-y: auto;
 	}
 
+	/* Dark mode */
+	:global(body.dark-mode) .status-details .box {
+		background: #1e293b;
+		color: #e2e8f0;
+	}
+
+	:global(body.dark-mode) .compliance-status {
+		border-color: #334155;
+	}
+
+	:global(body.dark-mode) .compliance-status.is-success {
+		background-color: #052e16;
+		border-color: #166534;
+		color: #bbf7d0;
+	}
+
+	:global(body.dark-mode) .compliance-status.is-warning {
+		background-color: #451a03;
+		border-color: #92400e;
+		color: #fde68a;
+	}
+
+	:global(body.dark-mode) .status-details .title.is-6 {
+		color: #e2e8f0;
+		border-bottom-color: #334155;
+	}
+
+	:global(body.dark-mode) .status-details .box:hover {
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+	}
+
+	:global(body.dark-mode) .non-compliant-ignored {
+		background-color: #1e293b !important;
+		border-left-color: #475569;
+	}
+
+	:global(body.dark-mode) .public-holidays {
+		background: #1e293b;
+		border-color: #334155;
+	}
+
+	:global(body.dark-mode) .status-details :global(.notification.is-success.is-light) {
+		background-color: #052e16;
+		color: #bbf7d0;
+	}
+
+	:global(body.dark-mode) .status-details :global(.notification.is-warning.is-light) {
+		background-color: #451a03;
+		color: #fde68a;
+	}
+
 	/* Mobile adjustments */
 	@media (max-width: 768px) {
 		.status-details .box {
