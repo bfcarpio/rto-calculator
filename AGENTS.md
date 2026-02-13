@@ -9,9 +9,10 @@ Before making commits make sure that the changes pass lints, checks, and tests t
 
 ## Build / Lint / Test Commands
 
+Never ever run `npm run dev` to start a dev server. Use `scripts/start-playwright-server.sh` and the playwright mcp to navigate the website.
+
 ```bash
 # Development
-npm run dev              # Start dev server
 npm run build           # Build for production (runs type check + build)
 npm run preview         # Preview production build
 

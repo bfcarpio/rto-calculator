@@ -1,0 +1,114 @@
+:root,
+.air-datepicker {
+	/* Map Air Datepicker variables to Slate palette */
+	--adp-font-family: inherit;
+	--adp-font-size: 1rem;
+	--adp-width: 100%; /* Make it responsive */
+	--adp-background-color: #ffffff;
+	--adp-background-color-hover: var(--color-bg-alt);
+	--adp-background-color-active: var(--color-selected-bg);
+	--adp-background-color-in-range: var(--color-selected-bg);
+	--adp-background-color-selected: var(--color-selected);
+	--adp-background-color-selected-other-month: #808080; /* Fallback */
+	--adp-background-color-selected-hover: var(--color-violation);
+
+	--adp-color: var(--color-text);
+	--adp-color-secondary: var(--color-muted);
+	--adp-accent-color: var(--color-compliant);
+	--adp-color-current-date: var(--color-compliant);
+	--adp-color-other-month: var(--color-past);
+	--adp-color-disabled: var(--color-past);
+	--adp-color-disabled-in-range: var(--color-past);
+	--adp-color-other-month-hover: var(--color-muted);
+
+	--adp-border-color: var(--color-border);
+	--adp-border-color-inner: var(--color-border);
+	--adp-border-radius: var(--border-radius);
+
+	--adp-day-name-color: var(--color-muted);
+	--adp-day-name-color-hover: var(--color-text);
+
+	--adp-day-cell-width: 40px;
+	--adp-day-cell-height: 40px;
+
+	/* Custom dot colors */
+	--dot-working: var(--color-compliant);
+	--dot-oof: var(--color-violation); /* Dark slate for OOF/Violation */
+	--dot-holiday: var(--color-holiday);
+}
+
+/* Dark mode overrides */
+body.dark-mode {
+	--adp-background-color: #1e293b; /* Slate-900 */
+	--adp-background-color-hover: #334155; /* Slate-700 */
+	--adp-background-color-active: #334155;
+	--adp-background-color-in-range: #334155;
+	--adp-background-color-selected: #475569; /* Slate-600 */
+	--adp-border-color: #475569;
+	--adp-border-color-inner: #475569;
+	--adp-color: #f1f5f9; /* Slate-50 */
+	--adp-color-secondary: #94a3b8; /* Slate-400 */
+	--adp-color-other-month: #475569;
+	--adp-day-name-color: #94a3b8;
+}
+
+/* Custom styles for the calendar container to match project look */
+.air-datepicker {
+	box-shadow: none;
+	border: 1px solid var(--adp-border-color);
+	font-family: inherit;
+}
+
+.air-datepicker-body--day-name {
+	text-transform: uppercase;
+	font-size: 0.75rem;
+	font-weight: 600;
+}
+
+/* Dot indicators */
+.adp-cell-dot {
+	position: absolute;
+	bottom: 4px;
+	left: 50%;
+	transform: translateX(-50%);
+	width: 4px;
+	height: 4px;
+	border-radius: 50%;
+	background-color: transparent;
+}
+
+.adp-cell-dot.is-working {
+	background-color: var(--dot-working);
+}
+
+.adp-cell-dot.is-oof {
+	background-color: var(--dot-oof);
+}
+
+.adp-cell-dot.is-holiday {
+	background-color: var(--dot-holiday);
+}
+
+/* Adjust cell content to make room for dot */
+.air-datepicker-cell.-day- {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+/* Selected state should inverse text color usually, handled by library but ensure visibility */
+.air-datepicker-cell.-selected- {
+	color: #ffffff;
+	background-color: var(--adp-background-color-selected) !important;
+}
+
+body.dark-mode .air-datepicker-cell.-selected- {
+	color: #ffffff;
+	background-color: var(--adp-background-color-selected) !important;
+}
+
+/* Remove today border if desired, or style it */
+.air-datepicker-cell.-current- {
+	border: 1px solid var(--adp-color-current-date);
+}

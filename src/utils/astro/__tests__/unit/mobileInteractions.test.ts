@@ -12,8 +12,7 @@
  * Aligns with E2E mobile interaction tests.
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { setupBasicCalendarDOM, simulateClick } from "../test.setup";
+import { beforeEach, describe, expect, it } from "vitest";
 import { createMockDayElement } from "../testHelpers";
 
 // ============================================================================
@@ -701,7 +700,7 @@ describe("Mobile Interactions - Keyboard Navigation", () => {
 	describe("navigateCalendarGrid", () => {
 		it("should navigate right in grid", () => {
 			const state: KeyboardNavigationState = {
-				currentElement: gridElements[0],
+				currentElement: gridElements[0] ?? null,
 				rowCount: 3,
 				columnCount: 3,
 			};
@@ -712,7 +711,7 @@ describe("Mobile Interactions - Keyboard Navigation", () => {
 
 		it("should navigate down in grid", () => {
 			const state: KeyboardNavigationState = {
-				currentElement: gridElements[0],
+				currentElement: gridElements[0] ?? null,
 				rowCount: 3,
 				columnCount: 3,
 			};
@@ -723,7 +722,7 @@ describe("Mobile Interactions - Keyboard Navigation", () => {
 
 		it("should navigate left in grid", () => {
 			const state: KeyboardNavigationState = {
-				currentElement: gridElements[1],
+				currentElement: gridElements[1] ?? null,
 				rowCount: 3,
 				columnCount: 3,
 			};
@@ -734,7 +733,7 @@ describe("Mobile Interactions - Keyboard Navigation", () => {
 
 		it("should navigate up in grid", () => {
 			const state: KeyboardNavigationState = {
-				currentElement: gridElements[3],
+				currentElement: gridElements[3] ?? null,
 				rowCount: 3,
 				columnCount: 3,
 			};
@@ -745,7 +744,7 @@ describe("Mobile Interactions - Keyboard Navigation", () => {
 
 		it("should return null when navigating beyond grid bounds", () => {
 			const state: KeyboardNavigationState = {
-				currentElement: gridElements[0],
+				currentElement: gridElements[0] ?? null,
 				rowCount: 3,
 				columnCount: 3,
 			};

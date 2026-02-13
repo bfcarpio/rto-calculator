@@ -3,12 +3,9 @@
 // Placeholder data - real data integration comes in later phases
 
 const _averageDays = 3.2;
-const _weeksTracked = 8;
-const _totalWeeks = 12;
 const _workingDays = 45;
 const _oofDays = 12;
 const _holidayDays = 4;
-const _progressPercent = (_weeksTracked / _totalWeeks) * 100;
 
 interface ActionButton {
 	id: string;
@@ -52,22 +49,6 @@ const _quickActions: ActionButton[] = [
 					Based on your tracked attendance
 				</p>
 
-				<!-- Progress Bar for Weeks Tracked -->
-				<div class="weeks-progress mb-3">
-					<div class="is-flex is-justify-content-space-between is-size-7 mb-1">
-						<span>Weeks tracked:</span>
-						<span class="has-text-weight-semibold">{_weeksTracked}/{_totalWeeks}</span>
-					</div>
-					<progress
-						class="progress is-primary"
-						value={_weeksTracked}
-						max={_totalWeeks}
-						aria-label={`Weeks tracked: ${_weeksTracked} of ${_totalWeeks}`}
-					>
-						{_progressPercent}%
-					</progress>
-				</div>
-
 				<!-- Quick Action Buttons -->
 				<div class="buttons are-small is-flex-wrap-wrap">
 					{_quickActions.map((action) => (
@@ -110,14 +91,6 @@ const _quickActions: ActionButton[] = [
 
 	.summary-bar .hero-body {
 		padding: 1.5rem;
-	}
-
-	.weeks-progress {
-		max-width: 300px;
-	}
-
-	.weeks-progress .progress {
-		height: 0.75rem;
 	}
 
 	.quick-action-btn {

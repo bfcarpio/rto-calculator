@@ -13,10 +13,12 @@
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
+	DESKTOP_VIOLATION_SCENARIO,
 	generateSelectionsForScenario,
 	getDeviceTypeFromWidth,
 	getExpectedUIState,
 	getResponsiveClasses,
+	INTERACTION_TYPES,
 	isInteractionSupported,
 	isTouchDevice,
 	MOBILE_COMPLIANT_SCENARIO,
@@ -317,35 +319,22 @@ describe("Responsive Validation - Display Logic", () => {
 describe("Responsive Validation - Interaction Support", () => {
 	describe("isInteractionSupported", () => {
 		it("should support touch interactions on mobile", () => {
-			const result = isInteractionSupported(
-				{ name: "touch", supportedDevices: ["mobile", "tablet"], events: [] },
-				"mobile",
-			);
+			const result = isInteractionSupported(INTERACTION_TYPES.TOUCH, "mobile");
 			expect(result).toBe(true);
 		});
 
 		it("should support mouse interactions on desktop", () => {
-			const result = isInteractionSupported(
-				{ name: "mouse", supportedDevices: ["desktop", "laptop"], events: [] },
-				"desktop",
-			);
+			const result = isInteractionSupported(INTERACTION_TYPES.MOUSE, "desktop");
 			expect(result).toBe(true);
 		});
 
 		it("should not support mouse interactions on mobile", () => {
-			const result = isInteractionSupported(
-				{ name: "mouse", supportedDevices: ["desktop", "laptop"], events: [] },
-				"mobile",
-			);
+			const result = isInteractionSupported(INTERACTION_TYPES.MOUSE, "mobile");
 			expect(result).toBe(false);
 		});
 
 		it("should support keyboard interactions on all devices", () => {
-			const keyboardInteraction = {
-				name: "keyboard" as const,
-				supportedDevices: ["mobile", "tablet", "desktop", "laptop"],
-				events: ["keydown", "keyup"],
-			};
+			const keyboardInteraction = INTERACTION_TYPES.KEYBOARD;
 
 			expect(isInteractionSupported(keyboardInteraction, "mobile")).toBe(true);
 			expect(isInteractionSupported(keyboardInteraction, "tablet")).toBe(true);

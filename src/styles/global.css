@@ -126,10 +126,28 @@ body.dark-mode .button:hover {
 	background-color: #475569;
 }
 
-body.dark-mode .box {
-	background-color: #1e293b;
-	color: #f1f5f9;
-	border-color: #475569;
+/* Framework Overrides - Enforce Slate Theme */
+.hero.is-primary {
+	background-color: var(--color-compliant) !important;
+	color: #ffffff;
+}
+
+/* Hero header text - Explicit white for WCAG AA compliance (4.5:1 contrast) */
+.hero.is-primary .title,
+.hero.is-primary .subtitle {
+	color: #ffffff !important;
+}
+
+.button.is-primary {
+	background-color: var(--color-compliant) !important;
+	border-color: transparent;
+	color: #ffffff;
+}
+
+.button.is-primary:hover,
+.button.is-primary:focus {
+	background-color: var(--color-violation) !important; /* Slate-700 */
+	color: #ffffff;
 }
 
 body.dark-mode .tag {
@@ -139,44 +157,6 @@ body.dark-mode .tag {
 
 body.dark-mode .tag.is-light {
 	background-color: #334155;
-}
-
-/* Dark mode - Calendar */
-body.dark-mode .flatpickr-calendar {
-	background-color: #1e293b;
-	color: #f1f5f9;
-}
-
-body.dark-mode .flatpickr-day {
-	color: #f1f5f9;
-	border-color: #475569;
-}
-
-body.dark-mode .flatpickr-day:not(.flatpickr-disabled):hover {
-	background-color: #334155;
-}
-
-body.dark-mode .flatpickr-month {
-	background-color: #1e293b;
-}
-
-body.dark-mode .flatpickr-weekday {
-	color: #94a3b8;
-}
-
-body.dark-mode .flatpickr-current-month,
-body.dark-mode .flatpickr-current-month span.cur-month,
-body.dark-mode .flatpickr-current-month span.cur-year {
-	color: #f1f5f9;
-}
-
-body.dark-mode .calendar-help {
-	background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-	border-color: #475569;
-}
-
-body.dark-mode .calendar-help .help {
-	color: #cbd5e1;
 }
 
 /* Dark mode - Settings Modal */
