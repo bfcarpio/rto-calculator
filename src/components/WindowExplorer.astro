@@ -1,0 +1,617 @@
+---
+---
+
+<details class="window-explorer" id="window-explorer">
+  <summary class="window-explorer__summary">
+    <span class="window-explorer__title">Window Explorer</span>
+    <span class="window-explorer__chevron" aria-hidden="true">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4.646 6.646a.5.5 0 0 1 .708 0L8 9.293l2.646-2.647a.5.5 0 0 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-3-3a.5.5 0 0 1 0-.708z" />
+      </svg>
+    </span>
+  </summary>
+  <div class="window-explorer__content" id="window-explorer-content">
+    <p class="window-explorer__loading">Computing windows...</p>
+  </div>
+</details>
+
+<style>
+  .window-explorer {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .window-explorer__summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+    background: #f8fafc;
+    transition: background-color 0.2s ease;
+  }
+
+  .window-explorer__summary::-webkit-details-marker { display: none; }
+  .window-explorer__summary::marker { display: none; }
+
+  .window-explorer__summary:hover { background: #f1f5f9; }
+
+  .window-explorer__summary:focus-visible {
+    outline: 2px solid #485fc7;
+    outline-offset: -2px;
+  }
+
+  .window-explorer[open] .window-explorer__summary {
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .window-explorer__title {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #334155;
+  }
+
+  .window-explorer__chevron {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s ease;
+    color: #64748b;
+  }
+
+  .window-explorer[open] .window-explorer__chevron {
+    transform: rotate(180deg);
+  }
+
+  .window-explorer__content {
+    padding: 0.75rem 1rem;
+  }
+
+  .window-explorer__loading {
+    font-size: 0.8rem;
+    color: #64748b;
+  }
+
+  /* Summary line */
+  .window-explorer__summary-line {
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+  }
+
+  /* Legend box */
+  .window-explorer__legend {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 0.6rem 0.75rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.7rem;
+    line-height: 1.6;
+    color: #475569;
+  }
+
+  .window-explorer__legend p {
+    margin: 0 0 0.25rem 0;
+  }
+
+  .window-explorer__legend-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.15rem;
+  }
+
+  /* Dots */
+  .we-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .we-dot--best-ok { background: #22c55e; }
+  .we-dot--best-bad { background: #f59e0b; }
+  .we-dot--drop-ok {
+    background: transparent;
+    border: 2px solid #22c55e;
+    width: 10px;
+    height: 10px;
+    box-sizing: border-box;
+  }
+  .we-dot--drop-bad {
+    background: transparent;
+    border: 2px solid #f59e0b;
+    width: 10px;
+    height: 10px;
+    box-sizing: border-box;
+  }
+
+  /* Diamond shape for dropped */
+  .we-diamond {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    flex-shrink: 0;
+    transform: rotate(45deg);
+  }
+
+  .we-diamond--drop-ok {
+    background: transparent;
+    border: 2px solid #22c55e;
+    box-sizing: border-box;
+  }
+
+  .we-diamond--drop-bad {
+    background: transparent;
+    border: 2px solid #f59e0b;
+    box-sizing: border-box;
+  }
+
+  /* Window row */
+  .window-explorer__row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0;
+    font-size: 0.75rem;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .window-explorer__row:last-child {
+    border-bottom: none;
+  }
+
+  .window-explorer__row-label {
+    min-width: 120px;
+    white-space: nowrap;
+    color: #334155;
+  }
+
+  .window-explorer__row-tag {
+    display: inline-block;
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    min-width: 32px;
+    text-align: center;
+  }
+
+  .window-explorer__row-tag--pass {
+    background: #dcfce7;
+    color: #166534;
+  }
+
+  .window-explorer__row-tag--fail {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  .window-explorer__row-dots {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    flex: 1;
+  }
+
+  .window-explorer__row-avg {
+    min-width: 28px;
+    text-align: right;
+    color: #6b7280;
+    font-size: 0.7rem;
+  }
+
+  /* Tooltip for dots */
+  .we-dot-wrap {
+    position: relative;
+    cursor: default;
+  }
+
+  .we-dot-wrap:hover .we-dot-tip {
+    display: block;
+  }
+
+  .we-dot-tip {
+    display: none;
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1e293b;
+    color: #f1f5f9;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    white-space: nowrap;
+    z-index: 10;
+    pointer-events: none;
+    margin-bottom: 4px;
+  }
+
+  /* Scenario section */
+  .window-explorer__scenarios {
+    margin-top: 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .window-explorer__scenarios summary {
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #334155;
+    background: #f8fafc;
+    list-style: none;
+    user-select: none;
+  }
+
+  .window-explorer__scenarios summary::-webkit-details-marker { display: none; }
+  .window-explorer__scenarios summary::marker { display: none; }
+
+  .window-explorer__scenarios[open] summary {
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .window-explorer__scenario-content {
+    padding: 0.6rem 0.75rem;
+    font-size: 0.75rem;
+    color: #475569;
+    line-height: 1.5;
+  }
+
+  .window-explorer__scenario-content ul {
+    margin: 0.25rem 0 0.5rem 1rem;
+    padding: 0;
+  }
+
+  .window-explorer__scenario-content li {
+    margin-bottom: 0.25rem;
+  }
+
+  /* Reference table */
+  .window-explorer__table-wrap {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-top: 0.5rem;
+  }
+
+  .window-explorer__table {
+    width: 100%;
+    font-size: 0.7rem;
+    border-collapse: collapse;
+  }
+
+  .window-explorer__table th {
+    position: sticky;
+    top: 0;
+    background: #f8fafc;
+    font-weight: 600;
+    text-align: left;
+    padding: 0.25rem 0.4rem;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .window-explorer__table td {
+    padding: 0.2rem 0.4rem;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .window-explorer__table tr.we-table-valid td {
+    color: #166534;
+  }
+
+  .window-explorer__table tr.we-table-invalid td {
+    color: #991b1b;
+  }
+
+  /* Dark mode */
+  body.dark-mode .window-explorer {
+    border-color: #334155;
+  }
+
+  body.dark-mode .window-explorer__summary {
+    background: #1e293b;
+  }
+
+  body.dark-mode .window-explorer__summary:hover {
+    background: #334155;
+  }
+
+  body.dark-mode .window-explorer[open] .window-explorer__summary {
+    border-bottom-color: #334155;
+  }
+
+  body.dark-mode .window-explorer__title {
+    color: #e2e8f0;
+  }
+
+  body.dark-mode .window-explorer__chevron {
+    color: #94a3b8;
+  }
+
+  body.dark-mode .window-explorer__legend {
+    background: #0f172a;
+    border-color: #334155;
+    color: #94a3b8;
+  }
+
+  body.dark-mode .window-explorer__row {
+    border-bottom-color: #1e293b;
+  }
+
+  body.dark-mode .window-explorer__row-label {
+    color: #e2e8f0;
+  }
+
+  body.dark-mode .window-explorer__row-tag--pass {
+    background: #052e16;
+    color: #86efac;
+  }
+
+  body.dark-mode .window-explorer__row-tag--fail {
+    background: #450a0a;
+    color: #fca5a5;
+  }
+
+  body.dark-mode .window-explorer__row-avg {
+    color: #94a3b8;
+  }
+
+  body.dark-mode .we-dot-tip {
+    background: #334155;
+    color: #e2e8f0;
+  }
+
+  body.dark-mode .window-explorer__scenarios {
+    border-color: #334155;
+  }
+
+  body.dark-mode .window-explorer__scenarios summary {
+    background: #0f172a;
+    color: #e2e8f0;
+  }
+
+  body.dark-mode .window-explorer__scenarios[open] summary {
+    border-bottom-color: #334155;
+  }
+
+  body.dark-mode .window-explorer__scenario-content {
+    color: #94a3b8;
+  }
+
+  body.dark-mode .window-explorer__table th {
+    background: #0f172a;
+    border-bottom-color: #334155;
+    color: #e2e8f0;
+  }
+
+  body.dark-mode .window-explorer__table td {
+    border-bottom-color: #1e293b;
+  }
+
+  body.dark-mode .window-explorer__table tr.we-table-valid td {
+    color: #86efac;
+  }
+
+  body.dark-mode .window-explorer__table tr.we-table-invalid td {
+    color: #fca5a5;
+  }
+
+  body.dark-mode .window-explorer__summary-line {
+    color: #e2e8f0;
+  }
+</style>
+
+<script>
+  import type { CalendarInstance } from 'datepainter';
+  import { readCalendarData, convertWeeksToCompliance } from '../lib/calendar-data-reader';
+  import { buildPolicyFromSettings, readSettings } from '../lib/settings-reader';
+  import { type RTOPolicyConfig } from '../lib/validation/rto-core';
+  import { evaluateAllWindows, type WindowSummary } from '../lib/validation/all-windows';
+  import { getTwoGroupCombinations, type SolverConfig } from '../lib/validation/combination-solver';
+
+  import { fmtShort } from '../lib/dateUtils';
+
+  function buildPolicy(): RTOPolicyConfig {
+    return buildPolicyFromSettings();
+  }
+
+  function buildSolverConfig(): SolverConfig {
+    const settings = readSettings();
+    return {
+      windowSize: settings.rollingWindowWeeks,
+      bestWeeksCount: settings.bestWeeksCount,
+      minOfficeDays: settings.minOfficeDays,
+      totalWeekdays: 5,
+    };
+  }
+
+  const details = document.getElementById('window-explorer') as HTMLDetailsElement;
+  const contentEl = document.getElementById('window-explorer-content')!;
+
+  let computed = false;
+
+  details.addEventListener('toggle', async () => {
+    if (!details.open || computed) return;
+    computed = true;
+
+    const calendarManager = (window as any).__datepainterInstance as CalendarInstance | null;
+    if (!calendarManager) {
+      contentEl.innerHTML = '<p class="window-explorer__loading">Calendar not ready.</p>';
+      computed = false;
+      return;
+    }
+
+    contentEl.innerHTML = '<p class="window-explorer__loading">Computing windows...</p>';
+
+    try {
+      const calendarData = await readCalendarData(calendarManager);
+
+      // Apply starting week filter like auto-compliance does
+      const settings = readSettings();
+      let weeks = calendarData.weeks;
+      if (settings.startingWeek) {
+        const startDate = new Date(`${settings.startingWeek}T00:00:00`);
+        const startIdx = weeks.findIndex((w) => w.weekStart >= startDate);
+        if (startIdx > 0) {
+          weeks = weeks.slice(startIdx);
+        }
+      }
+
+      const policy = buildPolicy();
+      const weeksForValidation = convertWeeksToCompliance(weeks);
+      const summaries = evaluateAllWindows(weeksForValidation, policy);
+
+      renderExplorer(summaries, policy);
+    } catch (err) {
+      console.error('[WindowExplorer] Failed:', err);
+      contentEl.innerHTML = '<p class="window-explorer__loading">Failed to compute windows.</p>';
+      computed = false;
+    }
+  });
+
+  // Re-compute on settings/state changes if open
+  function invalidate(): void {
+    computed = false;
+    if (details.open) {
+      details.dispatchEvent(new Event('toggle'));
+    }
+  }
+
+  document.addEventListener('settings-changed', invalidate);
+  window.addEventListener('compliance-updated', invalidate);
+
+  function renderExplorer(summaries: WindowSummary[], policy: RTOPolicyConfig): void {
+    if (summaries.length === 0) {
+      contentEl.innerHTML = '<p class="window-explorer__loading">Mark dates to see windows.</p>';
+      return;
+    }
+
+    const passCount = summaries.filter((s) => s.isValid).length;
+    const failCount = summaries.length - passCount;
+
+    let html = '';
+
+    // Summary line
+    html += `<p class="window-explorer__summary-line">${summaries.length} window${summaries.length !== 1 ? 's' : ''}: <span class="has-text-success">${passCount} pass</span>, <span class="has-text-danger">${failCount} fail</span></p>`;
+
+    // Legend
+    html += `<div class="window-explorer__legend">
+      <p>Each row is one ${policy.rollingPeriodWeeks}-week window. Dots show each week's role. The algorithm picks the best ${policy.topWeeksToCheck} — the rest are dropped.</p>
+      <div class="window-explorer__legend-row"><span class="we-dot we-dot--best-ok"></span> Evaluated — compliant (${policy.minOfficeDaysPerWeek}+ office days)</div>
+      <div class="window-explorer__legend-row"><span class="we-dot we-dot--best-bad"></span> Evaluated — non-compliant (&lt; ${policy.minOfficeDaysPerWeek} days)</div>
+      <div class="window-explorer__legend-row"><span class="we-dot we-dot--drop-ok"></span> Dropped — compliant</div>
+      <div class="window-explorer__legend-row"><span class="we-dot we-dot--drop-bad"></span> Dropped — non-compliant</div>
+    </div>`;
+
+    // Window rows
+    for (const s of summaries) {
+      const label = `${fmtShort(s.windowStart)} – ${fmtShort(s.windowEnd)}`;
+      const tagClass = s.isValid ? 'window-explorer__row-tag--pass' : 'window-explorer__row-tag--fail';
+      const tagText = s.isValid ? 'PASS' : 'FAIL';
+
+      let dots = '';
+      for (const w of s.weekDetails) {
+        const tipDate = fmtShort(w.weekStart);
+        const tipText = w.isBest
+          ? `${tipDate}: ${w.officeDays} days`
+          : `${tipDate}: ${w.officeDays} days (dropped)`;
+
+        let dotClass: string;
+        if (w.isBest) {
+          dotClass = w.isCompliant ? 'we-dot we-dot--best-ok' : 'we-dot we-dot--best-bad';
+        } else {
+          dotClass = w.isCompliant ? 'we-dot we-dot--drop-ok' : 'we-dot we-dot--drop-bad';
+        }
+
+        dots += `<span class="we-dot-wrap"><span class="${dotClass}"></span><span class="we-dot-tip">${tipText}</span></span>`;
+      }
+
+      html += `<div class="window-explorer__row">
+        <span class="window-explorer__row-label">${label}</span>
+        <span class="window-explorer__row-tag ${tagClass}">${tagText}</span>
+        <span class="window-explorer__row-dots">${dots}</span>
+        <span class="window-explorer__row-avg">${s.averageOfficeDays.toFixed(1)}</span>
+      </div>`;
+    }
+
+    // Scenario section
+    html += renderScenarioSection();
+
+    contentEl.innerHTML = html;
+
+    // Wire up scenario details on-expand
+    const scenarioDetails = contentEl.querySelector('#scenario-details') as HTMLDetailsElement | null;
+    if (scenarioDetails) {
+      scenarioDetails.addEventListener('toggle', () => {
+        if (!scenarioDetails.open) return;
+        const scenarioContent = scenarioDetails.querySelector('.window-explorer__scenario-content');
+        if (scenarioContent && !scenarioContent.hasAttribute('data-rendered')) {
+          scenarioContent.setAttribute('data-rendered', '1');
+          scenarioContent.innerHTML = buildScenarioContent();
+        }
+      });
+    }
+  }
+
+  function renderScenarioSection(): string {
+    return `<details class="window-explorer__scenarios" id="scenario-details">
+      <summary>Scenario Examples &amp; Reference Table</summary>
+      <div class="window-explorer__scenario-content">
+        <p class="window-explorer__loading">Expand to see scenarios...</p>
+      </div>
+    </details>`;
+  }
+
+  function buildScenarioContent(): string {
+    const config = buildSolverConfig();
+    const W = config.windowSize;
+    const K = config.bestWeeksCount;
+    const N = config.minOfficeDays;
+    const dropSlots = W - K;
+
+    let html = '';
+
+    // Quick examples
+    html += '<p><strong>Quick examples</strong> (using your current settings):</p><ul>';
+    html += `<li>${dropSlots} weeks fully WFH + ${K} weeks at ${N}+ days = <strong>compliant</strong> (worst weeks dropped)</li>`;
+    html += `<li>All ${W} weeks at ${N} days/week = exactly at threshold</li>`;
+    if (dropSlots + 1 <= W) {
+      html += `<li>${dropSlots + 1} weeks fully WFH = <strong>non-compliant</strong> (not enough good weeks to fill best ${K})</li>`;
+    }
+    html += '</ul>';
+
+    // Reference table
+    const combos = getTwoGroupCombinations(config);
+    const validCombos = combos.filter((c) => c.isValid);
+
+    // Sort by groupA office days desc, then groupB office days desc
+    validCombos.sort((a, b) => {
+      if (a.groupA.officeDays !== b.groupA.officeDays) return b.groupA.officeDays - a.groupA.officeDays;
+      return b.groupB.officeDays - a.groupB.officeDays;
+    });
+
+    // Limit to a reasonable number of rows
+    const displayCombos = validCombos.slice(0, 50);
+
+    html += '<p><strong>Valid 2-pattern schedules:</strong></p>';
+    html += '<div class="window-explorer__table-wrap"><table class="window-explorer__table">';
+    html += '<thead><tr><th>Pattern A</th><th>Pattern B</th><th>Avg</th></tr></thead><tbody>';
+
+    for (const c of displayCombos) {
+      html += `<tr class="we-table-valid"><td>${c.groupA.weeks}w × ${c.groupA.officeDays}d</td><td>${c.groupB.weeks}w × ${c.groupB.officeDays}d</td><td>${c.bestKAverage.toFixed(1)}</td></tr>`;
+    }
+
+    html += '</tbody></table></div>';
+
+    return html;
+  }
+</script>
