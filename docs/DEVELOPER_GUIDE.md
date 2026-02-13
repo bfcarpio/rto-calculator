@@ -288,6 +288,17 @@ calendarInstance.clearDateState(new Date('2025-01-15'));
 
 // Query date state
 const state = calendarInstance.getDateState(new Date('2025-01-15'));
+
+// Get contiguous date ranges grouped by state
+const allRanges = calendarInstance.getDateRanges();
+// → [{ start: Date, end: Date, state: 'oof' }, ...]
+
+// Filter by state, before/after boundaries
+const oofRanges = calendarInstance.getDateRanges({
+  state: 'oof',
+  after: new Date('2025-02-01'),   // exclude dates on or before Feb 1
+  before: new Date('2025-03-01'),  // exclude dates on or after Mar 1
+});
 ```
 
 **Note**: `dateStore` in `src/lib/dateStore.ts` is deprecated and being phased out. Use datepainter API directly.
