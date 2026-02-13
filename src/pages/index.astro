@@ -68,9 +68,6 @@ const months = Array.from({ length: 12 }, (_, index) => {
 
 
 
-            <!-- Load validation scripts before inline scripts -->
-            <script src="/src/scripts/rtoValidation.ts"></script>
-
             <ActionButtons position="top" />
             <SettingsButton />
 
@@ -102,154 +99,16 @@ const months = Array.from({ length: 12 }, (_, index) => {
         </footer>
 
         <script>
-            /**
-             * Initialize validate button functionality
-             */
-            function initValidateButtons() {
-                const validateButtons = document.querySelectorAll(
-                    '[id^="validate-button-"]',
-                );
-                validateButtons.forEach((button) => {
-                    button.addEventListener("click", (e) => {
-                        e.preventDefault();
-                        if (
-                            window.RTOValidation &&
-                            window.RTOValidation.runValidationWithHighlights
-                        ) {
-                            window.RTOValidation.runValidationWithHighlights();
-                        }
-                        (button as HTMLElement).focus();
-                    });
-                });
-            }
+            // Import and initialize RTO validation
+            import { initializeApp } from '../scripts/rtoValidation.ts';
 
-            /**
-             * Initialize clear all button functionality
-             */
-            function initClearAllButtons() {
-                const clearAllButtons = document.querySelectorAll(
-                    '[id^="clear-all-button-"]',
-                );
-                clearAllButtons.forEach((button) => {
-                    button.addEventListener("click", (e) => {
-                        e.preventDefault();
-
-                        // Find all selected cells across all months
-                        const selectedCells = document.querySelectorAll(
-                            ".calendar-day.selected[data-year][data-month]",
-                        );
-
-                        if (selectedCells.length === 0) {
-                            announceToScreenReader("No selections to clear");
-                            return;
-                        }
-
-                        const clearedCount = selectedCells.length;
-
-                        // Clear all selections
-                        selectedCells.forEach((cell) => {
-                            (cell as HTMLElement).classList.remove("selected");
-                            (cell as HTMLElement).removeAttribute("data-selection-type");
-                        });
-
-                        // Clear validation highlights and status icons
-                        if (
-                            window.RTOValidation &&
-                            window.RTOValidation.clearAllValidationHighlights
-                        ) {
-                            window.RTOValidation.clearAllValidationHighlights();
-                        }
-
-                        // Announce to screen readers
-                        announceToScreenReader(
-                            "Cleared " +
-                                clearedCount +
-                                " selection" +
-                                (clearedCount !== 1 ? "s" : "") +
-                                " from all months",
-                        );
-
-                        // Focus back on button
-                        (button as HTMLElement).focus();
-                    });
-
-                    // Add keyboard support
-                    button.addEventListener("keydown", (e) => {
-                        const keyboardEvent = e as KeyboardEvent;
-                        if (
-                            keyboardEvent.key === "Enter" ||
-                            keyboardEvent.key === " "
-                        ) {
-                            e.preventDefault();
-                            (button as HTMLElement).click();
-                        }
-                    });
-                });
-            }
-
-            /**
-             * Initialize export button functionality
-             */
-            function initExportButtons() {
-                const exportButtons = document.querySelectorAll(
-                    '[id^="export-button-"]',
-                );
-                exportButtons.forEach((button) => {
-                    button.addEventListener("click", (e) => {
-                        e.preventDefault();
-                        // TODO: Implement export functionality
-                        announceToScreenReader(
-                            "Export functionality coming soon",
-                        );
-                        (button as HTMLElement).focus();
-                    });
-
-                    // Add keyboard support
-                    button.addEventListener("keydown", (e) => {
-                        const keyboardEvent = e as KeyboardEvent;
-                        if (
-                            keyboardEvent.key === "Enter" ||
-                            keyboardEvent.key === " "
-                        ) {
-                            e.preventDefault();
-                            (button as HTMLElement).click();
-                        }
-                    });
-                });
-            }
-
-            /**
-             * Announce a message to screen readers
-             * @param {string} message - The message to announce
-             */
-            function announceToScreenReader(message: string) {
-                const announcement = document.createElement("div");
-                announcement.setAttribute("role", "status");
-                announcement.setAttribute("aria-live", "polite");
-                announcement.setAttribute("aria-atomic", "true");
-                announcement.className = "sr-only calendar-announcement";
-
-                announcement.textContent = message;
-                document.body.appendChild(announcement);
-
-                // Remove announcement after it's been read
-                setTimeout(() => {
-                    document.body.removeChild(announcement);
-                }, 1000);
-            }
-
-            // Initialize all buttons when DOM is ready
-            if (document.readyState === "loading") {
-                document.addEventListener("DOMContentLoaded", () => {
-                    initValidateButtons();
-                    initClearAllButtons();
-                    initExportButtons();
-                });
+            // Wait for DOM to be ready before initializing
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initializeApp);
             } else {
-                initValidateButtons();
-                initClearAllButtons();
-                initExportButtons();
+                initializeApp();
             }
+</script>
         </script>
 
         <style>

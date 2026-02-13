@@ -347,9 +347,10 @@ function updateWeekStatusIcon(weekInfo: WeekInfo) {
   const srElement = statusCell.querySelector(".sr-only") as HTMLElement;
   
   // Single update operation - no Map lookup!
-  iconElement.className = `week-status-icon ${weekInfo.isUnderEvaluation ? (weekInfo.isCompliant ? "" : "violation") : "least-attended"}`;
-  iconElement.textContent = weekInfo.isUnderEvaluation ? (weekInfo.isCompliant ? "✓" : "✗") : "⏳";
-  srElement.textContent = weekInfo.isUnderEvaluation ? (weekInfo.isCompliant ? "Compliant week" : "Non-compliant week") : "Excluded from evaluation";
+  // Status logic: Check individual compliance first, then overall validation result
+  iconElement.className = `week-status-icon ${!weekInfo.isUnderEvaluation ? "" : (!weekInfo.isCompliant ? "violation" : "compliant")}`;
+  iconElement.textContent = !weekInfo.isUnderEvaluation ? "" : (!weekInfo.isCompliant ? "✗" : "✓");
+  srElement.textContent = !weekInfo.isUnderEvaluation ? "" : (weekInfo.isCompliant ? "Compliant week" : "Non-compliant week");
 }
 ```
 

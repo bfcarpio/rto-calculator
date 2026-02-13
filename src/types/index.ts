@@ -24,6 +24,11 @@ export interface DayInfo {
 }
 
 /**
+ * Week status types for validation feedback
+ */
+export type WeekStatus = "compliant" | "invalid" | "pending" | "ignored";
+
+/**
  * Represents a week's compliance data
  */
 export interface WeekData {
@@ -46,6 +51,7 @@ export interface WeekInfo {
   officeDays: number;
   isCompliant: boolean;
   isUnderEvaluation: boolean;
+  status: WeekStatus;
   statusCellElement: HTMLElement | null; // Direct DOM reference - no cache needed
 }
 
