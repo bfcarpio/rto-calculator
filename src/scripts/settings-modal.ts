@@ -1,9 +1,11 @@
+import { getDateRange } from "../lib/dateUtils";
 import {
 	DEFAULTS,
 	readSettings,
 	SETTINGS_KEY,
 	writeSettings,
 } from "../lib/settings-reader";
+import { getStartOfWeek } from "../lib/validation/rto-core";
 import { logger } from "../utils/logger";
 import { debugLog } from "./debug";
 import { initializeIndex } from "./index-init";
@@ -41,6 +43,7 @@ class SettingsModal {
 	private holidayPenalizeToggle: HTMLButtonElement | null = null;
 	private rollingWindowInput: HTMLInputElement | null = null;
 	private bestWeeksInput: HTMLInputElement | null = null;
+	private startingWeekSelect: HTMLSelectElement | null = null;
 
 	constructor() {
 		initializeIndex();
@@ -95,6 +98,9 @@ class SettingsModal {
 		this.bestWeeksInput = document.getElementById(
 			"best-weeks-input",
 		) as HTMLInputElement | null;
+		this.startingWeekSelect = document.getElementById(
+			"starting-week-select",
+		) as HTMLSelectElement | null;
 	}
 
 	private initializeEventListeners(): void {
@@ -152,6 +158,9 @@ class SettingsModal {
 		);
 		this.bestWeeksInput?.addEventListener("change", () =>
 			this.onBestWeeksChange(),
+		);
+		this.startingWeekSelect?.addEventListener("change", () =>
+			this.onStartingWeekChange(),
 		);
 	}
 
@@ -267,6 +276,66 @@ class SettingsModal {
 		debugLog(`[Settings] Best weeks changed to: ${value}`);
 	}
 
+	private onStartingWeekChange(): void {
+		this.saveSettingsToLocalStorage();
+		this.dispatchSettingsChanged();
+		debugLog(
+			`[Settings] Starting week changed to: ${this.startingWeekSelect?.value || "default"}`,
+		);
+	}
+
+	private populateStartingWeekOptions(): void {
+		if (!this.startingWeekSelect) return;
+
+		const savedValue = this.startingWeekSelect.value;
+		// Clear all options except the default
+		this.startingWeekSelect.innerHTML =
+			'<option value="">Default (earliest)</option>';
+
+		const range = getDateRange();
+		const months = [
+			"Jan",
+			"Feb",
+			"Mar",
+			"Apr",
+			"May",
+			"Jun",
+			"Jul",
+			"Aug",
+			"Sep",
+			"Oct",
+			"Nov",
+			"Dec",
+		];
+
+		let weekStart = getStartOfWeek(range.startDate);
+		if (weekStart < range.startDate) {
+			weekStart = new Date(weekStart);
+			weekStart.setDate(weekStart.getDate() + 7);
+		}
+
+		while (weekStart <= range.endDate) {
+			const y = weekStart.getFullYear();
+			const m = String(weekStart.getMonth() + 1).padStart(2, "0");
+			const d = String(weekStart.getDate()).padStart(2, "0");
+			const value = `${y}-${m}-${d}`;
+			const label = `${months[weekStart.getMonth()]} ${weekStart.getDate()}, ${y}`;
+
+			const option = document.createElement("option");
+			option.value = value;
+			option.textContent = label;
+			this.startingWeekSelect.appendChild(option);
+
+			weekStart = new Date(weekStart);
+			weekStart.setDate(weekStart.getDate() + 7);
+		}
+
+		// Restore previously selected value if still valid
+		if (savedValue) {
+			this.startingWeekSelect.value = savedValue;
+		}
+	}
+
 	private dispatchSettingsChanged(): void {
 		document.dispatchEvent(
 			new CustomEvent("settings-changed", { bubbles: true }),
@@ -366,6 +435,9 @@ class SettingsModal {
 		if (this.bestWeeksInput) {
 			this.bestWeeksInput.value = DEFAULTS.bestWeeksCount.toString();
 			this.bestWeeksInput.max = DEFAULTS.rollingWindowWeeks.toString();
+		}
+		if (this.startingWeekSelect) {
+			this.startingWeekSelect.value = "";
 		}
 
 		localStorage.removeItem(SETTINGS_KEY);
@@ -486,6 +558,7 @@ class SettingsModal {
 			this.minOfficeDaysInput.value = config.minOfficeDaysPerWeek.toString();
 		}
 
+		this.populateStartingWeekOptions();
 		this.updatePatternSelectorUI();
 	}
 
@@ -502,6 +575,7 @@ class SettingsModal {
 			bestWeeksCount: this.bestWeeksInput
 				? parseInt(this.bestWeeksInput.value, 10)
 				: DEFAULTS.bestWeeksCount,
+			startingWeek: this.startingWeekSelect?.value || null,
 			defaultPattern:
 				this.selectedPattern.length > 0 ? [...this.selectedPattern] : null,
 			holidays: {
@@ -556,6 +630,12 @@ class SettingsModal {
 			if (this.bestWeeksInput) {
 				this.bestWeeksInput.value = settings.bestWeeksCount.toString();
 				this.bestWeeksInput.max = settings.rollingWindowWeeks.toString();
+			}
+
+			if (this.startingWeekSelect && settings.startingWeek) {
+				// Populate options first so the saved value can be selected
+				this.populateStartingWeekOptions();
+				this.startingWeekSelect.value = settings.startingWeek;
 			}
 
 			if (settings.defaultPattern && Array.isArray(settings.defaultPattern)) {

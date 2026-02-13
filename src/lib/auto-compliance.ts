@@ -196,8 +196,18 @@ function computeComplianceData(allWeeks: WeekInfo[]): ComplianceEventData {
 		topWeeksToCheck: settings.bestWeeksCount,
 	};
 
+	// Trim weeks to starting week if configured
+	let weeks = allWeeks;
+	if (settings.startingWeek) {
+		const startDate = new Date(`${settings.startingWeek}T00:00:00`);
+		const startIdx = allWeeks.findIndex((w) => w.weekStart >= startDate);
+		if (startIdx > 0) {
+			weeks = allWeeks.slice(startIdx);
+		}
+	}
+
 	// Run sliding window validation on ALL weeks in the calendar
-	const weeksForValidation = convertWeeksToCompliance(allWeeks);
+	const weeksForValidation = convertWeeksToCompliance(weeks);
 	const slidingWindowResult = validateSlidingWindow(weeksForValidation, policy);
 
 	// Determine which 12-week window to display:
@@ -207,7 +217,7 @@ function computeComplianceData(allWeeks: WeekInfo[]): ComplianceEventData {
 	const bestWeekStartSet = new Set(slidingWindowResult.evaluatedWeekStarts);
 
 	// Get the weeks in the display window
-	const windowWeeks = allWeeks.filter((w) =>
+	const windowWeeks = weeks.filter((w) =>
 		windowWeekStartSet.has(w.weekStart.getTime()),
 	);
 
@@ -250,7 +260,7 @@ function computeComplianceData(allWeeks: WeekInfo[]): ComplianceEventData {
 	// Find the earliest future week safe for full WFH using evaluated-set algorithm.
 	// Gates on overall compliance (slidingWindowResult.isValid checks ALL windows).
 	const nextWfhWeek = findNextSafeWfhWeek(
-		allWeeks,
+		weeks,
 		policy,
 		slidingWindowResult.isValid,
 	);

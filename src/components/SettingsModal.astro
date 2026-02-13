@@ -126,6 +126,19 @@
                         aria-label="Best weeks to evaluate"
                     />
                 </div>
+                <div class="setting-row">
+                    <div class="setting-info">
+                        <span class="setting-label">Starting week</span>
+                        <span class="setting-description">First week of the evaluation range</span>
+                    </div>
+                    <select
+                        id="starting-week-select"
+                        class="starting-week-select"
+                        aria-label="Starting week"
+                    >
+                        <option value="">Default (earliest)</option>
+                    </select>
+                </div>
             </section>
 
             <hr class="section-divider" />
@@ -328,6 +341,21 @@
         border-color: #475569;
     }
 
+    .starting-week-select {
+        padding: 0.5rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        background: white;
+        cursor: pointer;
+        transition: border-color 0.2s ease;
+    }
+
+    .starting-week-select:focus {
+        outline: none;
+        border-color: #475569;
+    }
+
     /* Toggle Switch */
     .toggle-button {
         position: relative;
@@ -462,6 +490,12 @@
     }
 
     :global(body.dark-mode) .target-days-input {
+        background: #1e293b;
+        border-color: #334155;
+        color: #e2e8f0;
+    }
+
+    :global(body.dark-mode) .starting-week-select {
         background: #1e293b;
         border-color: #334155;
         color: #e2e8f0;
