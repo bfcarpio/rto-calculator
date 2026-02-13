@@ -73,6 +73,16 @@
 					}
 				}
 			}
+		},
+		{
+			"includes": ["src/styles/global.css"],
+			"linter": {
+				"rules": {
+					"complexity": {
+						"noImportantStyles": "off"
+					}
+				}
+			}
 		}
 	]
 }

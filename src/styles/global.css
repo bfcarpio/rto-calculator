@@ -292,3 +292,24 @@ body.dark-mode .toggle-button {
 body.dark-mode .toggle-button[aria-checked="true"] {
 	background-color: #475569;
 }
+
+/* WCAG AA contrast overrides — Bulma uses !important on .has-text-* so we must too */
+.has-text-success {
+	color: #0f766e !important;
+}
+.has-text-danger {
+	color: #be123c !important;
+}
+.has-text-warning {
+	color: #a16207 !important;
+}
+
+body.dark-mode .has-text-success {
+	color: #5eead4 !important;
+}
+body.dark-mode .has-text-danger {
+	color: #fda4af !important;
+}
+body.dark-mode .has-text-warning {
+	color: #fde68a !important;
+}

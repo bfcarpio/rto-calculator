@@ -17,7 +17,7 @@ const BEST_WEEKS_REQUIRED = 8;
 
 	<!-- Week Summary Box -->
 	<div class="box week-summary">
-		<h3 class="title is-6 mb-3">Week Summary</h3>
+		<h2 class="title is-6 mb-3">Week Summary</h2>
 		<div class="content">
 			<div class="level is-mobile mb-2">
 				<div class="level-left">
@@ -54,7 +54,7 @@ const BEST_WEEKS_REQUIRED = 8;
 
 	<!-- Capacity Box -->
 	<div class="box capacity">
-		<h3 class="title is-6 mb-3">Capacity</h3>
+		<h2 class="title is-6 mb-3">Capacity</h2>
 		<div class="content">
 			<div class="level is-mobile mb-2">
 				<div class="level-left">
@@ -94,7 +94,7 @@ const BEST_WEEKS_REQUIRED = 8;
 
 	<!-- Current Week Status Box -->
 	<div class="box current-week">
-		<h3 class="title is-6 mb-3">Current Week Status</h3>
+		<h2 class="title is-6 mb-3">Current Week Status</h2>
 		<div class="content">
 			<p class="mb-2">
 				<span class="has-text-weight-semibold">Week of:</span>
@@ -115,7 +115,7 @@ const BEST_WEEKS_REQUIRED = 8;
 
 	<!-- Window Breakdown Box -->
 	<div class="box window-breakdown">
-		<h3 class="title is-6 mb-3">Window Breakdown</h3>
+		<h2 class="title is-6 mb-3">Window Breakdown</h2>
 		<p class="is-size-7 has-text-grey mb-3" id="window-breakdown-label">
 			Mark dates to see window breakdown
 		</p>
@@ -188,17 +188,7 @@ const BEST_WEEKS_REQUIRED = 8;
 		padding: 0.4rem 0.6rem;
 	}
 
-	.breakdown-section-label {
-		font-size: 0.75rem;
-		font-weight: 600;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-		color: #6b7280;
-		margin-bottom: 0.5rem;
-		margin-top: 0.75rem;
-	}
-
-	.breakdown-week {
+	.status-details :global(.breakdown-week) {
 		padding: 0.6rem 0.75rem;
 		border-radius: 6px;
 		background: #f9fafb;
@@ -206,13 +196,13 @@ const BEST_WEEKS_REQUIRED = 8;
 		margin-bottom: 0.4rem;
 	}
 
-	.breakdown-week--dropped {
+	.status-details :global(.breakdown-week--dropped) {
 		opacity: 0.6;
 		background: #f3f4f6;
 		border-left: 3px solid #9ca3af;
 	}
 
-	.breakdown-week--warn {
+	.status-details :global(.breakdown-week--warn) {
 		border-left: 3px solid #f59e0b;
 	}
 
@@ -278,23 +268,19 @@ const BEST_WEEKS_REQUIRED = 8;
 		color: #fde68a;
 	}
 
-	:global(body.dark-mode) .breakdown-week {
+	:global(body.dark-mode) .status-details :global(.breakdown-week) {
 		background: #1e293b;
 		border-color: #334155;
 		color: #e2e8f0;
 	}
 
-	:global(body.dark-mode) .breakdown-week--dropped {
+	:global(body.dark-mode) .status-details :global(.breakdown-week--dropped) {
 		background: #0f172a;
 		border-left-color: #475569;
 	}
 
-	:global(body.dark-mode) .breakdown-week--warn {
+	:global(body.dark-mode) .status-details :global(.breakdown-week--warn) {
 		border-left-color: #f59e0b;
-	}
-
-	:global(body.dark-mode) .breakdown-section-label {
-		color: #94a3b8;
 	}
 
 	:global(body.dark-mode) .public-holidays {
@@ -369,23 +355,8 @@ const BEST_WEEKS_REQUIRED = 8;
 			}
 		}
 
-		const bestWeeks = data.windowWeeks.filter((w) => w.isBest);
-		const droppedWeeks = data.windowWeeks.filter((w) => w.isIgnored);
-
-		let html = '';
-
-		// Best K section
-		if (bestWeeks.length > 0) {
-			html += `<p class="breakdown-section-label">Best ${bestWeeks.length}</p>`;
-			html += bestWeeks.map((w) => renderBreakdownWeek(w, false)).join('');
-		}
-
-		// Dropped section
-		if (droppedWeeks.length > 0) {
-			html += `<p class="breakdown-section-label">Dropped</p>`;
-			html += droppedWeeks.map((w) => renderBreakdownWeek(w, true)).join('');
-		}
-
+		// Chronological flat list (windowWeeks already in order)
+		const html = data.windowWeeks.map((w) => renderBreakdownWeek(w, w.isIgnored)).join('');
 		elContent.innerHTML = html;
 	}
 
