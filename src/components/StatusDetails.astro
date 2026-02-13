@@ -39,7 +39,8 @@ const _getStatusColor = (current: number, target: number): string => {
 	return "has-text-danger";
 };
 
-const _complianceStatusClass = _averageDays >= _targetDays ? "has-text-success" : "has-text-warning";
+const _complianceStatusClass =
+	_averageDays >= _targetDays ? "has-text-success" : "has-text-warning";
 ---
 
 <div class="status-details">

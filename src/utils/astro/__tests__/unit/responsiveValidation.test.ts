@@ -11,7 +11,7 @@
  * Aligns with E2E tests for consistent behavior across testing layers.
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
 	generateSelectionsForScenario,
 	getDeviceTypeFromWidth,

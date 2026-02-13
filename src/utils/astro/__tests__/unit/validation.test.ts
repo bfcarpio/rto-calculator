@@ -131,8 +131,12 @@ describe("getWeekDates", () => {
 		const dates = getWeekDates(weekStart);
 
 		for (let i = 1; i < dates.length; i++) {
-			const diff = dates[i]?.getTime() - dates[i - 1]?.getTime();
-			expect(diff).toBe(24 * 60 * 60 * 1000); // 1 day in milliseconds
+			const current = dates[i];
+			const previous = dates[i - 1];
+			if (current && previous) {
+				const diff = current.getTime() - previous.getTime();
+				expect(diff).toBe(24 * 60 * 60 * 1000); // 1 day in milliseconds
+			}
 		}
 	});
 });
