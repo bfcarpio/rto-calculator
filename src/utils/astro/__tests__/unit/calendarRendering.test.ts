@@ -161,7 +161,7 @@ describe("Calendar Rendering Functions", () => {
 
 			// Verify consecutive days
 			for (let i = 1; i < dates.length; i++) {
-				const diff = dates[i]!.getTime() - dates[i - 1]!.getTime();
+				const diff = dates[i]?.getTime() - dates[i - 1]?.getTime();
 				expect(diff).toBe(24 * 60 * 60 * 1000); // 1 day
 			}
 		});
@@ -172,11 +172,11 @@ describe("Calendar Rendering Functions", () => {
 			const weekStart = new Date(2025, 0, 6); // Monday, Jan 6
 			const dates = dateUtils.getWeekDates(weekStart);
 
-			expect(dates[0]!.getDay()).toBe(1); // Monday
-			expect(dates[1]!.getDay()).toBe(2); // Tuesday
-			expect(dates[2]!.getDay()).toBe(3); // Wednesday
-			expect(dates[3]!.getDay()).toBe(4); // Thursday
-			expect(dates[4]!.getDay()).toBe(5); // Friday
+			expect(dates[0]?.getDay()).toBe(1); // Monday
+			expect(dates[1]?.getDay()).toBe(2); // Tuesday
+			expect(dates[2]?.getDay()).toBe(3); // Wednesday
+			expect(dates[3]?.getDay()).toBe(4); // Thursday
+			expect(dates[4]?.getDay()).toBe(5); // Friday
 		});
 	});
 
@@ -307,8 +307,8 @@ describe("Calendar Rendering Functions", () => {
 			// First week should have days from December 2024
 			const firstWeek = weeks[0];
 			if (firstWeek && firstWeek.length > 0) {
-				expect(firstWeek[0]!.getMonth()).toBe(11); // December
-				expect(firstWeek[0]!.getFullYear()).toBe(2024);
+				expect(firstWeek[0]?.getMonth()).toBe(11); // December
+				expect(firstWeek[0]?.getFullYear()).toBe(2024);
 			}
 		});
 	});
