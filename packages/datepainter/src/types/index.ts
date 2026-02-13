@@ -74,6 +74,7 @@ export interface CalendarInstance {
 	clearDates(dates: DateString[]): void;
 	clearAll(): void;
 	toggleDate(date: DateString, state: DateState): void;
+	setPaintingState(state: DateState): void;
 	updateConfig(newConfig: Partial<CalendarConfig>): void;
 	onStateChange(
 		callback: (date: DateString, state: DateState | null) => void,

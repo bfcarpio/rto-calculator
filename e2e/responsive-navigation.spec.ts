@@ -119,7 +119,7 @@ test.describe("Responsive Navigation", () => {
 			await page.setViewportSize({ width: 1920, height: 1080 });
 
 			// Both calendar and status should be visible
-			const calendar = page.locator(".calendar-month");
+			const calendar = page.locator(".datepainter");
 			const status = page.locator(".status-details");
 
 			await expect(calendar).toBeVisible();
@@ -170,11 +170,11 @@ test.describe("Responsive Navigation", () => {
 			await page.setViewportSize({ width: 768, height: 1024 });
 
 			// Try to select a day
-			const dayCell = page.locator("[data-testid='calendar-day']").first();
+			const dayCell = page.locator("[data-testid='calendar-day']:not(.datepainter__day--empty):not(.datepainter__day--disabled)").first();
 			await dayCell.click();
 
-			// Selection should work
-			await expect(dayCell).toHaveClass(/selected/);
+			// Selection should work - check for any datepainter state class
+			await expect(dayCell).toHaveClass(/datepainter-day--(oof|holiday|sick)/);
 		});
 	});
 	test.describe("data-testid Attributes", () => {
@@ -222,7 +222,7 @@ test.describe("Responsive Navigation", () => {
 			expect(buttonCount).toBeGreaterThan(0);
 
 			// Check that calendar days are present
-			const dayCells = page.locator(".calendar-day:not(.empty)");
+			const dayCells = page.locator('[data-testid="calendar-day"]:not(.datepainter__day--empty)');
 			const dayCount = await dayCells.count();
 			expect(dayCount).toBeGreaterThan(0);
 		});

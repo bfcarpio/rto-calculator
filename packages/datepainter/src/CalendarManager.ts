@@ -352,6 +352,20 @@ export class CalendarManager implements CalendarInstance {
 	}
 
 	/**
+	 * Sets the painting state without triggering a re-render
+	 *
+	 * Use this to change the active painting mode (e.g., from palette buttons)
+	 * without destroying and recreating the calendar DOM.
+	 *
+	 * @param state - The new default painting state
+	 */
+	setPaintingState(state: DateState): void {
+		if (this.config.painting) {
+			this.config.painting.defaultState = state;
+		}
+	}
+
+	/**
 	 * Updates the calendar configuration
 	 *
 	 * Merges partial configuration with existing config, validates the result,
@@ -536,6 +550,7 @@ export class CalendarManager implements CalendarInstance {
 		let isDragging = false;
 		let dragDate: DateString | null = null;
 		let hasDragged = false;
+		let dragPaintState: DateState | null = null;
 
 		const mousedownHandler = (e: MouseEvent) => {
 			const target = e.target as HTMLElement;
@@ -548,15 +563,11 @@ export class CalendarManager implements CalendarInstance {
 					dragDate = date;
 					hasDragged = false;
 
-					const currentState = this.getState(date);
+					// Determine what state dragging will paint
 					const defaultState = this.config.painting.defaultState || "oof";
-
-					// Simple toggle: if current state matches default state, clear it
-					if (currentState === defaultState) {
-						this.clearDates([date]);
-					} else {
-						this.toggleDate(date, defaultState);
-					}
+					const currentState = this.getState(date);
+					// If cell already has the active state, drag will clear; otherwise drag will paint
+					dragPaintState = currentState === defaultState ? null : defaultState;
 				}
 			}
 		};
@@ -569,11 +580,23 @@ export class CalendarManager implements CalendarInstance {
 
 			if (dayCell && !dayCell.classList.contains("datepainter__day--empty")) {
 				const date = dayCell.getAttribute("data-date") as DateString | null;
-				if (date) {
-					const defaultState = this.config.painting?.defaultState || "oof";
-					if (!this.getState(date)) {
+				if (date && date !== dragDate) {
+					if (!hasDragged) {
+						// First drag move: paint the origin cell too
 						hasDragged = true;
-						this.toggleDate(date, defaultState);
+						if (dragDate) {
+							if (dragPaintState) {
+								this.setDates([dragDate], dragPaintState);
+							} else {
+								this.clearDates([dragDate]);
+							}
+						}
+					}
+					// Paint the new cell
+					if (dragPaintState) {
+						this.setDates([date], dragPaintState);
+					} else {
+						this.clearDates([date]);
 					}
 				}
 			}
@@ -581,32 +604,38 @@ export class CalendarManager implements CalendarInstance {
 
 		const mouseupHandler = () => {
 			isDragging = false;
+			dragPaintState = null;
 		};
 
 		const clickHandler = (e: MouseEvent) => {
+			// If this was a drag operation, skip click handling
+			if (hasDragged) {
+				hasDragged = false;
+				dragDate = null;
+				return;
+			}
+
 			const target = e.target as HTMLElement;
 			const dayCell = target.closest(".datepainter__day");
 
 			if (dayCell && !dayCell.classList.contains("datepainter__day--empty")) {
 				const date = dayCell.getAttribute("data-date") as DateString | null;
-				if (date && (!dragDate || hasDragged)) {
+				if (date) {
 					const currentState = this.getState(date);
-
-					// Get the default state from config, fallback to "oof"
 					const defaultState = this.config.painting?.defaultState || "oof";
 
-					// Simple toggle: if current state matches default state, clear it
-					// Otherwise, set it to the default state
+					// Toggle: if current state matches active palette state, clear it
+					// Otherwise, set it to the active palette state
 					if (currentState === defaultState) {
 						this.clearDates([date]);
 					} else {
-						this.toggleDate(date, defaultState);
+						this.setDates([date], defaultState);
 					}
-					// Clear drag state after click handler runs
-					dragDate = null;
-					hasDragged = false;
 				}
 			}
+
+			dragDate = null;
+			hasDragged = false;
 		};
 
 		// Navigation button click handler

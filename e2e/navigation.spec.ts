@@ -92,7 +92,7 @@ test.describe("Navigation", () => {
 			await waitForCalendarReady(page);
 
 			// Verify calendar section exists
-			const calendar = page.locator(".calendar-month");
+			const calendar = page.locator(".datepainter");
 			await expect(calendar).toBeVisible();
 		});
 

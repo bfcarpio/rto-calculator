@@ -209,9 +209,9 @@ export async function expectDateDisabled(
 		throw new Error("index must be a non-negative number");
 	}
 
-	const disabledCells = page.locator(".datepainter-day--empty");
+	const disabledCells = page.locator(".datepainter__day--disabled");
 	const cell = disabledCells.nth(index);
-	await expect(cell).toHaveCSS("opacity", "0.5");
+	await expect(cell).toHaveCSS("opacity", "0.3");
 }
 
 /**
@@ -246,17 +246,31 @@ export async function navigateToMonth(
 		throw new Error("month must be between 0 and 11");
 	}
 
-	const navTitle = page.locator(".air-datepicker-nav--title");
-	await navTitle.click();
+	const monthNames = [
+		"January", "February", "March", "April", "May", "June",
+		"July", "August", "September", "October", "November", "December",
+	];
+	const targetLabel = `${monthNames[month]} ${year}`;
 
-	const yearCell = page.locator(`[data-year="${year}"]`);
-	if (await yearCell.isVisible().catch(() => false)) {
-		await yearCell.click();
-	}
+	// Iteratively click prev/next until we reach the target month
+	for (let attempts = 0; attempts < 24; attempts++) {
+		const currentLabel = await getCurrentMonthYear(page);
+		if (currentLabel === targetLabel) return;
 
-	const monthCell = page.locator(`[data-month="${month}"]`);
-	if (await monthCell.isVisible().catch(() => false)) {
-		await monthCell.click();
+		// Parse current month/year to determine direction
+		const match = currentLabel.match(/(\w+)\s+(\d{4})/);
+		if (!match) break;
+		const currentMonthIdx = monthNames.indexOf(match[1]);
+		const currentYear = parseInt(match[2], 10);
+		const currentTotal = currentYear * 12 + currentMonthIdx;
+		const targetTotal = year * 12 + month;
+
+		if (targetTotal > currentTotal) {
+			await page.click('.datepainter__nav-btn[data-action="next"]');
+		} else {
+			await page.click('.datepainter__nav-btn[data-action="prev"]');
+		}
+		await page.waitForTimeout(100);
 	}
 }
 
@@ -278,7 +292,7 @@ export async function navigateToMonth(
  * ```
  */
 export async function getCurrentMonthYear(page: Page): Promise<string> {
-	const navTitle = page.locator(".air-datepicker-nav--title");
-	const content = await navTitle.textContent();
-	return content ?? "";
+	const monthLabel = page.locator(".datepainter__month-label");
+	const content = await monthLabel.textContent();
+	return content?.trim() ?? "";
 }

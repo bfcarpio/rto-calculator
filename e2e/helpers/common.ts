@@ -17,7 +17,7 @@ export async function navigateToApp(page: Page): Promise<void> {
  * Wait for app to be fully loaded
  */
 export async function waitForAppLoad(page: Page): Promise<void> {
-	await page.waitForSelector("[data-testid='datepainter-container']", {
+	await page.waitForSelector(".datepainter", {
 		state: "visible",
 	});
 	await page.waitForSelector("#status-legend", { state: "visible" });

@@ -795,7 +795,9 @@ export async function waitForCalendarReady(
  */
 export async function getSelectedDayCount(page: Page): Promise<number> {
 	return page
-		.locator('[data-testid="calendar-day"].selected.out-of-office')
+		.locator(
+			'[data-testid="calendar-day"].datepainter-day--oof, [data-testid="calendar-day"].datepainter-day--holiday, [data-testid="calendar-day"].datepainter-day--sick',
+		)
 		.count();
 }
 

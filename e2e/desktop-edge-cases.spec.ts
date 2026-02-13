@@ -32,10 +32,12 @@ test.describe("Desktop Edge Cases", () => {
 
 			// The cell should still be in a valid state (selected or not)
 			await expect(dayCell).toBeVisible();
-			const hasClass = await dayCell.evaluate((el) =>
-				el.classList.contains("selected"),
+			const hasStateClass = await dayCell.evaluate((el) =>
+				el.classList.contains("datepainter-day--oof") ||
+				el.classList.contains("datepainter-day--holiday") ||
+				el.classList.contains("datepainter-day--sick"),
 			);
-			expect(typeof hasClass).toBe("boolean");
+			expect(typeof hasStateClass).toBe("boolean");
 		});
 
 		test("should handle rapid clicks on multiple cells", async ({ page }) => {
@@ -65,7 +67,7 @@ test.describe("Desktop Edge Cases", () => {
 
 			// Now clicking should work
 			await dayCell.click();
-			await expect(dayCell).toHaveClass(/selected/);
+			await expect(dayCell).toHaveClass(/datepainter-day--(oof|holiday|sick)/);
 		});
 
 		test("should handle alternating left and right clicks", async ({
