@@ -217,6 +217,44 @@ export class CalendarManager implements CalendarInstance {
 	}
 
 	/**
+	 * Gets all dates with their current states
+	 *
+	 * @returns Map of date strings to their state
+	 * @throws {Error} If calendar not initialized
+	 *
+	 * @example
+	 * ```ts
+	 * const dates = manager.getAllDates();
+	 * // Map { '2026-02-06' => 'oof', '2026-02-07' => 'holiday' }
+	 * ```
+	 */
+	getAllDates(): Map<DateString, DateState> {
+		if (!this.isInitialized) {
+			throw new Error("Calendar not initialized");
+		}
+		return getAllDates();
+	}
+
+	/**
+	 * Gets the currently displayed month
+	 *
+	 * @returns Date object representing the current month view
+	 * @throws {Error} If calendar not initialized
+	 *
+	 * @example
+	 * ```ts
+	 * const month = manager.getCurrentMonth();
+	 * console.log(month.getMonth()); // 1 for February
+	 * ```
+	 */
+	getCurrentMonth(): Date {
+		if (!this.isInitialized) {
+			throw new Error("Calendar not initialized");
+		}
+		return new Date(this.currentViewDate);
+	}
+
+	/**
 	 * Sets multiple dates to a specific state
 	 *
 	 * @param dates - Array of date strings (YYYY-MM-DD) or Date objects

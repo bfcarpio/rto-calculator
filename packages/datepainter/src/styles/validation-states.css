@@ -1,0 +1,20 @@
+/**
+ * Validation State Classes
+ * Provides visual feedback for validation results
+ */
+
+/* ============================================
+   Validation State Classes
+   ============================================ */
+
+/* Validation pass - Green */
+.datepainter-day--pass {
+	background-color: #d1fae5 !important;
+	border-color: #10b981 !important;
+}
+
+/* Validation fail - Red */
+.datepainter-day--fail {
+	background-color: #fee2e2 !important;
+	border-color: #ef4444 !important;
+}

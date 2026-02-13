@@ -59,6 +59,8 @@ export interface CalendarInstance {
 	getSelectedDates(): DateString[];
 	getState(date: DateString): DateState | null;
 	getDatesByState(state: DateState): DateString[];
+	getAllDates(): Map<DateString, DateState>;
+	getCurrentMonth(): Date;
 	setDates(dates: DateString[], state: DateState): void;
 	clearDates(dates: DateString[]): void;
 	clearAll(): void;
