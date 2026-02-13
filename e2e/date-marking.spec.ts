@@ -123,8 +123,8 @@ test.describe("Date Marking Flows", () => {
 		await clickDate(page, 0);
 		await expectDateHasState(page, 0, "sick");
 
-		// Drag across multiple dates
-		const cells = await page.locator('[data-testid="calendar-day"]:not(.datepainter__day--empty)').all();
+		// Drag across multiple dates (exclude both empty and disabled cells)
+		const cells = await page.locator('[data-testid="calendar-day"]:not(.datepainter__day--empty):not(.datepainter__day--disabled)').all();
 		if (cells.length >= 4) {
 			// Simulate drag from cell 1 to cell 3
 			if (cells[1] && cells[2] && cells[3]) {

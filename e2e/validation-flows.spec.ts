@@ -154,14 +154,15 @@ test.describe("Validation Flows", () => {
 			const summary = page.locator(".summary-bar");
 			await expect(summary).toBeVisible();
 
-			// StatusLegend should show counts
-			const oofCount = page.locator("#count-oof");
+			// StatusLegend should show counts (scope to first legend to avoid duplicate IDs)
+			const legend = page.locator("#status-legend").first();
+			const oofCount = legend.locator("#count-oof");
 			await expect(oofCount).toHaveText("1");
 
-			const holidayCount = page.locator("#count-holiday");
+			const holidayCount = legend.locator("#count-holiday");
 			await expect(holidayCount).toHaveText("1");
 
-			const sickCount = page.locator("#count-sick");
+			const sickCount = legend.locator("#count-sick");
 			await expect(sickCount).toHaveText("2");
 		});
 	});

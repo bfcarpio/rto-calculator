@@ -35,9 +35,10 @@ export async function getModeCounts(page: Page): Promise<{
 	holiday: number;
 	sick: number;
 }> {
-	const oofText = await page.locator("#count-oof").textContent();
-	const holidayText = await page.locator("#count-holiday").textContent();
-	const sickText = await page.locator("#count-sick").textContent();
+	const legend = getMainLegend(page);
+	const oofText = await legend.locator("#count-oof").textContent();
+	const holidayText = await legend.locator("#count-holiday").textContent();
+	const sickText = await legend.locator("#count-sick").textContent();
 
 	return {
 		oof: parseInt(oofText || "0", 10),
@@ -51,6 +52,7 @@ export async function expectModeCount(
 	mode: "oof" | "holiday" | "sick",
 	expected: number,
 ): Promise<void> {
-	const countId = `#count-${mode}`;
-	await expect(page.locator(countId)).toHaveText(String(expected));
+	const legend = getMainLegend(page);
+	const countEl = legend.locator(`#count-${mode}`);
+	await expect(countEl).toHaveText(String(expected));
 }
