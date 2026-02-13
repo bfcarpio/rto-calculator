@@ -771,7 +771,7 @@ describe("UI Updates - Integration Scenarios", () => {
 
     // Simulate overall validation being valid (average >= 60%)
     // But individual week compliance should still be checked
-    weeks.forEach((week, index) => {
+    weeks.forEach((week) => {
       // This is the corrected logic: check individual compliance first
       if (!week.isCompliant) {
         week.status = "invalid";
@@ -782,7 +782,7 @@ describe("UI Updates - Integration Scenarios", () => {
     });
 
     // Verify that week 5 (0 office days) is marked as invalid
-    const week5Container = weeks[4].statusCellElement?.querySelector(
+    const week5Container = weeks[4]?.statusCellElement?.querySelector(
       ".week-status-container",
     ) as HTMLElement;
     expect(week5Container?.classList.contains("non-compliant")).toBe(true);
@@ -794,7 +794,7 @@ describe("UI Updates - Integration Scenarios", () => {
     // Verify that compliant weeks are marked as compliant
     for (let i = 0; i < 8; i++) {
       if (i === 4) continue; // Skip week 5
-      const container = weeks[i].statusCellElement?.querySelector(
+      const container = weeks[i]?.statusCellElement?.querySelector(
         ".week-status-container",
       ) as HTMLElement;
       expect(container?.classList.contains("compliant")).toBe(true);
