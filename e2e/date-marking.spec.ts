@@ -165,13 +165,14 @@ test.describe("Date Marking Flows", () => {
 		await clickDate(page, 5);
 		await expectDateHasState(page, 5, "oof");
 
-		// Navigate to next month
+		// Navigate to next month and wait for month label to change
+		const originalMonth = await page.locator(".datepainter__month-label").textContent();
 		await page.click('button[aria-label="Next month"]');
-		await page.waitForTimeout(300); // Wait for navigation
+		await expect(page.locator(".datepainter__month-label")).not.toHaveText(originalMonth!);
 
-		// Navigate back
+		// Navigate back and wait for original month label to return
 		await page.click('button[aria-label="Previous month"]');
-		await page.waitForTimeout(300);
+		await expect(page.locator(".datepainter__month-label")).toHaveText(originalMonth!);
 
 		// Date should still be marked
 		await expectDateHasState(page, 5, "oof");
