@@ -25,7 +25,6 @@ export type WeekStart = "sunday" | "monday";
 
 export const DEFAULT_WEEK_START: WeekStart = "sunday";
 
-
 export function getLocaleWeekStart(): WeekStart {
 	// For now, default to Sunday start
 	// In a real implementation, this would detect based on locale

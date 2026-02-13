@@ -204,9 +204,7 @@ describe("WeekdaySelector - Sync Logic", () => {
 			</div>
 		`;
 
-		const selector = document.getElementById(
-			"weekday-selector",
-		) as HTMLElement;
+		const selector = document.getElementById("weekday-selector") as HTMLElement;
 
 		// Simulate: all Mondays are marked oof → button should be active
 		const monBtn = selector.querySelector('[data-day="1"]') as HTMLElement;
@@ -225,9 +223,7 @@ describe("WeekdaySelector - Sync Logic", () => {
 			</div>
 		`;
 
-		const selector = document.getElementById(
-			"weekday-selector",
-		) as HTMLElement;
+		const selector = document.getElementById("weekday-selector") as HTMLElement;
 		const monBtn = selector.querySelector('[data-day="1"]') as HTMLElement;
 
 		// Initially active

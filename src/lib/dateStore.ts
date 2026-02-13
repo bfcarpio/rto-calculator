@@ -62,7 +62,9 @@ export function getDateStore() {
 			clearDateState(dateStr as `${number}-${number}-${number}`);
 		},
 
-		subscribe(_callback: (state: any, _stats: any) => void): () => void {
+		subscribe(
+			_callback: (state: unknown, _stats: unknown) => void,
+		): () => void {
 			// Simple stub - components will need to use datepainter's events
 			return () => {};
 		},

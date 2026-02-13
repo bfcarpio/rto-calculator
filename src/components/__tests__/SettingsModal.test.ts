@@ -310,10 +310,7 @@ describe("SettingsModal - Pattern Functionality Mock", () => {
 				holidayPenalize: false,
 			};
 
-			localStorage.setItem(
-				"rto-calculator-settings",
-				JSON.stringify(settings),
-			);
+			localStorage.setItem("rto-calculator-settings", JSON.stringify(settings));
 
 			const parsed = JSON.parse(
 				localStorage.getItem("rto-calculator-settings") || "{}",
@@ -330,10 +327,7 @@ describe("SettingsModal - Pattern Functionality Mock", () => {
 				sickDaysPenalize: true,
 			};
 
-			localStorage.setItem(
-				"rto-calculator-settings",
-				JSON.stringify(settings),
-			);
+			localStorage.setItem("rto-calculator-settings", JSON.stringify(settings));
 
 			const parsed = JSON.parse(
 				localStorage.getItem("rto-calculator-settings") || "{}",
@@ -351,10 +345,7 @@ describe("SettingsModal - Pattern Functionality Mock", () => {
 				holidayPenalize: false,
 			};
 
-			localStorage.setItem(
-				"rto-calculator-settings",
-				JSON.stringify(settings),
-			);
+			localStorage.setItem("rto-calculator-settings", JSON.stringify(settings));
 
 			const parsed = JSON.parse(
 				localStorage.getItem("rto-calculator-settings") || "{}",

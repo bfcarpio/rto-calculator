@@ -361,8 +361,7 @@ export function validateSlidingWindow(
 		// This handles holiday weeks correctly — a week with 5 holidays
 		// has 0 officeDays and 0 totalDays, so it correctly counts as
 		// 0 office days rather than getting a free pass via percentage.
-		const isValid =
-			averageOfficeDays >= policy.minOfficeDaysPerWeek;
+		const isValid = averageOfficeDays >= policy.minOfficeDaysPerWeek;
 
 		return { isValid, averageOfficeDays, averageOfficePercentage, bestWeeks };
 	}

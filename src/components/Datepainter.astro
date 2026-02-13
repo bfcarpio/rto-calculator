@@ -10,7 +10,9 @@
  */
 
 // Generate unique ID for this instance to support multiple calendars per page
-const { id = `datepainter-container-${Math.random().toString(36).slice(2, 9)}` } = Astro.props;
+const {
+	id = `datepainter-container-${Math.random().toString(36).slice(2, 9)}`,
+} = Astro.props;
 ---
 <div class="datepicker-container" id={id} data-container-id={id}>
   <!-- CalendarManager renders into this container -->

@@ -7,10 +7,10 @@
 
 import {
 	addDays,
+	isWeekend as dfIsWeekend,
 	eachDayOfInterval,
 	format,
 	isBefore,
-	isWeekend as dfIsWeekend,
 	startOfDay,
 	startOfMonth,
 	startOfWeek,

@@ -138,7 +138,6 @@ describe("Calendar Rendering Functions", () => {
 			expect(formatted).toContain("2025");
 			expect(formatted).toMatch(/Jan/);
 		});
-
 	});
 
 	describe("getWeekDates()", () => {
@@ -351,5 +350,4 @@ describe("Calendar Rendering Functions", () => {
 			expect(selectionTypes).toContain("none");
 		});
 	});
-
 });

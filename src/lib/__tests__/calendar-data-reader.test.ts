@@ -38,10 +38,10 @@ vi.mock("../validation/rto-core", () => ({
 	}),
 }));
 
+import type { CalendarInstance } from "../../../packages/datepainter/src/types";
+import { readCalendarData } from "../calendar-data-reader";
 import { getDateRange } from "../dateUtils";
 import { getHolidayDatesForValidation } from "../holiday/CalendarHolidayIntegration";
-import { readCalendarData } from "../calendar-data-reader";
-import type { CalendarInstance } from "../../../packages/datepainter/src/types";
 
 // ─── Helpers ─────────────────────────────────────────────────────
 
@@ -56,9 +56,7 @@ function monday(dateStr: string): Date {
  * Build a mock CalendarInstance whose getAllDates() returns the given map.
  * dateMap keys are "YYYY-MM-DD" strings, values are "oof" | "holiday" | "sick".
  */
-function mockCalendar(
-	dateMap: Map<string, string>,
-): CalendarInstance {
+function mockCalendar(dateMap: Map<string, string>): CalendarInstance {
 	return {
 		getAllDates: vi.fn(() => dateMap),
 	} as unknown as CalendarInstance;

@@ -74,7 +74,9 @@ function makeSchedule(
 		offset += count;
 	}
 	// Fix weekNumbers to be sequential
-	weeks.forEach((w, i) => (w.weekNumber = i + 1));
+	weeks.forEach((w, i) => {
+		w.weekNumber = i + 1;
+	});
 	return weeks;
 }
 
@@ -433,7 +435,9 @@ describe("validateSlidingWindow", () => {
 			expect(result.evaluatedWeekStarts).toHaveLength(8);
 
 			// The first 4 weeks should NOT be in evaluatedWeekStarts (dropped)
-			const droppedTimestamps = weeks.slice(0, 4).map((w) => w.weekStart.getTime());
+			const droppedTimestamps = weeks
+				.slice(0, 4)
+				.map((w) => w.weekStart.getTime());
 			for (const ts of droppedTimestamps) {
 				expect(result.evaluatedWeekStarts).not.toContain(ts);
 			}
@@ -519,7 +523,9 @@ describe("validateSlidingWindow", () => {
 			const normalStart = new Date(START);
 			normalStart.setDate(START.getDate() + 8 * 7);
 			const normalWeeks = makeWeeks(normalStart, 4, 3);
-			normalWeeks.forEach((w, i) => (w.weekNumber = 9 + i));
+			normalWeeks.forEach((w, i) => {
+				w.weekNumber = 9 + i;
+			});
 			const weeks = [...holidayWeeks, ...normalWeeks];
 
 			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
@@ -541,7 +547,9 @@ describe("validateSlidingWindow", () => {
 			const goodStart = new Date(START);
 			goodStart.setDate(START.getDate() + 4 * 7);
 			const goodWeeks = makeWeeks(goodStart, 8, 5);
-			goodWeeks.forEach((w, i) => (w.weekNumber = 5 + i));
+			goodWeeks.forEach((w, i) => {
+				w.weekNumber = 5 + i;
+			});
 			const weeks = [...holidayWeeks, ...goodWeeks];
 
 			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
