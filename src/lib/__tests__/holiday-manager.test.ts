@@ -63,7 +63,7 @@ describe("HolidayManager", () => {
 	let manager: HolidayManager;
 	let mockDataSource: any;
 
-	beforeEach(() => {
+	beforeEach(async () => {
 		// Clear any existing instance
 		(HolidayManager as any).instance = null;
 
@@ -109,7 +109,7 @@ describe("HolidayManager", () => {
 			_resetInstance: vi.fn(),
 		} as any);
 
-		manager = HolidayManager.getInstance();
+		manager = await HolidayManager.getInstance();
 	});
 
 	afterEach(() => {
@@ -117,9 +117,9 @@ describe("HolidayManager", () => {
 	});
 
 	describe("Singleton Pattern", () => {
-		it("should return the same instance on multiple calls", () => {
-			const instance1 = HolidayManager.getInstance();
-			const instance2 = HolidayManager.getInstance();
+		it("should return the same instance on multiple calls", async () => {
+			const instance1 = await HolidayManager.getInstance();
+			const instance2 = await HolidayManager.getInstance();
 			expect(instance1).toBe(instance2);
 		});
 	});
@@ -242,7 +242,7 @@ describe("HolidayManager", () => {
 		});
 
 		describe("Company Filtering", () => {
-			beforeEach(() => {
+			beforeEach(async () => {
 				// Mock the getCompanyHolidays method to return specific filters
 				vi.spyOn(manager as any, "getCompanyHolidays").mockReturnValue(
 					new Set(["New Year's Day", "Christmas Day"]),
