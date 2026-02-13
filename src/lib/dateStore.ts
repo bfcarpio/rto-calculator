@@ -1,7 +1,7 @@
 /**
  * Date Store - In-memory reactive state management
  * No localStorage - data clears on page refresh
- * Priority: Holiday > OOF > Working
+ * Priority: Holiday > OOF > Sick
  */
 
 import { logger } from "../utils/logger";
@@ -13,7 +13,7 @@ import {
 	parseDateISO,
 } from "./dateUtils";
 
-export type DateState = "working" | "oof" | "holiday";
+export type DateState = "oof" | "holiday" | "sick";
 export type MarkingMode = DateState;
 
 interface DateStoreState {
@@ -24,13 +24,13 @@ interface DateStoreState {
 }
 
 interface StoreStatistics {
-	workingDays: number;
 	oofDays: number;
 	holidayDays: number;
+	sickDays: number;
 	totalMarkedDays: number;
 }
 
-const STATE_PRIORITY: DateState[] = ["holiday", "oof", "working"];
+const STATE_PRIORITY: DateState[] = ["holiday", "oof", "sick"];
 
 function normalizeDate(date: Date | string): string {
 	if (typeof date === "string") {
@@ -56,7 +56,7 @@ export class DateStore {
 	constructor() {
 		this.state = {
 			dateStates: new Map(),
-			markingMode: "working",
+			markingMode: "oof",
 			dateRange: getDateRange(),
 			isInitialized: false,
 		};
@@ -195,10 +195,10 @@ export class DateStore {
 
 	/**
 	 * Cycle to the next marking mode
-	 * working -> oof -> holiday -> working
+	 * oof -> holiday -> sick -> oof
 	 */
 	cycleMarkingMode(): MarkingMode {
-		const modes: MarkingMode[] = ["working", "oof", "holiday"];
+		const modes: MarkingMode[] = ["oof", "holiday", "sick"];
 		const currentIndex = modes.indexOf(this.state.markingMode);
 
 		if (currentIndex === -1) {
@@ -232,21 +232,21 @@ export class DateStore {
 	 * Get statistics for the StatusLegend
 	 */
 	getStatistics(): StoreStatistics {
-		let workingDays = 0;
 		let oofDays = 0;
 		let holidayDays = 0;
+		let sickDays = 0;
 
 		for (const state of this.state.dateStates.values()) {
-			if (state === "working") workingDays++;
-			else if (state === "oof") oofDays++;
+			if (state === "oof") oofDays++;
 			else if (state === "holiday") holidayDays++;
+			else if (state === "sick") sickDays++;
 		}
 
 		return {
-			workingDays,
 			oofDays,
 			holidayDays,
-			totalMarkedDays: workingDays + oofDays + holidayDays,
+			sickDays,
+			totalMarkedDays: oofDays + holidayDays + sickDays,
 		};
 	}
 

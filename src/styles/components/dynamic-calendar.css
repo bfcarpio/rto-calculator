@@ -163,6 +163,23 @@
 	opacity: 0.8;
 }
 
+.day-cell.sick {
+	background-color: #1890ff;
+	border-color: #096dd9;
+	color: white;
+	font-weight: 600;
+	position: relative;
+}
+
+.day-cell.sick::after {
+	content: "💊";
+	position: absolute;
+	bottom: 1px;
+	right: 1px;
+	font-size: 0.6em;
+	opacity: 0.8;
+}
+
 /* Holiday tooltip */
 .day-cell.holiday[title] {
 	cursor: help;

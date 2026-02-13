@@ -507,9 +507,11 @@ class CalendarEventManager {
 			const label =
 				state === "oof"
 					? "Out of office"
-					: state === "working"
-						? "Working"
-						: state;
+					: state === "holiday"
+						? "Holiday"
+						: state === "sick"
+							? "Sick"
+							: state;
 			const newLabel = currentLabel.replace(/\. .*$/, `.${label}`);
 			cell.setAttribute("aria-label", newLabel);
 		}

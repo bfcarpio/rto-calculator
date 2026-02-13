@@ -1,16 +1,16 @@
-import { beforeEach, describe, it, expect, vi } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import {
-	selectedDates,
+	clearDateState,
 	currentMonth,
 	dragState,
-	validationResult,
-	setDateState,
-	clearDateState,
 	getAllDates,
 	getCurrentMonth,
+	selectedDates,
 	setCurrentMonth,
+	setDateState,
+	validationResult,
 } from "../../src/stores/calendarStore";
-import type { DateString, DateState } from "../../src/types";
+import type { DateState, DateString } from "../../src/types";
 
 describe("stores", () => {
 	beforeEach(() => {
@@ -34,21 +34,21 @@ describe("stores", () => {
 		});
 
 		it("should toggle date selection (add)", () => {
-			setDateState("2026-02-06" as DateString, "working" as DateState);
+			setDateState("2026-02-06" as DateString, "oof" as DateState);
 			const dates = selectedDates.get();
 			expect(dates.size).toBe(1);
-			expect(dates.get("2026-02-06" as DateString)).toBe("working");
+			expect(dates.get("2026-02-06" as DateString)).toBe("oof");
 		});
 
 		it("should toggle date selection (remove)", () => {
-			setDateState("2026-02-06" as DateString, "working" as DateState);
+			setDateState("2026-02-06" as DateString, "oof" as DateState);
 			clearDateState("2026-02-06" as DateString);
 			const dates = selectedDates.get();
 			expect(dates.size).toBe(0);
 		});
 
 		it("should clear all dates", () => {
-			setDateState("2026-02-06" as DateString, "working" as DateState);
+			setDateState("2026-02-06" as DateString, "holiday" as DateState);
 			setDateState("2026-02-07" as DateString, "oof" as DateState);
 			selectedDates.set(new Map());
 			const dates = selectedDates.get();
@@ -56,18 +56,18 @@ describe("stores", () => {
 		});
 
 		it("should update existing date state", () => {
-			setDateState("2026-02-06" as DateString, "working" as DateState);
+			setDateState("2026-02-06" as DateString, "holiday" as DateState);
 			setDateState("2026-02-06" as DateString, "oof" as DateState);
 			const dates = selectedDates.get();
 			expect(dates.get("2026-02-06" as DateString)).toBe("oof");
 		});
 
 		it("should get all dates", () => {
-			setDateState("2026-02-06" as DateString, "working" as DateState);
+			setDateState("2026-02-06" as DateString, "holiday" as DateState);
 			setDateState("2026-02-07" as DateString, "oof" as DateState);
 			const dates = getAllDates();
 			expect(dates.size).toBe(2);
-			expect(dates.get("2026-02-06" as DateString)).toBe("working");
+			expect(dates.get("2026-02-06" as DateString)).toBe("holiday");
 			expect(dates.get("2026-02-07" as DateString)).toBe("oof");
 		});
 	});
@@ -195,7 +195,7 @@ describe("stores", () => {
 
 	describe("localStorage persistence", () => {
 		it("should persist to localStorage", () => {
-			setDateState("2026-02-06" as DateString, "working" as DateState);
+			setDateState("2026-02-06" as DateString, "sick" as DateState);
 			const dates = getAllDates();
 			const serialized = JSON.stringify(Array.from(dates.entries()));
 			localStorage.setItem("selectedDates", serialized);
@@ -203,7 +203,10 @@ describe("stores", () => {
 		});
 
 		it("should load from localStorage", () => {
-			const mockData = [["2026-02-06", "working"], ["2026-02-07", "oof"]];
+			const mockData = [
+				["2026-02-06", "holiday"],
+				["2026-02-07", "oof"],
+			];
 			localStorage.setItem("selectedDates", JSON.stringify(mockData));
 
 			const stored = localStorage.getItem("selectedDates");
@@ -214,13 +217,16 @@ describe("stores", () => {
 
 				const dates = getAllDates();
 				expect(dates.size).toBe(2);
-				expect(dates.get("2026-02-06" as DateString)).toBe("working");
+				expect(dates.get("2026-02-06" as DateString)).toBe("holiday");
 				expect(dates.get("2026-02-07" as DateString)).toBe("oof");
 			}
 		});
 
 		it("should clear localStorage", () => {
-			localStorage.setItem("selectedDates", JSON.stringify([["2026-02-06", "working"]]));
+			localStorage.setItem(
+				"selectedDates",
+				JSON.stringify([["2026-02-06", "holiday"]]),
+			);
 			localStorage.clear();
 			expect(localStorage.getItem("selectedDates")).toBe(null);
 		});
@@ -229,7 +235,7 @@ describe("stores", () => {
 	describe("state consistency", () => {
 		it("should maintain state consistency", () => {
 			// Set multiple dates
-			setDateState("2026-02-06" as DateString, "working" as DateState);
+			setDateState("2026-02-06" as DateString, "sick" as DateState);
 			setDateState("2026-02-07" as DateString, "oof" as DateState);
 			setDateState("2026-02-08" as DateString, "holiday" as DateState);
 

@@ -5,7 +5,7 @@ export type DateString = `${number}-${number}-${number}`;
 export type SelectionType = "selected" | "work-from-home" | "office";
 
 // Date state type
-export type DateState = "working" | "oof" | "holiday";
+export type DateState = "oof" | "holiday" | "sick";
 
 // Date range type
 export interface DateRange {

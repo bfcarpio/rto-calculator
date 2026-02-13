@@ -42,16 +42,6 @@
   }
 
   /* State color classes - applied to individual date cells */
-  :global(.air-datepicker-cell.-working-) {
-    background-color: #ffffff !important;
-    color: #334155 !important;
-  }
-
-  :global(body.dark-mode .air-datepicker-cell.-working-) {
-    background-color: #1e293b !important;
-    color: #e2e8f0 !important;
-  }
-
   :global(.air-datepicker-cell.-oof-) {
     background-color: var(--color-violation) !important;
     color: white !important;
@@ -59,6 +49,11 @@
 
   :global(.air-datepicker-cell.-holiday-) {
     background-color: var(--color-holiday) !important;
+    color: white !important;
+  }
+
+  :global(.air-datepicker-cell.-sick-) {
+    background-color: #1890ff !important;
     color: white !important;
   }
 
@@ -105,7 +100,7 @@
   }
 
   :global(body.dark-mode .air-datepicker-cell) {
-    color: #cbd5e1;
+    color: var(--text-muted);
   }
 
   :global(body.dark-mode .air-datepicker-cell.-other-month-) {
@@ -141,12 +136,14 @@
   import {
     getDateStore,
     getDateState,
+    type DateState,
   } from '../lib/dateStore';
   import {
     getDateRange,
     isDateInRange,
   } from '../lib/dateUtils';
 
+  const STATE_CYCLE: DateState[] = ['oof' as DateState, 'holiday' as DateState, 'sick' as DateState];
   const container = document.getElementById('air-datepicker');
   const store = getDateStore();
   let picker: InstanceType<typeof AirDatepicker> | null = null;
@@ -207,7 +204,7 @@
         };
       },
 
-      // Handle date selection
+      // Handle date selection with smart toggle pattern
       onSelect({ date }) {
         if (!date) return;
 
@@ -215,21 +212,26 @@
         const isInRange = isDateInRange(selectedDate, dateRange);
         if (!isInRange) return;
 
-        const currentMode = store.getMarkingMode();
         const existingState = getDateState(selectedDate);
 
-        // Working mode acts as eraser - clears any existing marking
-        if (currentMode === 'working') {
-          if (existingState) {
-            store.clearDate(selectedDate);
-          }
-          // If no existing state, do nothing (working is the default)
+        // Smart toggle: blank cell → Apply OOF (default), filled cell → Cycle OOF → Holiday → Sick → Clear
+        if (!existingState) {
+          // Blank cell: apply OOF (default state)
+          store.markDate(selectedDate, 'oof' as DateState);
         } else {
-          // Toggle: if clicking the same state, clear it; otherwise set to current mode
-          if (existingState === currentMode) {
+          // Filled cell: cycle through states
+          const currentIndex = STATE_CYCLE.indexOf(existingState);
+
+          if (currentIndex === -1) {
+            // Invalid state, clear it
+            store.clearDate(selectedDate);
+          } else if (currentIndex === STATE_CYCLE.length - 1) {
+            // Last state (sick), clear it
             store.clearDate(selectedDate);
           } else {
-            store.markDate(selectedDate, currentMode);
+            // Move to next state
+            const nextState = STATE_CYCLE[currentIndex + 1] as DateState;
+            store.markDate(selectedDate, nextState);
           }
         }
 

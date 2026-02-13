@@ -1,14 +1,14 @@
-import { beforeEach, describe, it, expect } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import {
-	selectedDates,
-	currentMonth,
-	validationResult,
-	setDateState,
 	clearDateState,
-	setCurrentMonth,
+	currentMonth,
 	getAllDates,
+	selectedDates,
+	setCurrentMonth,
+	setDateState,
+	validationResult,
 } from "../../src/stores/calendarStore";
-import type { DateString, DateState } from "../../src/types";
+import type { DateState, DateString } from "../../src/types";
 
 describe("calendarStore", () => {
 	beforeEach(() => {
@@ -20,30 +20,30 @@ describe("calendarStore", () => {
 
 	it("should update derived state on date toggle", () => {
 		// Toggle a date
-		setDateState("2026-02-06" as DateString, "working" as DateState);
+		setDateState("2026-02-06" as DateString, "oof" as DateState);
 
 		// Verify derived state is updated
 		const dates = getAllDates();
 		expect(dates.size).toBe(1);
-		expect(dates.get("2026-02-06" as DateString)).toBe("working");
+		expect(dates.get("2026-02-06" as DateString)).toBe("oof");
 	});
 
 	it("should sync selection changes to validation", () => {
 		// Set some dates
-		setDateState("2026-02-06" as DateString, "working" as DateState);
-		setDateState("2026-02-07" as DateString, "working" as DateState);
-		setDateState("2026-02-08" as DateString, "working" as DateState);
+		setDateState("2026-02-06" as DateString, "oof" as DateState);
+		setDateState("2026-02-07" as DateString, "oof" as DateState);
+		setDateState("2026-02-08" as DateString, "oof" as DateState);
 
 		// Set validation result based on selection
 		const dates = getAllDates();
-		const workingDays = Array.from(dates.values()).filter(
-			(state) => state === "working"
+		const markedDays = Array.from(dates.values()).filter(
+			(state) => state === "oof",
 		).length;
 
 		validationResult.set({
-			isValid: workingDays >= 3,
+			isValid: markedDays >= 3,
 			message:
-				workingDays >= 3
+				markedDays >= 3
 					? "Sufficient office days selected"
 					: "Insufficient office days selected",
 		});
@@ -78,9 +78,9 @@ describe("calendarStore", () => {
 
 	it("should maintain state consistency", () => {
 		// Set multiple dates
-		setDateState("2026-02-06" as DateString, "working" as DateState);
-		setDateState("2026-02-07" as DateString, "oof" as DateState);
-		setDateState("2026-02-08" as DateString, "holiday" as DateState);
+		setDateState("2026-02-06" as DateString, "oof" as DateState);
+		setDateState("2026-02-07" as DateString, "holiday" as DateState);
+		setDateState("2026-02-08" as DateString, "sick" as DateState);
 
 		// Set current month
 		setCurrentMonth(new Date(2026, 1, 1));
@@ -93,18 +93,18 @@ describe("calendarStore", () => {
 
 		// Update one date
 		clearDateState("2026-02-07" as DateString);
-		setDateState("2026-02-07" as DateString, "working" as DateState);
+		setDateState("2026-02-07" as DateString, "sick" as DateState);
 
 		// Verify state is still consistent
 		const updatedDates = getAllDates();
 		expect(updatedDates.size).toBe(3);
-		expect(updatedDates.get("2026-02-07" as DateString)).toBe("working");
+		expect(updatedDates.get("2026-02-07" as DateString)).toBe("sick");
 	});
 
 	it("should clear state on destroy", () => {
 		// Set some state
-		setDateState("2026-02-06" as DateString, "working" as DateState);
-		setDateState("2026-02-07" as DateString, "working" as DateState);
+		setDateState("2026-02-06" as DateString, "oof" as DateState);
+		setDateState("2026-02-07" as DateString, "oof" as DateState);
 		setCurrentMonth(new Date(2026, 1, 1));
 		validationResult.set({
 			isValid: true,

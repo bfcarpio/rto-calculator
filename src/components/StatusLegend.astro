@@ -2,17 +2,17 @@
 ---
 
 <div class="status-legend" id="status-legend">
-  <button class="legend-item" data-mode="working" data-testid="mode-working">
-    <span class="dot is-working"></span>
-    <span class="label">Working</span>
-  </button>
-  <button class="legend-item" data-mode="oof" data-testid="mode-oof">
+  <button class="legend-item" data-mode="oof" data-testid="mode-oof" data-shortcut="1">
     <span class="dot is-oof"></span>
-    <span class="label">OOF: <strong id="count-oof">0</strong></span>
+    <span class="label">OOF (1)</span>
   </button>
-  <button class="legend-item" data-mode="holiday" data-testid="mode-holiday">
+  <button class="legend-item" data-mode="holiday" data-testid="mode-holiday" data-shortcut="2">
     <span class="dot is-holiday"></span>
-    <span class="label">Holiday: <strong id="count-holiday">0</strong></span>
+    <span class="label">Holiday (2)</span>
+  </button>
+  <button class="legend-item" data-mode="sick" data-testid="mode-sick" data-shortcut="3">
+    <span class="dot is-sick"></span>
+    <span class="label">Sick (3)</span>
   </button>
 </div>
 
@@ -73,10 +73,6 @@
     display: inline-block;
   }
 
-  .dot.is-working {
-    background-color: transparent;
-  }
-
   .dot.is-oof {
     background-color: var(--color-violation);
   }
@@ -85,16 +81,16 @@
     background-color: var(--color-holiday);
   }
 
-  .label strong {
-    color: var(--color-complementary);
+  .dot.is-sick {
+    background-color: #1890ff;
   }
 </style>
 
 <script>
-  import { 
-    getDateStore, 
-    setMarkingMode, 
-    type MarkingMode 
+  import {
+    getDateStore,
+    setMarkingMode,
+    type MarkingMode
   } from '../lib/dateStore';
 
   const store = getDateStore();
@@ -102,14 +98,7 @@
 
   if (legend) {
     // Subscribe to store updates
-    store.subscribe((state, stats) => {
-      // Update counts
-      const oofCount = document.getElementById('count-oof');
-      const holidayCount = document.getElementById('count-holiday');
-
-      if (oofCount) oofCount.textContent = String(stats.oofDays);
-      if (holidayCount) holidayCount.textContent = String(stats.holidayDays);
-
+    store.subscribe((state, _stats) => {
       // Update active state
       const currentMode = state.markingMode;
       legend.querySelectorAll('.legend-item').forEach((item) => {
@@ -130,6 +119,13 @@
           setMarkingMode(mode);
         }
       });
+    });
+
+    // Handle keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.key === '1') setMarkingMode('oof' as MarkingMode);
+      if (e.key === '2') setMarkingMode('holiday' as MarkingMode);
+      if (e.key === '3') setMarkingMode('sick' as MarkingMode);
     });
   }
 </script>

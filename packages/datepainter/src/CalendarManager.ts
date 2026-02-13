@@ -32,9 +32,9 @@ import type {
  * const manager = new CalendarManager('#calendar-container', {
  *   dateRange: { start: new Date(2026, 0, 1), end: new Date(2026, 11, 31) },
  *   states: {
- *     working: { label: 'Working', color: '#10b981', bgColor: '#d1fae5' },
- *     oof: { label: 'OOO', color: '#ef4444', bgColor: '#fee2e2' },
- *     holiday: { label: 'Holiday', color: '#f59e0b', bgColor: '#fef3c7' }
+ *     oof: { label: 'Out of Office', color: '#ef4444', bgColor: '#fee2e2', icon: '📍' },
+ *     holiday: { label: 'Holiday', color: '#f59e0b', bgColor: '#fef3c7', icon: '🎄' },
+ *     sick: { label: 'Sick Day', color: '#1890ff', bgColor: '#e6f7ff', icon: '💊' }
  *   }
  * });
  * manager.init();
@@ -511,7 +511,7 @@ export class CalendarManager implements CalendarInstance {
 					hasDragged = false;
 
 					const currentState = this.getState(date);
-					const defaultState = this.config.painting.defaultState || "working";
+					const defaultState = this.config.painting.defaultState || "oof";
 					const newState = currentState === defaultState ? null : defaultState;
 
 					if (newState) {
@@ -532,7 +532,7 @@ export class CalendarManager implements CalendarInstance {
 			if (dayCell && !dayCell.classList.contains("datepainter__day--empty")) {
 				const date = dayCell.getAttribute("data-date") as DateString | null;
 				if (date) {
-					const defaultState = this.config.painting?.defaultState || "working";
+					const defaultState = this.config.painting?.defaultState || "oof";
 					if (!this.getState(date)) {
 						hasDragged = true;
 						this.toggleDate(date, defaultState);
@@ -554,9 +554,9 @@ export class CalendarManager implements CalendarInstance {
 				if (date && (!dragDate || hasDragged)) {
 					const currentState = this.getState(date);
 					const stateOrder: (DateState | null)[] = [
-						"working",
 						"oof",
 						"holiday",
+						"sick",
 						null,
 					];
 					const currentIndex = stateOrder.indexOf(currentState);
