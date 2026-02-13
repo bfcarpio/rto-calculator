@@ -71,7 +71,7 @@ Orchestrator (ValidationOrchestrator.ts)
 Strategy (StrictDayCountValidator / AverageWindowValidator)
 ```
 
-**Data Reader key behavior**: Iterates through every Monday-aligned week in the calendar range (not just painted dates). For each Mon-Fri, checks the datepainter state and holiday set. Calculates `officeDays = 5 - holidayCount - oofCount` (minus `sickCount` if `sickDaysPenalize` is enabled in settings).
+**Data Reader key behavior**: Iterates through every Monday-aligned week in the calendar range (not just painted dates). For each Mon-Fri, checks the datepainter state and holiday set. Calculates `officeDays = 5 - holidayCount - wfhCount` (minus `sickCount` if `sickDaysPenalize` is enabled in settings).
 
 See [ARCHITECTURE.md](./ARCHITECTURE.md#the-3-layer-validation-flow) for detailed explanation.
 
@@ -91,10 +91,16 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md#the-3-layer-validation-flow) for detaile
 - **HistoryManager** - Undo/redo functionality with state snapshots
 - **localStorage** - Persists user settings (including `sickDaysPenalize`)
 
-**Reactive Components** (subscribe to `onStateChange`):
-- **SummaryBar** - Average in-office, working days, OOF/holiday counts
-- **StatusDetails** - Week summary, capacity, current week, non-compliant weeks
-- **StatusLegend** - Count badges for OOF/holiday/sick
+**Auto-Compliance Module** (`src/lib/auto-compliance.ts`):
+- Singleton that subscribes to `onStateChange` with 1.5s debounce
+- Computes best-8-of-12 sliding window stats excluding current incomplete week
+- Dispatches `compliance-updated` CustomEvent consumed by StatusDetails and SummaryBar
+- Loading bar at top of viewport shows progress during debounce
+
+**Reactive Components** (consume `compliance-updated` events):
+- **SummaryBar** - Average in-office, working days, WFH/holiday counts
+- **StatusDetails** - Week summary, capacity, current week, non-compliant weeks (with ignored/dropped distinction)
+- **StatusLegend** - Count badges for WFH/holiday/sick (directly subscribes to `onStateChange`)
 
 ---
 

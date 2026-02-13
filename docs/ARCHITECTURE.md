@@ -42,7 +42,7 @@ The validation system is organized into three distinct layers, each with specifi
 │  - Enumerate ALL weeks in the calendar range                      │
 │  - Extract selections via datepainter API                         │
 │  - Query holidays from HolidayManager                             │
-│  - Calculate officeDays = 5 - holidays - OOF (- sick)             │
+│  - Calculate officeDays = 5 - holidays - WFH (- sick)             │
 │  - Respect sickDaysPenalize setting from localStorage             │
 │  - Return typed data structures (DayInfo, WeekInfo)               │
 │  - Only layer with DOM access                                     │
@@ -246,11 +246,32 @@ The application uses the **datepainter** library for calendar rendering and stat
 - `getDateRanges(options?)` - Get contiguous date ranges grouped by state
 
 **State Types:**
-- `"oof"` - Out of office (work from home)
+- `"oof"` - Work from home (internal key kept as "oof" for backwards compatibility)
 - `"holiday"` - Public holiday
 - `"sick"` - Sick leave
 
 **Global Access:** The calendar instance is exposed as `window.__datepainterInstance`.
+
+**Reactivity Layers:**
+
+Nanostores and CustomEvents serve different layers and should not be mixed:
+
+```
+nanostores (internal to datepainter package)
+  selectedDates atom → CalendarManager.subscribeToStoreChanges()
+    → re-renders day cells
+    → fires onStateChange() callbacks
+
+onStateChange (datepainter public API — per-date granularity)
+  → StatusLegend: count badges (direct, no debounce)
+  → auto-compliance module: debounced aggregate computation
+
+compliance-updated CustomEvent (application layer — aggregate stats)
+  → StatusDetails: week summary, capacity, non-compliant weeks
+  → SummaryBar: averages, day counts
+```
+
+**Rule of thumb:** Components that need per-date granularity (StatusLegend counts) subscribe to `onStateChange` directly. Components that need aggregate/computed stats (StatusDetails, SummaryBar) consume the `compliance-updated` CustomEvent — this avoids duplicating expensive computation and naturally debounces rapid changes.
 
 **Legacy Note:** `dateStore` in `src/lib/dateStore.ts` is a compatibility stub. New code should use the datepainter `CalendarInstance` API directly.
 
@@ -322,6 +343,7 @@ src/
 │   ├── Datepainter.astro              # Calendar widget
 │   ├── HolidayCountrySelector.astro   # Country/company selection
 │   ├── SettingsModal.astro            # Settings dialog
+│   ├── ShortcutsModal.astro           # Keyboard shortcuts help dialog
 │   ├── StatusDetails.astro            # Week status visualization
 │   ├── StatusLegend.astro             # Legend for status indicators
 │   ├── ActionButtons.astro            # Action buttons
@@ -355,6 +377,7 @@ src/
 │   ├── history/          # Undo/state management
 │   │   └── HistoryManager.ts            # State snapshot management
 │   │
+│   ├── auto-compliance.ts         # Auto-compliance singleton (debounced stats via CustomEvent)
 │   ├── calendar-data-reader.ts    # Data extraction layer (DOM → pure data)
 │   ├── rto-config.ts              # Configuration constants
 │   └── dateStore.ts               # Legacy stub (use datepainter CalendarInstance instead)
@@ -452,10 +475,10 @@ interface WeekInfo {
   weekStart: Date;                    // Monday at midnight
   weekNumber: number;                 // Sequential (1, 2, 3...)
   days: DayInfo[];                    // Days in this week
-  oofCount: number;                   // Out-of-office days
+  oofCount: number;                   // WFH (work-from-home) days
   holidayCount: number;               // Holiday days in this week
   sickCount: number;                  // Sick days in this week
-  officeDays: number;                 // Calculated: 5 - holidays - OOF (- sick if penalizing)
+  officeDays: number;                 // Calculated: 5 - holidays - WFH (- sick if penalizing)
   totalDays: number;                  // Effective weekdays (excluding holidays/sick)
   oofDays: number;                    // Alias for oofCount
   isCompliant: boolean;               // Meets 3-day minimum?
@@ -537,16 +560,21 @@ interface Holiday {
 - Sick day policy toggle (`sickDaysPenalize`) — controls whether sick days reduce office count
 - Configuration management
 
+#### `components/ShortcutsModal.astro`
+- Keyboard shortcuts help dialog (native `<dialog>` element)
+- Opens via `?` button in header or `?` key shortcut
+- Lists all shortcuts grouped by category (painting modes, actions, calendar grid)
+
 #### `components/StatusDetails.astro`
-- Reactive client-side component (subscribes to `onStateChange`)
+- Consumes `compliance-updated` events from auto-compliance module
 - Week summary, capacity, current week status, non-compliant weeks
-- Respects `sickDaysPenalize` setting from localStorage
-- Updates in real-time as dates are painted
+- Non-compliant weeks show "Ignored" (dimmed) for dropped weeks vs "Needs X more" for counted weeks
+- Updates after 1.5s debounce as dates are painted
 
 #### `components/SummaryBar.astro`
-- Reactive client-side component (subscribes to `onStateChange`)
-- Average in-office days, working days, OOF count, holiday count
-- Updates in real-time as dates are painted
+- Consumes `compliance-updated` events from auto-compliance module
+- Average in-office days, working days, WFH count, holiday count
+- Updates after 1.5s debounce as dates are painted
 
 ---
 

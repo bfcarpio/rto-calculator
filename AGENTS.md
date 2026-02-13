@@ -386,6 +386,46 @@ export class HolidayManager {
 }
 ```
 
+## Design Patterns for Reducing Complexity
+
+### Prefer Events Over Direct Subscriptions
+
+When multiple UI components need the same computed data, use a **single event emitter** instead of having each component independently subscribe, compute, and update.
+
+**Pattern: Event-driven stats**
+```
+Single producer (auto-compliance module)
+  → subscribes to onStateChange once
+  → debounces, computes, dispatches CustomEvent
+  → N consumers listen for the event (zero coupling)
+```
+
+**Why:**
+- Eliminates duplicated computation across components
+- Components don't need polling or direct calendar access
+- Adding a new consumer = one `addEventListener` call, no changes to producers
+- Natural debouncing — compute once, broadcast to all
+
+**Anti-pattern: Each component subscribes independently**
+```
+StatusDetails subscribes → computes weeks → updates DOM
+SummaryBar subscribes → computes weeks → updates DOM  (same computation!)
+StatusLegend subscribes → counts states → updates DOM
+```
+
+This led to ~200 lines of duplicated week-counting logic across StatusDetails and SummaryBar.
+
+### Design Away the Need for Mocks
+
+When a function uses a fixed value internally (e.g., a reference date), tests shouldn't mock globals to "prove" it works. If the implementation doesn't depend on `new Date()`, the test shouldn't either.
+
+**Prefer:**
+1. Pure functions with explicit parameters over functions that read globals
+2. `vi.useFakeTimers()` + `vi.setSystemTime()` when you truly need to control "now"
+3. Deleting the mock entirely when the function under test doesn't use the mocked thing
+
+**Avoid:** `vi.spyOn(globalThis, "Date")` — brittle, type-unsafe, and usually a sign the test is testing implementation rather than behavior.
+
 ## Performance Guidelines
 
 1. **Clarity First** - Write clear code, optimize only when profiling shows need

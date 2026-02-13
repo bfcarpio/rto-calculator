@@ -26,10 +26,10 @@ Welcome to the RTO Calculator! This guide will help you track your Return-to-Off
 
 ## Marking Days
 
-### Selecting Out-of-Office Days
+### Selecting Work-From-Home Days
 
 **Click to Toggle:**
-- Click any weekday to mark it as **out-of-office (OOF)**
+- Click any weekday to mark it as **work from home (WFH)**
 - Click again to unmark it
 - Unselected days count as office days
 
@@ -42,11 +42,12 @@ Welcome to the RTO Calculator! This guide will help you track your Return-to-Off
 - Press **Space** or **Enter** to toggle the focused day
 - Press **Esc** to cancel an in-progress drag selection
 - Use **Tab/Shift+Tab** to move between controls
+- Press **?** to open keyboard shortcuts help
 
 **Visual Indicators:**
-- **Blue background** = Out-of-office (work from home)
+- **Red background with 🏠** = Work from home
 - **No highlight** = Office day
-- **Orange background with 🎄** = Holiday (see Holiday Features below)
+- **Amber background with ☀️** = Holiday (see Holiday Features below)
 
 ---
 
@@ -60,7 +61,7 @@ Welcome to the RTO Calculator! This guide will help you track your Return-to-Off
 4. Click **Save**
 
 **Result:**
-- Holidays appear with orange background and 🎄 emoji
+- Holidays appear with amber background and ☀️ emoji
 - Hover over holiday to see the holiday name
 - Holidays are automatically treated as non-office days in validation
 
@@ -218,7 +219,7 @@ Required: 3 days (60%)
 **Location**: Top and bottom of the page
 
 **What it does:**
-- Removes **all** out-of-office selections
+- Removes **all** work-from-home selections
 - Clears all weeks at once
 - Does not remove holidays (use Settings to disable holidays)
 
@@ -249,11 +250,27 @@ If data saving is enabled and you want a completely clean start:
 
 ---
 
-## Undo/Redo (Keyboard Shortcuts)
+## Keyboard Shortcuts
+
+Press **?** or click the **?** button in the header to see all shortcuts.
+
+| Key | Action |
+|-----|--------|
+| `1` | WFH painting mode |
+| `2` | Holiday painting mode |
+| `3` | Sick painting mode |
+| `Ctrl+Z` / `Cmd+Z` | Undo |
+| `Ctrl+S` / `Cmd+S` | Validate |
+| `Arrow Keys` | Navigate calendar months |
+| `Space` / `Enter` | Toggle focused day |
+| `Escape` | Cancel drag / close modal |
+| `?` | Open shortcuts help |
+
+### Undo/Redo
 
 The RTO Calculator includes undo/redo functionality:
 
-**Keyboard Shortcuts:**
+**Shortcuts:**
 - **Ctrl+Z** (Windows/Linux) or **Cmd+Z** (Mac) - Undo last action
 - **Ctrl+Y** or **Ctrl+Shift+Z** - Redo undone action
 
@@ -285,7 +302,7 @@ Monday is a holiday
 You're working from home Thursday
 Total weekdays: 5
 Holidays: 1 (Monday)
-Out-of-office: 1 (Thursday)
+WFH: 1 (Thursday)
 Office days: 5 - 1 - 1 = 3 days ✓ Compliant
 ```
 
@@ -293,7 +310,7 @@ Office days: 5 - 1 - 1 = 3 days ✓ Compliant
 ```
 Taking Monday-Friday off
 Total weekdays: 5
-Out-of-office: 5
+WFH: 5
 Office days: 0 days ✗ Violation
 Solution: In Average mode, balance with high-office weeks
 ```
@@ -325,7 +342,7 @@ As long as best 8 weeks average ≥ 3 days: ✓ Compliant
 
 ### Issue: "No selections to validate"
 
-**Cause:** No days marked as out-of-office
+**Cause:** No days marked as work-from-home
 
 **Solution:** Mark at least one day, then click **Validate**
 
@@ -335,7 +352,7 @@ As long as best 8 weeks average ≥ 3 days: ✓ Compliant
 
 **Cause 1:** Week has a holiday that reduces effective weekdays
 
-**Solution:** Check if orange holiday markers are present. Count: `Office days = Weekdays - Holidays - OOF days`
+**Solution:** Check if holiday markers are present. Count: `Office days = Weekdays - Holidays - WFH days`
 
 **Cause 2:** Using Average Window mode and overall window is below 60%
 
@@ -381,7 +398,7 @@ As long as best 8 weeks average ≥ 3 days: ✓ Compliant
 ### What Data is Stored?
 
 When data saving is **enabled**:
-- Selected out-of-office days
+- Selected work-from-home days
 - Country/company selection for holidays
 - Validation mode preference
 - Settings preferences
@@ -453,7 +470,7 @@ Complete functionality available via keyboard:
 **Quick Steps:**
 1. Enable holidays (Settings → Country)
 2. Choose validation mode (Strict or Average)
-3. Mark out-of-office days
+3. Mark work-from-home days
 4. Click **Validate**
 5. Adjust schedule based on results
 
@@ -471,4 +488,4 @@ Complete functionality available via keyboard:
 
 ---
 
-*Last Updated: February 2025*
+*Last Updated: February 2026*
