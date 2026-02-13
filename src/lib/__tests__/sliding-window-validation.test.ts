@@ -419,6 +419,62 @@ describe("validateSlidingWindow", () => {
 		});
 	});
 
+	// ── Tiebreaker: earlier weeks dropped first ────────────────
+
+	describe("tiebreaker: earlier weeks dropped when office days are equal", () => {
+		it("drops earlier weeks when multiple weeks have the same office days", () => {
+			// 12 weeks all with 3 office days — all tied.
+			// Best 8 of 12: the 4 EARLIEST weeks should be dropped,
+			// keeping the 8 most recent weeks.
+			const weeks = makeWeeks(START, 12, 3);
+			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
+
+			expect(result.isValid).toBe(true);
+			expect(result.evaluatedWeekStarts).toHaveLength(8);
+
+			// The first 4 weeks should NOT be in evaluatedWeekStarts (dropped)
+			const droppedTimestamps = weeks.slice(0, 4).map((w) => w.weekStart.getTime());
+			for (const ts of droppedTimestamps) {
+				expect(result.evaluatedWeekStarts).not.toContain(ts);
+			}
+
+			// The last 8 weeks SHOULD be in evaluatedWeekStarts (kept)
+			const keptTimestamps = weeks.slice(4).map((w) => w.weekStart.getTime());
+			for (const ts of keptTimestamps) {
+				expect(result.evaluatedWeekStarts).toContain(ts);
+			}
+		});
+
+		it("tiebreaker applies only to equal office days, not higher ones", () => {
+			// 4 weeks with 5 days + 4 weeks with 3 days + 4 weeks with 3 days
+			// The 5-day weeks are always kept. Among the 3-day weeks,
+			// the earlier ones (weeks 5-8) should be dropped before later ones (weeks 9-12).
+			const weeks = makeSchedule(START, [4, 5], [4, 3], [4, 3]);
+			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
+
+			expect(result.isValid).toBe(true);
+			expect(result.evaluatedWeekStarts).toHaveLength(8);
+
+			// All 5-day weeks (first 4) should be kept
+			const highWeeks = weeks.slice(0, 4).map((w) => w.weekStart.getTime());
+			for (const ts of highWeeks) {
+				expect(result.evaluatedWeekStarts).toContain(ts);
+			}
+
+			// Earlier 3-day weeks (weeks 5-8) should be dropped
+			const earlierTied = weeks.slice(4, 8).map((w) => w.weekStart.getTime());
+			for (const ts of earlierTied) {
+				expect(result.evaluatedWeekStarts).not.toContain(ts);
+			}
+
+			// Later 3-day weeks (weeks 9-12) should be kept
+			const laterTied = weeks.slice(8).map((w) => w.weekStart.getTime());
+			for (const ts of laterTied) {
+				expect(result.evaluatedWeekStarts).toContain(ts);
+			}
+		});
+	});
+
 	// ── Holiday edge cases ──────────────────────────────────────
 
 	describe("holiday weeks (totalDays = 0)", () => {

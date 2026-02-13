@@ -340,7 +340,9 @@ export function validateSlidingWindow(
 		bestWeeks: WeekCompliance[];
 	} {
 		const sorted = [...windowWeeks].sort(
-			(a, b) => b.officeDays - a.officeDays,
+			(a, b) =>
+				b.officeDays - a.officeDays ||
+				b.weekStart.getTime() - a.weekStart.getTime(),
 		);
 		// For partial windows (< 12 weeks), evaluate all available weeks
 		const evalCount = Math.min(weeksToEvaluate, sorted.length);
