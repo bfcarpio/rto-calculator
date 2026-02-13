@@ -23,7 +23,7 @@
 						<span class="has-text-weight-semibold">Working:</span>&nbsp;<span id="summary-working">0</span> days
 					</div>
 					<div class="tag is-warning is-light mb-2">
-						<span class="has-text-weight-semibold">OOF:</span>&nbsp;<span id="summary-oof">0</span> days
+						<span class="has-text-weight-semibold">WFH:</span>&nbsp;<span id="summary-oof">0</span> days
 					</div>
 					<div class="tag is-light">
 						<span class="has-text-weight-semibold">Holiday:</span>&nbsp;<span id="summary-holiday">0</span> days
@@ -72,67 +72,24 @@
 </style>
 
 <script>
-	import type { CalendarInstance } from 'datepainter';
-	import { addDays, startOfWeek } from 'date-fns';
-	import { getDateRange } from '../lib/dateUtils';
+	import { onComplianceUpdated, getLatestCompliance, type ComplianceEventData } from '../lib/auto-compliance';
 
-	function updateSummary(): void {
-		const calendarManager = (window as any).__datepainterInstance as CalendarInstance | null;
-		if (!calendarManager) return;
-
-		const allDates = calendarManager.getAllDates();
-		const range = getDateRange();
-
-		// Count states from painted dates
-		let oofCount = 0;
-		let holidayCount = 0;
-		let sickCount = 0;
-		for (const [, state] of allDates) {
-			if (state === 'oof') oofCount++;
-			else if (state === 'holiday') holidayCount++;
-			else if (state === 'sick') sickCount++;
-		}
-
-		// Count total weeks in range (Monday-aligned)
-		let totalWeeks = 0;
-		let weekStart = startOfWeek(range.startDate, { weekStartsOn: 1 });
-		if (weekStart < range.startDate) {
-			weekStart = addDays(weekStart, 7);
-		}
-		while (weekStart <= range.endDate) {
-			totalWeeks++;
-			weekStart = addDays(weekStart, 7);
-		}
-
-		const totalWeekdays = totalWeeks * 5;
-		const workingDays = totalWeekdays - oofCount - holidayCount - sickCount;
-		const avg = totalWeeks > 0 ? workingDays / totalWeeks : 0;
-
-		// Update DOM
+	function updateSummary(data: ComplianceEventData): void {
 		const elAvg = document.getElementById('summary-average');
 		const elWorking = document.getElementById('summary-working');
 		const elOof = document.getElementById('summary-oof');
 		const elHoliday = document.getElementById('summary-holiday');
 
-		if (elAvg) elAvg.textContent = avg.toFixed(1);
-		if (elWorking) elWorking.textContent = String(workingDays);
-		if (elOof) elOof.textContent = String(oofCount);
-		if (elHoliday) elHoliday.textContent = String(holidayCount);
+		if (elAvg) elAvg.textContent = data.averageOfficeDays.toFixed(1);
+		if (elWorking) elWorking.textContent = String(data.totalWorkingDays);
+		if (elOof) elOof.textContent = String(data.totalWfhDays);
+		if (elHoliday) elHoliday.textContent = String(data.totalHolidayDays);
 	}
 
-	function init(): void {
-		const calendarManager = (window as any).__datepainterInstance as CalendarInstance | null;
-		if (calendarManager) {
-			updateSummary();
-			calendarManager.onStateChange(() => updateSummary());
-		} else {
-			setTimeout(init, 200);
-		}
-	}
+	// Subscribe to auto-compliance events
+	onComplianceUpdated(updateSummary);
 
-	if (document.readyState === 'loading') {
-		document.addEventListener('DOMContentLoaded', init);
-	} else {
-		init();
-	}
+	// If auto-compliance already ran before we loaded, use cached result
+	const cached = getLatestCompliance();
+	if (cached) updateSummary(cached);
 </script>

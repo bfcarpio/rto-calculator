@@ -66,7 +66,7 @@ const BEST_WEEKS_REQUIRED = 8;
 				</div>
 				<div class="level-right">
 					<p class="has-text-weight-bold has-text-success" id="stat-oof-available">
-						0 full weeks OOF
+						0 full weeks WFH
 					</p>
 				</div>
 			</div>
@@ -161,6 +161,12 @@ const BEST_WEEKS_REQUIRED = 8;
 		margin-bottom: 0.75rem;
 	}
 
+	.non-compliant-ignored {
+		opacity: 0.5;
+		background-color: #f5f5f5 !important;
+		border-left: 3px solid #d1d5db;
+	}
+
 	.public-holidays {
 		margin-bottom: 1rem;
 		padding: 1.5rem;
@@ -201,13 +207,10 @@ const BEST_WEEKS_REQUIRED = 8;
 </style>
 
 <script>
-	import type { CalendarInstance } from 'datepainter';
-	import { addDays, startOfWeek } from 'date-fns';
-	import { getDateRange } from '../lib/dateUtils';
+	import { onComplianceUpdated, getLatestCompliance, type ComplianceEventData, type AnnotatedWeek } from '../lib/auto-compliance';
+	import { REQUIRED_OFFICE_DAYS, BEST_WEEKS_COUNT } from '../lib/validation/constants';
 
-	const TARGET_DAYS = 3;
 	const MAX_DAYS = 5;
-	const BEST_WEEKS_REQUIRED = 8;
 	const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 	function fmtDate(d: Date): string {
@@ -220,123 +223,51 @@ const BEST_WEEKS_REQUIRED = 8;
 		return 'has-text-danger';
 	}
 
-	interface WeekStats {
-		startDate: Date;
-		officeDays: number;
-	}
+	function renderNonCompliantWeeks(data: ComplianceEventData): void {
+		const elNonCompliant = document.getElementById('non-compliant-content');
+		if (!elNonCompliant) return;
 
-	function getSickDaysPenalize(): boolean {
-		try {
-			const saved = localStorage.getItem('rto-calculator-settings');
-			if (!saved) return true;
-			const settings = JSON.parse(saved);
-			return settings.sickDaysPenalize !== false;
-		} catch {
-			return true;
-		}
-	}
+		const nonCompliantWeeks = data.windowWeeks.filter((w) => !w.isCompliant);
 
-	function computeWeeks(allDates: Map<string, string>, range: { startDate: Date; endDate: Date }): WeekStats[] {
-		const sickPenalize = getSickDaysPenalize();
-		const weeks: WeekStats[] = [];
-		let weekStart = startOfWeek(range.startDate, { weekStartsOn: 1 }); // Monday
-		// If weekStart is before range start, advance to next Monday
-		if (weekStart < range.startDate) {
-			weekStart = addDays(weekStart, 7);
+		if (nonCompliantWeeks.length === 0) {
+			elNonCompliant.innerHTML =
+				'<div class="notification is-success is-light"><p class="has-text-centered">All weeks are compliant!</p></div>';
+			return;
 		}
 
-		while (weekStart <= range.endDate) {
-			// Count deductions for Mon-Fri
-			let oofCount = 0;
-			let holidayCount = 0;
-			let sickCount = 0;
-			let weekdayCount = 0;
+		elNonCompliant.innerHTML = '<div class="non-compliant-list">' +
+			nonCompliantWeeks.map((w: AnnotatedWeek) => {
+				const weekEnd = new Date(w.weekStart);
+				weekEnd.setDate(weekEnd.getDate() + 6);
+				const range = `${fmtDate(w.weekStart)} - ${fmtDate(weekEnd)}`;
+				const needed = REQUIRED_OFFICE_DAYS - w.officeDays;
 
-			for (let i = 0; i < 5; i++) {
-				const d = addDays(weekStart, i);
-				if (d > range.endDate) break;
-				weekdayCount++;
-
-				const iso = d.toISOString().split('T')[0] ?? '';
-				const state = allDates.get(iso) ?? null;
-
-				if (state === 'holiday') {
-					holidayCount++;
-				} else if (state === 'oof') {
-					oofCount++;
-				} else if (state === 'sick') {
-					sickCount++;
+				if (w.isIgnored) {
+					return `<div class="notification is-light mb-2 non-compliant-ignored">
+						<div class="is-flex is-justify-content-space-between is-align-items-center">
+							<div>
+								<p class="has-text-weight-semibold has-text-grey">${range}</p>
+								<p class="is-size-7 has-text-grey-light">Only ${w.officeDays} of ${REQUIRED_OFFICE_DAYS} days worked</p>
+							</div>
+							<span class="tag is-light has-text-grey">Ignored</span>
+						</div>
+					</div>`;
 				}
-			}
 
-			if (weekdayCount > 0) {
-				let officeDays: number;
-				if (sickPenalize) {
-					officeDays = 5 - holidayCount - oofCount - sickCount;
-				} else {
-					officeDays = 5 - holidayCount - oofCount;
-				}
-				weeks.push({ startDate: new Date(weekStart), officeDays });
-			}
-
-			weekStart = addDays(weekStart, 7);
-		}
-
-		return weeks;
+				return `<div class="notification is-warning is-light mb-2">
+					<div class="is-flex is-justify-content-space-between is-align-items-center">
+						<div>
+							<p class="has-text-weight-semibold">${range}</p>
+							<p class="is-size-7">Only ${w.officeDays} of ${REQUIRED_OFFICE_DAYS} days worked</p>
+						</div>
+						<span class="tag is-warning">Needs ${needed} more</span>
+					</div>
+				</div>`;
+			}).join('') +
+			'</div>';
 	}
 
-	function updateStats(): void {
-		const calendarManager = (window as any).__datepainterInstance as CalendarInstance | null;
-		if (!calendarManager) return;
-
-		const allDates = calendarManager.getAllDates();
-		// Build a string->string map for computeWeeks
-		const dateMap = new Map<string, string>();
-		for (const [dateStr, state] of allDates) {
-			dateMap.set(dateStr, state);
-		}
-
-		const range = getDateRange();
-		const allWeeks = computeWeeks(dateMap, range);
-
-		const compliantCount = allWeeks.filter((w) => w.officeDays >= TARGET_DAYS).length;
-		const totalWeeks = allWeeks.length;
-
-		// Average
-		const totalOfficeDays = allWeeks.reduce((sum, w) => sum + w.officeDays, 0);
-		const avg = totalWeeks > 0 ? totalOfficeDays / totalWeeks : 0;
-
-		// Capacity
-		const oofAvailable = Math.max(0, compliantCount - BEST_WEEKS_REQUIRED);
-
-		// Current week
-		const today = new Date();
-		today.setHours(0, 0, 0, 0);
-		const currentWeekStart = startOfWeek(today, { weekStartsOn: 1 });
-		const currentWeekEnd = addDays(currentWeekStart, 6);
-		const sickPenalize = getSickDaysPenalize();
-		let currentOfficeDays = 0;
-		for (let i = 0; i < 5; i++) {
-			const d = addDays(currentWeekStart, i);
-			const iso = d.toISOString().split('T')[0] ?? '';
-			const st = dateMap.get(iso) ?? null;
-			if (st === 'holiday' || st === 'oof') continue;
-			if (st === 'sick' && sickPenalize) continue;
-			currentOfficeDays++;
-		}
-
-		// Non-compliant weeks
-		const nonCompliant = allWeeks
-			.filter((w) => w.officeDays < TARGET_DAYS)
-			.map((w) => {
-				const weekEnd = addDays(w.startDate, 6);
-				return {
-					range: `${fmtDate(w.startDate)} - ${fmtDate(weekEnd)}`,
-					daysWorked: w.officeDays,
-				};
-			});
-
-		// --- Update DOM ---
+	function updateStats(data: ComplianceEventData): void {
 		const elTotalLabel = document.getElementById('stat-total-weeks-label');
 		const elCompliant = document.getElementById('stat-compliant-weeks');
 		const elAverage = document.getElementById('stat-average-days');
@@ -344,61 +275,31 @@ const BEST_WEEKS_REQUIRED = 8;
 		const elOof = document.getElementById('stat-oof-available');
 		const elWeekRange = document.getElementById('stat-current-week-range');
 		const elWeekDays = document.getElementById('stat-current-week-days');
-		const elNonCompliant = document.getElementById('non-compliant-content');
 
-		if (elTotalLabel) elTotalLabel.textContent = `In best ${totalWeeks} weeks:`;
+		if (elTotalLabel) elTotalLabel.textContent = `In best ${data.bestWeekCount} weeks:`;
 		if (elCompliant) {
-			elCompliant.textContent = `${compliantCount}/${totalWeeks}`;
-			elCompliant.className = `has-text-weight-bold ${avg >= TARGET_DAYS ? 'has-text-success' : 'has-text-warning'}`;
+			elCompliant.textContent = `${data.goodWeeks}/${data.bestWeekCount}`;
+			elCompliant.className = `has-text-weight-bold ${data.averageOfficeDays >= REQUIRED_OFFICE_DAYS ? 'has-text-success' : 'has-text-warning'}`;
 		}
 		if (elAverage) {
-			elAverage.textContent = `${avg.toFixed(1)}/${MAX_DAYS} days`;
-			elAverage.className = `has-text-weight-bold ${getStatusColor(avg, TARGET_DAYS)}`;
+			elAverage.textContent = `${data.averageOfficeDays.toFixed(1)}/${MAX_DAYS} days`;
+			elAverage.className = `has-text-weight-bold ${getStatusColor(data.averageOfficeDays, REQUIRED_OFFICE_DAYS)}`;
 		}
-		if (elBuffer) elBuffer.textContent = `Good weeks = ${compliantCount} of ${BEST_WEEKS_REQUIRED} needed`;
-		if (elOof) elOof.textContent = `${oofAvailable} full weeks OOF`;
-		if (elWeekRange) elWeekRange.textContent = `${fmtDate(currentWeekStart)} - ${fmtDate(currentWeekEnd)}`;
+		if (elBuffer) elBuffer.textContent = `Good weeks = ${data.goodWeeks} of ${BEST_WEEKS_COUNT} needed`;
+		if (elOof) elOof.textContent = `${data.bufferWeeks} full weeks WFH`;
+		if (elWeekRange) elWeekRange.textContent = `${fmtDate(data.currentWeek.weekStart)} - ${fmtDate(data.currentWeek.weekEnd)}`;
 		if (elWeekDays) {
-			elWeekDays.textContent = `${currentOfficeDays}/${TARGET_DAYS}`;
-			elWeekDays.className = `has-text-weight-bold ${getStatusColor(currentOfficeDays, TARGET_DAYS)}`;
+			elWeekDays.textContent = `${data.currentWeek.officeDays}/${REQUIRED_OFFICE_DAYS}`;
+			elWeekDays.className = `has-text-weight-bold ${getStatusColor(data.currentWeek.officeDays, REQUIRED_OFFICE_DAYS)}`;
 		}
 
-		if (elNonCompliant) {
-			if (nonCompliant.length === 0) {
-				elNonCompliant.innerHTML =
-					'<div class="notification is-success is-light"><p class="has-text-centered">All weeks are compliant!</p></div>';
-			} else {
-				elNonCompliant.innerHTML = '<div class="non-compliant-list">' +
-					nonCompliant.map((w) =>
-						`<div class="notification is-warning is-light mb-2">
-							<div class="is-flex is-justify-content-space-between is-align-items-center">
-								<div>
-									<p class="has-text-weight-semibold">${w.range}</p>
-									<p class="is-size-7">Only ${w.daysWorked} of ${TARGET_DAYS} days worked</p>
-								</div>
-								<span class="tag is-warning">Needs ${TARGET_DAYS - w.daysWorked} more</span>
-							</div>
-						</div>`
-					).join('') +
-					'</div>';
-			}
-		}
+		renderNonCompliantWeeks(data);
 	}
 
-	// Poll for datepainter instance then subscribe
-	function init(): void {
-		const calendarManager = (window as any).__datepainterInstance as CalendarInstance | null;
-		if (calendarManager) {
-			updateStats();
-			calendarManager.onStateChange(() => updateStats());
-		} else {
-			setTimeout(init, 200);
-		}
-	}
+	// Subscribe to auto-compliance events
+	onComplianceUpdated(updateStats);
 
-	if (document.readyState === 'loading') {
-		document.addEventListener('DOMContentLoaded', init);
-	} else {
-		init();
-	}
+	// If auto-compliance already ran before we loaded, use cached result
+	const cached = getLatestCompliance();
+	if (cached) updateStats(cached);
 </script>

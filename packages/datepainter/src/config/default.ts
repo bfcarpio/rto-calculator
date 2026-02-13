@@ -12,17 +12,17 @@ export const defaultConfig: CalendarConfig = {
 			bgColor: "#ffffff",
 		},
 		oof: {
-			label: "Out of Office",
+			label: "Work From Home",
 			color: "#ffffff",
 			bgColor: "#ef4444",
-			icon: "🏖️",
+			icon: "🏠",
 			position: "below",
 		},
 		holiday: {
 			label: "Holiday",
 			color: "#ffffff",
 			bgColor: "#10b981",
-			icon: "🎉",
+			icon: "☀️",
 			position: "below",
 		},
 		sick: {
