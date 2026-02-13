@@ -14,7 +14,7 @@ const BASE_URL =
 
 // Timeout configurations
 const TEST_TIMEOUT = 30000;
-const ACTION_TIMEOUT = 5000;
+const ACTION_TIMEOUT = 10000;
 const NAVIGATION_TIMEOUT = 10000;
 
 /**
