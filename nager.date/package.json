@@ -3,14 +3,12 @@
   "version": "1.0.0",
   "description": "OpenAPI client for Nager.Date API",
   "type": "module",
-  "main": "index.ts",
+  "main": "dist/index.js",
   "exports": {
-    ".": "./index.ts"
+    ".": "./dist/index.js"
   },
-  "files": [
-    "index.ts",
-    "runtime.ts",
-    "apis/",
-    "models/"
-  ]
+  "files": ["dist/"],
+  "scripts": {
+    "build": "tsc"
+  }
 }
