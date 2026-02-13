@@ -340,11 +340,11 @@ const clearButtonId = `clear-${year}-${month}`;
     }
 
     .calendar-month {
-        margin: 0.5rem 0;
+        margin: 0;
         background-color: var(--calendar-month-bg);
         border-radius: var(--calendar-month-border-radius);
         box-shadow: var(--calendar-month-shadow);
-        padding: var(--calendar-month-padding);
+        padding: 0.5rem;
         display: inline-block;
         position: relative;
         max-width: 100%;
@@ -363,7 +363,8 @@ const clearButtonId = `clear-${year}-${month}`;
         justify-content: center;
         align-items: center;
         position: relative;
-        margin-bottom: 0;
+        margin: 0;
+        padding: 0;
         gap: 0.5rem;
     }
 
@@ -371,9 +372,10 @@ const clearButtonId = `clear-${year}-${month}`;
         flex: 1;
         text-align: center;
         margin: 0;
+        padding: 0;
         color: var(--calendar-heading-color);
         font-size: var(--calendar-heading-font-size);
-        line-height: 1.5;
+        line-height: 1;
         font-weight: 600;
     }
 
@@ -427,7 +429,8 @@ const clearButtonId = `clear-${year}-${month}`;
         table-layout: fixed;
         width: 100%;
         max-width: 19rem; /* Adjusted for status and week number columns */
-        margin-top: -0.5rem; /* Pull table closer to header */
+        margin: 0;
+        padding: 0;
     }
 
     .calendar-table th,
@@ -445,6 +448,9 @@ const clearButtonId = `clear-${year}-${month}`;
         height: var(--calendar-cell-height);
         font-size: 0.8rem;
         position: relative;
+        margin: 0;
+        padding: 0;
+        vertical-align: middle;
     }
 
     .calendar-table td {
