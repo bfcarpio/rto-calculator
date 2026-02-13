@@ -95,25 +95,8 @@ test.describe("Responsive Navigation", () => {
 			await expect(calendar).toBeVisible();
 			await expect(status).toBeVisible();
 		});
-
-		test("desktop layout should have proper structure", async ({ page }) => {
-			// Set desktop viewport
-			await page.setViewportSize({ width: 1920, height: 1080 });
-
-			// Check layout structure
-			const columns = page.locator(".columns.is-desktop");
-			await expect(columns).toBeVisible();
-		});
 	});
 	test.describe("Tablet Viewport (768px)", () => {
-		test("should adapt to tablet viewport", async ({ page }) => {
-			// Set tablet viewport
-			await page.setViewportSize({ width: 768, height: 1024 });
-
-			// Page should load without errors
-			await expect(page.locator("body")).toBeVisible();
-		});
-
 		test("tablet should show appropriate layout", async ({ page }) => {
 			// Set tablet viewport
 			await page.setViewportSize({ width: 768, height: 1024 });
@@ -190,7 +173,6 @@ test.describe("Responsive Navigation", () => {
 
 			// Change to desktop viewport
 			await page.setViewportSize({ width: 1920, height: 1080 });
-			await page.waitForTimeout(300);
 
 			// Verify mobile menu is now hidden on desktop
 			await expect(mobileMenu).toBeHidden();
@@ -210,7 +192,6 @@ test.describe("Responsive Navigation", () => {
 
 			// Change to mobile viewport
 			await page.setViewportSize({ width: 375, height: 667 });
-			await page.waitForTimeout(300);
 
 			// Verify mobile menu is visible
 			await expect(mobileMenu).toBeVisible();

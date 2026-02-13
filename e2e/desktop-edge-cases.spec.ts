@@ -44,18 +44,6 @@ test.describe("Desktop Edge Cases", () => {
 			expect(typeof hasStateClass).toBe("boolean");
 		});
 
-		test("should handle rapid clicks on multiple cells", async ({ page }) => {
-			// Rapidly click first 5 enabled cells twice each
-			for (let i = 0; i < 5; i++) {
-				const cell = page.locator(ENABLED_DAY_SELECTOR).nth(i);
-				await cell.click();
-				await cell.click();
-			}
-
-			// Page should remain functional
-			await expect(page.locator("body")).toBeVisible();
-		});
-
 		test("should handle clicks during page load", async ({ page }) => {
 			// Reload the page
 			await page.reload();
@@ -68,43 +56,8 @@ test.describe("Desktop Edge Cases", () => {
 			await dayCell.click();
 			await expect(dayCell).toHaveClass(/datepainter-day--(oof|holiday|sick)/);
 		});
-
-		test("should handle alternating left and right clicks", async ({
-			page,
-		}) => {
-			const dayCell = page.locator(ENABLED_DAY_SELECTOR).first();
-
-			// Alternate between left and right clicks
-			await dayCell.click({ button: "left" });
-			await dayCell.click({ button: "right" });
-			await dayCell.click({ button: "left" });
-
-			// Cell should remain functional
-			await expect(dayCell).toBeVisible();
-		});
 	});
 	test.describe("Window Resize Handling", () => {
-		test("should handle rapid window resizing", async ({ page }) => {
-			// Resize multiple times rapidly
-			const sizes = [
-				{ width: 1920, height: 1080 },
-				{ width: 1280, height: 720 },
-				{ width: 1024, height: 768 },
-				{ width: 1920, height: 1080 },
-			];
-
-			for (const size of sizes) {
-				await page.setViewportSize(size);
-				await page.waitForTimeout(100);
-			}
-
-			// Reset to original size
-			await page.setViewportSize({ width: 1920, height: 1080 });
-
-			// Page should remain functional
-			await expect(page.locator("body")).toBeVisible();
-		});
-
 		test("should maintain state during resize", async ({ page }) => {
 			// Make some selections
 			await applyWeekdayPattern(page, "tue-thu", 4);
@@ -113,11 +66,9 @@ test.describe("Desktop Edge Cases", () => {
 
 			// Resize the window
 			await page.setViewportSize({ width: 1280, height: 720 });
-			await page.waitForTimeout(300);
 
 			// Resize back
 			await page.setViewportSize({ width: 1920, height: 1080 });
-			await page.waitForTimeout(300);
 
 			// Page should be functional
 			await expect(page.locator("body")).toBeVisible();

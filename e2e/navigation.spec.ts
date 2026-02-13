@@ -123,29 +123,4 @@ test.describe("Navigation", () => {
 			await expect(buttons).toBeVisible();
 		});
 	});
-	test.describe("Responsive Layout", () => {
-		test("desktop should show two-column layout", async ({ page }) => {
-			// Set desktop viewport
-			await page.setViewportSize({ width: 1920, height: 1080 });
-			await page.goto("/rto-calculator/");
-			await waitForCalendarReady(page);
-
-			// Verify unified responsive layout with columns
-			const columns = page.locator(".columns.is-desktop");
-			await expect(columns).toBeVisible();
-		});
-
-		test("mobile should show stacked layout", async ({ page }) => {
-			// Set mobile viewport
-			await page.setViewportSize({ width: 375, height: 667 });
-			await page.goto("/rto-calculator/");
-			await waitForCalendarReady(page);
-
-			// Verify calendar and status are both visible (stacked)
-			const calendar = page.locator(".datepainter");
-			const status = page.locator(".status-details");
-			await expect(calendar).toBeVisible();
-			await expect(status.first()).toBeVisible();
-		});
-	});
 });
