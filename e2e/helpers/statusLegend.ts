@@ -18,8 +18,8 @@ function getMainLegend(page: Page) {
 export async function selectMode(page: Page, mode: MarkingMode): Promise<void> {
 	const legend = getMainLegend(page);
 	const button = legend.locator(`[data-testid="mode-${mode}"]`);
-	await button.waitFor({ state: "attached" });
-	await button.click({ force: true });
+	await button.waitFor({ state: "visible" });
+	await button.click();
 }
 
 export async function expectModeActive(

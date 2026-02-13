@@ -106,8 +106,8 @@ export async function clickDate(page: Page, index: number): Promise<void> {
 
 	const cells = getDateCells(page);
 	const cell = cells.nth(index);
-	await cell.waitFor({ state: "attached" });
-	await cell.click({ force: true });
+	await cell.waitFor({ state: "visible" });
+	await cell.click();
 }
 
 /**
