@@ -1,4 +1,4 @@
-import type { CalendarConfig } from '../types';
+import type { CalendarConfig } from "../types";
 
 /**
  * Validate calendar configuration
@@ -35,7 +35,11 @@ export function validateConfig(config: CalendarConfig): void {
     throw new Error("cellSize must be a positive number");
   }
 
-  if (config.styling?.firstDayOfWeek !== undefined && config.styling.firstDayOfWeek !== 0 && config.styling.firstDayOfWeek !== 1) {
+  if (
+    config.styling?.firstDayOfWeek !== undefined &&
+    config.styling.firstDayOfWeek !== 0 &&
+    config.styling.firstDayOfWeek !== 1
+  ) {
     throw new Error("firstDayOfWeek must be 0 (Sunday) or 1 (Monday)");
   }
 }
