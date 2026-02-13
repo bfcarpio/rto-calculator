@@ -27,6 +27,9 @@ declare global {
 	}
 }
 
+/**
+ * Dispatch calendar-loaded custom event to notify other modules
+ */
 function dispatchCalendarLoadedEvent() {
 	const event = new CustomEvent("calendar-loaded", {
 		bubbles: true,
@@ -39,6 +42,11 @@ function dispatchCalendarLoadedEvent() {
 	debugLog("[Index] Dispatched calendar-loaded event");
 }
 
+/**
+ * Initialize the RTO calendar application
+ * Sets up holiday data, local storage, calendar events,
+ * and validation display functionality
+ */
 export function initializeIndex() {
 	initHolidayDataLoader();
 	initializeLocalStorage();
@@ -83,6 +91,7 @@ export function initializeIndex() {
 /**
  * Cleanup calendar event manager and other resources
  * Useful for testing or future SPA navigation
+ * Removes event listeners and clears timers
  */
 export function cleanupIndex(): void {
 	const manager = (window as any).__calendarEventManager as
