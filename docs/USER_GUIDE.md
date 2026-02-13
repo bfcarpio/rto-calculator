@@ -142,6 +142,16 @@ Average: (2+2+2+2+3+3+3+3) / 8 = 2.5 days = 50%
 Result: ✗ VIOLATION (below 60% threshold)
 ```
 
+### Starting Week
+
+By default, the evaluation range starts from the earliest week in the calendar (12 weeks before today). You can override this in **Settings > Evaluation Window > Starting week**.
+
+- Choose a specific Monday from the dropdown to begin evaluation from that week
+- All weeks before the starting week are excluded from validation
+- Select "Default (earliest)" to revert to the default behavior
+
+This is useful if you started a new role or policy changed on a specific date and earlier weeks are not relevant to your compliance.
+
 ---
 
 ## Understanding Results
