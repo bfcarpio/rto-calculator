@@ -9,6 +9,26 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { HolidayManager } from "../holiday/HolidayManager";
 import { HolidayDataSourceFactory } from "../holiday/sources";
 
+// Mock the factory module — only getDataSource is used by HolidayManager.initialize()
+vi.mock("../holiday/sources", () => ({
+	HolidayDataSourceFactory: {
+		getInstance: vi.fn(),
+	},
+}));
+
+// Mock company filters JSON — controls getCompanyHolidays() filtering
+vi.mock("../holiday/data/company-filters.json", () => ({
+	default: {
+		US: {
+			name: "United States",
+			companies: {
+				TechCo: ["New Year's Day", "Christmas Day"],
+				SmallCo: ["New Year's Day"],
+			},
+		},
+	},
+}));
+
 // Mock holiday data for testing
 const mockHolidays = {
 	"US-2024": [
@@ -84,29 +104,9 @@ describe("HolidayManager", () => {
 			config: {},
 		};
 
-		// Mock the factory to return our mock data source
-		vi.spyOn(HolidayDataSourceFactory, "getInstance").mockReturnValue({
-			dataSources: new Map([["mock-data-source", mockDataSource]]),
-			defaultDataSourceName: "mock-data-source",
+		// Configure the factory mock to return our mock data source
+		vi.mocked(HolidayDataSourceFactory.getInstance).mockResolvedValue({
 			getDataSource: vi.fn().mockReturnValue(mockDataSource),
-			getAllDataSources: vi.fn().mockReturnValue([mockDataSource]),
-			getDataSourceNames: vi.fn().mockReturnValue(["mock-data-source"]),
-			hasDataSource: vi.fn().mockReturnValue(true),
-			registerDataSource: vi.fn(),
-			unregisterDataSource: vi.fn(),
-			getDefaultDataSource: vi.fn().mockReturnValue(mockDataSource),
-			setDefaultDataSource: vi.fn(),
-			checkAllDataSources: vi.fn().mockResolvedValue(new Map()),
-			clearAllCaches: vi.fn().mockResolvedValue(undefined),
-			resetAllDataSources: vi.fn().mockResolvedValue(undefined),
-			getStatistics: vi.fn().mockReturnValue({
-				totalDataSources: 1,
-				defaultDataSource: "mock-data-source",
-				dataSources: {},
-			}),
-			reloadDataSource: vi.fn(),
-			_initializeDefaultDataSources: vi.fn(),
-			_resetInstance: vi.fn(),
 		} as any);
 
 		manager = await HolidayManager.getInstance();
@@ -242,13 +242,6 @@ describe("HolidayManager", () => {
 		});
 
 		describe("Company Filtering", () => {
-			beforeEach(async () => {
-				// Mock the getCompanyHolidays method to return specific filters
-				vi.spyOn(manager as any, "getCompanyHolidays").mockReturnValue(
-					new Set(["New Year's Day", "Christmas Day"]),
-				);
-			});
-
 			it("should filter holidays by company name", async () => {
 				const result = await manager.fetchHolidays({
 					countryCode: "US",
@@ -304,13 +297,9 @@ describe("HolidayManager", () => {
 		});
 
 		it("should filter by company when specified", async () => {
-			vi.spyOn(manager as any, "getCompanyHolidays").mockReturnValue(
-				new Set(["New Year's Day"]),
-			);
-
 			const holidayDates = await manager.getHolidayDates(
 				"US",
-				"TechCo",
+				"SmallCo",
 				[2024],
 			);
 
@@ -364,11 +353,7 @@ describe("HolidayManager", () => {
 		});
 
 		it("should filter by company when specified", async () => {
-			vi.spyOn(manager as any, "getCompanyHolidays").mockReturnValue(
-				new Set(["New Year's Day", "Christmas Day"]),
-			);
-
-			// Independence Day is not in the company filter
+			// Independence Day is not in TechCo's company filter
 			const isHoliday = await manager.isHoliday(
 				new Date("2024-07-04"),
 				"US",
@@ -449,11 +434,7 @@ describe("HolidayManager", () => {
 		});
 
 		it("should filter by company when applying", async () => {
-			vi.spyOn(manager as any, "getCompanyHolidays").mockReturnValue(
-				new Set(["New Year's Day"]),
-			);
-
-			await manager.applyHolidaysToCalendar("US", "TechCo", [2024]);
+			await manager.applyHolidaysToCalendar("US", "SmallCo", [2024]);
 
 			const holidayCells = document.querySelectorAll(".calendar-day.holiday");
 			expect(holidayCells).toHaveLength(1);
@@ -581,20 +562,16 @@ describe("HolidayManager", () => {
 				mockHolidays["US-2024"],
 			);
 
-			vi.spyOn(manager as any, "getCompanyHolidays").mockReturnValue(
-				new Set(["New Year's Day"]),
-			);
-
 			const result = await manager.fetchHolidays({
 				countryCode: "US",
-				companyName: "TechCo",
+				companyName: "SmallCo",
 				years: [2024],
 			});
 
 			const summary = manager.getHolidaySummary(result);
 
 			expect(summary).toContain("1 holiday");
-			expect(summary).toContain("filtered by TechCo");
+			expect(summary).toContain("filtered by SmallCo");
 		});
 
 		it("should generate summary for no holidays", async () => {
@@ -618,7 +595,7 @@ describe("HolidayManager", () => {
 
 			expect(Array.isArray(companies)).toBe(true);
 			expect(companies.length).toBeGreaterThan(0);
-			expect(companies).toContain("Acme Corp");
+			expect(companies).toContain("TechCo");
 		});
 
 		it("should return empty array for country without filters", () => {
