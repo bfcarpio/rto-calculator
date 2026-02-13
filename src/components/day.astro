@@ -52,6 +52,18 @@ const cellId = `day-cell-${dateString}-${dayNumber}`;
 </td>
 
 <script define:vars={{ cellId }}>
+    // Global drag state (shared across all day cells)
+    let isDragging = false;
+    let dragSelectionType = null;
+
+    // Initialize drag state on first use
+    if (!window.__calendarDragState) {
+        window.__calendarDragState = {
+            isDragging: false,
+            selectionType: null,
+        };
+    }
+
     // Wait for DOM to be ready
     function initDayCell() {
         const cell = document.getElementById(cellId);
@@ -60,55 +72,73 @@ const cellId = `day-cell-${dateString}-${dayNumber}`;
             return;
         }
 
-        // Remove existing event listeners by cloning
-        const newCell = cell.cloneNode(true);
-        cell.parentNode?.replaceChild(newCell, cell);
+        // Get global drag state
+        const dragState = window.__calendarDragState;
 
-        // Handle left click - turn blue (work-from-home)
-        newCell.addEventListener("click", (e) => {
-            e.preventDefault();
-            e.stopPropagation();
+        // Apply a selection type to a cell
+        function applySelection(targetCell, type) {
+            if (type === null) {
+                targetCell.dataset.selected = "false";
+                targetCell.dataset.selectionType = "";
+                targetCell.style.backgroundColor = "transparent";
+            } else if (type === "work-from-home") {
+                targetCell.dataset.selected = "true";
+                targetCell.dataset.selectionType = "work-from-home";
+                targetCell.style.backgroundColor = "#1890ff";
+            } else if (type === "office") {
+                targetCell.dataset.selected = "true";
+                targetCell.dataset.selectionType = "office";
+                targetCell.style.backgroundColor = "#f5222d";
+            }
+        }
 
-            const currentType = newCell.dataset.selectionType || "";
+        // Handle mouse down - start dragging
+        cell.addEventListener("mousedown", (e) => {
+            if (e.button === 0 || e.button === 2) {
+                // Left or right click
+                e.preventDefault();
 
-            console.log(
-                `Left click on ${cellId}, current type: ${currentType}`,
-            );
+                const currentType = cell.dataset.selectionType || "";
+                const newType = e.button === 0 ? "work-from-home" : "office";
 
-            // Toggle: if already work-from-home, unselect; otherwise, set to work-from-home
-            if (currentType === "work-from-home") {
-                newCell.dataset.selected = "false";
-                newCell.dataset.selectionType = "";
-                newCell.style.backgroundColor = "transparent";
-            } else {
-                newCell.dataset.selected = "true";
-                newCell.dataset.selectionType = "work-from-home";
-                newCell.style.backgroundColor = "#1890ff";
+                // Toggle logic: if clicking the same type, clear it
+                dragState.selectionType =
+                    currentType === newType ? null : newType;
+                dragState.isDragging = true;
+
+                // Apply the selection to this cell
+                applySelection(cell, dragState.selectionType);
             }
         });
 
-        // Handle right click - turn red (office)
-        newCell.addEventListener("contextmenu", (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-
-            const currentType = newCell.dataset.selectionType || "";
-
-            console.log(
-                `Right click on ${cellId}, current type: ${currentType}`,
-            );
-
-            // Toggle: if already office, unselect; otherwise, set to office
-            if (currentType === "office") {
-                newCell.dataset.selected = "false";
-                newCell.dataset.selectionType = "";
-                newCell.style.backgroundColor = "transparent";
-            } else {
-                newCell.dataset.selected = "true";
-                newCell.dataset.selectionType = "office";
-                newCell.style.backgroundColor = "#f5222d";
+        // Handle mouse enter - apply selection if dragging
+        cell.addEventListener("mouseenter", (e) => {
+            if (dragState.isDragging && dragState.selectionType !== null) {
+                applySelection(cell, dragState.selectionType);
             }
         });
+
+        // Prevent context menu on right-click
+        cell.addEventListener("contextmenu", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+        });
+    }
+
+    // Global mouse up handler - stop dragging
+    function stopDragging() {
+        const dragState = window.__calendarDragState;
+        if (dragState) {
+            dragState.isDragging = false;
+            dragState.selectionType = null;
+        }
+    }
+
+    // Add global mouse up listener once
+    if (!window.__calendarMouseUpListenerAdded) {
+        document.addEventListener("mouseup", stopDragging);
+        document.addEventListener("mouseleave", stopDragging);
+        window.__calendarMouseUpListenerAdded = true;
     }
 
     // Initialize when DOM is ready
