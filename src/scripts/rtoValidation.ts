@@ -548,12 +548,8 @@ export function runValidationWithHighlights(): void {
   const calendarStartDate = getCalendarStartDate();
   const firstWeekStart = getFirstMondayOnOrAfter(calendarStartDate);
 
-  // Pre-calculate week data for all weeks with sliding window optimization (O(n))
-  // When sliding window, 11 of 12 weeks are reused - just remove one, add one
+  // Pre-calculate week data for all 12 weeks (O(n))
   const weekDataArray: WeekInfo[] = [];
-  let totalOfficeDaysTop8 = 0;
-  let windowStart = 0; // First week index in top-8 window
-  let windowEnd = 0; // Last week index in top-8 window (inclusive)
 
   if (CONFIG.DEBUG) {
     console.log("[RTO Validation] Starting week calculations...");
@@ -572,6 +568,7 @@ export function runValidationWithHighlights(): void {
     weekStart.setDate(firstWeekStart.getDate() + weekIndex * 7);
 
     const wfhDaysCount = weeksByWFH.get(weekStart.getTime()) || 0;
+
     if (CONFIG.DEBUG) {
       console.log(
         `[RTO Validation] Week ${weekIndex + 1} (${weekStart.toISOString().split("T")[0]}): WFH days = ${wfhDaysCount}`,
@@ -580,33 +577,18 @@ export function runValidationWithHighlights(): void {
     const weekInfo = calculateWeekData(weekStart, wfhDaysCount);
     weekInfo.weekNumber = weekIndex + 1;
     weekDataArray.push(weekInfo);
-
-    // Update sliding window for top 8 weeks
-    if (weekIndex < 8) {
-      // Expanding window: just add new week
-      totalOfficeDaysTop8 += weekInfo.officeDays;
-      windowEnd = weekIndex;
-    } else {
-      // Sliding window: remove oldest week, add new week
-      const oldWeekInfo = weekDataArray[windowStart];
-      if (oldWeekInfo) {
-        totalOfficeDaysTop8 -= oldWeekInfo.officeDays;
-      }
-      totalOfficeDaysTop8 += weekInfo.officeDays;
-      windowStart++;
-      windowEnd++;
-    }
-
-    // Update status icons as we calculate (O(n))
-    const isUnderEvaluation = weekIndex < 8;
-    updateWeekStatusIcon(
-      weekInfo.week,
-      isUnderEvaluation,
-      weekInfo.isCompliant,
-    );
   }
 
-  // Calculate compliance from pre-calculated data (O(1))
+  // Get top 8 weeks using slice (O(1))
+  const top8Weeks = weekDataArray.slice(0, 8);
+
+  // Calculate compliance from top 8 weeks (O(n) where n=8)
+  const totalOfficeDaysTop8 = top8Weeks.reduce(
+    (sum, week) => sum + week.officeDays,
+    0,
+  );
+
+  // Calculate compliance (O(1))
   const averageOfficeDays = totalOfficeDaysTop8 / 8;
   const averageOfficePercentage =
     (averageOfficeDays / CONFIG.TOTAL_WEEKDAYS_PER_WEEK) * 100;
@@ -646,7 +628,15 @@ export function runValidationWithHighlights(): void {
  * Optimized to use cache
  */
 export function clearAllValidationHighlights(): void {
-  // Reset status cells using cache
+  if (CONFIG.DEBUG) {
+    console.log("[RTO Validation] Clearing all validation highlights...");
+    console.log(
+      `[RTO Validation] Status cells to clear: ${statusCellCache.size}`,
+    );
+    console.log(`[RTO Validation] Calendar cells to clear: ${cellCache.size}`);
+  }
+
+  // Clear all status cell highlights
   statusCellCache.forEach((statusCell) => {
     statusCell.classList.remove("evaluated", "compliant", "non-compliant");
     const iconElement = statusCell.querySelector(".week-status-icon");
@@ -654,9 +644,24 @@ export function clearAllValidationHighlights(): void {
 
     if (iconElement) {
       iconElement.textContent = "";
+      if (CONFIG.DEBUG) {
+        console.log("[RTO Validation] Cleared icon content");
+      }
     }
     if (srElement) {
       srElement.textContent = "";
+      if (CONFIG.DEBUG) {
+        console.log("[RTO Validation] Cleared SR content");
+      }
+    }
+  });
+
+  // Clear all cell highlights
+  cellCache.forEach((cell) => {
+    const hadHighlight = cell.classList.contains("validation-highlight");
+    cell.classList.remove("validation-highlight");
+    if (CONFIG.DEBUG && hadHighlight) {
+      console.log("[RTO Validation] Removed validation-highlight class");
     }
   });
 
