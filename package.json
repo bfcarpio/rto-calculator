@@ -38,7 +38,7 @@
 		"astro": "^5.16.8",
 		"bulma": "^1.0.4",
 		"datepainter": "workspace:*",
-		"nager_date_api_reference": "file:packages/nager.date",
+		"nager_date_api_reference": "workspace:*",
 		"open-props": "^1.7.23",
 		"ts-ics": "^2.4.0",
 		"typescript": "^5.9.3"
