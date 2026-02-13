@@ -32,7 +32,7 @@
 	--adp-day-cell-height: 40px;
 
 	/* Custom dot colors */
-	--dot-working: var(--color-compliant);
+	--dot-working: transparent;
 	--dot-oof: var(--color-violation); /* Dark slate for OOF/Violation */
 	--dot-holiday: var(--color-holiday);
 }

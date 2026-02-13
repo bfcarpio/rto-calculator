@@ -3,32 +3,37 @@
 ---
 
 <div class="holiday-selector" id="holiday-selector">
-  <div class="selector-header">
-    <h3 class="selector-title">🗓️ Add Public Holidays</h3>
-    <p class="selector-description">
-      Select a country to automatically mark public holidays
-    </p>
-  </div>
+  <button class="selector-header" id="selector-toggle" aria-expanded="false" aria-controls="selector-drawer">
+    <div class="header-content">
+      <h3 class="selector-title">🗓️ Add Public Holidays</h3>
+      <p class="selector-description">
+        Select a country to automatically mark public holidays
+      </p>
+    </div>
+    <span class="chevron" aria-hidden="true">▼</span>
+  </button>
   
-  <div class="selector-controls">
-    <select 
-      id="country-select" 
-      class="country-select"
-      disabled
-    >
-      <option value="">Loading countries...</option>
-    </select>
+  <div class="selector-drawer" id="selector-drawer">
+    <div class="selector-controls">
+      <select 
+        id="country-select" 
+        class="country-select"
+        disabled
+      >
+        <option value="">Loading countries...</option>
+      </select>
+      
+      <button 
+        id="add-holidays-button" 
+        class="add-holidays-button"
+        disabled
+      >
+        Add Holidays
+      </button>
+    </div>
     
-    <button 
-      id="add-holidays-button" 
-      class="add-holidays-button"
-      disabled
-    >
-      Add Holidays
-    </button>
+    <div id="holiday-status" class="holiday-status"></div>
   </div>
-  
-  <div id="holiday-status" class="holiday-status"></div>
 </div>
 
 <style>
@@ -41,7 +46,44 @@
   }
 
   .selector-header {
-    margin-bottom: 0.75rem;
+    all: unset;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    cursor: pointer;
+    padding: 0;
+    margin-bottom: 0;
+  }
+
+  .header-content {
+    flex: 1;
+  }
+
+  .chevron {
+    font-size: 1rem;
+    color: #64748b;
+    transition: transform 0.3s ease;
+    flex-shrink: 0;
+    margin-left: 0.5rem;
+    display: inline-block;
+  }
+
+  .selector-header[aria-expanded="true"] .chevron {
+    transform: rotate(180deg);
+  }
+
+  .selector-drawer {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, opacity 0.3s ease;
+    opacity: 0;
+  }
+
+  .selector-drawer.open {
+    max-height: 200px;
+    opacity: 1;
+    margin-top: 0.75rem;
   }
 
   .selector-title {
@@ -61,6 +103,7 @@
     display: flex;
     gap: 0.5rem;
     align-items: center;
+    margin-bottom: 0.5rem;
   }
 
   .country-select {
@@ -99,7 +142,6 @@
   }
 
   .holiday-status {
-    margin-top: 0.75rem;
     font-size: 0.875rem;
   }
 
@@ -125,6 +167,10 @@
   }
 
   :global(body.dark-mode) .selector-description {
+    color: #94a3b8;
+  }
+
+  :global(body.dark-mode) .chevron {
     color: #94a3b8;
   }
 
@@ -157,7 +203,18 @@
   const countrySelect = document.getElementById('country-select') as HTMLSelectElement;
   const addButton = document.getElementById('add-holidays-button') as HTMLButtonElement;
   const statusDiv = document.getElementById('holiday-status');
+  const toggleButton = document.getElementById('selector-toggle') as HTMLButtonElement;
+  const drawer = document.getElementById('selector-drawer');
   const dateStore = getDateStore();
+
+  // Toggle drawer open/closed
+  if (toggleButton && drawer) {
+    toggleButton.addEventListener('click', () => {
+      const isExpanded = toggleButton.getAttribute('aria-expanded') === 'true';
+      toggleButton.setAttribute('aria-expanded', String(!isExpanded));
+      drawer.classList.toggle('open', !isExpanded);
+    });
+  }
 
   const BASE_URL = 'https://date.nager.at';
 
