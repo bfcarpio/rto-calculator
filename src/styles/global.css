@@ -8,84 +8,84 @@
 
 /* CSS Custom Properties (Variables) */
 :root {
-  /* Colors - Compliance */
-  --color-compliant: #389e0d;
-  --color-compliant-bg: #f6ffed;
+	/* Colors - Compliance */
+	--color-compliant: #389e0d;
+	--color-compliant-bg: #f6ffed;
 
-  /* Colors - Calendar Day States */
-  --calendar-day-out-of-office: #1890ff;
-  --calendar-day-focus-outline: #3b82f6;
-  --calendar-day-hover-border: #40a9ff;
+	/* Colors - Calendar Day States */
+	--calendar-day-out-of-office: #1890ff;
+	--calendar-day-focus-outline: #3b82f6;
+	--calendar-day-hover-border: #40a9ff;
 
-  /* Colors - Violation */
-  --color-violation: #cf1322;
-  --color-violation-bg: #fff2f0;
+	/* Colors - Violation */
+	--color-violation: #cf1322;
+	--color-violation-bg: #fff2f0;
 
-  /* Colors - Warning */
-  --color-warning: #d48806;
-  --color-warning-bg: #fffbe6;
+	/* Colors - Warning */
+	--color-warning: #d48806;
+	--color-warning-bg: #fffbe6;
 
-  /* Colors - Selected */
-  --color-selected: #1890ff;
-  --color-selected-bg: #e6f7ff;
+	/* Colors - Selected */
+	--color-selected: #1890ff;
+	--color-selected-bg: #e6f7ff;
 
-  /* Colors - Text */
-  --color-text: #374151;
-  --color-muted: #6b7280;
+	/* Colors - Text */
+	--color-text: #374151;
+	--color-muted: #6b7280;
 
-  /* Colors - Background */
-  --color-bg-alt: #f5f5f5;
-  --color-border: #d1d5db;
-  --color-weekend: #e5e7eb;
-  --color-past: #9ca3af;
+	/* Colors - Background */
+	--color-bg-alt: #f5f5f5;
+	--color-border: #d1d5db;
+	--color-weekend: #e5e7eb;
+	--color-past: #9ca3af;
 
-  /* Colors - Holidays */
-  --color-holiday: #fa8c16;
-  --color-holiday-bg: #fff7e6;
-  --color-holiday-border: #ffd591;
-  --color-holiday-text: #873800;
+	/* Colors - Holidays */
+	--color-holiday: #fa8c16;
+	--color-holiday-bg: #fff7e6;
+	--color-holiday-border: #ffd591;
+	--color-holiday-text: #873800;
 
-  /* Dimensions */
-  --border-radius: 6px;
+	/* Dimensions */
+	--border-radius: 6px;
 
-  /* Animation */
-  --transition-speed: 0.2s;
+	/* Animation */
+	--transition-speed: 0.2s;
 }
 
 /* Base styles */
 * {
-  box-sizing: border-box;
+	box-sizing: border-box;
 }
 
 body {
-  font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
-    Cantarell, sans-serif;
-  line-height: 1.6;
-  color: #374151;
-  background-color: #f9fafb;
-  margin: 0 auto;
-  padding: 0 1rem;
+	font-family:
+		-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
+		Cantarell, sans-serif;
+	line-height: 1.6;
+	color: #374151;
+	background-color: #f9fafb;
+	margin: 0 auto;
+	padding: 0 1rem;
 }
 
 /* Accessibility: Reduced motion */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+	}
 }
 
 /* Focus styles for keyboard navigation */
 :focus-visible {
-  outline: 2px solid #3b82f6;
-  outline-offset: 2px;
+	outline: 2px solid #3b82f6;
+	outline-offset: 2px;
 }
 
 button:focus-visible,
 [role="button"]:focus-visible {
-  outline: 0 0 0 3px rgba(59, 130, 246, 0.5);
+	outline: 0 0 0 3px rgba(59, 130, 246, 0.5);
 }

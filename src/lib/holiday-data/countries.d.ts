@@ -9,9 +9,9 @@
  * Country information with ISO code, name, and flag emoji
  */
 export interface Country {
-  code: string;
-  name: string;
-  flag: string;
+	code: string;
+	name: string;
+	flag: string;
 }
 
 /**

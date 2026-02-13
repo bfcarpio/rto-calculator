@@ -1,11 +1,11 @@
 ---
-import '/src/styles/utilities.css';
-import Day from "./day.astro";
+import "/src/styles/utilities.css";
 import { getISOWeekNumber } from "../utils/dateUtils";
+import Day from "./day.astro";
 
 interface Props {
-    month: number; // 0-11 (January-December)
-    year: number;
+	month: number; // 0-11 (January-December)
+	year: number;
 }
 
 const { month, year } = Astro.props;
@@ -16,28 +16,28 @@ const daysInMonth = new Date(year, month + 1, 0).getDate();
 const offset = date.getDay(); // 0-6 (Sunday-Saturday)
 
 const monthNames = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
+	"January",
+	"February",
+	"March",
+	"April",
+	"May",
+	"June",
+	"July",
+	"August",
+	"September",
+	"October",
+	"November",
+	"December",
 ];
 
 const shortDayNames = [
-    { abbr: "Sun", full: "Sunday" },
-    { abbr: "Mon", full: "Monday" },
-    { abbr: "Tue", full: "Tuesday" },
-    { abbr: "Wed", full: "Wednesday" },
-    { abbr: "Thu", full: "Thursday" },
-    { abbr: "Fri", full: "Friday" },
-    { abbr: "Sat", full: "Saturday" },
+	{ abbr: "Sun", full: "Sunday" },
+	{ abbr: "Mon", full: "Monday" },
+	{ abbr: "Tue", full: "Tuesday" },
+	{ abbr: "Wed", full: "Wednesday" },
+	{ abbr: "Thu", full: "Thursday" },
+	{ abbr: "Fri", full: "Friday" },
+	{ abbr: "Sat", full: "Saturday" },
 ];
 
 // Fixed 5 rows and 7 columns

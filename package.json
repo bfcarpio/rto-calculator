@@ -9,7 +9,11 @@
 		"astro": "astro",
 		"test": "vitest",
 		"test:ui": "vitest --ui",
-		"test:run": "vitest run"
+		"test:run": "vitest run",
+		"lint": "biome check src/",
+		"lint:fix": "biome check --write src/",
+		"format": "biome format --write src/",
+		"check": "biome check src/ && astro check"
 	},
 	"dependencies": {
 		"@astrojs/check": "^0.9.6",
