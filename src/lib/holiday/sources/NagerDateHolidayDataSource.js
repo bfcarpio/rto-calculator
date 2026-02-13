@@ -146,6 +146,39 @@ class NagerDateHolidayDataSource extends HolidayDataSourceStrategy {
 	}
 
 	/**
+	 * Get list of available countries from Nager.Date API
+	 * @returns {Promise<Array<{code: string, name: string}>>} Array of country codes and names
+	 */
+	async getAvailableCountries() {
+		if (!this.apiClient) {
+			await this._initializeApiClient();
+			if (!this.apiClient) {
+				throw new Error("Nager.Date API client not initialized");
+			}
+		}
+
+		// Import CountryApi if not already available
+		const { CountryApi } = await import("nager_date_api_reference");
+		const countryApi = new CountryApi(this.apiClient);
+
+		return new Promise((resolve, reject) => {
+			countryApi.apiV3AvailableCountriesGet((error, data) => {
+				if (error) {
+					reject(error);
+				} else {
+					const countries = (data || [])
+						.map((c) => ({
+							code: c.countryCode,
+							name: c.name,
+						}))
+						.sort((a, b) => a.name.localeCompare(b.name));
+					resolve(countries);
+				}
+			});
+		});
+	}
+
+	/**
 	 * Check if today is a holiday using the optimized endpoint
 	 * @param {string} countryCode - ISO 3166-1 alpha-2 country code
 	 * @returns {Promise<HolidayCheckResult>} Holiday check result

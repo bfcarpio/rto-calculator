@@ -279,6 +279,15 @@ class HolidayDataSourceStrategy {
 	// Abstract methods that must be implemented by subclasses
 
 	/**
+	 * Get list of available countries supported by this data source
+	 * @returns {Promise<Array<{code: string, name: string}>>} Array of country codes and names
+	 * @abstract
+	 */
+	async getAvailableCountries() {
+		throw new Error(`getAvailableCountries must be implemented by subclass`);
+	}
+
+	/**
 	 * Fetch holidays for a specific year and country from the data source
 	 * @abstract
 	 * @param {number} year - Year to fetch holidays for
