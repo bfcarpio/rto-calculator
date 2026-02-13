@@ -576,7 +576,7 @@ export function runValidationWithHighlights(): void {
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekStart.getDate() + 6);
 
-    const hasWeekData = cellCache.some((cell) => {
+    const hasWeekData = Array.from(cellCache.values()).some((cell) => {
       const cellYear = parseInt(cell.dataset.year || "0");
       const cellMonth = parseInt(cell.dataset.month || "0");
       const cellDay = parseInt(cell.dataset.day || "0");
