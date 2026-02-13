@@ -2,6 +2,9 @@
 	"name": "rto-calculator",
 	"type": "module",
 	"version": "0.0.1",
+	"workspaces": [
+		"packages/*"
+	],
 	"scripts": {
 		"dev": "astro dev",
 		"build": "astro check && astro build",
@@ -21,7 +24,12 @@
 		"lint": "biome check src/",
 		"lint:fix": "biome check --write src/",
 		"format": "biome format --write src/",
-		"check": "biome check src/ && astro check"
+		"check": "biome check src/ && astro check",
+		"dev:datepainter": "npm run dev --workspace=datepainter",
+		"dev:nager": "npm run dev --workspace=nager-date",
+		"build:all": "npm run build --workspaces --if-present",
+		"clean:all": "npm run clean --workspaces --if-present && rm -rf node_modules",
+		"install:all": "npm install --workspaces"
 	},
 	"dependencies": {
 		"@astrojs/check": "^0.9.6",
