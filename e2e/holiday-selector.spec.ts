@@ -102,6 +102,100 @@ test.describe("Holiday Country Selector", () => {
 		await expectModeCount(page, "holiday", 0);
 	});
 
+	test("company dropdown appears for US", async ({ page }) => {
+		const drawer = page.locator("#holiday-drawer");
+		await drawer.locator("summary").click();
+
+		const select = page.locator("#country-select");
+		const companySelect = page.locator("#company-select");
+
+		// Company select should be hidden initially
+		await expect(companySelect).toBeHidden();
+
+		// Select US
+		await select.selectOption("US");
+		const status = page.locator("#holiday-status");
+		await expect(status).toContainText(/Added \d+ holiday/, { timeout: 15000 });
+
+		// Company select should now be visible with options
+		await expect(companySelect).toBeVisible();
+		const options = companySelect.locator("option");
+		const optionCount = await options.count();
+		// "All public holidays" + Amazon, Google, Microsoft, Meta
+		expect(optionCount).toBe(5);
+
+		// Verify company names
+		const optionTexts = await options.allTextContents();
+		expect(optionTexts).toContain("Amazon");
+		expect(optionTexts).toContain("Google");
+		expect(optionTexts).toContain("Microsoft");
+		expect(optionTexts).toContain("Meta");
+	});
+
+	test("company dropdown hidden for country without filters", async ({
+		page,
+	}) => {
+		const drawer = page.locator("#holiday-drawer");
+		await drawer.locator("summary").click();
+
+		const select = page.locator("#country-select");
+		const companySelect = page.locator("#company-select");
+
+		// Select JP (no company filters)
+		await select.selectOption("JP");
+		const status = page.locator("#holiday-status");
+		await expect(status).toContainText(/Added \d+ holiday/, { timeout: 15000 });
+
+		// Company select should stay hidden
+		await expect(companySelect).toBeHidden();
+	});
+
+	test("company filter reduces holiday count", async ({ page }) => {
+		const drawer = page.locator("#holiday-drawer");
+		await drawer.locator("summary").click();
+
+		const select = page.locator("#country-select");
+		const companySelect = page.locator("#company-select");
+		const status = page.locator("#holiday-status");
+
+		// Select US — get unfiltered count
+		await select.selectOption("US");
+		await expect(status).toContainText(/Added \d+ holiday/, { timeout: 15000 });
+		const unfilteredCount = (await getModeCounts(page)).holiday;
+
+		// Select Amazon — should reduce count (no Columbus Day, no Veterans Day)
+		await companySelect.selectOption("Amazon");
+		await expect(status).toContainText(/Added \d+ holiday/, { timeout: 15000 });
+		const filteredCount = (await getModeCounts(page)).holiday;
+
+		expect(filteredCount).toBeLessThan(unfilteredCount);
+	});
+
+	test("switching back to All restores count", async ({ page }) => {
+		const drawer = page.locator("#holiday-drawer");
+		await drawer.locator("summary").click();
+
+		const select = page.locator("#country-select");
+		const companySelect = page.locator("#company-select");
+		const status = page.locator("#holiday-status");
+
+		// Select US — get unfiltered count
+		await select.selectOption("US");
+		await expect(status).toContainText(/Added \d+ holiday/, { timeout: 15000 });
+		const unfilteredCount = (await getModeCounts(page)).holiday;
+
+		// Select Amazon — reduces count
+		await companySelect.selectOption("Amazon");
+		await expect(status).toContainText(/Added \d+ holiday/, { timeout: 15000 });
+
+		// Select "All public holidays" — count should restore
+		await companySelect.selectOption("");
+		await expect(status).toContainText(/Added \d+ holiday/, { timeout: 15000 });
+		const restoredCount = (await getModeCounts(page)).holiday;
+
+		expect(restoredCount).toBe(unfilteredCount);
+	});
+
 	test("manual holidays are preserved when selecting country", async ({
 		page,
 	}) => {
