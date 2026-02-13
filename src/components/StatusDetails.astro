@@ -39,7 +39,7 @@ function getAllWeeksInRange(dateRange: {
 			);
 			weeks.push(weekData);
 		}
-		// Move to next week
+		// Step 3: Window is invalid - mark lowest week
 		currentWeekStart = new Date(
 			currentWeekStart.getTime() + 7 * 24 * 60 * 60 * 1000,
 		);
@@ -245,6 +245,16 @@ const complianceStatusClass =
 			)}
 		</div>
 	</div>
+
+	<!-- Public Holidays -->
+	<div class="box public-holidays">
+		<h3 class="title is-6 mb-3">Public Holidays</h3>
+		<p class="is-size-7 mb-2">Mark national holidays or company days off</p>
+		<div class="content">
+			<!-- Public holidays list will be dynamically populated -->
+			<div id="public-holidays-list"></div>
+		</div>
+	</div>
 </div>
 
 <style>
@@ -288,6 +298,28 @@ const complianceStatusClass =
 
 	.non-compliant-list .notification:not(:last-child) {
 		margin-bottom: 0.75rem;
+	}
+
+	.public-holidays {
+		margin-bottom: 1rem;
+		padding: 1.5rem;
+		border: 1px solid #e5e7eb;
+		border-radius: 8px;
+		background: #f9fafb;
+	}
+
+	.public-holidays .title {
+		font-size: 1.5rem;
+		margin-bottom: 0.5rem;
+	}
+
+	.public-holidays .content {
+		margin-bottom: 1rem;
+	}
+
+	#public-holidays-list {
+		max-height: 200px;
+		overflow-y: auto;
 	}
 
 	/* Mobile adjustments */
