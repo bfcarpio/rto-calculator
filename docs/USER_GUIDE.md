@@ -197,18 +197,17 @@ Required: 3 days (60%)
 - Testing different scenarios
 - Resetting after trying a pattern
 
-### Clear Month Buttons
+### Clear Month Button
 
-**Location**: Below each month's calendar
+**Location**: Top and bottom of the page (same bar as Clear All)
 
 **What it does:**
-- Clears only that specific month
+- Clears selections in the currently visible month only
 - Other months remain unchanged
-- Screen reader announces how many days were cleared
 
 **When to use:**
-- Fixing mistakes in a single month
-- Changing plans for one month only
+- Fixing mistakes in the current month
+- Changing plans for one month without affecting others
 
 ### Clear All + Refresh = Clean Slate
 
