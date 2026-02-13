@@ -53,6 +53,13 @@ class SettingsModal {
 		this.loadSettingsFromLocalStorage();
 	}
 
+	public initialize(): void {
+		// Re-bind elements in case DOM changed
+		this.bindElements();
+		// Sync current state to UI
+		this.syncSettings();
+	}
+
 	private bindElements(): void {
 		this.modal = document.getElementById(
 			"settings-modal",
@@ -574,4 +581,9 @@ class SettingsModal {
 	}
 }
 
-document.addEventListener("DOMContentLoaded", () => new SettingsModal());
+const settingsManager = new SettingsModal();
+document.addEventListener("DOMContentLoaded", () => {
+	settingsManager.initialize();
+});
+
+export { settingsManager };

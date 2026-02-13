@@ -4,7 +4,7 @@
 
 const {
 	id: _id = "mobile-menu-button",
-	modalId = "settings-modal",
+	modalId = "settings-dialog",
 	ariaLabel = "Open settings menu",
 } = Astro.props;
 ---
@@ -122,7 +122,7 @@ const {
 	// Wire up the mobile menu button to toggle the settings modal
 	document.addEventListener('DOMContentLoaded', () => {
 		const menuButton = document.getElementById('mobile-menu-button');
-		const modal = document.getElementById('settings-modal') as HTMLDialogElement | null;
+		const modal = document.getElementById('settings-dialog') as HTMLDialogElement | null;
 
 		if (menuButton && modal) {
 			menuButton.addEventListener('click', () => {

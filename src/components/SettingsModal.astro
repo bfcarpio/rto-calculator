@@ -1,274 +1,180 @@
 ---
-import "/src/styles/utilities.css";
-import { COUNTRIES } from "../lib/holiday/data/countries";
-
-const { id: _id = "settings-modal" } = Astro.props;
+import MobileMenu from "./MobileMenu.astro";
 ---
 
-<dialog
-    id={_id}
-    class="settings-modal"
-    aria-labelledby={`${_id}-title`}
-    aria-describedby={`${_id}-description`}
->
+<dialog id="settings-dialog" class="settings-modal" aria-labelledby="settings-title">
     <div class="modal-content">
         <header class="modal-header">
-            <h2 id={`${_id}-title`} class="modal-title">Settings</h2>
-            <button
-                class="close-button focus-reset no-reduced-motion"
-                type="button"
-                aria-label="Close settings"
-                id={`${_id}-close`}
-            >
-                <span aria-hidden="true">×</span>
-            </button>
+            <h2 id="settings-title">Settings</h2>
+            <button class="close-button" aria-label="Close settings">&times;</button>
         </header>
 
-        <p id={`${_id}-description`} class="sr-only">
-            Configure RTO calculator settings and preferences
-        </p>
-
         <div class="modal-body">
-                <details class="settings-group" open>
-                <summary class="group-toggle focus-reset no-reduced-motion">
-                    <span>Validation Settings</span>
-                    <span class="toggle-icon">▼</span>
-                </summary>
-                <div class="group-content">
-                    <div class="setting-item">
-                        <div class="setting-info">
-                            <label for="validation-strategy" class="setting-label">
-                                Validation Strategy
-                            </label>
-                            <p class="setting-description">
-                                Choose which validation algorithm to use
-                            </p>
-                        </div>
-                        <div class="setting-control">
-                            <select
-                                id="validation-strategy"
-class="setting-select focus-reset no-reduced-motion"
-                                aria-label="Select validation strategy"
-                            >
-                                <option value="rolling-period">Rolling Period</option>
-                                <option value="monthly">Monthly Average</option>
-                                <option value="quarterly">Quarterly Period</option>
-                            </select>
-                        </div>
+            <!-- Appearance Section -->
+            <section class="settings-section">
+                <h3>Appearance</h3>
+                <div class="setting-row">
+                    <div class="setting-info">
+                        <span class="setting-label">Theme</span>
+                        <span class="setting-description">Choose your preferred color scheme</span>
                     </div>
-
-                    <div class="setting-item">
-                        <div class="setting-info">
-                            <label for="min-office-days" class="setting-label">
-                                Minimum Office Days per Week
-                            </label>
-                            <p class="setting-description">
-                                Required office days to be compliant
-                            </p>
-                        </div>
-                        <div class="setting-control">
-                            <input
-                                type="number"
-                                id="min-office-days"
-                                class="setting-input focus-reset no-reduced-motion"
-                                min="0"
-                                max="5"
-                                step="1"
-                                value="3"
-                                aria-label="Minimum office days per week"
-                            />
-                        </div>
-                    </div>
-
-                    <div class="setting-item">
-                        <div class="setting-info">
-                            <label class="setting-label">
-                                Validation Mode
-                            </label>
-                            <p class="setting-description">
-                                Strict Mode: Each week must meet the minimum office day requirement. Average Mode: Top weeks in the period are averaged for compliance.
-                            </p>
-                        </div>
-                        <div class="setting-control">
-                            <div class="segmented-control" role="radiogroup" aria-label="Select validation mode">
-                                <button type="button" id="validation-mode-strict" class="segmented-button segmented-button-active focus-reset no-reduced-motion" role="radio" aria-checked="true" aria-label="Strict Mode">
-                                    Strict Mode
-                                </button>
-                                <button type="button" id="validation-mode-average" class="segmented-button focus-reset no-reduced-motion" role="radio" aria-checked="false" aria-label="Average Mode">
-                                    Average Mode
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                    <button
+                        id="theme-cycle-button"
+                        class="theme-cycle-button"
+                        aria-label="Cycle theme: System, Light, Dark"
+                        title="Click to cycle theme"
+                    >
+                        <span id="theme-icon" class="theme-icon">🖥️</span>
+                        <span id="theme-label" class="theme-label">System</span>
+                    </button>
                 </div>
-            </details>
+            </section>
 
-            <details class="settings-group">
-                <summary class="group-toggle">
-                    <span>Pattern Settings</span>
-                    <span class="toggle-icon">▼</span>
-                </summary>
-                <div class="group-content">
-                    <div class="setting-item">
-                        <div class="setting-info">
-                            <label class="setting-label">
-                                Default Selection Pattern
-                            </label>
-                            <p class="setting-description">
-                                Select days to always apply to unselected calendar days
-                            </p>
-                        </div>
-                        <div class="setting-control pattern-selector-container">
-                            <div class="pattern-selector" id="pattern-selector" role="toolbar" aria-label="Default pattern selector">
-                                <div class="pattern-header">
-                                    <span class="sr-only">Select default pattern days</span>
-                                </div>
-                                <div class="pattern-days-row">
-                                    <button type="button" class="pattern-day focus-reset no-reduced-motion" data-day="0" aria-label="Sunday" aria-pressed="false">Sun</button>
-                                    <button type="button" class="pattern-day focus-reset no-reduced-motion" data-day="1" aria-label="Monday" aria-pressed="false">Mon</button>
-                                    <button type="button" class="pattern-day focus-reset no-reduced-motion" data-day="2" aria-label="Tuesday" aria-pressed="false">Tue</button>
-                                    <button type="button" class="pattern-day focus-reset no-reduced-motion" data-day="3" aria-label="Wednesday" aria-pressed="false">Wed</button>
-                                    <button type="button" class="pattern-day focus-reset no-reduced-motion" data-day="4" aria-label="Thursday" aria-pressed="false">Thu</button>
-                                    <button type="button" class="pattern-day focus-reset no-reduced-motion" data-day="5" aria-label="Friday" aria-pressed="false">Fri</button>
-                                    <button type="button" class="pattern-day focus-reset no-reduced-motion" data-day="6" aria-label="Saturday" aria-pressed="false">Sat</button>
-                                </div>
-                                <div class="pattern-actions">
-                                    <button type="button" id="clear-pattern-button" class="button button-secondary focus-reset no-reduced-motion" aria-label="Clear pattern selection">
-                                        Clear Pattern
-                                    </button>
-                                </div>
-                                <div class="pattern-status" id="pattern-status" role="status" aria-live="polite">
-                                    No pattern selected
-                                </div>
-                            </div>
-                        </div>
+            <hr class="section-divider" />
+
+            <!-- Target Days Section -->
+            <section class="settings-section" id="target-days-section">
+                <h3>Target Office Days</h3>
+                <p class="section-description">
+                    Set your minimum required days per week. Weeks with fewer days marked will
+                    be flagged as violations.
+                </p>
+
+                <div class="setting-row">
+                    <div class="setting-info">
+                        <span class="setting-label">Minimum days per week</span>
                     </div>
+                    <input
+                        type="number"
+                        id="target-days-input"
+                        class="target-days-input"
+                        min="0"
+                        max="5"
+                        value="3"
+                        aria-label="Minimum office days per week"
+                    />
                 </div>
-            </details>
+            </section>
 
-            <details class="settings-group" open>
-                <summary class="group-toggle">
-                    <span>Holiday Settings</span>
-                    <span class="toggle-icon">▼</span>
-                </summary>
-                <div class="group-content">
-                    <div class="setting-item">
-                        <div class="setting-info">
-                            <label for="country-select" class="setting-label">
-                                Country Holidays
-                            </label>
-                            <p class="setting-description">
-                                Select a country to mark public holidays as non-office days.
-                            </p>
-                        </div>
-                        <div class="setting-control">
-                            <select id="country-select" class="setting-select focus-reset no-reduced-motion" aria-label="Select country for holidays">
-                                <option value="">None</option>
-                                {COUNTRIES.map((country) => (
-                                    <option value={country.code}>
-                                        {country.flag} {country.name} ({country.code})
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
+            <hr class="section-divider" />
 
-                    <div class="setting-item">
-                        <div class="setting-info">
-                            <label for="holiday-oof-toggle" class="setting-label">
-                                Count holidays as days out of office
-                            </label>
-                            <p class="setting-description">
-                                When enabled, holidays will count as out-of-office days in compliance calculations
-                            </p>
-                        </div>
-                        <div class="setting-control">
-                            <button id="holiday-oof-toggle" type="button" role="switch" aria-checked="true" aria-label="Toggle counting holidays as out-of-office days" class="toggle-button focus-reset no-reduced-motion">
-                                <span class="toggle-slider"></span>
-                            </button>
-                        </div>
-                    </div>
+            <!-- Validation Mode Section -->
+            <section class="settings-section" id="validation-mode-section">
+                <h3>Validation Mode</h3>
+                <p class="section-description">Choose how compliance is calculated.</p>
+
+                <div class="radio-group">
+                    <label class="radio-label">
+                        <input
+                            type="radio"
+                            name="validationMode"
+                            value="strict"
+                            checked
+                        />
+                        <span class="radio-text">
+                            <strong>Strict</strong> - Each week must individually meet the target
+                        </span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="validationMode" value="average4" />
+                        <span class="radio-text">
+                            <strong>4-Week Average</strong> - Compliance based on rolling 4-week
+                            average
+                        </span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="validationMode" value="average12" />
+                        <span class="radio-text">
+                            <strong>12-Week Average</strong> - Compliance based on rolling 12-week
+                            average
+                        </span>
+                    </label>
                 </div>
-            </details>
+            </section>
 
-            <details class="settings-group">
-                <summary class="group-toggle">
-                    <span>System Settings</span>
-                    <span class="toggle-icon">▼</span>
-                </summary>
-                <div class="group-content">
-                    <div class="setting-item">
-                        <div class="setting-info">
-                            <label for="save-data-toggle" class="setting-label">
-                                Save Data to LocalStorage
-                            </label>
-                            <p class="setting-description">
-                                Automatically save and restore all calendar selections, settings, and holidays
-                            </p>
-                        </div>
-                        <div class="setting-control">
-                            <button id="save-data-toggle" type="button" role="switch" aria-checked="false" aria-label="Toggle data saving" class="toggle-button focus-reset no-reduced-motion">
-                            <span class="toggle-slider"></span>
+            <hr class="section-divider" />
+
+            <!-- Week Labels Section -->
+            <section class="settings-section" id="week-labels-section">
+                <h3>Week Labels</h3>
+                <p class="section-description">
+                    Add labels to identify weeks (e.g., "Vacation", "Conference"). These don't
+                    affect compliance calculation.
+                </p>
+
+                <div class="week-labels-container">
+                    <div class="add-label-row">
+                        <select id="week-select" class="week-select">
+                            <option value="">Select week...</option>
+                        </select>
+                        <input
+                            type="text"
+                            id="week-label-input"
+                            class="week-label-input"
+                            placeholder="Label (e.g., Vacation)"
+                            maxlength="30"
+                        />
+                        <button id="add-label-button" class="add-label-button" type="button">
+                            Add
                         </button>
                     </div>
+                    <ul id="labels-list" class="labels-list"></ul>
                 </div>
+            </section>
 
-                    <div class="setting-item">
-                        <div class="setting-info">
-                            <label for="debug-toggle" class="setting-label">
-                                Debug Mode
-                            </label>
-                            <p class="setting-description">
-                                Enable console logging for validation and debugging
-                            </p>
-                        </div>
-                        <div class="setting-control">
-                            <button id="debug-toggle" type="button" role="switch" aria-checked="false" aria-label="Toggle debug mode" class="toggle-button focus-reset no-reduced-motion">
-                                <span class="toggle-slider"></span>
-                            </button>
-                        </div>
+            <hr class="section-divider" />
+
+            <!-- Data Management Section -->
+            <section class="settings-section">
+                <h3>Data</h3>
+                <div class="setting-row">
+                    <div class="setting-info">
+                        <span class="setting-label">Export calendar data</span>
+                        <span class="setting-description">Download your data as JSON</span>
                     </div>
+                    <button id="export-button" class="action-button secondary" type="button">
+                        Export
+                    </button>
                 </div>
-            </details>
+                <div class="setting-row">
+                    <div class="setting-info">
+                        <span class="setting-label">Import calendar data</span>
+                        <span class="setting-description">Restore from a previous export</span>
+                    </div>
+                    <button id="import-button" class="action-button secondary" type="button">
+                        Import
+                    </button>
+                </div>
+            </section>
         </div>
-
-        <footer class="modal-footer">
-            <button
-                type="button"
-                id={`${_id}-reset`}
-class="button button-secondary focus-reset no-reduced-motion"
-            >
-                Reset to Defaults
-            </button>
-            <button
-                type="button"
-                id={`${_id}-save`}
-                class="button button-primary focus-reset no-reduced-motion"
-            >
-                Save Changes
-            </button>
-        </footer>
     </div>
 </dialog>
+
+<input type="file" id="import-file-input" accept=".json" style="display: none;" />
+
+<!-- Mobile Menu Component -->
+<MobileMenu />
 
 <style>
     .settings-modal {
         border: none;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        border-radius: 12px;
         padding: 0;
-        max-width: 500px;
+        max-width: 600px;
         width: 90vw;
-        background-color: white;
+        max-height: 85vh;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     }
 
     .settings-modal::backdrop {
-        background-color: rgba(0, 0, 0, 0.5);
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
     }
 
     .modal-content {
         display: flex;
         flex-direction: column;
+        max-height: 85vh;
     }
 
     .modal-header {
@@ -276,439 +182,433 @@ class="button button-secondary focus-reset no-reduced-motion"
         justify-content: space-between;
         align-items: center;
         padding: 1.25rem 1.5rem;
-        border-bottom: 1px solid #e8e8e8;
-        background-color: #fafafa;
+        border-bottom: 1px solid #e2e8f0;
+        background: #f8fafc;
+        border-radius: 12px 12px 0 0;
     }
 
-    .modal-title {
+    .modal-header h2 {
         margin: 0;
         font-size: 1.25rem;
         font-weight: 600;
-        color: #333;
-        flex: 1;
+        color: #1e293b;
     }
 
     .close-button {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 32px;
-        height: 32px;
+        background: none;
         border: none;
-        border-radius: 4px;
-        background-color: transparent;
-        color: #666;
-        cursor: pointer;
-        font-size: 1.5rem;
+        font-size: 1.75rem;
         line-height: 1;
-        transition: all 0.2s ease;
-        padding: 0;
+        cursor: pointer;
+        padding: 0.25rem 0.5rem;
+        color: #64748b;
+        border-radius: 4px;
+        transition:
+            background-color 0.2s ease,
+            color 0.2s ease;
     }
 
     .close-button:hover {
-        background-color: #e0e0e0;
-        color: #333;
+        background: #e2e8f0;
+        color: #1e293b;
     }
 
     .modal-body {
         padding: 1.5rem;
-        max-height: 60vh;
         overflow-y: auto;
+        flex: 1;
     }
 
-    .settings-group {
-        margin-bottom: 1rem;
-        border: 1px solid #e8e8e8;
-        border-radius: 4px;
+    .settings-section {
+        margin-bottom: 1.5rem;
     }
 
-    .group-toggle {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0.75rem 1rem;
-        background-color: #fafafa;
-        border: none;
-        border-bottom: 1px solid #e8e8e8;
-        cursor: pointer;
+    .settings-section:last-child {
+        margin-bottom: 0;
+    }
+
+    .settings-section h3 {
+        margin: 0 0 0.75rem 0;
         font-size: 1rem;
         font-weight: 600;
-        color: #333;
-        transition: background-color 0.2s ease;
-        width: 100%;
-        text-align: left;
+        color: #334155;
     }
 
-    .group-toggle:hover {
-        background-color: #f0f0f0;
+    .section-description {
+        margin: 0 0 1rem 0;
+        font-size: 0.875rem;
+        color: #64748b;
+        line-height: 1.5;
     }
 
-    .group-toggle span:first-child {
-        text-align: left;
+    .section-divider {
+        border: none;
+        height: 1px;
+        background: #e2e8f0;
+        margin: 1.5rem 0;
     }
 
-    .toggle-icon {
-        font-size: 0.75rem;
-        transition: transform 0.3s ease;
-        display: inline-block;
-    }
-
-    .toggle-icon.collapsed {
-        transform: rotate(-90deg);
-    }
-
-    .group-content {
-        overflow: hidden;
-        background-color: #fff;
-        padding: 0 1rem;
-    }
-
-    .group-content .setting-item:first-child {
-        border-top: none;
-    }
-
-    .group-content .setting-item:last-child {
-        border-bottom: none;
-    }
-
-    .setting-item {
+    .setting-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 1rem 0;
-        border-bottom: 1px solid #f0f0f0;
-    }
-
-    .setting-item:last-child {
-        border-bottom: none;
-        padding-bottom: 0;
-    }
-
-    .setting-item:first-child {
-        padding-top: 0;
+        gap: 1rem;
+        padding: 0.75rem 0;
     }
 
     .setting-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
         flex: 1;
-        margin-right: 1rem;
     }
 
     .setting-label {
-        display: block;
-        font-weight: 600;
-        color: #333;
-        font-size: 0.9rem;
-        margin-bottom: 0.25rem;
+        font-weight: 500;
+        color: #334155;
     }
 
     .setting-description {
-        margin: 0;
-        color: #666;
-        font-size: 0.85rem;
-        line-height: 1.4;
+        font-size: 0.875rem;
+        color: #64748b;
     }
 
-    .setting-control {
+    /* Theme Cycle Button */
+    .theme-cycle-button {
         display: flex;
         align-items: center;
-    }
-
-    /* Toggle button switch */
-    .toggle-button {
-        position: relative;
-        width: 48px;
-        height: 26px;
-        border: none;
-        border-radius: 13px;
-        background-color: #bfbfbf;
-        cursor: pointer;
-        transition: background-color 0.3s ease;
-        padding: 0;
-    }
-
-
-
-    .toggle-button[aria-checked="true"] {
-        background-color: #52c41a;
-    }
-
-    .toggle-slider {
-        position: absolute;
-        top: 3px;
-        left: 3px;
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        background-color: white;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        transition: transform 0.3s ease;
-    }
-
-    .toggle-button[aria-checked="true"] .toggle-slider {
-        transform: translateX(22px);
-    }
-
-    /* Segmented Control */
-    .segmented-control {
-        display: flex;
-        border: 1px solid #d9d9d9;
-        border-radius: 4px;
-        overflow: hidden;
-        background-color: white;
-    }
-
-    .segmented-button {
-        flex: 1;
+        gap: 0.5rem;
         padding: 0.5rem 1rem;
-        border: none;
-        background-color: white;
-        color: #666;
-        font-size: 0.85rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        background: white;
+        cursor: pointer;
+        transition:
+            border-color 0.2s ease,
+            background-color 0.2s ease;
+        font-size: 0.875rem;
         font-weight: 500;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        white-space: nowrap;
+        min-width: 120px;
+        justify-content: center;
     }
 
-    .segmented-button:first-child {
-        border-right: 1px solid #d9d9d9;
+    .theme-cycle-button:hover {
+        border-color: #475569;
+        background: #f8fafc;
     }
 
-    .segmented-button:hover {
-        background-color: #f0f0f0;
-        color: #333;
+    .theme-cycle-button:active {
+        background: #e2e8f0;
     }
 
-    .segmented-button.segmented-button-active {
-        background-color: #1890ff;
-        color: white;
-        font-weight: 600;
+    .theme-icon {
+        font-size: 1rem;
     }
 
-    .segmented-button.segmented-button-active:hover {
-        background-color: #40a9ff;
+    .theme-label {
+        color: #334155;
     }
 
-
-
-    /* Select dropdown */
-    .setting-select {
-        padding: 0.5rem 2rem 0.5rem 0.75rem;
-        border: 1px solid #d9d9d9;
-        border-radius: 4px;
-        background-color: white;
-        color: #333;
-        font-size: 0.9rem;
-        cursor: pointer;
-        min-width: 200px;
-        transition: border-color 0.2s ease;
-        appearance: none;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
-        background-repeat: no-repeat;
-        background-position: right 0.75rem center;
-    }
-
-    .setting-select:hover {
-        border-color: #40a9ff;
-    }
-
-    /* Number input */
-    .setting-input {
-        padding: 0.5rem 0.75rem;
-        border: 1px solid #d9d9d9;
-        border-radius: 4px;
-        background-color: white;
-        color: #333;
-        font-size: 0.9rem;
-        width: 80px;
+    .target-days-input {
+        width: 70px;
+        padding: 0.5rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 1rem;
+        text-align: center;
         transition: border-color 0.2s ease;
     }
 
-    .setting-input:hover {
-        border-color: #40a9ff;
+    .target-days-input:focus {
+        outline: none;
+        border-color: #475569;
     }
 
-    .setting-input:disabled {
-        background-color: #f5f5f5;
-        cursor: not-allowed;
-    }
-
-    /* Pattern Selector */
-    .pattern-selector-container {
-        flex: 1;
-        max-width: 400px;
-    }
-
-    .pattern-selector {
+    .radio-group {
         display: flex;
         flex-direction: column;
         gap: 0.75rem;
-        padding: 0.75rem;
-        background-color: #fafafa;
-        border: 1px solid #e8e8e8;
-        border-radius: 4px;
     }
 
-    .pattern-header {
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: #333;
-    }
-
-    .pattern-days-row {
+    .radio-label {
         display: flex;
-        justify-content: space-between;
-        gap: 0.25rem;
-    }
-
-    .pattern-day {
-        flex: 1;
-        padding: 0.5rem 0.25rem;
-        border: 1px solid #d9d9d9;
-        border-radius: 4px;
-        background-color: white;
-        color: #333;
-        font-size: 0.8rem;
-        font-weight: 500;
+        align-items: flex-start;
+        gap: 0.75rem;
         cursor: pointer;
-        transition: all 0.2s ease;
-        text-align: center;
+        padding: 0.5rem;
+        border-radius: 6px;
+        transition: background-color 0.2s ease;
     }
 
-    .pattern-day:hover {
-        background-color: #f0f0f0;
-        border-color: #40a9ff;
+    .radio-label:hover {
+        background: #f8fafc;
     }
 
-    .pattern-day[aria-pressed="true"] {
-        background-color: #e6f7ff;
-        border-color: #1890ff;
-        color: #1890ff;
-        font-weight: 600;
+    .radio-label input[type='radio'] {
+        margin-top: 0.25rem;
+        cursor: pointer;
     }
 
-    .pattern-day[aria-pressed="true"]:hover {
-        background-color: #bae7ff;
-    }
-
-    .pattern-actions {
+    .radio-text {
         display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        font-size: 0.875rem;
+        color: #475569;
+        line-height: 1.4;
+    }
+
+    .week-labels-container {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .add-label-row {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .week-select {
+        flex: 1;
+        padding: 0.5rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        background: white;
+        min-width: 140px;
+    }
+
+    .week-label-input {
+        flex: 2;
+        padding: 0.5rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 0.875rem;
+    }
+
+    .add-label-button {
+        padding: 0.5rem 1rem;
+        background: #475569;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 500;
+        white-space: nowrap;
+        transition: background-color 0.2s ease;
+    }
+
+    .add-label-button:hover {
+        background: #334155;
+    }
+
+    .labels-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
         gap: 0.5rem;
     }
 
-    .pattern-actions .button {
-        flex: 1;
-        padding: 0.4rem 0.75rem;
-        font-size: 0.85rem;
-    }
-
-    .pattern-status {
-        font-size: 0.8rem;
-        color: #666;
-        text-align: center;
-        padding: 0.25rem;
-        border-radius: 2px;
-    }
-
-    .pattern-status.valid {
-        color: #52c41a;
-        background-color: #f6ffed;
-    }
-
-    .pattern-status.invalid {
-        color: #ff4d4f;
-        background-color: #fff1f0;
-    }
-
-    /* Modal footer */
-    .modal-footer {
-        display: flex;
-        justify-content: flex-end;
-        gap: 0.75rem;
-        padding: 1rem 1.5rem;
-        border-top: 1px solid #e8e8e8;
-        background-color: #fafafa;
-    }
-
-    .button {
-        padding: 0.5rem 1.25rem;
-        border: none;
-        border-radius: 4px;
-        font-size: 0.9rem;
-        font-weight: 600;
+    .action-button {
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-weight: 500;
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition:
+            background-color 0.2s ease,
+            border-color 0.2s ease;
     }
 
-    .button-primary {
-        background-color: #1890ff;
-        color: white;
+    .action-button.secondary {
+        background: white;
+        border: 2px solid #e2e8f0;
+        color: #475569;
     }
 
-    .button-primary:hover {
-        background-color: #40a9ff;
+    .action-button.secondary:hover {
+        background: #f8fafc;
+        border-color: #475569;
     }
 
-    .button-secondary {
-        background-color: #f0f0f0;
-        color: #333;
-        border: 1px solid #d9d9d9;
-    }
-
-    .button-secondary:hover {
-        background-color: #fafafa;
-        border-color: #40a9ff;
-    }
-
-    .button:active {
-        transform: scale(0.98);
-    }
-
-    /* Responsive adjustments */
-    @media (max-width: 768px) {
+    @media (max-width: 480px) {
         .settings-modal {
             width: 95vw;
-            max-width: none;
+            max-height: 90vh;
+            margin: 0;
+            border-radius: 12px;
         }
 
-        .modal-header,
-        .modal-body,
-        .modal-footer {
-            padding: 1rem;
-        }
-
-        .setting-item {
+        .setting-row {
             flex-direction: column;
             align-items: flex-start;
+            gap: 0.75rem;
         }
 
-        .setting-info {
-            margin-right: 0;
-            margin-bottom: 0.75rem;
-        }
-
-        .setting-control {
-            width: 100%;
-        }
-
-        .setting-select {
-            width: 100%;
-        }
-
-        .setting-input {
-            width: 100%;
-        }
-
-        .modal-footer {
+        .add-label-row {
             flex-direction: column;
+            align-items: stretch;
         }
 
-        .button {
+        .week-select,
+        .week-label-input,
+        .add-label-button {
             width: 100%;
         }
+
+        .theme-cycle-button {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+
+    /* Dark mode styles */
+    :global(body.dark-mode) .modal-header {
+        background: #1e293b;
+        border-bottom-color: #334155;
+    }
+
+    :global(body.dark-mode) .modal-header h2 {
+        color: #f1f5f9;
+    }
+
+    :global(body.dark-mode) .close-button {
+        color: #94a3b8;
+    }
+
+    :global(body.dark-mode) .close-button:hover {
+        background: #334155;
+        color: #f1f5f9;
+    }
+
+    :global(body.dark-mode) .settings-section h3 {
+        color: #e2e8f0;
+    }
+
+    :global(body.dark-mode) .section-description,
+    :global(body.dark-mode) .setting-description {
+        color: #94a3b8;
+    }
+
+    :global(body.dark-mode) .section-divider {
+        background: #334155;
+    }
+
+    :global(body.dark-mode) .setting-label {
+        color: #e2e8f0;
+    }
+
+    :global(body.dark-mode) .theme-cycle-button {
+        background: #1e293b;
+        border-color: #334155;
+    }
+
+    :global(body.dark-mode) .theme-cycle-button:hover {
+        border-color: #64748b;
+        background: #334155;
+    }
+
+    :global(body.dark-mode) .theme-label {
+        color: #e2e8f0;
+    }
+
+    :global(body.dark-mode) .target-days-input,
+    :global(body.dark-mode) .week-select,
+    :global(body.dark-mode) .week-label-input {
+        background: #1e293b;
+        border-color: #334155;
+        color: #e2e8f0;
+    }
+
+    :global(body.dark-mode) .radio-text {
+        color: #cbd5e1;
+    }
+
+    :global(body.dark-mode) .radio-label:hover {
+        background: #334155;
+    }
+
+    :global(body.dark-mode) .action-button.secondary {
+        background: #1e293b;
+        border-color: #334155;
+        color: #cbd5e1;
+    }
+
+    :global(body.dark-mode) .action-button.secondary:hover {
+        background: #334155;
+        border-color: #64748b;
+    }
+
+    :global(body.dark-mode) .add-label-button {
+        background: #64748b;
+    }
+
+    :global(body.dark-mode) .add-label-button:hover {
+        background: #94a3b8;
     }
 </style>
 
 <script>
-    import '../scripts/settings-modal';
+    import { settingsManager } from '../scripts/settings-modal';
+    import { cycleTheme, getCurrentTheme, getThemeManager } from '../lib/themeManager';
+
+    const dialog = document.getElementById('settings-dialog') as HTMLDialogElement;
+    const closeButton = dialog?.querySelector('.close-button');
+    const themeCycleButton = document.getElementById('theme-cycle-button');
+    const themeIcon = document.getElementById('theme-icon');
+    const themeLabel = document.getElementById('theme-label');
+
+    const THEME_ICONS: Record<string, string> = {
+        system: '🖥️',
+        light: '☀️',
+        dark: '🌙',
+    };
+
+    const THEME_LABELS: Record<string, string> = {
+        system: 'System',
+        light: 'Light',
+        dark: 'Dark',
+    };
+
+    function updateThemeDisplay(theme: string): void {
+        if (themeIcon) {
+            themeIcon.textContent = THEME_ICONS[theme] || '🖥️';
+        }
+        if (themeLabel) {
+            themeLabel.textContent = THEME_LABELS[theme] || 'System';
+        }
+    }
+
+    // Subscribe to theme changes
+    const themeManager = getThemeManager();
+    themeManager.subscribe((state) => {
+        updateThemeDisplay(state.currentTheme);
+    });
+
+    // Initialize display
+    updateThemeDisplay(getCurrentTheme());
+
+    // Handle theme cycling
+    themeCycleButton?.addEventListener('click', () => {
+        cycleTheme();
+    });
+
+    // Modal open/close
+    closeButton?.addEventListener('click', () => {
+        dialog.close();
+    });
+
+    dialog?.addEventListener('click', (e) => {
+        if (e.target === dialog) {
+            dialog.close();
+        }
+    });
+
+    // Initialize settings
+    if (settingsManager) {
+        settingsManager.initialize();
+    }
 </script>
