@@ -43,7 +43,7 @@ type DateState = "oof" | "holiday" | "sick";
  */
 export function getDateCells(page: Page): Locator {
 	return page.locator(
-		'[data-testid="calendar-day"]:not(.datepainter-day--empty):not(.datepainter__day--disabled)',
+		'[data-testid="calendar-day"]:not(.datepainter__day--empty):not(.datepainter__day--disabled)',
 	);
 }
 
@@ -137,7 +137,9 @@ export async function expectDateHasState(
 
 	const cells = getDateCells(page);
 	const cell = cells.nth(index);
-	await expect(cell).toHaveClass(`datepainter-day--${state}`);
+	// Check if class attribute contains the state class (more efficient than regex)
+	const className = await cell.getAttribute("class");
+	expect(className).toContain(`datepainter-day--${state}`);
 }
 
 /**

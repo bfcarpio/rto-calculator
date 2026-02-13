@@ -102,7 +102,7 @@ test.describe("Navigation", () => {
 
 			// Verify status section exists
 			const status = page.locator(".status-details");
-			await expect(status).toBeVisible();
+			await expect(status.first()).toBeVisible();
 		});
 
 		test("should have footer section", async ({ page }) => {

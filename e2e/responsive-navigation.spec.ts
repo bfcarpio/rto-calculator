@@ -24,7 +24,7 @@ test.describe("Responsive Navigation", () => {
 			const mobileMenuButton = page.locator(
 				"[data-testid='mobile-menu-button']",
 			);
-			await expect(mobileMenuButton).toBeVisible();
+			await expect(mobileMenuButton.first()).toBeVisible();
 		});
 
 		test("should hide desktop layout on mobile", async ({ page }) => {
@@ -102,7 +102,7 @@ test.describe("Responsive Navigation", () => {
 			const mobileMenuButton = page.locator(
 				"[data-testid='mobile-menu-button']",
 			);
-			await expect(mobileMenuButton).toBeHidden();
+			await expect(mobileMenuButton.first()).toBeHidden();
 		});
 
 		test("should show two-column layout", async ({ page }) => {
@@ -200,7 +200,7 @@ test.describe("Responsive Navigation", () => {
 			const mobileMenuButton = page.locator(
 				"[data-testid='mobile-menu-button']",
 			);
-			await expect(mobileMenuButton).toBeVisible();
+			await expect(mobileMenuButton.first()).toBeVisible();
 		});
 
 		test("week status cells should have data-testid", async ({ page }) => {

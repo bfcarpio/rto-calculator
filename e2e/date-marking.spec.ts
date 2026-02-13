@@ -16,7 +16,7 @@ test.describe("Date Marking Flows", () => {
 		// Wait for calendar to be ready (datepainter)
 		// Wait for enabled cells only (exclude empty and disabled)
 		await page.waitForSelector(
-			'[data-testid="calendar-day"]:not(.datepainter-day--empty):not(.datepainter__day--disabled)',
+			'[data-testid="calendar-day"]:not(.datepainter__day--empty):not(.datepainter__day--disabled)',
 			{
 				state: "visible",
 			},

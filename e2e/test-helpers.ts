@@ -210,7 +210,7 @@ export async function selectWorkFromHomeDays(
 ): Promise<void> {
 	// Get all calendar day cells (exclude empty and disabled)
 	const dayCells = page.locator(
-		'[data-testid="calendar-day"]:not(.datepainter-day--empty):not(.datepainter__day--disabled)',
+		'[data-testid="calendar-day"]:not(.datepainter__day--empty):not(.datepainter__day--disabled)',
 	);
 	const visibleCells = await dayCells.all();
 

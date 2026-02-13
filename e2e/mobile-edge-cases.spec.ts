@@ -13,7 +13,7 @@ test.describe("Mobile Edge Cases", () => {
 		await navigateToApp(page);
 		// Wait for calendar to be ready (datepainter)
 		await page.waitForSelector(
-			'[data-testid="calendar-day"]:not(.datepainter-day--empty):not(.datepainter__day--disabled)',
+			'[data-testid="calendar-day"]:not(.datepainter__day--empty):not(.datepainter__day--disabled)',
 			{
 				state: "visible",
 			},
@@ -31,7 +31,7 @@ test.describe("Mobile Edge Cases", () => {
 		// Simulate touch tap on a date
 		const dateCell = page
 			.locator(
-				'[data-testid="calendar-day"]:not(.datepainter-day--empty):not(.datepainter__day--disabled)',
+				'[data-testid="calendar-day"]:not(.datepainter__day--empty):not(.datepainter__day--disabled)',
 			)
 			.first();
 		await dateCell.tap();
@@ -55,7 +55,7 @@ test.describe("Mobile Edge Cases", () => {
 		await selectMode(page, "holiday");
 
 		const dateCells = page.locator(
-			'[data-testid="calendar-day"]:not(.datepainter-day--empty):not(.datepainter__day--disabled)',
+			'[data-testid="calendar-day"]:not(.datepainter__day--empty):not(.datepainter__day--disabled)',
 		);
 
 		// Rapid taps on different dates

@@ -14,7 +14,7 @@ test.describe("Validation Flows", () => {
 	test.beforeEach(async ({ page }) => {
 		await navigateToApp(page);
 		await page.waitForSelector(
-			'[data-testid="calendar-day"]:not(.datepainter-day--empty):not(.datepainter__day--disabled)',
+			'[data-testid="calendar-day"]:not(.datepainter__day--empty):not(.datepainter__day--disabled)',
 			{ state: "visible" },
 		);
 	});
