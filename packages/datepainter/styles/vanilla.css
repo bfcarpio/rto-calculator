@@ -12,7 +12,9 @@
 
 /* Apply reset globally for vanilla usage */
 .datepainter {
-	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+	font-family:
+		-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
+		Cantarell, sans-serif;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 }
@@ -31,66 +33,121 @@
 }
 
 /* ============================================
-   Responsive Grid System (Mobile First)
+   Responsive Grid System (Mobile First - Compact Default)
    ============================================ */
 
-/* Base: Single column for mobile */
-@media (max-width: 480px) {
+/* Base: Compact sizing (mobile) - 28px cells, 12px font */
+.datepainter__day {
+	min-height: 28px;
+	font-size: 12px;
+}
+
+.datepainter__weekday {
+	font-size: 0.6rem;
+	padding: 2px;
+}
+
+.datepainter__month-label {
+	font-size: 0.875rem;
+	padding: 0.25rem;
+}
+
+/* Desktop: Slightly larger (32px cells, 13px font) */
+@media (min-width: 768px) {
 	.datepainter__day {
 		min-height: 32px;
-		font-size: 0.75rem;
+		font-size: 13px;
 	}
 
 	.datepainter__weekday {
-		font-size: 0.7rem;
-		padding: 4px;
-	}
-
-	.datepainter__month-label {
-		font-size: 1rem;
-		padding: 8px;
-	}
-
-	.datepainter-day__icon {
-		font-size: 0.7em;
+		font-size: 0.6rem;
+		padding: 3px;
 	}
 }
 
-/* Tablet: Adjusted spacing */
-@media (min-width: 481px) and (max-width: 768px) {
-	.datepainter__day {
-		min-height: 40px;
-		font-size: 0.875rem;
-	}
+/* ============================================
+   Navigation Controls
+   ============================================ */
 
-	.datepainter__weekday {
-		font-size: 0.75rem;
-	}
+/* Navigation bar with buttons and month label */
+.datepainter__nav {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0.5rem 0.75rem;
+	margin-bottom: 0.5rem;
 }
 
-/* Desktop: Standard sizing */
-@media (min-width: 769px) {
-	.datepainter__day {
-		min-height: 48px;
-		font-size: 1rem;
-	}
-
-	.datepainter__weekday {
-		font-size: 0.875rem;
-		padding: 12px;
-	}
+/* Navigation buttons */
+.datepainter__nav-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	padding: 0;
+	border: none;
+	background-color: transparent;
+	color: var(--datepainter-primary, #475569);
+	border-radius: 4px;
+	cursor: pointer;
+	transition: all 150ms ease-out;
+	font-size: 1.25rem;
+	line-height: 1;
 }
 
-/* Large Desktop: More spacious */
-@media (min-width: 1200px) {
-	.datepainter__day {
-		min-height: 56px;
-		font-size: 1.125rem;
-	}
+.datepainter__nav-btn:hover:not(:disabled) {
+	background-color: var(--datepainter-primary-light, #e2e8f0);
+}
 
-	.datepainter__month-label {
-		font-size: 1.5rem;
-	}
+.datepainter__nav-btn:active:not(:disabled) {
+	transform: scale(0.95);
+}
+
+.datepainter__nav-btn:focus {
+	outline: 2px solid var(--datepainter-primary, #475569);
+	outline-offset: 2px;
+}
+
+/* Disabled state - when at date range boundaries */
+.datepainter__nav-btn:disabled {
+	opacity: 0.3;
+	cursor: not-allowed;
+}
+
+/* Dark mode navigation buttons */
+body.dark-mode .datepainter__nav-btn {
+	color: var(--datepainter-text-muted, #94a3b8);
+}
+
+body.dark-mode .datepainter__nav-btn:hover:not(:disabled) {
+	background-color: var(--datepainter-primary, #475569);
+}
+
+body.dark-mode .datepainter__nav-btn:focus {
+	outline-color: var(--datepainter-primary, #94a3b8);
+}
+
+/* Month label in navigation */
+.datepainter__month-label {
+	font-size: 0.875rem;
+	font-weight: 600;
+	text-align: center;
+	color: var(--datepainter-text, #1e293b);
+}
+
+body.dark-mode .datepainter__month-label {
+	color: var(--datepainter-text-light, #f1f5f9);
+}
+
+/* ============================================
+   Day Cell Variants (Vanilla)
+   ============================================ */
+
+/* Padding days from previous/next month */
+.datepainter-day--padding {
+	opacity: 0.4;
+	pointer-events: none;
 }
 
 /* ============================================
@@ -283,7 +340,8 @@
 /* Keyboard focus styles */
 .datepainter__day:focus {
 	outline: none;
-	box-shadow: 0 0 0 2px var(--datepainter-bg, #ffffff),
+	box-shadow:
+		0 0 0 2px var(--datepainter-bg, #ffffff),
 		0 0 0 4px var(--datepainter-focus, #475569);
 }
 
@@ -315,7 +373,8 @@
 
 /* Shake animation for invalid selection */
 @keyframes datepainter-shake {
-	0%, 100% {
+	0%,
+	100% {
 		transform: translateX(0);
 	}
 	25% {
@@ -346,20 +405,7 @@
 	max-width: none;
 }
 
-/* Compact mode */
-.datepainter--compact .datepainter__day {
-	min-height: 32px;
-	font-size: 0.75rem;
-}
-
-.datepainter--compact .datepainter__weekday {
-	font-size: 0.7rem;
-	padding: 4px;
-}
-
-.datepainter--compact .datepainter__month-label {
-	font-size: 0.875rem;
-}
+/* Compact mode is now the default - modifier class no longer needed */
 
 /* ============================================
    Accessibility (Vanilla)
