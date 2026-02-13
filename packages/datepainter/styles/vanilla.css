@@ -28,7 +28,7 @@
 	display: flex;
 	flex-direction: column;
 	gap: var(--datepainter-month-gap, 1rem);
-	max-width: 100%;
+	width: 280px;
 	margin: 0 auto;
 }
 
@@ -38,7 +38,7 @@
 
 /* Base: Compact sizing (mobile) - 28px cells, 12px font */
 .datepainter__day {
-	min-height: 28px;
+	height: 32px;
 	font-size: 12px;
 }
 
@@ -55,7 +55,6 @@
 /* Desktop: Slightly larger (32px cells, 13px font) */
 @media (min-width: 768px) {
 	.datepainter__day {
-		min-height: 32px;
 		font-size: 13px;
 	}
 
@@ -196,6 +195,57 @@ body.dark-mode .datepainter__month-label {
 	opacity: 0.5;
 	cursor: not-allowed;
 	background-color: var(--datepainter-bg-past, #94a3b8);
+}
+
+/* ============================================
+   State Styles (Vanilla - BEM)
+   ============================================ */
+
+/* OOF state - Red */
+.datepainter-day--oof {
+	background-color: #f5222d !important;
+	color: white !important;
+	border-color: #dc2626 !important;
+}
+
+/* Holiday state - Yellow/Amber */
+.datepainter-day--holiday {
+	background-color: #faad14 !important;
+	color: white !important;
+	border-color: #d97706 !important;
+}
+
+/* Sick state - Blue */
+.datepainter-day--sick {
+	background-color: #1890ff !important;
+	color: white !important;
+	border-color: #096dd9 !important;
+}
+
+/* Icon positioning */
+.datepainter-day__icon {
+	position: absolute;
+	bottom: 1px;
+	right: 1px;
+	font-size: 0.6em;
+	opacity: 0.8;
+	pointer-events: none;
+}
+
+/* Icon positioning variations */
+.datepainter-day--oof .datepainter-day__icon {
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	bottom: auto;
+	right: auto;
+}
+
+.datepainter-day--holiday .datepainter-day__icon {
+	top: 1px;
+	left: 1px;
+	bottom: auto;
+	right: auto;
 }
 
 .datepainter__day--past:hover {
