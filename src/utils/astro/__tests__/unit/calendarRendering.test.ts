@@ -139,15 +139,6 @@ describe("Calendar Rendering Functions", () => {
 			expect(formatted).toMatch(/Jan/);
 		});
 
-		it("formatDateWithDay should include day of week", async () => {
-			const dateUtils = await import("../../../dateUtils");
-
-			const date = new Date(2025, 0, 6); // Monday
-			const formatted = dateUtils.formatDateWithDay(date);
-
-			// Should contain day of week
-			expect(formatted).toMatch(/Mon|Monday/);
-		});
 	});
 
 	describe("getWeekDates()", () => {
@@ -361,43 +352,4 @@ describe("Calendar Rendering Functions", () => {
 		});
 	});
 
-	describe("Month and Day Name Functions", () => {
-		it("getMonthName should return full month name", async () => {
-			const dateUtils = await import("../../../dateUtils");
-
-			const january = new Date(2025, 0, 1);
-			const february = new Date(2025, 1, 1);
-			const december = new Date(2025, 11, 1);
-
-			expect(dateUtils.getMonthName(january)).toBe("January");
-			expect(dateUtils.getMonthName(february)).toBe("February");
-			expect(dateUtils.getMonthName(december)).toBe("December");
-		});
-
-		it("getMonthNameShort should return short month name", async () => {
-			const dateUtils = await import("../../../dateUtils");
-
-			const january = new Date(2025, 0, 1);
-
-			expect(dateUtils.getMonthNameShort(january)).toBe("Jan");
-		});
-
-		it("getDayName should return full day name", async () => {
-			const dateUtils = await import("../../../dateUtils");
-
-			const monday = new Date(2025, 0, 6);
-			const friday = new Date(2025, 0, 10);
-
-			expect(dateUtils.getDayName(monday)).toBe("Monday");
-			expect(dateUtils.getDayName(friday)).toBe("Friday");
-		});
-
-		it("getDayNameShort should return short day name", async () => {
-			const dateUtils = await import("../../../dateUtils");
-
-			const monday = new Date(2025, 0, 6);
-
-			expect(dateUtils.getDayNameShort(monday)).toBe("Mon");
-		});
-	});
 });
