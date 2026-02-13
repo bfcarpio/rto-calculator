@@ -68,16 +68,14 @@ export function getWeekdayLabels(
 	locale: string = "en-US",
 	firstDayOfWeek: number = 0,
 ): string[] {
-	const date = new Date();
+	// Use a known Sunday as reference (Jan 4, 2026 is a Sunday)
+	const refSunday = new Date(2026, 0, 4);
 	const weekdays: string[] = [];
 
 	for (let i = 0; i < 7; i++) {
 		const dayIndex = (firstDayOfWeek + i) % 7;
-		const tempDate = new Date(
-			date.getFullYear(),
-			date.getMonth(),
-			dayIndex + 1 - date.getDay(),
-		);
+		const tempDate = new Date(refSunday);
+		tempDate.setDate(refSunday.getDate() + dayIndex);
 		const label = new Intl.DateTimeFormat(locale, { weekday: "short" }).format(
 			tempDate,
 		);
