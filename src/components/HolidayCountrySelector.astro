@@ -17,6 +17,9 @@
     <select id="country-select" class="holiday-drawer__select">
       <option value="">Select a country...</option>
     </select>
+    <select id="company-select" class="holiday-drawer__select holiday-drawer__select--company" style="display: none;">
+      <option value="">All public holidays</option>
+    </select>
     <div id="holiday-status" class="holiday-drawer__status"></div>
   </div>
 </details>
@@ -104,6 +107,10 @@
     cursor: pointer;
   }
 
+  .holiday-drawer__select--company {
+    margin-top: 0.5rem;
+  }
+
   .holiday-drawer__select:disabled {
     background: #f1f5f9;
     color: #94a3b8;
@@ -178,6 +185,7 @@
   const autoAddedHolidays = new Set<DateString>();
 
   const countrySelect = document.getElementById('country-select') as HTMLSelectElement;
+  const companySelect = document.getElementById('company-select') as HTMLSelectElement;
   const statusDiv = document.getElementById('holiday-status') as HTMLElement;
 
   // Populate dropdown from shared COUNTRIES list
@@ -196,7 +204,27 @@
     }
   }
 
-  async function handleCountryChange(countryCode: string): Promise<void> {
+  function populateCompanySelect(companies: string[]): void {
+    // Remove all options except the first "All public holidays"
+    while (companySelect.options.length > 1) {
+      companySelect.remove(1);
+    }
+    for (const name of companies) {
+      const option = document.createElement('option');
+      option.value = name;
+      option.textContent = name;
+      companySelect.appendChild(option);
+    }
+    companySelect.value = '';
+    companySelect.style.display = '';
+  }
+
+  function hideCompanySelect(): void {
+    companySelect.style.display = 'none';
+    companySelect.value = '';
+  }
+
+  async function fetchAndApplyHolidays(countryCode: string, companyName: string): Promise<void> {
     const calendarManager = (window as any).__datepainterInstance as CalendarInstance | null;
     if (!calendarManager) {
       setStatus('Calendar not ready. Please try again.', 'error');
@@ -222,6 +250,7 @@
 
     setStatus('Fetching holidays...', 'loading');
     countrySelect.disabled = true;
+    companySelect.disabled = true;
 
     try {
       const range = getDateRange();
@@ -236,7 +265,11 @@
       const rangeEnd = formatDateISO(range.endDate);
 
       const manager = await getHolidayManager();
-      const result = await manager.fetchHolidays({ countryCode, years });
+      const fetchOptions: { countryCode: string; years: number[]; companyName?: string } = { countryCode, years };
+      if (companyName) {
+        fetchOptions.companyName = companyName;
+      }
+      const result = await manager.fetchHolidays(fetchOptions);
 
       const datesToAdd: DateString[] = [];
       for (const holiday of result.holidays) {
@@ -265,10 +298,36 @@
       setStatus('Failed to fetch holidays. Please try again.', 'error');
     } finally {
       countrySelect.disabled = false;
+      companySelect.disabled = false;
     }
+  }
+
+  async function handleCountryChange(countryCode: string): Promise<void> {
+    if (!countryCode) {
+      hideCompanySelect();
+      await fetchAndApplyHolidays('', '');
+      return;
+    }
+
+    const manager = await getHolidayManager();
+    const companies = manager.getAvailableCompanies(countryCode);
+    if (companies.length > 0) {
+      populateCompanySelect(companies);
+    } else {
+      hideCompanySelect();
+    }
+
+    await fetchAndApplyHolidays(countryCode, '');
   }
 
   countrySelect.addEventListener('change', () => {
     handleCountryChange(countrySelect.value);
+  });
+
+  companySelect.addEventListener('change', () => {
+    const countryCode = countrySelect.value;
+    if (countryCode) {
+      fetchAndApplyHolidays(countryCode, companySelect.value);
+    }
   });
 </script>
