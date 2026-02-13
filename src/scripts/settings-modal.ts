@@ -8,7 +8,8 @@ interface Settings {
 	strategy: string;
 	minOfficeDays: number;
 	defaultPattern: number[] | null;
-	holidays: { countryCode: string | null };
+	holidays: { countryCode: string | null; holidaysAsOOF: boolean };
+	validationMode: "strict" | "average";
 }
 
 declare global {
@@ -42,6 +43,9 @@ class SettingsModal {
 	private clearPatternButton: HTMLElement | null = null;
 	private patternStatus: HTMLElement | null = null;
 	private selectedPattern: number[] = [];
+	private holidayOofToggle: HTMLButtonElement | null = null;
+	private validationModeStrictButton: HTMLButtonElement | null = null;
+	private validationModeAverageButton: HTMLButtonElement | null = null;
 
 	constructor() {
 		this.bindElements();
@@ -76,6 +80,15 @@ class SettingsModal {
 		this.patternSelector = document.getElementById("pattern-selector");
 		this.clearPatternButton = document.getElementById("clear-pattern-button");
 		this.patternStatus = document.getElementById("pattern-status");
+		this.holidayOofToggle = document.getElementById(
+			"holiday-oof-toggle",
+		) as HTMLButtonElement | null;
+		this.validationModeStrictButton = document.getElementById(
+			"validation-mode-strict",
+		) as HTMLButtonElement | null;
+		this.validationModeAverageButton = document.getElementById(
+			"validation-mode-average",
+		) as HTMLButtonElement | null;
 	}
 
 	private initializeEventListeners(): void {
@@ -123,6 +136,15 @@ class SettingsModal {
 		this.countrySelect?.addEventListener("change", (e) =>
 			this.onCountryChange(e),
 		);
+		this.holidayOofToggle?.addEventListener("click", () =>
+			this.toggleHolidayOofMode(),
+		);
+		this.validationModeStrictButton?.addEventListener("click", () =>
+			this.setValidationMode("strict"),
+		);
+		this.validationModeAverageButton?.addEventListener("click", () =>
+			this.setValidationMode("average"),
+		);
 	}
 
 	private toggleDebugMode(): void {
@@ -147,6 +169,47 @@ class SettingsModal {
 		debugLog(`[Settings] Data saving ${newState ? "enabled" : "disabled"}`);
 	}
 
+	private toggleHolidayOofMode(): void {
+		if (!this.holidayOofToggle) return;
+		const currentState =
+			this.holidayOofToggle.getAttribute("aria-checked") === "true";
+		const newState = !currentState;
+		this.holidayOofToggle.setAttribute("aria-checked", newState.toString());
+
+		debugLog(
+			`[Settings] Holiday OOF mode ${newState ? "enabled" : "disabled"}`,
+		);
+		document.dispatchEvent(
+			new CustomEvent("settings-changed", {
+				bubbles: true,
+				detail: { holidays: { holidaysAsOOF: newState } },
+			}),
+		);
+	}
+
+	private setValidationMode(mode: "strict" | "average"): void {
+		if (!this.validationModeStrictButton || !this.validationModeAverageButton)
+			return;
+
+		const isStrict = mode === "strict";
+		this.validationModeStrictButton.setAttribute(
+			"aria-pressed",
+			isStrict.toString(),
+		);
+		this.validationModeAverageButton.setAttribute(
+			"aria-pressed",
+			(!isStrict).toString(),
+		);
+
+		debugLog(`[Settings] Validation mode changed to: ${mode}`);
+		document.dispatchEvent(
+			new CustomEvent("settings-changed", {
+				bubbles: true,
+				detail: { validationMode: mode },
+			}),
+		);
+	}
+
 	private onStrategyChange(e: Event): void {
 		const strategy = (e.target as HTMLSelectElement).value;
 		debugLog(`[Settings] Strategy changed to: ${strategy}`);
@@ -163,12 +226,16 @@ class SettingsModal {
 
 	private onCountryChange(e: Event): void {
 		const countryCode = (e.target as HTMLSelectElement).value;
+		const holidaysAsOOF =
+			this.holidayOofToggle?.getAttribute("aria-checked") === "true";
 		debugLog(`[Settings] Country changed to: ${countryCode}`);
 
 		document.dispatchEvent(
 			new CustomEvent("settings-changed", {
 				bubbles: true,
-				detail: { holidays: { countryCode: countryCode || null } },
+				detail: {
+					holidays: { countryCode: countryCode || null, holidaysAsOOF },
+				},
 			}),
 		);
 	}
@@ -237,6 +304,24 @@ class SettingsModal {
 		if (this.countrySelect) {
 			this.countrySelect.value = "";
 		}
+
+		this.holidayOofToggle?.setAttribute("aria-checked", "true");
+		document.dispatchEvent(
+			new CustomEvent("settings-changed", {
+				bubbles: true,
+				detail: { holidays: { holidaysAsOOF: true } },
+			}),
+		);
+
+		this.validationModeStrictButton?.setAttribute("aria-pressed", "true");
+		this.validationModeAverageButton?.setAttribute("aria-pressed", "false");
+		document.dispatchEvent(
+			new CustomEvent("settings-changed", {
+				bubbles: true,
+				detail: { validationMode: "strict" },
+			}),
+		);
+
 		localStorage.removeItem("rto-calculator-settings");
 		debugLog("[Settings] Settings reset to defaults");
 
@@ -367,7 +452,15 @@ class SettingsModal {
 				: 3,
 			defaultPattern:
 				this.selectedPattern.length > 0 ? [...this.selectedPattern] : null,
-			holidays: { countryCode: this.countrySelect?.value ?? null },
+			holidays: {
+				countryCode: this.countrySelect?.value ?? null,
+				holidaysAsOOF:
+					this.holidayOofToggle?.getAttribute("aria-checked") === "true",
+			},
+			validationMode:
+				this.validationModeStrictButton?.getAttribute("aria-pressed") === "true"
+					? "strict"
+					: "average",
 		};
 
 		localStorage.setItem("rto-calculator-settings", JSON.stringify(settings));
@@ -423,6 +516,46 @@ class SettingsModal {
 
 			if (settings.holidays && this.countrySelect) {
 				this.countrySelect.value = settings.holidays.countryCode ?? "";
+			}
+
+			if (
+				settings.holidays?.holidaysAsOOF !== undefined &&
+				this.holidayOofToggle
+			) {
+				this.holidayOofToggle.setAttribute(
+					"aria-checked",
+					settings.holidays.holidaysAsOOF.toString(),
+				);
+				document.dispatchEvent(
+					new CustomEvent("settings-changed", {
+						bubbles: true,
+						detail: {
+							holidays: { holidaysAsOOF: settings.holidays.holidaysAsOOF },
+						},
+					}),
+				);
+			}
+
+			if (
+				settings.validationMode &&
+				this.validationModeStrictButton &&
+				this.validationModeAverageButton
+			) {
+				const isStrict = settings.validationMode === "strict";
+				this.validationModeStrictButton.setAttribute(
+					"aria-pressed",
+					isStrict.toString(),
+				);
+				this.validationModeAverageButton.setAttribute(
+					"aria-pressed",
+					(!isStrict).toString(),
+				);
+				document.dispatchEvent(
+					new CustomEvent("settings-changed", {
+						bubbles: true,
+						detail: { validationMode: settings.validationMode },
+					}),
+				);
 			}
 
 			debugLog("[Settings] Settings loaded from localStorage:", settings);
