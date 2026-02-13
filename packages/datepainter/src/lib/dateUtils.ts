@@ -39,8 +39,10 @@ export function formatDate(date: Date): DateString {
  * parseDate('2026-02-06'); // Date object for February 6, 2026
  * ```
  */
+const MIDNIGHT_REF = new Date(2000, 0, 1); // fixed midnight reference for parse()
+
 export function parseDate(dateStr: string): Date {
-	return parse(dateStr, "yyyy-MM-dd", new Date());
+	return parse(dateStr, "yyyy-MM-dd", MIDNIGHT_REF);
 }
 
 /**

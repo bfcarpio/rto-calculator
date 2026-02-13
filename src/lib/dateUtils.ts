@@ -20,6 +20,7 @@ import {
 } from "date-fns";
 import type { DateString } from "../types/calendar-types";
 
+const MIDNIGHT_REF = new Date(2000, 0, 1); // fixed midnight reference for parse()
 const WEEKS_BACK = 12;
 const WEEKS_FORWARD = 52;
 
@@ -82,7 +83,7 @@ export function parseDateISO(dateString: string): Date | null {
 	const match = dateString.match(/^\d{4}-\d{2}-\d{2}$/);
 	if (!match) return null;
 
-	const date = parse(dateString, "yyyy-MM-dd", new Date());
+	const date = parse(dateString, "yyyy-MM-dd", MIDNIGHT_REF);
 	if (!isValid(date)) return null;
 
 	// Validate round-trip (catches invalid dates like Feb 30)
@@ -95,7 +96,7 @@ export function parseDateISO(dateString: string): Date | null {
  * Parse ISO string to Date (throws on invalid input)
  */
 export function parseDate(dateStr: DateString): Date {
-	const date = parse(dateStr, "yyyy-MM-dd", new Date());
+	const date = parse(dateStr, "yyyy-MM-dd", MIDNIGHT_REF);
 	if (!isValid(date)) {
 		throw new Error(
 			`Invalid date string format: ${dateStr}. Expected YYYY-MM-DD.`,

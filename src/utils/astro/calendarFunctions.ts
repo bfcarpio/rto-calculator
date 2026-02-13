@@ -439,24 +439,17 @@ export function handleDayClick(event: Event): void {
  * @param event - The mouse down event
  */
 export function handleDayMouseDown(event: Event): void {
-	// Prevent default drag behavior (text selection, native drag)
-	event.preventDefault();
-	event.stopPropagation();
-
-	console.log("handleDayMouseDown triggered");
 	const target = event.target as HTMLElement;
-	console.log("Target class:", target.className);
 	if (!target.classList.contains("calendar-day")) return;
 
 	const dateStr = target.getAttribute("data-date");
 	if (!dateStr) return;
 
-	console.log("Starting drag on date:", dateStr);
+	// Only prevent default after confirming target is a calendar day cell
+	event.preventDefault();
+
 	if (dragSelectionManager) {
 		dragSelectionManager.startDrag(dateStr as DateString);
-		console.log("Drag started successfully");
-	} else {
-		console.log("ERROR: dragSelectionManager is null!");
 	}
 }
 
