@@ -1,5 +1,5 @@
-import { initializeHolidayIntegration } from "../lib/calendar-holiday-integration";
-import { initHolidayDataLoader } from "../lib/holiday-data-loader";
+import { initializeHolidayIntegration } from "../lib/holiday/CalendarHolidayIntegration";
+import { initHolidayDataLoader } from "../lib/holiday/HolidayDataLoader";
 import {
 	type CalendarEventManager,
 	initializeCalendarEvents,
@@ -10,12 +10,13 @@ import {
 	displayValidationResults,
 } from "../scripts/validation-result-display";
 import { setupEventListeners } from "../utils/astro/calendarFunctions";
-import "../scripts/rtoValidation";
+import "../scripts/rto-ui-controller";
+import type { ValidationResult } from "../types/validation-strategy";
 import { debugLog, getDebugEnabled } from "./debug";
 
 declare global {
 	interface Window {
-		displayValidationResults?: (validationResult: any) => void;
+		displayValidationResults?: (validationResult: ValidationResult) => void;
 		validationManager?: {
 			setDebugMode(enabled: boolean): void;
 			getDebugMode(): boolean;
@@ -65,7 +66,7 @@ export function initializeIndex() {
 		initializeCalendarEvents();
 	}
 
-	window.displayValidationResults = (validationResult: any) => {
+	window.displayValidationResults = (validationResult: ValidationResult) => {
 		displayValidationResults(validationResult);
 	};
 
@@ -94,12 +95,12 @@ export function initializeIndex() {
  * Removes event listeners and clears timers
  */
 export function cleanupIndex(): void {
-	const manager = (window as any).__calendarEventManager as
-		| CalendarEventManager
-		| undefined;
+	const manager = (window as { __calendarEventManager?: CalendarEventManager })
+		.__calendarEventManager;
 	if (manager) {
 		manager.destroy();
-		delete (window as any).__calendarEventManager;
+		delete (window as { __calendarEventManager?: CalendarEventManager })
+			.__calendarEventManager;
 		debugLog("[Index] Cleaned up calendar event manager");
 	}
 }

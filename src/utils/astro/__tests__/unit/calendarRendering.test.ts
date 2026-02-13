@@ -73,7 +73,7 @@ describe("Calendar Rendering Functions", () => {
 		it("should parse month key correctly", async () => {
 			const monthKey = "2025-0"; // January 2025
 			const parts = monthKey.split("-").map(Number);
-			const year = parts[0];
+			const year = parts[0]!;
 			const monthIndex = parts[1] ?? 0;
 
 			expect(year).toBe(2025);

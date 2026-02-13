@@ -29,7 +29,7 @@ import {
 	type RTOPolicyConfig,
 	// Main validation function
 	validateTop8Weeks,
-} from "../../../../lib/rtoValidation";
+} from "../../../../lib/validation/rto-core";
 // import { getISOWeekNumber } from "../../../utils/dateUtils";
 
 // Import fixtures for scenario testing
@@ -250,9 +250,9 @@ describe("groupDatesByWeek", () => {
 		const secondWeek = new Date(2025, 0, 13);
 		const thirdWeek = new Date(2025, 0, 20);
 
-		expect(result.get(firstWeek?.getTime())).toBe(2);
-		expect(result.get(secondWeek?.getTime())).toBe(1);
-		expect(result.get(thirdWeek?.getTime())).toBe(1);
+		expect(result.get(firstWeek.getTime())).toBe(2);
+		expect(result.get(secondWeek.getTime())).toBe(1);
+		expect(result.get(thirdWeek.getTime())).toBe(1);
 	});
 
 	it("should count multiple dates in same week", () => {
@@ -266,7 +266,7 @@ describe("groupDatesByWeek", () => {
 		const weekStart = new Date(2025, 0, 6);
 
 		expect(result.size).toBe(1);
-		expect(result.get(weekStart?.getTime())).toBe(3);
+		expect(result.get(weekStart.getTime())).toBe(3);
 	});
 
 	it("should return empty map for empty input", () => {
@@ -490,8 +490,8 @@ describe("elementToDaySelection", () => {
 		const result = elementToDaySelection(mockElement);
 
 		expect(result).not.toBeNull();
-		expect(result?.date).toEqual(new Date(2025, 0, 6));
-		expect(result?.selectionType).toBe("out-of-office");
+		expect(result!.date).toEqual(new Date(2025, 0, 6));
+		expect(result!.selectionType).toBe("out-of-office");
 	});
 
 	it("should return null for element without year", () => {
@@ -544,7 +544,7 @@ describe("elementToDaySelection", () => {
 		} as unknown as HTMLElement;
 
 		const result = elementToDaySelection(mockElement);
-		expect(result?.selectionType).toBe("none");
+		expect(result!.selectionType).toBe("none");
 	});
 
 	it("should handle empty dataset", () => {
