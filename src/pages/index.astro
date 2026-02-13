@@ -1,9 +1,10 @@
 ---
+import AirDatepicker from "../components/AirDatepicker.astro";
 import MobileMenu from "../components/MobileMenu.astro";
-import Month from "../components/month.astro";
 import PanelToggle from "../components/PanelToggle.astro";
 import SettingsModal from "../components/SettingsModal.astro";
 import StatusDetails from "../components/StatusDetails.astro";
+import StatusLegend from "../components/StatusLegend.astro";
 import SummaryBar from "../components/SummaryBar.astro";
 import Layout from "../layouts/Layout.astro";
 
@@ -11,11 +12,6 @@ import Layout from "../layouts/Layout.astro";
 const title = "RTO Calculator - Plan Your Time Off";
 const description =
 	"Plan your vacation for the next 365 days while ensuring compliance with RTO policies";
-
-// Get current date for single month display
-const now = new Date();
-const currentMonth = now.getMonth();
-const currentYear = now.getFullYear();
 ---
 
 <Layout title={title} description={description}>
@@ -42,7 +38,10 @@ const currentYear = now.getFullYear();
 				<!-- Calendar Section -->
 				<section class="section py-4" id="calendar-container">
 					<div class="box">
-						<Month month={currentMonth} year={currentYear} />
+						<AirDatepicker />
+						<div class="mt-4">
+							<StatusLegend />
+						</div>
 					</div>
 				</section>
 			</div>
@@ -64,7 +63,10 @@ const currentYear = now.getFullYear();
 
 		<PanelToggle title="📅 Calendar" open={false}>
 			<div class="box" id="calendar-container-mobile">
-				<Month month={currentMonth} year={currentYear} />
+				<AirDatepicker />
+				<div class="mt-4">
+					<StatusLegend />
+				</div>
 			</div>
 		</PanelToggle>
 	</div>
@@ -73,7 +75,7 @@ const currentYear = now.getFullYear();
 		<div class="content has-text-centered">
 			<p>RTO Calculator - Plan your time off while staying compliant</p>
 			<p class="is-size-7">
-				<small>Left-click for work from home, right-click for office day</small>
+				<small>Select a mode from the palette below, then click dates to mark them</small>
 			</p>
 		</div>
 	</footer>
@@ -110,3 +112,8 @@ const currentYear = now.getFullYear();
 		}
 	}
 </style>
+
+<script>
+	import { initializeDateStore } from "../lib/dateStore";
+	initializeDateStore();
+</script>

@@ -1,0 +1,165 @@
+---
+---
+
+<div class="datepicker-container">
+  <div id="air-datepicker" class="air-datepicker-inline"></div>
+</div>
+
+<style>
+  .datepicker-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+    width: 100%;
+  }
+
+  :global(.air-datepicker-inline) {
+    width: 100%;
+    max-width: 340px;
+  }
+
+  /* State color classes - applied to individual date cells */
+  :global(.air-datepicker-cell.-working-) {
+    background-color: var(--color-compliant) !important;
+    color: white !important;
+  }
+
+  :global(.air-datepicker-cell.-oof-) {
+    background-color: var(--color-violation) !important;
+    color: white !important;
+  }
+
+  :global(.air-datepicker-cell.-holiday-) {
+    background-color: var(--color-holiday) !important;
+    color: white !important;
+  }
+
+  /* Gray out dates outside range */
+  :global(.air-datepicker-cell.-disabled-) {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  /* Selected date styling */
+  :global(.air-datepicker-cell.-selected-) {
+    font-weight: bold;
+  }
+
+  /* Dark mode support */
+  :global(body.dark-mode .air-datepicker) {
+    background: #1e293b;
+    border-color: #334155;
+  }
+
+  :global(body.dark-mode .air-datepicker-nav) {
+    background: #1e293b;
+    border-color: #334155;
+  }
+
+  :global(body.dark-mode .air-datepicker-nav--title) {
+    color: #e2e8f0;
+  }
+
+  :global(body.dark-mode .air-datepicker-body--cells) {
+    background: #1e293b;
+  }
+
+  :global(body.dark-mode .air-datepicker-cell) {
+    color: #cbd5e1;
+  }
+
+  :global(body.dark-mode .air-datepicker-cell.-other-month-) {
+    color: #64748b;
+  }
+
+  :global(body.dark-mode .air-datepicker-cell.-disabled-) {
+    color: #475569;
+    opacity: 0.4;
+  }
+
+  @media (min-width: 768px) {
+    :global(.air-datepicker-inline) {
+      max-width: 400px;
+    }
+  }
+</style>
+
+<script>
+  import AirDatepicker from 'air-datepicker';
+  import 'air-datepicker/air-datepicker.css';
+  import {
+    getDateStore,
+    getDateState,
+  } from '../lib/dateStore';
+  import {
+    getDateRange,
+    isDateInRange,
+  } from '../lib/dateUtils';
+
+  const container = document.getElementById('air-datepicker');
+  const store = getDateStore();
+  let picker: InstanceType<typeof AirDatepicker> | null = null;
+
+  if (container) {
+    const dateRange = getDateRange();
+
+    // Initialize Air Datepicker
+    picker = new AirDatepicker(container, {
+      inline: true,
+      range: false,
+      multipleDates: false,
+      toggleSelected: false,
+      
+      // Custom cell renderer to show state colors and disable out-of-range dates
+      onRenderCell({ date, cellType }) {
+        if (cellType !== 'day') return;
+
+        const isInRange = isDateInRange(date, dateRange);
+        const dateState = getDateState(date);
+
+        if (!isInRange) {
+          return {
+            disabled: true,
+            classes: '-disabled-',
+          };
+        }
+
+        if (dateState) {
+          return {
+            classes: `-${dateState}-`,
+          };
+        }
+
+        return {};
+      },
+
+      // Handle date selection
+      onSelect({ date }) {
+        if (!date) return;
+
+        const selectedDate = date as Date;
+        const isInRange = isDateInRange(selectedDate, dateRange);
+        if (!isInRange) return;
+
+        const currentMode = store.getMarkingMode();
+        const existingState = getDateState(selectedDate);
+
+        // Toggle: if clicking the same state, clear it; otherwise set to current mode
+        if (existingState === currentMode) {
+          store.clearDate(selectedDate);
+        } else {
+          store.markDate(selectedDate, currentMode);
+        }
+
+        // Refresh the calendar to show updated colors
+        picker?.update();
+      },
+    });
+
+    // Subscribe to store changes to refresh the calendar
+    store.subscribe(() => {
+      picker?.update();
+    });
+  }
+</script>
