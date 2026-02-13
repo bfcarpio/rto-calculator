@@ -116,20 +116,12 @@ export default defineConfig({
 		},
 	],
 
-	// Web server is managed via npm scripts for better control
-	// Use `npm run test:e2e` which starts the server before running tests
-	// Or manually start with `npm run test:e2e:server`
-	//
-	// WebServer auto-start is disabled by default - prefer npm scripts
-	// Uncomment below to enable auto-start as a fallback:
-	// webServer: {
-	// 	command: "npm run preview",
-	// 	url: BASE_URL,
-	// 	reuseExistingServer: true,
-	// 	timeout: 120000,
-	// },
-
-	// Global setup and teardown (optional)
-	// globalSetup: require.resolve('./e2e/global-setup.ts'),
-	// globalTeardown: require.resolve('./e2e/global-teardown.ts'),
+	// Auto-start preview server if no server is already running.
+	// Uses reuseExistingServer so a manual `npm run dev` is used when available.
+	webServer: {
+		command: "npm run build && npm run preview",
+		url: "http://localhost:4321/rto-calculator",
+		reuseExistingServer: true,
+		timeout: 120000,
+	},
 });

@@ -16,14 +16,21 @@ Playwright powers the end-to-end (E2E) testing suite for the RTO Calculator. The
 
 ```
 e2e/
-├── test-helpers.ts              # Shared testing utilities
-├── hello-world.spec.ts          # Basic smoke test
-├── navigation.spec.ts           # Page navigation
-├── calendar-interactions.spec.ts # Calendar day selection
-├── validation-flows.spec.ts     # Validation scenarios
-├── responsive-navigation.spec.ts # Mobile/desktop nav
-├── mobile-edge-cases.spec.ts    # Mobile-specific issues
-└── desktop-edge-cases.spec.ts   # Desktop-specific issues
+├── helpers/
+│   ├── common.ts              # navigateToApp, waitForAppLoad
+│   ├── datepainter.ts         # clickDate, getDateCells, navigateToMonth
+│   ├── statusLegend.ts        # selectMode, expectModeActive, getModeCounts
+│   └── theme.ts               # openSettings, closeSettings, cycleTheme
+├── test-helpers.ts            # Legacy shared utilities
+├── hello-world.spec.ts        # Basic smoke test
+├── navigation.spec.ts         # Page load, routing, page structure
+├── date-marking.spec.ts       # Day marking, palette switching, drag
+├── validation-flows.spec.ts   # Compliance checking, target days
+├── verify-ui.spec.ts          # UI styling and element verification
+├── theme-system.spec.ts       # Settings modal, theme cycling
+├── responsive-navigation.spec.ts # Mobile/tablet/desktop layouts
+├── mobile-edge-cases.spec.ts  # Mobile viewport interactions
+└── desktop-edge-cases.spec.ts # Rapid clicks, window resizing
 ```
 
 ---
@@ -33,17 +40,34 @@ e2e/
 Run the complete E2E test suite:
 
 ```bash
-npm run test:e2e
+npx playwright test
 ```
 
-This command:
-1. Starts the preview server (`npm run preview`)
-2. Waits for the server to be ready
-3. Runs all Playwright tests
-4. Generates HTML reports
+Playwright's `webServer` config handles the server automatically:
+1. If a dev server is already running on port 4321, it reuses it (`reuseExistingServer: true`)
+2. Otherwise, it runs `npm run build && npm run preview` to start a preview server
+3. Waits for the server to respond, then runs all tests
+4. Shuts down the server when tests complete
+
+**Preferred flow (fastest, most reliable):**
+```bash
+# No manual server needed — Playwright handles everything
+npx playwright test
+```
+
+**With a manual dev server (useful during development):**
+```bash
+# Terminal 1: start dev server
+npm run dev
+
+# Terminal 2: run tests (auto-detects running server)
+npx playwright test
+```
+
+The preview server is preferred for test runs because it serves pre-built static files — no on-demand compilation means sub-second page loads and zero cold-start flakiness.
 
 **First Run:**
-- Firefox browser binaries are already installed
+- Browser binaries must be installed (see below)
 - Tests run headless by default
 - Screenshots and traces captured on failure
 
@@ -51,23 +75,22 @@ This command:
 
 ## Prerequisites
 
-### Browser Installation (Already Done)
+### Browser Installation
 
-Firefox is configured as the default browser. Browsers were installed during initial setup:
+Five browser/viewport projects are configured (firefox-desktop, chromium-desktop, chromium-mobile, webkit-desktop, tablet). Install all browsers:
 
 ```bash
-# If you need to reinstall browsers:
-npx playwright install firefox
+npx playwright install
 ```
 
 ### Server Management
 
-The preview server runs on port `4321` by default. The test scripts handle server lifecycle automatically:
+The `webServer` option in `playwright.config.ts` manages the server lifecycle:
 
-- **Port Check** - Script verifies if server is already running
-- **Auto-Start** - Server starts if not already running
-- **Auto-Cleanup** - Server stops after tests complete
-- **Background Mode** - Server runs detached for CI environments
+- **`reuseExistingServer: true`** - If a server is already running on port 4321, Playwright uses it as-is (e.g. your `npm run dev` session)
+- **Auto-Start** - If no server is detected, Playwright runs `npm run build && npm run preview` automatically
+- **Auto-Cleanup** - The auto-started server stops when tests complete
+- **Override URL** - Use `PLAYWRIGHT_BASE_URL` env var to point tests at a different server
 
 ---
 
@@ -547,34 +570,30 @@ export default defineConfig({
   // Run tests in parallel
   fullyParallel: true,
 
-  // Reporter configuration
-  reporter: [
-    ["html", { open: "on-failure" }],
-    ["list"],
-  ],
-
   // Shared settings
   use: {
-    // Base URL for tests
-    baseURL: "http://localhost:4321",
-
-    // Collect trace on failure
+    baseURL: "http://localhost:4321/rto-calculator",
     trace: "on-first-retry",
-
-    // Screenshot on failure
     screenshot: "only-on-failure",
+    actionTimeout: 10000,
+    navigationTimeout: 10000,
+  },
 
-    // Action timeout
-    actionTimeout: 5000,
+  // Auto-start preview server (reuses existing if running)
+  webServer: {
+    command: "npm run build && npm run preview",
+    url: "http://localhost:4321/rto-calculator",
+    reuseExistingServer: true,
+    timeout: 120000,
   },
 
   // Browser projects
   projects: [
-    {
-      name: "firefox-desktop",
-      use: { ...devices["Desktop Firefox"] },
-    },
-    // ... other projects
+    { name: "firefox-desktop", use: { ...devices["Desktop Firefox"] } },
+    { name: "chromium-desktop", use: { ...devices["Desktop Chrome"] } },
+    { name: "chromium-mobile", use: { ...devices["iPhone 12"] } },
+    { name: "webkit-desktop", use: { ...devices["Desktop Safari"] } },
+    { name: "tablet", use: { ...devices["iPad (gen 7)"] } },
   ],
 });
 ```

@@ -11,7 +11,7 @@ You are a senior software engineer focused on writing maintainable, bug-free cod
 ## CRITICAL RULES
 
 ### DO NOT
-- ❌ **NEVER run `npm run dev`** - Use `scripts/start-playwright-server.sh` and Playwright MCP instead
+- ❌ **NEVER run `npm run dev` for E2E tests** - Use `npx playwright test` which auto-starts a preview server via `webServer` config. If a dev server is already running it will be reused.
 - ❌ Do not use `any` type - Use `unknown` with type guards
 - ❌ Do not use wildcard imports - Use explicit imports: `import { Thing } from './path'`
 - ❌ Do not nest deeply - Use early returns and guard clauses
@@ -65,11 +65,12 @@ npm run test:ui         # Run tests with UI
 npm test -- path/to/specific.test.ts  # Run single test
 
 # E2E Testing (Playwright)
-npm run test:e2e              # Run all E2E tests (Firefox desktop)
+# Preferred: let Playwright handle the server via webServer config
+npx playwright test                          # Run all E2E tests (auto-starts preview server)
+npx playwright test --project=chromium-desktop  # Single browser project
+npx playwright test --workers=2              # Limit parallelism
+npx playwright test e2e/date-marking.spec.ts # Single test file
 npm run test:e2e:ui           # Open Playwright UI mode
-npm run test:e2e:debug        # Step-through debugger
-npm run test:e2e:mobile       # Mobile viewport tests
-npm run test:e2e:desktop      # Desktop viewport tests
 npm run test:e2e:report       # View HTML test report
 
 # Quality Checks

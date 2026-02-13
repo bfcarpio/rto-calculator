@@ -18,9 +18,10 @@ Astro-based Return-to-Office (RTO) compliance calculator with an interactive cal
 5. Build: `npm run build`
 
 ## Playwright E2E
-- Full suite: `npm run test:e2e` (auto-starts preview server via `scripts/start-playwright-server.sh`).
+- Full suite: `npm run test:e2e` (auto-starts preview server via Playwright `webServer` config).
 - Debug/interactive: `npm run test:e2e:ui` or `npm run test:e2e:debug`.
-- More options live in `docs/PlaywrightTesting.md`.
+- If a dev server is already running, it will be reused (`reuseExistingServer: true`).
+- More options in `docs/PlaywrightTesting.md`.
 
 ## Debug logging
 - Build-time: set `PUBLIC_DEBUG=true` (or `PUBLIC_RTO_DEBUG=true`) in your environment before running Astro.
