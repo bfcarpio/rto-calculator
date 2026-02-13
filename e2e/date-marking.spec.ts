@@ -79,4 +79,101 @@ test.describe("Date Marking Flows", () => {
 
 		await expectModeCount(page, "oof", 3);
 	});
+
+	test("should toggle between selected state and cleared (not cycle)", async ({ page }) => {
+		// Select OOF
+		await selectMode(page, "oof");
+
+		// Click to mark as OOF
+		await clickDate(page, 0);
+		await expectDateHasState(page, 0, "oof");
+
+		// Click again to clear (should NOT cycle to holiday)
+		await clickDate(page, 0);
+		await expectDateHasNoState(page, 0);
+
+		// Click again to mark as OOF (should NOT cycle to sick)
+		await clickDate(page, 0);
+		await expectDateHasState(page, 0, "oof");
+	});
+
+	test("should change to new palette selection when clicking marked date", async ({ page }) => {
+		// Mark as OOF
+		await selectMode(page, "oof");
+		await clickDate(page, 0);
+		await expectDateHasState(page, 0, "oof");
+
+		// Switch palette to Holiday
+		await selectMode(page, "holiday");
+
+		// Click the OOF date -> should change to Holiday
+		await clickDate(page, 0);
+		await expectDateHasState(page, 0, "holiday");
+
+		// Click again -> should clear
+		await clickDate(page, 0);
+		await expectDateHasNoState(page, 0);
+	});
+
+	test("should use palette selection for both click and drag", async ({ page }) => {
+		// Select Sick
+		await selectMode(page, "sick" as any);
+
+		// Click to mark
+		await clickDate(page, 0);
+		await expectDateHasState(page, 0, "sick");
+
+		// Drag across multiple dates
+		const cells = await page.locator('[data-testid="calendar-day"]:not(.datepainter__day--empty)').all();
+		if (cells.length >= 4) {
+			// Simulate drag from cell 1 to cell 3
+			if (cells[1] && cells[2] && cells[3]) {
+				await cells[1].hover();
+				await page.mouse.down();
+				await cells[2].hover();
+				await cells[3].hover();
+				await page.mouse.up();
+
+				// All should be marked as sick
+				await expectDateHasState(page, 1, "sick");
+				await expectDateHasState(page, 2, "sick");
+				await expectDateHasState(page, 3, "sick");
+			}
+		}
+	});
+
+	test("should use keyboard shortcuts to update behavior immediately", async ({ page }) => {
+		// Press '1' for OOF
+		await page.keyboard.press("1");
+		await clickDate(page, 0);
+		await expectDateHasState(page, 0, "oof");
+
+		// Press '2' for Holiday
+		await page.keyboard.press("2");
+		await clickDate(page, 1);
+		await expectDateHasState(page, 1, "holiday");
+
+		// Press '3' for Sick
+		await page.keyboard.press("3");
+		await clickDate(page, 2);
+		await expectDateHasState(page, 2, "sick");
+	});
+
+	test("should preserve marked dates after month navigation", async ({ page }) => {
+		// Mark a date
+		await selectMode(page, "oof");
+		await clickDate(page, 5);
+		await expectDateHasState(page, 5, "oof");
+
+		// Navigate to next month
+		await page.click('button[aria-label="Next month"]');
+		await page.waitForTimeout(300); // Wait for navigation
+
+		// Navigate back
+		await page.click('button[aria-label="Previous month"]');
+		await page.waitForTimeout(300);
+
+		// Date should still be marked
+		await expectDateHasState(page, 5, "oof");
+	});
 });
