@@ -22,31 +22,6 @@ rto-calculator/src/styles/pages/index.css
 }
 
 /* Compliance indicator */
-.compliance-indicator {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.25rem 0.75rem;
-  border-radius: var(--border-radius);
-  font-weight: 600;
-  margin-top: 0.5rem;
-  font-size: 0.875rem;
-}
-
-.compliance-indicator.compliant {
-  background-color: var(--color-compliant-bg);
-  color: var(--color-compliant);
-}
-
-.compliance-indicator.violation {
-  background-color: var(--color-violation-bg);
-  color: var(--color-violation);
-}
-
-.compliance-indicator.warning {
-  background-color: var(--color-warning-bg);
-  color: var(--color-warning);
-}
 
 /* Legend */
 .legend {
@@ -152,21 +127,21 @@ rto-calculator/src/styles/pages/index.css
 }
 
 .validation-message.error {
-  background-color: var(--color-violation-bg);
-  color: var(--color-violation);
-  border-left: 3px solid var(--color-violation);
+  background-color: #fff1f0;
+  color: #cf1322;
+  border-left: 5px solid #cf1322;
 }
 
 .validation-message.warning {
-  background-color: var(--color-warning-bg);
-  color: var(--color-warning);
-  border-left: 3px solid var(--color-warning);
+  background-color: #fffbe6;
+  color: #d48806;
+  border-left: 5px solid #d48806;
 }
 
 .validation-message.success {
-  background-color: var(--color-compliant-bg);
-  color: var(--color-compliant);
-  border-left: 3px solid var(--color-compliant);
+  background-color: #f6ffed;
+  color: #389e0d;
+  border-left: 5px solid #389e0d;
 }
 
 /* Action buttons */

@@ -15,32 +15,23 @@ import type { WeekInfo } from "../../../../types";
 // Mock UI update functions
 const mockUIUpdates = {
   updateComplianceIndicator: (isValid: boolean, percentage: number) => {
-    const indicator = document.getElementById(
-      "compliance-indicator",
-    ) as HTMLElement;
-    const icon = document.getElementById("compliance-icon") as HTMLElement;
-    const text = document.getElementById("compliance-text") as HTMLElement;
     const messageContainer = document.getElementById(
       "validation-message",
     ) as HTMLElement;
 
-    if (!indicator || !icon || !text) return;
+    if (!messageContainer) return;
 
-    // Clear previous classes
-    indicator.classList.remove("compliant", "non-compliant");
+    // Clear previous color classes
+    messageContainer.classList.remove("success", "error", "warning");
 
     const percentageValue = Math.round(percentage * 100);
 
     if (isValid) {
-      indicator.classList.add("compliant");
-      icon.textContent = "✓";
-      text.textContent = `Compliant (${percentageValue}%)`;
+      messageContainer.classList.add("success");
       messageContainer.textContent = `✓ RTO Compliant: Best 8 of 12 weeks average ${percentageValue}% compliance. Required: 60%`;
     } else {
-      indicator.classList.add("non-compliant");
-      icon.textContent = "✗";
-      text.textContent = `Not Compliant (${percentageValue}%)`;
-      messageContainer.textContent = `✗ RTO Not Compliant: Below required 60% threshold (${percentageValue}%).`;
+      messageContainer.classList.add("error");
+      messageContainer.textContent = `✗ RTO Not Compliant: Below required 60% threshold (${percentageValue}%.`;
     }
 
     messageContainer.style.display = "block";
@@ -465,19 +456,12 @@ describe("UI Updates - Validation Message Display", () => {
   it("should show compliant message for valid results", () => {
     mockUIUpdates.updateComplianceIndicator(true, 0.75);
 
-    const indicator = document.getElementById(
-      "compliance-indicator",
-    ) as HTMLElement;
-    const icon = document.getElementById("compliance-icon") as HTMLElement;
-    const text = document.getElementById("compliance-text") as HTMLElement;
     const messageContainer = document.getElementById(
       "validation-message",
     ) as HTMLElement;
 
-    expect(indicator?.classList.contains("compliant")).toBe(true);
-    expect(indicator?.classList.contains("non-compliant")).toBe(false);
-    expect(icon?.textContent).toBe("✓");
-    expect(text?.textContent).toBe("Compliant (75%)");
+    expect(messageContainer?.classList.contains("success")).toBe(true);
+    expect(messageContainer?.classList.contains("error")).toBe(false);
     expect(messageContainer?.textContent).toContain("RTO Compliant");
     expect(messageContainer?.textContent).toContain("75%");
   });
@@ -485,21 +469,14 @@ describe("UI Updates - Validation Message Display", () => {
   it("should show violation message for invalid results", () => {
     mockUIUpdates.updateComplianceIndicator(false, 0.4);
 
-    const indicator = document.getElementById(
-      "compliance-indicator",
-    ) as HTMLElement;
-    const icon = document.getElementById("compliance-icon") as HTMLElement;
-    const text = document.getElementById("compliance-text") as HTMLElement;
     const messageContainer = document.getElementById(
       "validation-message",
     ) as HTMLElement;
 
-    expect(indicator?.classList.contains("non-compliant")).toBe(true);
-    expect(indicator?.classList.contains("compliant")).toBe(false);
-    expect(icon?.textContent).toBe("✗");
-    expect(text?.textContent).toBe("Not Compliant (40%)");
+    expect(messageContainer?.classList.contains("error")).toBe(true);
+    expect(messageContainer?.classList.contains("success")).toBe(false);
     expect(messageContainer?.textContent).toContain("Not Compliant");
-    expect(messageContainer?.textContent).toContain("60%");
+    expect(messageContainer?.textContent).toContain("40%");
   });
 
   it("should set visibility to visible when displaying message", () => {
@@ -511,21 +488,6 @@ describe("UI Updates - Validation Message Display", () => {
 
     expect(messageContainer.style.display).toBe("block");
     expect(messageContainer.style.visibility).toBe("visible");
-  });
-
-  it("should update indicator icon and text correctly", () => {
-    mockUIUpdates.updateComplianceIndicator(true, 0.8);
-
-    const icon = document.getElementById("compliance-icon") as HTMLElement;
-    const text = document.getElementById("compliance-text") as HTMLElement;
-
-    expect(icon?.textContent).toBe("✓");
-    expect(text?.textContent).toBe("Compliant (80%)");
-
-    mockUIUpdates.updateComplianceIndicator(false, 0.3);
-
-    expect(icon?.textContent).toBe("✗");
-    expect(text?.textContent).toBe("Not Compliant (30%)");
   });
 });
 
@@ -703,10 +665,11 @@ describe("UI Updates - Integration Scenarios", () => {
     });
 
     // Verify
-    const indicator = document.getElementById(
-      "compliance-indicator",
+    const messageContainer = document.getElementById(
+      "validation-message",
     ) as HTMLElement;
-    expect(indicator?.classList.contains("compliant")).toBe(true);
+    expect(messageContainer?.classList.contains("success")).toBe(true);
+    expect(messageContainer?.classList.contains("error")).toBe(false);
 
     weeks.forEach((week) => {
       const container = week.statusCellElement?.querySelector(
@@ -741,10 +704,11 @@ describe("UI Updates - Integration Scenarios", () => {
     });
 
     // Verify
-    const indicator = document.getElementById(
-      "compliance-indicator",
+    const messageContainer = document.getElementById(
+      "validation-message",
     ) as HTMLElement;
-    expect(indicator?.classList.contains("non-compliant")).toBe(true);
+    expect(messageContainer?.classList.contains("error")).toBe(true);
+    expect(messageContainer?.classList.contains("success")).toBe(false);
 
     weeks.forEach((week) => {
       const container = week.statusCellElement?.querySelector(
@@ -998,37 +962,34 @@ describe("UI Updates - Edge Cases", () => {
   it("should handle empty selections scenario", () => {
     mockUIUpdates.updateComplianceIndicator(true, 1.0);
 
-    const indicator = document.getElementById(
-      "compliance-indicator",
+    const messageContainer = document.getElementById(
+      "validation-message",
     ) as HTMLElement;
-    const text = document.getElementById("compliance-text") as HTMLElement;
 
-    expect(indicator?.classList.contains("compliant")).toBe(true);
-    expect(text?.textContent).toBe("Compliant (100%)");
+    expect(messageContainer?.classList.contains("success")).toBe(true);
+    expect(messageContainer?.textContent).toContain("100%");
   });
 
   it("should handle boundary case with exactly 60% compliance", () => {
     mockUIUpdates.updateComplianceIndicator(true, 0.6);
 
-    const indicator = document.getElementById(
-      "compliance-indicator",
+    const messageContainer = document.getElementById(
+      "validation-message",
     ) as HTMLElement;
-    const text = document.getElementById("compliance-text") as HTMLElement;
 
-    expect(indicator?.classList.contains("compliant")).toBe(true);
-    expect(text?.textContent).toBe("Compliant (60%)");
+    expect(messageContainer?.classList.contains("success")).toBe(true);
+    expect(messageContainer?.textContent).toContain("60%");
   });
 
   it("should handle boundary case just below 60% (59%)", () => {
     mockUIUpdates.updateComplianceIndicator(false, 0.59);
 
-    const indicator = document.getElementById(
-      "compliance-indicator",
+    const messageContainer = document.getElementById(
+      "validation-message",
     ) as HTMLElement;
-    const text = document.getElementById("compliance-text") as HTMLElement;
 
-    expect(indicator?.classList.contains("non-compliant")).toBe(true);
-    expect(text?.textContent).toBe("Not Compliant (59%)");
+    expect(messageContainer?.classList.contains("error")).toBe(true);
+    expect(messageContainer?.textContent).toContain("59%");
   });
 
   it("should handle weeks with identical office day counts", () => {

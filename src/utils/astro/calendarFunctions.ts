@@ -514,14 +514,11 @@ export function updateDayCell(cell: HTMLElement, dateStr: string): void {
 }
 
 /**
- * Update the compliance indicator display
+ * Update the compliance display using validation message
  */
 export function updateComplianceIndicator(): void {
-  const indicator = document.getElementById("compliance-indicator");
-  const icon = document.getElementById("compliance-icon");
-  const text = document.getElementById("compliance-text");
-
-  if (!indicator || !icon || !text) return;
+  const messageContainer = document.getElementById("validation-message");
+  if (!messageContainer) return;
 
   // Calculate overall compliance
   const dates = getCalendarDates();
@@ -545,9 +542,22 @@ export function updateComplianceIndicator(): void {
   const status = getComplianceStatus(overallCompliance);
 
   // Update UI
-  icon.textContent = status.colorClass.includes("green") ? "✓" : "⚠";
-  text.textContent = `${Math.round(overallCompliance)}% compliant (${totalOfficeDays}/${totalWeekdays} office days)`;
-  indicator.className = `compliance-indicator ${status.colorClass.replace("text-", "")}`;
+  messageContainer.style.display = "block";
+  messageContainer.style.visibility = "visible";
+
+  // Clear previous color classes
+  messageContainer.classList.remove("success", "error", "warning");
+
+  const isCompliant = status.colorClass.includes("green");
+  if (isCompliant) {
+    messageContainer.classList.add("success");
+  } else {
+    messageContainer.classList.add("error");
+  }
+
+  messageContainer.textContent = isCompliant
+    ? `✓ RTO Compliant: Best 8 of 12 weeks average ${Math.round(overallCompliance)}% compliance. Required: 60%`
+    : `⚠ RTO Not Compliant: Below required 60% threshold (${Math.round(overallCompliance)}%).`;
 }
 
 /**

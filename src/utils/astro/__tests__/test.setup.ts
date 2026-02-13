@@ -63,15 +63,7 @@ export function setupBasicCalendarDOM(weekCount: number = 3): void {
   container.className = "calendar-container";
   container.id = "calendar-container";
 
-  // Create validation indicator
-  const indicator = document.createElement("div");
-  indicator.id = "compliance-indicator";
-  indicator.className = "compliance-indicator";
-  indicator.innerHTML = `
-    <span id="compliance-icon"></span>
-    <span id="compliance-text"></span>
-  `;
-  container.appendChild(indicator);
+  // Compliance indicator removed - validation message now provides color-coded feedback
 
   // Create message container
   const messageContainer = document.createElement("div");
