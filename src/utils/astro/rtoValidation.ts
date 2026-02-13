@@ -151,7 +151,6 @@ export function groupDatesByWeek(
  * @returns Number of office days in the week
  */
 export function calculateOfficeDaysInWeek(
-  weekDates: Date[],
   weeksByWFH: Map<number, number>,
   weekStart: Date,
 ): number {
@@ -174,7 +173,6 @@ export function calculateWeekCompliance(
   weeksByWFH: Map<number, number>,
   policy: RTOPolicyConfig = DEFAULT_RTO_POLICY,
 ): WeekCompliance {
-  const weekDates = getWeekDates(weekStart);
   const weekKey = weekStart.getTime();
   const wfhDays = weeksByWFH.get(weekKey) || 0;
   const officeDays = policy.totalWeekdaysPerWeek - wfhDays;

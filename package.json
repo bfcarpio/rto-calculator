@@ -12,8 +12,10 @@
     "test:run": "vitest run"
   },
   "dependencies": {
+    "@astrojs/check": "^0.9.6",
     "astro": "^5.16.8",
-    "mvp.css": "^1.17.2"
+    "mvp.css": "^1.17.2",
+    "typescript": "^5.9.3"
   },
   "devDependencies": {
     "@playwright/test": "^1.57.0",

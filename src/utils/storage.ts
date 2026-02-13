@@ -4,7 +4,6 @@
  */
 
 import type { CalendarState, UserPreferences } from "../types";
-import { formatDateISO, parseDateISO } from "./dateUtils";
 
 const STORAGE_KEYS = {
   SELECTED_DATES: "rto-calculator-selected-dates",

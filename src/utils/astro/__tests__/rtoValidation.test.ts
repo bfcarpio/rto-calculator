@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import {
   getStartOfWeek,
   getFirstWeekStart,
@@ -94,18 +94,18 @@ describe("getWeekDates", () => {
     const weekStart = new Date(2025, 0, 6); // Monday, Jan 6, 2025
     const dates = getWeekDates(weekStart);
     expect(dates).toHaveLength(5);
-    expect(dates[0].getDay()).toBe(1); // Monday
-    expect(dates[4].getDay()).toBe(5); // Friday
+    expect(dates[0]?.getDay()).toBe(1); // Monday
+    expect(dates[4]?.getDay()).toBe(5); // Friday
   });
 
   it("should return consecutive dates", () => {
     const weekStart = new Date(2025, 0, 6);
     const dates = getWeekDates(weekStart);
-    expect(dates[0].getDate()).toBe(6);
-    expect(dates[1].getDate()).toBe(7);
-    expect(dates[2].getDate()).toBe(8);
-    expect(dates[3].getDate()).toBe(9);
-    expect(dates[4].getDate()).toBe(10);
+    expect(dates[0]?.getDate()).toBe(6);
+    expect(dates[1]?.getDate()).toBe(7);
+    expect(dates[2]?.getDate()).toBe(8);
+    expect(dates[3]?.getDate()).toBe(9);
+    expect(dates[4]?.getDate()).toBe(10);
   });
 });
 
@@ -119,8 +119,8 @@ describe("getWorkFromHomeDates", () => {
     ];
     const result = getWorkFromHomeDates(selections);
     expect(result).toHaveLength(2);
-    expect(result[0].getDate()).toBe(6);
-    expect(result[1].getDate()).toBe(9);
+    expect(result[0]?.getDate()).toBe(6);
+    expect(result[1]?.getDate()).toBe(9);
   });
 
   it("should return empty array when no work-from-home selections", () => {
@@ -178,33 +178,31 @@ describe("groupDatesByWeek", () => {
 
 describe("calculateOfficeDaysInWeek", () => {
   it("should calculate office days correctly", () => {
-    const weekDates = getWeekDates(new Date(2025, 0, 6));
     const weeksByWFH = groupDatesByWeek([
       new Date(2025, 0, 6),
       new Date(2025, 0, 7),
     ]);
     const weekStart = new Date(2025, 0, 6);
 
-    const result = calculateOfficeDaysInWeek(weekDates, weeksByWFH, weekStart);
+    const result = calculateOfficeDaysInWeek(weeksByWFH, weekStart);
     expect(result).toBe(3); // 5 weekdays - 2 WFH days
   });
 
   it("should return 5 when no WFH days", () => {
-    const weekDates = getWeekDates(new Date(2025, 0, 6));
     const weeksByWFH = new Map();
     const weekStart = new Date(2025, 0, 6);
 
-    const result = calculateOfficeDaysInWeek(weekDates, weeksByWFH, weekStart);
+    const result = calculateOfficeDaysInWeek(weeksByWFH, weekStart);
     expect(result).toBe(5);
   });
 
   it("should return 0 when all days are WFH", () => {
     const weekDates = getWeekDates(new Date(2025, 0, 6));
-    const wfhDates = weekDates.map((d) => new Date(d));
+    const wfhDates = weekDates.map((d: Date) => new Date(d));
     const weeksByWFH = groupDatesByWeek(wfhDates);
     const weekStart = new Date(2025, 0, 6);
 
-    const result = calculateOfficeDaysInWeek(weekDates, weeksByWFH, weekStart);
+    const result = calculateOfficeDaysInWeek(weeksByWFH, weekStart);
     expect(result).toBe(0);
   });
 });
@@ -282,21 +280,21 @@ describe("validateTop8Weeks", () => {
     ];
 
     for (let week = 0; week < 8; week++) {
-      const weekStart = weekStarts[week];
+      const weekStart = weekStarts[week]!;
       // Add 2 WFH days (Monday and Tuesday)
       selections.push(
         createDaySelection(
-          weekStart.getFullYear(),
-          weekStart.getMonth(),
-          weekStart.getDate(),
+          weekStart!.getFullYear(),
+          weekStart!.getMonth(),
+          weekStart!.getDate(),
           "work-from-home",
         ),
       );
       selections.push(
         createDaySelection(
-          weekStart.getFullYear(),
-          weekStart.getMonth(),
-          weekStart.getDate() + 1,
+          weekStart!.getFullYear(),
+          weekStart!.getMonth(),
+          weekStart!.getDate() + 1,
           "work-from-home",
         ),
       );
@@ -323,29 +321,29 @@ describe("validateTop8Weeks", () => {
     ];
 
     for (let week = 0; week < 8; week++) {
-      const weekStart = weekStarts[week];
+      const weekStart = weekStarts[week]!;
       // Add 3 WFH days (Mon, Tue, Wed)
       selections.push(
         createDaySelection(
-          weekStart.getFullYear(),
-          weekStart.getMonth(),
-          weekStart.getDate(),
+          weekStart!.getFullYear(),
+          weekStart!.getMonth(),
+          weekStart!.getDate(),
           "work-from-home",
         ),
       );
       selections.push(
         createDaySelection(
-          weekStart.getFullYear(),
-          weekStart.getMonth(),
-          weekStart.getDate() + 1,
+          weekStart!.getFullYear(),
+          weekStart!.getMonth(),
+          weekStart!.getDate() + 1,
           "work-from-home",
         ),
       );
       selections.push(
         createDaySelection(
-          weekStart.getFullYear(),
-          weekStart.getMonth(),
-          weekStart.getDate() + 2,
+          weekStart!.getFullYear(),
+          weekStart!.getMonth(),
+          weekStart!.getDate() + 2,
           "work-from-home",
         ),
       );
@@ -378,13 +376,12 @@ describe("validateTop8Weeks", () => {
     ];
 
     for (let week = 0; week < 8; week++) {
-      const weekStart = weekStarts[week];
-      // Add 1 WFH day (Monday)
+      const weekStart = weekStarts[week]!;
       selections.push(
         createDaySelection(
-          weekStart.getFullYear(),
-          weekStart.getMonth(),
-          weekStart.getDate(),
+          weekStart!.getFullYear(),
+          weekStart!.getMonth(),
+          weekStart!.getDate(),
           "work-from-home",
         ),
       );
@@ -470,21 +467,21 @@ describe("validateTop8Weeks", () => {
     ];
 
     for (let week = 0; week < 8; week++) {
-      const weekStart = weekStarts[week];
+      const weekStart = weekStarts[week]!;
       // 2 WFH days = 3 office days = 60%
       selections.push(
         createDaySelection(
-          weekStart.getFullYear(),
-          weekStart.getMonth(),
-          weekStart.getDate(),
+          weekStart!.getFullYear(),
+          weekStart!.getMonth(),
+          weekStart!.getDate(),
           "work-from-home",
         ),
       );
       selections.push(
         createDaySelection(
-          weekStart.getFullYear(),
-          weekStart.getMonth(),
-          weekStart.getDate() + 1,
+          weekStart!.getFullYear(),
+          weekStart!.getMonth(),
+          weekStart!.getDate() + 1,
           "work-from-home",
         ),
       );
@@ -514,13 +511,13 @@ describe("validateTop8Weeks", () => {
 
     for (let week = 0; week < 8; week++) {
       const weekStart = weekStarts[week];
-      const wfhCount = weekWFHCounts[week];
+      const wfhCount = weekWFHCounts[week]!;
       for (let day = 0; day < wfhCount; day++) {
         selections.push(
           createDaySelection(
-            weekStart.getFullYear(),
-            weekStart.getMonth(),
-            weekStart.getDate() + day,
+            weekStart!.getFullYear(),
+            weekStart!.getMonth(),
+            weekStart!.getDate() + day,
             "work-from-home",
           ),
         );

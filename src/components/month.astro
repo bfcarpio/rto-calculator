@@ -94,7 +94,7 @@ const clearButtonId = `clear-${year}-${month}`;
                     <span aria-hidden="true" class="status-icon"></span>
                 </th>
                 {
-                    shortDayNames.map((day, index) => (
+                    shortDayNames.map((day) => (
                         <th
                             scope="col"
                             role="columnheader"
@@ -208,11 +208,12 @@ const clearButtonId = `clear-${year}-${month}`;
     </table>
 </section>
 
-<script define:vars={{ monthId, clearButtonId, year, month, monthNames }}>
+<script define:vars={{ monthId, clearButtonId, year, month, monthNames }} is:inline>
     /**
      * Initialize clear button with proper accessibility
      */
     function initClearButton() {
+        // @ts-ignore - clearButtonId is defined via define:vars
         const clearButton = document.getElementById(clearButtonId);
         const monthContainer = document.getElementById(monthId);
 

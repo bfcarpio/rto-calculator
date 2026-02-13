@@ -123,8 +123,11 @@ export function formatDateISO(date: Date): string {
  * @returns Date object
  */
 export function parseDateISO(isoString: string): Date {
-  const [year, month, day] = isoString.split("-").map(Number);
-  return new Date(year, month - 1, day);
+  const parts = isoString.split("-").map(Number);
+  const year = parts[0] ?? 0;
+  const month = (parts[1] ?? 1) - 1;
+  const day = parts[2] ?? 1;
+  return new Date(year, month, day);
 }
 
 /**

@@ -6,12 +6,10 @@
 import type { DayData, WeekData, RollingPeriodData } from "../types";
 import {
   getStartOfWeek,
-  getEndOfWeek,
   isWeekday,
   isWeekend,
   getWeekDates,
   getRollingPeriodDates,
-  isSameDay,
 } from "./dateUtils";
 
 /**
@@ -66,7 +64,7 @@ export function calculateOfficeDaysInWeek(
   selectedDates: Set<string>,
 ): number {
   return weekDates.filter((date) => {
-    const isoDate = date.toISOString().split("T")[0];
+    const isoDate = date.toISOString().split("T")[0] ?? "";
     return !selectedDates.has(isoDate);
   }).length;
 }
@@ -95,7 +93,7 @@ export function validateWeek(
   }
 
   return {
-    startDate: weekDates[0],
+    startDate: weekDates[0] ?? new Date(),
     officeDays,
     totalDays,
     compliance,
@@ -128,7 +126,7 @@ export function validateRollingPeriod(
     if (!weeksMap.has(weekKey)) {
       weeksMap.set(weekKey, []);
     }
-    weeksMap.get(weekKey)!.push(date);
+    weeksMap.get(weekKey)?.push(date);
   });
 
   // Validate each week
@@ -256,9 +254,9 @@ export function validateSelection(
     return { isValid: true };
   }
 
-  // Simulate the selection
+  // Simulate: selection
   const newSelectedDates = new Set(selectedDates);
-  const isoDate = date.toISOString().split("T")[0];
+  const isoDate = date.toISOString().split("T")[0] ?? "";
   newSelectedDates.add(isoDate);
 
   // Validate the week
@@ -272,7 +270,7 @@ export function validateSelection(
   if (weekData.violations.length > 0) {
     return {
       isValid: false,
-      message: weekData.violations[0],
+      message: weekData.violations[0] ?? "",
     };
   }
 
