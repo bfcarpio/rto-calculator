@@ -17,10 +17,9 @@
 	},
 	"dependencies": {
 		"@astrojs/check": "^0.9.6",
-		"@picocss/pico": "^2.1.1",
 		"astro": "^5.16.8",
 		"bulma": "^1.0.4",
-		"mvp.css": "^1.17.2",
+		"flatpickr": "^4.6.13",
 		"nager_date_api_reference": "file:nager.date",
 		"open-props": "^1.7.23",
 		"ts-ics": "^2.4.0",
