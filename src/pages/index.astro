@@ -101,11 +101,16 @@ const months = Array.from({ length: 12 }, (_, index) => {
         <script>
             // Import and initialize RTO validation
             import { initializeApp } from '../scripts/rtoValidation.ts';
+            import { initializeLocalStorage } from '../scripts/localStorage.ts';
 
             // Wait for DOM to be ready before initializing
             if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', initializeApp);
+                document.addEventListener('DOMContentLoaded', () => {
+                    initializeLocalStorage();
+                    initializeApp();
+                });
             } else {
+                initializeLocalStorage();
                 initializeApp();
             }
 </script>

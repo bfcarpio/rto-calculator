@@ -120,12 +120,15 @@ export interface UserPreferences {
   language: string;
   timezone: string;
   firstDayOfWeek: number;
+  defaultPattern: number[] | null; // Array of day indices [0-6] to always select
 }
 
 /**
  * Calendar state for localStorage
+ * Selected dates are stored as "YYYY-MM-DD:selectionType" strings
+ * where selectionType is "work-from-home" or "office"
  */
 export interface CalendarState {
-  selectedDates: string[]; // ISO date strings
+  selectedDates: string[]; // Format: "YYYY-MM-DD:selectionType"
   lastUpdated: string;
 }
