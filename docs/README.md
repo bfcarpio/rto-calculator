@@ -22,8 +22,10 @@ Welcome to the RTO Calculator documentation! This directory contains comprehensi
 - **[StatusColumn.md](./StatusColumn.md)** - Week status column implementation (✓, ✗, ⏳, empty states)
 
 #### Testing
-- **[PlaywrightTesting.md](./PlaywrightTesting.md)** - End-to-end testing guide with Playwright
-  *Commands, debugging, best practices, troubleshooting*
+- **[TestingBestPractices.md](./TestingBestPractices.md)** - Unit and E2E testing best practices
+  *Wait strategies, selectors, helpers, anti-patterns, browser scoping*
+- **[PlaywrightTesting.md](./PlaywrightTesting.md)** - E2E testing commands and debugging
+  *Quick start, CLI commands, debugging tools, troubleshooting*
 
 ### Feature Documentation
 
@@ -82,7 +84,8 @@ docs/
 │   ├── ARCHITECTURE.md                # System architecture
 │   ├── DEVELOPER_GUIDE.md             # Developer workflows
 │   ├── USER_GUIDE.md                  # End-user guide
-│   └── PlaywrightTesting.md           # E2E testing guide
+│   ├── TestingBestPractices.md         # Testing best practices
+│   └── PlaywrightTesting.md           # E2E commands & debugging
 │
 ├── Feature Documentation
 │   ├── StatusColumn.md                # Status column details

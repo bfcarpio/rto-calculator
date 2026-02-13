@@ -49,7 +49,8 @@ Read these before making significant changes:
 - **[docs/README.md](./docs/README.md)** - Documentation index
 - **[docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)** - System architecture and data flow
 - **[docs/DEVELOPER_GUIDE.md](./docs/DEVELOPER_GUIDE.md)** - Development workflows
-- **[docs/PlaywrightTesting.md](./docs/PlaywrightTesting.md)** - E2E testing guide
+- **[docs/TestingBestPractices.md](./docs/TestingBestPractices.md)** - Unit and E2E testing best practices
+- **[docs/PlaywrightTesting.md](./docs/PlaywrightTesting.md)** - E2E testing commands and debugging
 
 ## Commands Reference
 
