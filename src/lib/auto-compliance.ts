@@ -104,12 +104,12 @@ function isWeekComplete(weekStart: Date): boolean {
 }
 
 function computeComplianceData(allWeeks: WeekInfo[]): ComplianceEventData {
-	// Separate current incomplete week
-	const completedWeeks = allWeeks.filter((w) => isWeekComplete(w.weekStart));
+	// Identify current incomplete week for display, but include ALL weeks
+	// (including future) in validation so marking future months triggers violations
 	const currentWeekInfo = allWeeks.find((w) => !isWeekComplete(w.weekStart));
 
-	// Run sliding window validation on ALL completed weeks
-	const weeksForValidation = convertWeeksToCompliance(completedWeeks);
+	// Run sliding window validation on ALL weeks in the calendar
+	const weeksForValidation = convertWeeksToCompliance(allWeeks);
 	const slidingWindowResult = validateSlidingWindow(
 		weeksForValidation,
 		DEFAULT_RTO_POLICY,
@@ -122,7 +122,7 @@ function computeComplianceData(allWeeks: WeekInfo[]): ComplianceEventData {
 	const bestWeekStartSet = new Set(slidingWindowResult.evaluatedWeekStarts);
 
 	// Get the weeks in the display window
-	const windowWeeks = completedWeeks.filter((w) =>
+	const windowWeeks = allWeeks.filter((w) =>
 		windowWeekStartSet.has(w.weekStart.getTime()),
 	);
 

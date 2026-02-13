@@ -57,13 +57,23 @@ describe("validateSlidingWindow", () => {
 		expect(result.overallCompliance).toBe(100);
 	});
 
-	it("should return valid for fewer than 12 weeks", () => {
+	it("should return valid for fewer than 12 weeks with good attendance", () => {
 		const start = new Date(2025, 0, 6); // Monday Jan 6
 		const weeks = makeWeeks(start, 8, 5); // 8 weeks, all 5-day
 
 		const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
 
 		expect(result.isValid).toBe(true);
+	});
+
+	it("should return NOT valid for fewer than 12 weeks with bad attendance", () => {
+		const start = new Date(2025, 0, 6);
+		const weeks = makeWeeks(start, 6, 0); // 6 weeks, all 0-day
+
+		const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
+
+		expect(result.isValid).toBe(false);
+		expect(result.overallCompliance).toBe(0);
 	});
 
 	it("should return valid when all weeks have 5 office days", () => {

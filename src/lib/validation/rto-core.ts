@@ -332,29 +332,69 @@ export function validateSlidingWindow(
 	const windowSize = policy.rollingPeriodWeeks;
 	const weeksToEvaluate = policy.topWeeksToCheck;
 
-	for (
-		let windowStart = 0;
-		windowStart <= weeksData.length - windowSize;
-		windowStart++
-	) {
-		const windowWeeks = weeksData.slice(windowStart, windowStart + windowSize);
-		const sortedByOfficeDays = [...windowWeeks].sort(
+	// Helper to evaluate a single window of weeks
+	function evaluateWindow(windowWeeks: WeekCompliance[]): {
+		isValid: boolean;
+		averageOfficeDays: number;
+		averageOfficePercentage: number;
+		bestWeeks: WeekCompliance[];
+	} {
+		const sorted = [...windowWeeks].sort(
 			(a, b) => b.officeDays - a.officeDays,
 		);
-		const bestWeeks = sortedByOfficeDays.slice(0, weeksToEvaluate);
+		// For partial windows (< 12 weeks), evaluate all available weeks
+		const evalCount = Math.min(weeksToEvaluate, sorted.length);
+		const bestWeeks = sorted.slice(0, evalCount);
 
 		const totalOfficeDays = bestWeeks.reduce(
 			(sum, week) => sum + week.officeDays,
 			0,
 		);
-		const averageOfficeDays = totalOfficeDays / weeksToEvaluate;
+		const averageOfficeDays = evalCount > 0 ? totalOfficeDays / evalCount : 0;
 		const totalDays = bestWeeks.reduce((sum, week) => sum + week.totalDays, 0);
 		const averageOfficePercentage =
 			totalDays > 0 ? (totalOfficeDays / totalDays) * 100 : 100;
 		const requiredPercentage = policy.thresholdPercentage * 100;
 		const isValid = averageOfficePercentage >= requiredPercentage;
 
+		return { isValid, averageOfficeDays, averageOfficePercentage, bestWeeks };
+	}
+
+	// If fewer weeks than a full window, evaluate as a single partial window
+	if (weeksData.length > 0 && weeksData.length < windowSize) {
+		const { isValid, averageOfficeDays, averageOfficePercentage, bestWeeks } =
+			evaluateWindow(weeksData);
+		const requiredPercentage = policy.thresholdPercentage * 100;
+		const evaluatedWeekStarts = bestWeeks.map((w) => w.weekStart.getTime());
+		const windowWeekStarts = weeksData.map((w) => w.weekStart.getTime());
+		const windowStartTimestamp = weeksData[0]?.weekStart.getTime() ?? null;
+
+		const label = isValid ? "Compliant" : "Not compliant";
+		return {
+			isValid,
+			message: `${label}: Best ${bestWeeks.length} of ${weeksData.length} weeks average ${averageOfficeDays.toFixed(1)} office days (${averageOfficePercentage.toFixed(0)}%). Required: ${requiredPercentage.toFixed(0)}%`,
+			overallCompliance: averageOfficePercentage,
+			evaluatedWeekStarts,
+			windowWeekStarts,
+			invalidWeekStart: isValid
+				? null
+				: (bestWeeks[bestWeeks.length - 1]?.weekStart.getTime() ?? null),
+			windowStart: windowStartTimestamp,
+		};
+	}
+
+	// Slide through all full 12-week windows
+	for (
+		let windowStart = 0;
+		windowStart <= weeksData.length - windowSize;
+		windowStart++
+	) {
+		const windowWeeks = weeksData.slice(windowStart, windowStart + windowSize);
+		const { isValid, averageOfficeDays, averageOfficePercentage, bestWeeks } =
+			evaluateWindow(windowWeeks);
+
 		if (!isValid) {
+			const requiredPercentage = policy.thresholdPercentage * 100;
 			const evaluatedWeekStarts = bestWeeks.map((w) => w.weekStart.getTime());
 			const windowWeekStarts = windowWeeks.map((w) => w.weekStart.getTime());
 			const invalidWeek = bestWeeks[bestWeeks.length - 1];
@@ -380,18 +420,8 @@ export function validateSlidingWindow(
 		lastWindowStart,
 		lastWindowStart + windowSize,
 	);
-	const sortedByOfficeDays = [...lastWindowWeeks].sort(
-		(a, b) => b.officeDays - a.officeDays,
-	);
-	const bestWeeks = sortedByOfficeDays.slice(0, weeksToEvaluate);
-	const totalOfficeDays = bestWeeks.reduce(
-		(sum, week) => sum + week.officeDays,
-		0,
-	);
-	const averageOfficeDays = totalOfficeDays / weeksToEvaluate;
-	const totalDays = bestWeeks.reduce((sum, week) => sum + week.totalDays, 0);
-	const averageOfficePercentage =
-		totalDays > 0 ? (totalOfficeDays / totalDays) * 100 : 100;
+	const { averageOfficeDays, averageOfficePercentage, bestWeeks } =
+		evaluateWindow(lastWindowWeeks);
 	const requiredPercentage = policy.thresholdPercentage * 100;
 	const evaluatedWeekStarts = bestWeeks.map((w) => w.weekStart.getTime());
 	const windowWeekStarts = lastWindowWeeks.map((w) => w.weekStart.getTime());
