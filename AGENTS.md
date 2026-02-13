@@ -391,11 +391,10 @@ Single producer (auto-compliance module)
 **Anti-pattern: Each component subscribes independently**
 ```
 StatusDetails subscribes → computes weeks → updates DOM
-SummaryBar subscribes → computes weeks → updates DOM  (same computation!)
 StatusLegend subscribes → counts states → updates DOM
 ```
 
-This led to ~200 lines of duplicated week-counting logic across StatusDetails and SummaryBar.
+This pattern led to duplicated computation when multiple components independently computed the same stats.
 
 ### Design Away the Need for Mocks
 

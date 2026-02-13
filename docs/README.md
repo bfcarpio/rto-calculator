@@ -77,7 +77,7 @@ docs/
 1. **Auto-Compliance Hub** - Subscribes to date changes, debounces, dispatches results (`auto-compliance.ts`)
 2. **Data Reader** - Reads calendar state via datepainter API (`calendar-data-reader.ts`)
 3. **Orchestrator** - Coordinates validation without DOM dependencies (`ValidationOrchestrator.ts`)
-4. **Sidebar UI** - StatusDetails and SummaryBar consume `compliance-updated` events
+4. **Sidebar UI** - StatusDetails consumes `compliance-updated` events
 
 ### Strategy Pattern for Validation
 - **StrictDayCountValidator** - Each week must individually meet 3-day minimum

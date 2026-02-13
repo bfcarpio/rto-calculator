@@ -68,10 +68,10 @@ Data Reader (calendar-data-reader.ts)
     ↓ enumerates ALL weeks in range, reads datepainter API
 Sliding Window Validation (rto-core.ts)
     ↓ evaluates ALL 12-week windows, best 8 of 12
-Sidebar UI (StatusDetails / SummaryBar)
+Sidebar UI (StatusDetails)
 ```
 
-**Data Reader key behavior**: Iterates through every Monday-aligned week in the calendar range (not just painted dates). For each Mon-Fri, checks the datepainter state and holiday set. Calculates `officeDays = 5 - holidayCount - wfhCount` (minus `sickCount` if `sickDaysPenalize` is enabled in settings).
+**Data Reader key behavior**: Iterates through every Monday-aligned week in the calendar range (not just painted dates). For each Mon-Fri, checks the datepainter state and holiday set. Calculates `officeDays = 5 - wfhCount` (minus `holidayCount` if `holidayPenalize` is enabled, minus `sickCount` if `sickDaysPenalize` is enabled). When a penalize toggle is OFF, those days reduce the effective total instead of office days (excused absence).
 
 See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed explanation.
 
@@ -87,16 +87,15 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed explanation.
 **State Management**:
 - **datepainter** - Primary calendar state via `window.__datepainterInstance`
 - **HistoryManager** - Undo/redo functionality with state snapshots
-- **localStorage** - Persists user settings (including `sickDaysPenalize`)
+- **localStorage** - Persists user settings (including `sickDaysPenalize`, `holidayPenalize`)
 
 **Auto-Compliance Module** (`src/lib/auto-compliance.ts`):
 - Singleton that subscribes to `onStateChange` with 1.5s debounce
 - Computes best-8-of-12 sliding window stats excluding current incomplete week
-- Dispatches `compliance-updated` CustomEvent consumed by StatusDetails and SummaryBar
+- Dispatches `compliance-updated` CustomEvent consumed by StatusDetails
 - Loading bar at top of viewport shows progress during debounce
 
 **Reactive Components** (consume `compliance-updated` events):
-- **SummaryBar** - Average in-office, working days, WFH/holiday counts
 - **StatusDetails** - Week summary, capacity, current week, non-compliant weeks (with ignored/dropped distinction)
 - **StatusLegend** - Count badges for WFH/holiday/sick (directly subscribes to `onStateChange`)
 - **WeekdaySelector** - Bulk weekday toggle buttons; subscribes to `onStateChange` for sync
@@ -403,8 +402,9 @@ error('[MyModule] Error message');        // Always shown
 window.__getHolidayManager().getHolidayDates(2025, 'US');
 window.__datepainterInstance.getAllDates();
 
-// Check sick day policy setting
+// Check penalize policy settings
 JSON.parse(localStorage.getItem('rto-calculator-settings'))?.sickDaysPenalize;
+JSON.parse(localStorage.getItem('rto-calculator-settings'))?.holidayPenalize;
 ```
 
 ---

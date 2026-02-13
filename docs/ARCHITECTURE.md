@@ -43,8 +43,8 @@ Validation runs automatically via the **auto-compliance module** — a singleton
 │  - Enumerate ALL weeks in the calendar range                      │
 │  - Extract selections via datepainter API                         │
 │  - Query holidays from HolidayManager                             │
-│  - Calculate officeDays = 5 - holidays - WFH (- sick)             │
-│  - Respect sickDaysPenalize setting from localStorage             │
+│  - Calculate officeDays based on penalize settings                 │
+│  - Respect holidayPenalize & sickDaysPenalize from localStorage   │
 │  - Return typed data structures (DayInfo, WeekInfo)               │
 └───────────────────────────────┬──────────────────────────────────┘
                                 │
@@ -91,7 +91,7 @@ User paints/clears a date
 ┌───────────────┐
 │  Sidebar UI   │  Step 4: Components consume compliance-updated event
 │ (StatusDetails│  - Compliance status box (compliant/not compliant)
-│  SummaryBar)  │  - Week summary, capacity, non-compliant weeks
+│              )│  - Week summary, capacity, non-compliant weeks
 └───────────────┘
 ```
 
@@ -248,10 +248,9 @@ onStateChange (datepainter public API — per-date granularity)
 
 compliance-updated CustomEvent (application layer — aggregate stats)
   → StatusDetails: week summary, capacity, non-compliant weeks
-  → SummaryBar: averages, day counts
 ```
 
-**Rule of thumb:** Components that need per-date granularity (StatusLegend counts) subscribe to `onStateChange` directly. Components that need aggregate/computed stats (StatusDetails, SummaryBar) consume the `compliance-updated` CustomEvent — this avoids duplicating expensive computation and naturally debounces rapid changes.
+**Rule of thumb:** Components that need per-date granularity (StatusLegend counts) subscribe to `onStateChange` directly. Components that need aggregate/computed stats (StatusDetails) consume the `compliance-updated` CustomEvent — this avoids duplicating expensive computation and naturally debounces rapid changes.
 
 **Legacy Note:** `dateStore` in `src/lib/dateStore.ts` is a compatibility stub. New code should use the datepainter `CalendarInstance` API directly.
 
@@ -278,6 +277,7 @@ Manages state snapshots for undo functionality.
 - Selected company name
 - Holiday preferences
 - Sick day policy (`sickDaysPenalize` - whether sick days count against compliance)
+- Holiday policy (`holidayPenalize` - whether holidays count against compliance)
 - User settings
 
 **Managed by:** `src/scripts/localStorage.ts`
@@ -428,7 +428,7 @@ interface WeekInfo {
   oofCount: number;                   // WFH (work-from-home) days
   holidayCount: number;               // Holiday days in this week
   sickCount: number;                  // Sick days in this week
-  officeDays: number;                 // Calculated: 5 - holidays - WFH (- sick if penalizing)
+  officeDays: number;                 // Calculated: 5 - WFH (- holidays if penalizing) (- sick if penalizing)
   totalDays: number;                  // Effective weekdays (excluding holidays/sick)
   oofDays: number;                    // Alias for oofCount
   isCompliant: boolean;               // Meets 3-day minimum?
@@ -502,9 +502,10 @@ interface Holiday {
 - Persists selection to localStorage
 
 #### `components/SettingsModal.astro`
-- Settings dialog for holidays, sick day policy, etc.
+- Settings dialog for holidays, sick day policy, holiday policy, etc.
 - Pattern presets (Mon-Wed-Fri, Tue-Thu, All WFH)
 - Sick day policy toggle (`sickDaysPenalize`) — controls whether sick days reduce office count
+- Holiday policy toggle (`holidayPenalize`) — controls whether holidays reduce office count
 - Configuration management
 
 #### `components/ShortcutsModal.astro`
@@ -527,10 +528,9 @@ interface Holiday {
 - Subscribes to `onStateChange` to sync button states (active only if ALL instances are marked `oof`)
 - Uses `getDateRange()`, `getDateRangeArray()`, `formatDate()` from `dateUtils.ts`
 
-#### `components/SummaryBar.astro`
-- Consumes `compliance-updated` events from auto-compliance module
-- Average in-office days, working days, WFH count, holiday count
-- Updates after 1.5s debounce as dates are painted
+#### `components/SummaryBar.astro` *(commented out)*
+- Previously showed average in-office days, working days, WFH/holiday counts
+- Functionality consolidated into StatusDetails
 
 ---
 
@@ -571,6 +571,7 @@ src/
 ├── lib/
 │   └── __tests__/
 │       ├── sliding-window-validation.test.ts
+│       ├── calendar-data-reader.test.ts
 │       ├── HolidayManager.test.ts
 │       └── HistoryManager.test.ts
 │
