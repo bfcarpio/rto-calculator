@@ -87,11 +87,11 @@ function handleDayClick(dayEl) {
 
   if (newState) {
     setDateState(date, newState);
-    dayEl.classList.add(`rto-calendar-day--${newState}`);
+    dayEl.classList.add(`datepainter-day--${newState}`);
   } else {
     clearDateState(date);
     for (const s of stateOrder.slice(0, -1)) {
-      dayEl.classList.remove(`rto-calendar-day--${s}`);
+      dayEl.classList.remove(`datepainter-day--${s}`);
     }
   }
 
@@ -103,13 +103,13 @@ const renderer = new CalendarRenderer('#calendar-container', config);
 renderer.render();
 
 // Set up event delegation
-const calendar = document.querySelector('.rto-calendar');
+const calendar = document.querySelector('.datepainter');
 if (calendar) {
   calendar.addEventListener('click', (e) => {
     const target = e.target;
-    const dayEl = target.closest('.rto-calendar-day');
+    const dayEl = target.closest('.datepainter-day');
 
-    if (dayEl && !dayEl.classList.contains('rto-calendar-day--empty')) {
+    if (dayEl && !dayEl.classList.contains('datepainter-day--empty')) {
       handleDayClick(dayEl);
     }
   });

@@ -56,7 +56,7 @@ const calendarHTML = getCalendarHTML(config);
       <p>Click on dates to select them. Click again to deselect.</p>
 
       <div id="calendar-container">
-        <div class="rto-calendar" set:html={calendarHTML} />
+        <div class="datepainter" set:html={calendarHTML} />
       </div>
 
       <div class="info">
@@ -120,11 +120,11 @@ const calendarHTML = getCalendarHTML(config);
 
         if (newState) {
           setDateState(date, newState as DateState);
-          dayEl.classList.add(`rto-calendar-day--${newState}`);
+          dayEl.classList.add(`datepainter-day--${newState}`);
         } else {
           clearDateState(date);
           stateOrder.slice(0, -1).forEach(s => {
-            dayEl.classList.remove(`rto-calendar-day--${s}`);
+            dayEl.classList.remove(`datepainter-day--${s}`);
           });
         }
 
@@ -132,13 +132,13 @@ const calendarHTML = getCalendarHTML(config);
       }
 
       // Set up event delegation
-      const calendar = document.querySelector('.rto-calendar');
+      const calendar = document.querySelector('.datepainter');
       if (calendar) {
         calendar.addEventListener('click', (e) => {
           const target = e.target as HTMLElement;
-          const dayEl = target.closest('.rto-calendar-day') as HTMLElement;
+          const dayEl = target.closest('.datepainter-day') as HTMLElement;
 
-          if (dayEl && !dayEl.classList.contains('rto-calendar-day--empty')) {
+          if (dayEl && !dayEl.classList.contains('datepainter-day--empty')) {
             handleDayClick(dayEl);
           }
         });
