@@ -147,16 +147,11 @@ describe("NagerDateHolidayDataSource", () => {
 		it("should not cache when caching is disabled", async () => {
 			dataSource.updateConfig({ enableCache: false });
 
-			const firstCallStart = Date.now();
 			await dataSource.getHolidaysByYear(2024, "US");
-			const firstCallTime = Date.now() - firstCallStart;
-
-			const secondCallStart = Date.now();
 			await dataSource.getHolidaysByYear(2024, "US");
-			const secondCallTime = Date.now() - secondCallStart;
 
-			// Both calls should take similar time (no caching)
-			expect(secondCallTime).toBeGreaterThanOrEqual(firstCallTime / 2);
+			// Cache should not have been populated
+			expect((dataSource as any).cache.size).toBe(0);
 		}, 30000);
 
 		it("should throw error for invalid country code", async () => {

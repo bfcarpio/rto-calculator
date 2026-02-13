@@ -16,6 +16,7 @@
 </details>
 
 <style>
+  /* Static (server-rendered) elements — normal Astro scoping */
   .window-explorer {
     border: 1px solid #e2e8f0;
     border-radius: 8px;
@@ -75,15 +76,20 @@
     color: #64748b;
   }
 
+  /*
+   * Dynamic (innerHTML) elements — use :global() to bypass Astro scoping.
+   * Scoped ancestor (.window-explorer) prevents style leaks.
+   */
+
   /* Summary line */
-  .window-explorer__summary-line {
+  .window-explorer :global(.window-explorer__summary-line) {
     font-size: 0.8rem;
     font-weight: 600;
     margin-bottom: 0.75rem;
   }
 
-  /* Legend box */
-  .window-explorer__legend {
+  /* Legend */
+  .window-explorer :global(.window-explorer__legend) {
     background: #f8fafc;
     border: 1px solid #e2e8f0;
     border-radius: 6px;
@@ -94,11 +100,11 @@
     color: #475569;
   }
 
-  .window-explorer__legend p {
+  .window-explorer :global(.window-explorer__legend p) {
     margin: 0 0 0.25rem 0;
   }
 
-  .window-explorer__legend-row {
+  .window-explorer :global(.window-explorer__legend-row) {
     display: flex;
     align-items: center;
     gap: 0.4rem;
@@ -106,7 +112,7 @@
   }
 
   /* Dots */
-  .we-dot {
+  .window-explorer :global(.we-dot) {
     display: inline-block;
     width: 10px;
     height: 10px;
@@ -114,46 +120,23 @@
     flex-shrink: 0;
   }
 
-  .we-dot--best-ok { background: #22c55e; }
-  .we-dot--best-bad { background: #f59e0b; }
-  .we-dot--drop-ok {
-    background: transparent;
-    border: 2px solid #22c55e;
-    width: 10px;
-    height: 10px;
-    box-sizing: border-box;
-  }
-  .we-dot--drop-bad {
-    background: transparent;
-    border: 2px solid #f59e0b;
-    width: 10px;
-    height: 10px;
-    box-sizing: border-box;
-  }
+  .window-explorer :global(.we-dot--best-ok) { background: #22c55e; }
+  .window-explorer :global(.we-dot--best-bad) { background: #f59e0b; }
 
-  /* Diamond shape for dropped */
-  .we-diamond {
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    flex-shrink: 0;
-    transform: rotate(45deg);
-  }
-
-  .we-diamond--drop-ok {
+  .window-explorer :global(.we-dot--drop-ok) {
     background: transparent;
     border: 2px solid #22c55e;
     box-sizing: border-box;
   }
 
-  .we-diamond--drop-bad {
+  .window-explorer :global(.we-dot--drop-bad) {
     background: transparent;
     border: 2px solid #f59e0b;
     box-sizing: border-box;
   }
 
-  /* Window row */
-  .window-explorer__row {
+  /* Window rows */
+  .window-explorer :global(.window-explorer__row) {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -162,17 +145,17 @@
     border-bottom: 1px solid #f1f5f9;
   }
 
-  .window-explorer__row:last-child {
+  .window-explorer :global(.window-explorer__row:last-child) {
     border-bottom: none;
   }
 
-  .window-explorer__row-label {
+  .window-explorer :global(.window-explorer__row-label) {
     min-width: 120px;
     white-space: nowrap;
     color: #334155;
   }
 
-  .window-explorer__row-tag {
+  .window-explorer :global(.window-explorer__row-tag) {
     display: inline-block;
     padding: 0.1rem 0.4rem;
     border-radius: 4px;
@@ -183,41 +166,41 @@
     text-align: center;
   }
 
-  .window-explorer__row-tag--pass {
+  .window-explorer :global(.window-explorer__row-tag--pass) {
     background: #dcfce7;
     color: #166534;
   }
 
-  .window-explorer__row-tag--fail {
+  .window-explorer :global(.window-explorer__row-tag--fail) {
     background: #fee2e2;
     color: #991b1b;
   }
 
-  .window-explorer__row-dots {
+  .window-explorer :global(.window-explorer__row-dots) {
     display: flex;
     align-items: center;
     gap: 3px;
     flex: 1;
   }
 
-  .window-explorer__row-avg {
+  .window-explorer :global(.window-explorer__row-avg) {
     min-width: 28px;
     text-align: right;
     color: #6b7280;
     font-size: 0.7rem;
   }
 
-  /* Tooltip for dots */
-  .we-dot-wrap {
+  /* Dot tooltips */
+  .window-explorer :global(.we-dot-wrap) {
     position: relative;
     cursor: default;
   }
 
-  .we-dot-wrap:hover .we-dot-tip {
+  .window-explorer :global(.we-dot-wrap:hover .we-dot-tip) {
     display: block;
   }
 
-  .we-dot-tip {
+  .window-explorer :global(.we-dot-tip) {
     display: none;
     position: absolute;
     bottom: 100%;
@@ -235,14 +218,14 @@
   }
 
   /* Scenario section */
-  .window-explorer__scenarios {
+  .window-explorer :global(.window-explorer__scenarios) {
     margin-top: 0.75rem;
     border: 1px solid #e2e8f0;
     border-radius: 6px;
     overflow: hidden;
   }
 
-  .window-explorer__scenarios summary {
+  .window-explorer :global(.window-explorer__scenarios summary) {
     padding: 0.5rem 0.75rem;
     cursor: pointer;
     font-size: 0.8rem;
@@ -253,43 +236,43 @@
     user-select: none;
   }
 
-  .window-explorer__scenarios summary::-webkit-details-marker { display: none; }
-  .window-explorer__scenarios summary::marker { display: none; }
+  .window-explorer :global(.window-explorer__scenarios summary::-webkit-details-marker) { display: none; }
+  .window-explorer :global(.window-explorer__scenarios summary::marker) { display: none; }
 
-  .window-explorer__scenarios[open] summary {
+  .window-explorer :global(.window-explorer__scenarios[open] summary) {
     border-bottom: 1px solid #e2e8f0;
   }
 
-  .window-explorer__scenario-content {
+  .window-explorer :global(.window-explorer__scenario-content) {
     padding: 0.6rem 0.75rem;
     font-size: 0.75rem;
     color: #475569;
     line-height: 1.5;
   }
 
-  .window-explorer__scenario-content ul {
+  .window-explorer :global(.window-explorer__scenario-content ul) {
     margin: 0.25rem 0 0.5rem 1rem;
     padding: 0;
   }
 
-  .window-explorer__scenario-content li {
+  .window-explorer :global(.window-explorer__scenario-content li) {
     margin-bottom: 0.25rem;
   }
 
   /* Reference table */
-  .window-explorer__table-wrap {
+  .window-explorer :global(.window-explorer__table-wrap) {
     max-height: 200px;
     overflow-y: auto;
     margin-top: 0.5rem;
   }
 
-  .window-explorer__table {
+  .window-explorer :global(.window-explorer__table) {
     width: 100%;
     font-size: 0.7rem;
     border-collapse: collapse;
   }
 
-  .window-explorer__table th {
+  .window-explorer :global(.window-explorer__table th) {
     position: sticky;
     top: 0;
     background: #f8fafc;
@@ -299,114 +282,115 @@
     border-bottom: 1px solid #e2e8f0;
   }
 
-  .window-explorer__table td {
+  .window-explorer :global(.window-explorer__table td) {
     padding: 0.2rem 0.4rem;
     border-bottom: 1px solid #f1f5f9;
   }
 
-  .window-explorer__table tr.we-table-valid td {
+  .window-explorer :global(.window-explorer__table tr.we-table-valid td) {
     color: #166534;
   }
 
-  .window-explorer__table tr.we-table-invalid td {
+  .window-explorer :global(.window-explorer__table tr.we-table-invalid td) {
     color: #991b1b;
   }
 
-  /* Dark mode */
-  body.dark-mode .window-explorer {
+  /* Dark mode — static elements */
+  :global(body.dark-mode) .window-explorer {
     border-color: #334155;
   }
 
-  body.dark-mode .window-explorer__summary {
+  :global(body.dark-mode) .window-explorer__summary {
     background: #1e293b;
   }
 
-  body.dark-mode .window-explorer__summary:hover {
+  :global(body.dark-mode) .window-explorer__summary:hover {
     background: #334155;
   }
 
-  body.dark-mode .window-explorer[open] .window-explorer__summary {
+  :global(body.dark-mode) .window-explorer[open] .window-explorer__summary {
     border-bottom-color: #334155;
   }
 
-  body.dark-mode .window-explorer__title {
+  :global(body.dark-mode) .window-explorer__title {
     color: #e2e8f0;
   }
 
-  body.dark-mode .window-explorer__chevron {
+  :global(body.dark-mode) .window-explorer__chevron {
     color: #94a3b8;
   }
 
-  body.dark-mode .window-explorer__legend {
+  /* Dark mode — dynamic elements */
+  :global(body.dark-mode) .window-explorer :global(.window-explorer__summary-line) {
+    color: #e2e8f0;
+  }
+
+  :global(body.dark-mode) .window-explorer :global(.window-explorer__legend) {
     background: #0f172a;
     border-color: #334155;
     color: #94a3b8;
   }
 
-  body.dark-mode .window-explorer__row {
+  :global(body.dark-mode) .window-explorer :global(.window-explorer__row) {
     border-bottom-color: #1e293b;
   }
 
-  body.dark-mode .window-explorer__row-label {
+  :global(body.dark-mode) .window-explorer :global(.window-explorer__row-label) {
     color: #e2e8f0;
   }
 
-  body.dark-mode .window-explorer__row-tag--pass {
+  :global(body.dark-mode) .window-explorer :global(.window-explorer__row-tag--pass) {
     background: #052e16;
     color: #86efac;
   }
 
-  body.dark-mode .window-explorer__row-tag--fail {
+  :global(body.dark-mode) .window-explorer :global(.window-explorer__row-tag--fail) {
     background: #450a0a;
     color: #fca5a5;
   }
 
-  body.dark-mode .window-explorer__row-avg {
+  :global(body.dark-mode) .window-explorer :global(.window-explorer__row-avg) {
     color: #94a3b8;
   }
 
-  body.dark-mode .we-dot-tip {
+  :global(body.dark-mode) .window-explorer :global(.we-dot-tip) {
     background: #334155;
     color: #e2e8f0;
   }
 
-  body.dark-mode .window-explorer__scenarios {
+  :global(body.dark-mode) .window-explorer :global(.window-explorer__scenarios) {
     border-color: #334155;
   }
 
-  body.dark-mode .window-explorer__scenarios summary {
+  :global(body.dark-mode) .window-explorer :global(.window-explorer__scenarios summary) {
     background: #0f172a;
     color: #e2e8f0;
   }
 
-  body.dark-mode .window-explorer__scenarios[open] summary {
+  :global(body.dark-mode) .window-explorer :global(.window-explorer__scenarios[open] summary) {
     border-bottom-color: #334155;
   }
 
-  body.dark-mode .window-explorer__scenario-content {
+  :global(body.dark-mode) .window-explorer :global(.window-explorer__scenario-content) {
     color: #94a3b8;
   }
 
-  body.dark-mode .window-explorer__table th {
+  :global(body.dark-mode) .window-explorer :global(.window-explorer__table th) {
     background: #0f172a;
     border-bottom-color: #334155;
     color: #e2e8f0;
   }
 
-  body.dark-mode .window-explorer__table td {
+  :global(body.dark-mode) .window-explorer :global(.window-explorer__table td) {
     border-bottom-color: #1e293b;
   }
 
-  body.dark-mode .window-explorer__table tr.we-table-valid td {
+  :global(body.dark-mode) .window-explorer :global(.window-explorer__table tr.we-table-valid td) {
     color: #86efac;
   }
 
-  body.dark-mode .window-explorer__table tr.we-table-invalid td {
+  :global(body.dark-mode) .window-explorer :global(.window-explorer__table tr.we-table-invalid td) {
     color: #fca5a5;
-  }
-
-  body.dark-mode .window-explorer__summary-line {
-    color: #e2e8f0;
   }
 </style>
 
@@ -501,18 +485,19 @@
     let html = '';
 
     // Summary line
-    html += `<p class="window-explorer__summary-line">${summaries.length} window${summaries.length !== 1 ? 's' : ''}: <span class="has-text-success">${passCount} pass</span>, <span class="has-text-danger">${failCount} fail</span></p>`;
+    html += `<p class="window-explorer__summary-line" aria-live="polite">${summaries.length} window${summaries.length !== 1 ? 's' : ''}: <span class="has-text-success">${passCount} pass</span>, <span class="has-text-danger">${failCount} fail</span></p>`;
 
     // Legend
-    html += `<div class="window-explorer__legend">
+    html += `<div class="window-explorer__legend" role="list" aria-label="Dot legend">
       <p>Each row is one ${policy.rollingPeriodWeeks}-week window. Dots show each week's role. The algorithm picks the best ${policy.topWeeksToCheck} — the rest are dropped.</p>
-      <div class="window-explorer__legend-row"><span class="we-dot we-dot--best-ok"></span> Evaluated — compliant (${policy.minOfficeDaysPerWeek}+ office days)</div>
-      <div class="window-explorer__legend-row"><span class="we-dot we-dot--best-bad"></span> Evaluated — non-compliant (&lt; ${policy.minOfficeDaysPerWeek} days)</div>
-      <div class="window-explorer__legend-row"><span class="we-dot we-dot--drop-ok"></span> Dropped — compliant</div>
-      <div class="window-explorer__legend-row"><span class="we-dot we-dot--drop-bad"></span> Dropped — non-compliant</div>
+      <div class="window-explorer__legend-row" role="listitem"><span class="we-dot we-dot--best-ok" role="img" aria-label="Evaluated, compliant"></span> Evaluated — compliant (${policy.minOfficeDaysPerWeek}+ office days)</div>
+      <div class="window-explorer__legend-row" role="listitem"><span class="we-dot we-dot--best-bad" role="img" aria-label="Evaluated, non-compliant"></span> Evaluated — non-compliant (&lt; ${policy.minOfficeDaysPerWeek} days)</div>
+      <div class="window-explorer__legend-row" role="listitem"><span class="we-dot we-dot--drop-ok" role="img" aria-label="Dropped, compliant"></span> Dropped — compliant</div>
+      <div class="window-explorer__legend-row" role="listitem"><span class="we-dot we-dot--drop-bad" role="img" aria-label="Dropped, non-compliant"></span> Dropped — non-compliant</div>
     </div>`;
 
     // Window rows
+    html += `<div role="list" aria-label="Sliding window results">`;
     for (const s of summaries) {
       const label = `${fmtShort(s.windowStart)} – ${fmtShort(s.windowEnd)}`;
       const tagClass = s.isValid ? 'window-explorer__row-tag--pass' : 'window-explorer__row-tag--fail';
@@ -521,6 +506,9 @@
       let dots = '';
       for (const w of s.weekDetails) {
         const tipDate = fmtShort(w.weekStart);
+        const stateDesc = w.isBest ? 'evaluated' : 'dropped';
+        const complianceDesc = w.isCompliant ? 'compliant' : 'non-compliant';
+        const ariaLabel = `${tipDate}: ${w.officeDays} office days, ${stateDesc}, ${complianceDesc}`;
         const tipText = w.isBest
           ? `${tipDate}: ${w.officeDays} days`
           : `${tipDate}: ${w.officeDays} days (dropped)`;
@@ -532,16 +520,17 @@
           dotClass = w.isCompliant ? 'we-dot we-dot--drop-ok' : 'we-dot we-dot--drop-bad';
         }
 
-        dots += `<span class="we-dot-wrap"><span class="${dotClass}"></span><span class="we-dot-tip">${tipText}</span></span>`;
+        dots += `<span class="we-dot-wrap"><span class="${dotClass}" role="img" aria-label="${ariaLabel}"></span><span class="we-dot-tip" aria-hidden="true">${tipText}</span></span>`;
       }
 
-      html += `<div class="window-explorer__row">
+      html += `<div class="window-explorer__row" role="listitem">
         <span class="window-explorer__row-label">${label}</span>
         <span class="window-explorer__row-tag ${tagClass}">${tagText}</span>
         <span class="window-explorer__row-dots">${dots}</span>
         <span class="window-explorer__row-avg">${s.averageOfficeDays.toFixed(1)}</span>
       </div>`;
     }
+    html += `</div>`;
 
     // Scenario section
     html += renderScenarioSection();

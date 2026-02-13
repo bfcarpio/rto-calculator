@@ -61,13 +61,15 @@ function buildSummary(
 		policy,
 	);
 	const bestSet = new Set(bestWeeks.map((w) => w.weekStart.getTime()));
-	const lastWeek = windowWeeks[windowWeeks.length - 1]!;
+	const firstWeek = windowWeeks[0];
+	const lastWeek = windowWeeks[windowWeeks.length - 1];
+	if (!firstWeek || !lastWeek) throw new Error("empty windowWeeks");
 	const windowEnd = new Date(lastWeek.weekStart);
 	windowEnd.setDate(windowEnd.getDate() + 4); // Friday
 
 	return {
 		windowIndex: index,
-		windowStart: windowWeeks[0]!.weekStart,
+		windowStart: firstWeek.weekStart,
 		windowEnd,
 		isValid,
 		averageOfficeDays,

@@ -51,7 +51,10 @@ export function computeBestKAverage(
 	// Iterate from 0 WFH days (most office days) upward
 	for (let wfh = 0; wfh < distribution.length && weeksAssigned < K; wfh++) {
 		const officeDays = config.totalWeekdays - wfh;
-		const weeksAtThisLevel = Math.min(distribution[wfh] ?? 0, K - weeksAssigned);
+		const weeksAtThisLevel = Math.min(
+			distribution[wfh] ?? 0,
+			K - weeksAssigned,
+		);
 		totalOfficeDays += weeksAtThisLevel * officeDays;
 		weeksAssigned += weeksAtThisLevel;
 	}
