@@ -117,15 +117,15 @@ Use `data-testid` attributes for stable, intent-revealing selectors:
 
 ```typescript
 // Good — resilient to styling changes
-page.locator('[data-testid="validate-button"]');
+page.locator('[data-testid="clear-all-button"]');
 page.locator('[data-testid="calendar-day"]');
 
 // Acceptable — user-facing attributes when no testid exists
-page.getByRole("button", { name: "Validate" });
+page.getByRole("button", { name: "Clear All" });
 page.getByLabel("Target days");
 
 // Bad — brittle implementation details
-page.locator(".btn-primary.action-validate");
+page.locator(".btn-primary.action-clear");
 page.locator("#input-123");
 ```
 
@@ -137,7 +137,6 @@ page.locator("#input-123");
 | Day with state | `.datepainter-day--oof`, `.datepainter-day--holiday`, `.datepainter-day--sick` |
 | Count badges | `#count-oof`, `#count-holiday`, `#count-sick` (scope to `#status-legend`) |
 | Palette mode | `[data-testid="mode-oof"]`, `mode-holiday`, `mode-sick` |
-| Validate button | `[data-testid="validate-button"]` |
 | Clear all button | `[data-testid="clear-all-button"]` |
 | Mobile menu | `[data-testid="mobile-menu-button"]` |
 | Settings button | `[data-testid="settings-button"]` |

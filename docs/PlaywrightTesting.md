@@ -208,11 +208,7 @@ test("description of what test does", async ({ page }) => {
   // Navigate to page
   await page.goto("/rto-calculator/");
 
-  // Interact with elements
-  const button = page.locator('[data-testid="validate-button"]');
-  await button.click();
-
-  // Assert expectations
+  // Wait for auto-compliance to compute
   await expect(page.locator(".status-details")).toBeVisible();
 });
 ```
@@ -225,7 +221,7 @@ Import helpers from `test-helpers.ts`:
 import {
   applyWeekdayPattern,
   clearAllSelections,
-  runValidation,
+  waitForCompliance,
   waitForCalendarReady,
 } from "./test-helpers";
 
@@ -236,8 +232,8 @@ test("validation with compliant pattern", async ({ page }) => {
   // Setup test data
   await applyWeekdayPattern(page, "tue-thu", 8); // 2 WFH days = compliant
 
-  // Run validation
-  await runValidation(page);
+  // Wait for auto-compliance to finish (1.5s debounce + computation)
+  await waitForCompliance(page);
 
   // Verify results
   const isCompliant = await isValidationCompliant(page);
@@ -252,7 +248,7 @@ test("validation with compliant pattern", async ({ page }) => {
 | `waitForCalendarReady(page)` | Wait for calendar to load |
 | `applyWeekdayPattern(page, pattern, weeks)` | Apply MWF/Tue-Thu/all patterns |
 | `clearAllSelections(page)` | Click "Clear All" button |
-| `runValidation(page)` | Click validate button, wait for results |
+| `waitForCompliance(page)` | Wait for auto-compliance to finish computing |
 | `setupValidationScenario(page, scenario)` | Predefined scenarios (compliant, violation, etc.) |
 | `isValidationCompliant(page)` | Check if validation shows compliance |
 | `getCalendarDayByDate(page, year, month, day)` | Get specific day cell |
@@ -372,7 +368,7 @@ Always add `data-testid` attributes to interactive elements:
 
 ```html
 <!-- Component template -->
-<button data-testid="validate-button">Validate</button>
+<button data-testid="clear-all-button">Clear All</button>
 <div data-testid="calendar-day" data-day="15">15</div>
 ```
 
@@ -452,12 +448,11 @@ test.describe("Feature", () => {
 
 ```typescript
 // Instead of repeating in every test:
-const button = page.locator('[data-testid="validate-button"]');
-await button.click();
-await page.waitForSelector(".status-details");
+await page.waitForFunction(() => !document.querySelector(".status-details.computing"));
+await page.waitForSelector(".status-details .box");
 
 // Use a helper:
-await runValidation(page);
+await waitForCompliance(page);
 ```
 
 ---

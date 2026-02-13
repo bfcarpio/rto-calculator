@@ -260,7 +260,6 @@ Press **?** or click the **?** button in the header to see all shortcuts.
 | `2` | Holiday painting mode |
 | `3` | Sick painting mode |
 | `Ctrl+Z` / `Cmd+Z` | Undo |
-| `Ctrl+S` / `Cmd+S` | Validate |
 | `Arrow Keys` | Navigate calendar months |
 | `Space` / `Enter` | Toggle focused day |
 | `Escape` | Cancel drag / close modal |

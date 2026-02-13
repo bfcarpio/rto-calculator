@@ -226,7 +226,6 @@ DEFERRED END -->
 <!-- ARIA: Checkbox - unchecked -->
 - [ ] **Keyboard Shortcuts**
 <!-- ARIA: End checkbox -->
-  - Ctrl+S: Save current state
   - Ctrl+Z: Undo last action
   - Space: Toggle current day selection
   - Arrow keys: Navigate calendar
