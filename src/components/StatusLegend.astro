@@ -43,13 +43,13 @@
   }
 
   .legend-item:hover {
-    border-color: var(--color-complementary);
+    border-color: #94a3b8;
     background: #f8fafc;
   }
 
   .legend-item.is-active {
-    border-color: var(--color-complementary);
-    background: #f1f5f9;
+    border-color: #475569;
+    background: #e2e8f0;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
 
@@ -59,13 +59,13 @@
   }
 
   body.dark-mode .legend-item:hover {
-    border-color: #64748b;
+    border-color: #94a3b8;
     background: #334155;
   }
 
   body.dark-mode .legend-item.is-active {
-    border-color: #64748b;
-    background: #334155;
+    border-color: #94a3b8;
+    background: #475569;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   }
 
@@ -177,6 +177,26 @@
   /**
    * Initialize calendar manager with polling fallback
    */
+  const legend = document.getElementById('status-legend');
+
+  if (legend) {
+    legend.querySelectorAll('.legend-item').forEach((item) => {
+      item.addEventListener('click', () => {
+        const mode = item.getAttribute('data-mode') as DateState;
+        if (mode) {
+          setMarkingMode(mode);
+        }
+      });
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.target instanceof HTMLElement && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT')) return;
+      if (e.key === '1') setMarkingMode('oof');
+      if (e.key === '2') setMarkingMode('holiday');
+      if (e.key === '3') setMarkingMode('sick');
+    });
+  }
+
   const initCalendarManager = (): void => {
     calendarManager = getCalendarManager();
     if (!calendarManager) {
@@ -191,28 +211,10 @@
 
     // Initial count update
     updateCounts();
+
+    // Set initial mode now that calendarManager is ready
+    setMarkingMode('oof');
   };
 
   initCalendarManager();
-
-  const legend = document.getElementById('status-legend');
-
-  if (legend) {
-    legend.querySelectorAll('.legend-item').forEach((item) => {
-      item.addEventListener('click', () => {
-        const mode = item.getAttribute('data-mode') as DateState;
-        if (mode) {
-          setMarkingMode(mode);
-        }
-      });
-    });
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key === '1') setMarkingMode('oof');
-      if (e.key === '2') setMarkingMode('holiday');
-      if (e.key === '3') setMarkingMode('sick');
-    });
-
-    setMarkingMode('oof');
-  }
 </script>

@@ -216,3 +216,83 @@ const _buttons: ButtonConfig[] = [
         }
     }
 </style>
+
+<script>
+  import type { CalendarInstance } from 'datepainter';
+  import { readCalendarData } from '../lib/calendar-data-reader';
+  import {
+    clearAllValidationHighlights,
+    orchestrateValidation,
+    updateWeekStatusCells,
+  } from '../lib/validation/ValidationOrchestrator';
+  import { DEFAULT_RTO_POLICY } from '../lib/validation/rto-core';
+  import {
+    clearValidationMessage,
+    displayValidationResults,
+  } from '../scripts/validation-result-display';
+  import type { ValidationResult } from '../types/validation-strategy';
+
+  function getCalendarManager(): CalendarInstance | null {
+    return (window as any).__datepainterInstance || null;
+  }
+
+  /** Run validation using the datepainter API */
+  async function handleValidate(): Promise<void> {
+    const calendarManager = getCalendarManager();
+    if (!calendarManager) {
+      alert('Calendar not ready. Please wait a moment and try again.');
+      return;
+    }
+
+    try {
+      const calendarData = await readCalendarData(calendarManager, { DEBUG: false });
+
+      if (calendarData.totalWeeks === 0) {
+        alert('No weeks found. Please mark some dates first.');
+        return;
+      }
+
+      clearAllValidationHighlights();
+
+      const result = orchestrateValidation(calendarData, {
+        policy: DEFAULT_RTO_POLICY,
+        DEBUG: false,
+      });
+
+      updateWeekStatusCells(result.evaluatedWeeks);
+      clearValidationMessage();
+      displayValidationResults({
+        isValid: result.isValid,
+        overallCompliance: result.compliancePercentage,
+        message: result.message,
+        windowResults: [],
+        violatingWindows: [],
+        compliantWindows: [],
+      } as ValidationResult);
+    } catch (error) {
+      console.error('[ActionButtons] Validation error:', error);
+      alert('An error occurred during validation. Please try again.');
+    }
+  }
+
+  /** Clear all date selections */
+  function handleClearAll(): void {
+    const calendarManager = getCalendarManager();
+    if (!calendarManager) return;
+
+    if (!confirm('Clear all marked dates?')) return;
+
+    calendarManager.clearAll();
+    clearAllValidationHighlights();
+    clearValidationMessage();
+  }
+
+  // Wire up buttons
+  document.querySelectorAll('[data-testid="validate-button"]').forEach((btn) => {
+    btn.addEventListener('click', handleValidate);
+  });
+
+  document.querySelectorAll('[data-testid="clear-all-button"]').forEach((btn) => {
+    btn.addEventListener('click', handleClearAll);
+  });
+</script>

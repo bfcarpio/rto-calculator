@@ -198,47 +198,4 @@ const description =
 			settingsDialog.showModal();
 		});
 	}
-
-	/**
-	 * Initialize calendar manager reference for validation integration
-	 * This connects the Datepainter component with the RTO UI controller
-	 */
-	type CalendarInstance = {
-		getSelectedDates: () => Date[];
-		setSelectedDates: (dates: Date[]) => void;
-		markDate: (date: Date, type: string) => void;
-		unmarkDate: (date: Date) => void;
-	};
-
-	/**
-	 * Calendar manager reference used by validation logic
-	 * Gets initialized when Datepainter component mounts
-	 */
-	let calendarManager: CalendarInstance | null = null;
-
-	/**
-	 * Initialize calendar manager by retrieving the Datepainter instance
-	 * from the window object and connecting it to the RTO UI controller
-	 */
-	const initCalendarManager = (): void => {
-		const globalWindow = window as any;
-
-		// Guard clause: no instance available yet
-		if (!globalWindow.__datepainterInstance) {
-			return;
-		}
-
-		calendarManager = globalWindow.__datepainterInstance;
-
-		// Connect calendar manager to RTO UI controller if available
-		if (globalWindow.rtoUiController?.setCalendarManager) {
-			globalWindow.rtoUiController.setCalendarManager(calendarManager);
-		}
-	};
-
-	// Try to initialize immediately (synchronous case)
-	initCalendarManager();
-
-	// Also try after a short delay (for async initialization)
-	setTimeout(initCalendarManager, 100);
 </script>

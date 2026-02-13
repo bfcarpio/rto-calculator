@@ -1,40 +1,11 @@
 ---
-// SummaryBar.astro - Display compliance metrics + integrated quick actions
+// SummaryBar.astro - Display compliance metrics
 // Placeholder data - real data integration comes in later phases
 
 const _averageDays = 3.2;
 const _workingDays = 45;
 const _oofDays = 12;
 const _holidayDays = 4;
-
-interface ActionButton {
-	id: string;
-	text: string;
-	variant: "primary" | "danger" | "info";
-	icon: string;
-}
-
-const _quickActions: ActionButton[] = [
-	{
-		id: "mark-oof-this",
-		text: "Mark This Week as OOF",
-		variant: "primary",
-		icon: "📅",
-	},
-	{
-		id: "mark-available-next",
-		text: "Mark Next Week Available",
-		variant: "info",
-		icon: "✓",
-	},
-	{ id: "clear-oof", text: "Clear All OOF Days", variant: "danger", icon: "🗑️" },
-	{
-		id: "import-calendar",
-		text: "Import from Calendar",
-		variant: "primary",
-		icon: "📥",
-	},
-];
 ---
 
 <section class="hero is-light summary-bar" aria-labelledby="summary-heading">
@@ -45,24 +16,9 @@ const _quickActions: ActionButton[] = [
 				<h2 id="summary-heading" class="title is-5 mb-2">
 					Average In-Office: <span class="has-text-weight-bold has-text-primary">{_averageDays}</span>/5 days
 				</h2>
-				<p class="subtitle is-7 mb-3">
+				<p class="subtitle is-7 mb-0">
 					Based on your tracked attendance
 				</p>
-
-				<!-- Quick Action Buttons -->
-				<div class="buttons are-small is-flex-wrap-wrap">
-					{_quickActions.map((action) => (
-						<button
-							type="button"
-							id={action.id}
-							class={`button is-${action.variant} quick-action-btn`}
-							aria-label={action.text}
-						>
-							<span class="icon" aria-hidden="true">{action.icon}</span>
-							<span>{action.text}</span>
-						</button>
-					))}
-				</div>
 			</div>
 
 			<!-- Right Column: Day Count Tags -->
@@ -93,18 +49,6 @@ const _quickActions: ActionButton[] = [
 		padding: 1.5rem;
 	}
 
-	.quick-action-btn {
-		transition: transform 0.2s ease;
-	}
-
-	.quick-action-btn:hover {
-		transform: translateY(-2px);
-	}
-
-	.quick-action-btn:active {
-		transform: scale(0.98);
-	}
-
 	/* Mobile adjustments */
 	@media (max-width: 768px) {
 		.summary-bar .hero-body {
@@ -131,15 +75,3 @@ const _quickActions: ActionButton[] = [
 		}
 	}
 </style>
-
-<script>
-	// Quick action button handlers - will be integrated with real functionality in later phases
-	document.querySelectorAll('.quick-action-btn').forEach((button) => {
-		button.addEventListener('click', (e) => {
-			const btn = e.currentTarget as HTMLButtonElement;
-			const actionId = btn.id;
-			console.log(`Quick action triggered: ${actionId}`);
-			// Placeholder for future integration
-		});
-	});
-</script>
