@@ -17,7 +17,7 @@ const CONFIG = {
   TOTAL_WEEKDAYS_PER_WEEK: 5,
   ROLLING_PERIOD_WEEKS: 12,
   THRESHOLD_PERCENTAGE: 0.6, // 3/5 = 60%
-  DEBUG: false, // Debug mode disabled
+  DEBUG: true, // Debug mode enabled
 };
 
 // State
@@ -32,11 +32,11 @@ let validationTimeout = null;
 function getStartOfWeek(date) {
   const d = new Date(date);
   const day = d.getDay();
-  // Sunday (0) -> go back 6 days to Monday
-  // Monday (1) -> same day
-  // Tuesday (2) -> go back 1 day
+  // Sunday (0) -> same day (start of calendar week)
+  // Monday (1) -> go back 1 day
+  // Tuesday (2) -> go back 2 days
   // etc.
-  const daysToSubtract = day === 0 ? 6 : day - 1;
+  const daysToSubtract = day;
   d.setDate(d.getDate() - daysToSubtract);
   d.setHours(0, 0, 0, 0);
   return d;
@@ -316,6 +316,13 @@ function updateWeekStatusIcon(weekStart, isEvaluating = true) {
   const weekKey = weekStart.getTime().toString();
   const statusCell = document.querySelector(`[data-week-start="${weekKey}"]`);
 
+  if (CONFIG.DEBUG) {
+    console.log(
+      `[updateWeekStatusIcon] Looking for cell with data-week-start="${weekKey}"`,
+    );
+    console.log(`[updateWeekStatusIcon] Status cell found:`, statusCell);
+  }
+
   if (!statusCell) return;
 
   const statusIcon = statusCell.querySelector(".week-status-icon");
@@ -325,9 +332,15 @@ function updateWeekStatusIcon(weekStart, isEvaluating = true) {
     statusIcon.textContent = "⏳";
     statusIcon.classList.add("evaluating");
     statusIcon.classList.remove("violation");
+    if (CONFIG.DEBUG) {
+      console.log(`[updateWeekStatusIcon] Set ⏳ icon for week ${weekKey}`);
+    }
   } else {
     statusIcon.textContent = "";
     statusIcon.classList.remove("evaluating", "violation");
+    if (CONFIG.DEBUG) {
+      console.log(`[updateWeekStatusIcon] Cleared icon for week ${weekKey}`);
+    }
   }
 }
 
@@ -339,12 +352,22 @@ function setWeekStatusViolation(weekStart) {
   const weekKey = weekStart.getTime().toString();
   const statusCell = document.querySelector(`[data-week-start="${weekKey}"]`);
 
+  if (CONFIG.DEBUG) {
+    console.log(
+      `[setWeekStatusViolation] Looking for cell with data-week-start="${weekKey}"`,
+    );
+    console.log(`[setWeekStatusViolation] Status cell found:`, statusCell);
+  }
+
   if (statusCell) {
     const statusIcon = statusCell.querySelector(".week-status-icon");
     if (statusIcon) {
       statusIcon.textContent = "✗";
       statusIcon.classList.remove("evaluating");
       statusIcon.classList.add("violation");
+      if (CONFIG.DEBUG) {
+        console.log(`[setWeekStatusViolation] Set ✗ icon for week ${weekKey}`);
+      }
     }
   }
 }
@@ -593,22 +616,8 @@ function initRTOValidation() {
   // Dim weekends
   dimWeekends();
 
-  // Set up validate button
-  const validateButton = document.getElementById("validate-button");
-  if (validateButton) {
-    validateButton.addEventListener("click", () => {
-      runValidation();
-      validateButton.focus();
-    });
-
-    // Add keyboard support
-    validateButton.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        runValidation();
-      }
-    });
-  }
+  // Note: Validate and Clear All button handlers are now in index.astro
+  // to support both top and bottom button sets
 
   // Set up MutationObserver to clear status icons on selection changes
   const calendarContainer = document.querySelector(".calendar-container");
@@ -672,6 +681,7 @@ globalWindow.RTOValidation = {
   updateComplianceIndicator,
   highlightCurrentWeek,
   runValidation,
+  runValidationWithHighlights,
   clearAllValidationHighlights,
   cleanupRTOValidation,
 };
