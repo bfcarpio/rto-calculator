@@ -17,8 +17,10 @@ export async function navigateToApp(page: Page): Promise<void> {
  * Wait for app to be fully loaded (DOM + JS initialized)
  */
 export async function waitForAppLoad(page: Page): Promise<void> {
-	await page.waitForLoadState("networkidle");
-	await page.waitForSelector(".datepainter", { state: "visible" });
+	await page.waitForSelector(
+		'[data-testid="calendar-day"]:not(.datepainter__day--empty):not(.datepainter__day--disabled)',
+		{ state: "visible" },
+	);
 	await page.waitForSelector("#status-legend", { state: "visible" });
 }
 

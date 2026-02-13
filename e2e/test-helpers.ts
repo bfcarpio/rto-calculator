@@ -770,13 +770,10 @@ export async function waitForCalendarReady(
 	page: Page,
 	timeout = 10000,
 ): Promise<void> {
-	await page.waitForSelector('[data-testid="calendar-day"]', {
-		timeout,
-		state: "visible",
-	});
-
-	// Additional wait for any JavaScript initialization
-	await page.waitForTimeout(500);
+	await page.waitForSelector(
+		'[data-testid="calendar-day"]:not(.datepainter__day--empty):not(.datepainter__day--disabled)',
+		{ timeout, state: "visible" },
+	);
 }
 
 /**

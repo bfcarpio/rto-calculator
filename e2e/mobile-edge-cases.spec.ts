@@ -11,7 +11,6 @@ test.describe("Mobile Edge Cases", () => {
 		// Set mobile viewport
 		await page.setViewportSize({ width: 375, height: 667 });
 		await navigateToApp(page);
-		await page.waitForLoadState("networkidle");
 		await page.waitForSelector(
 			'[data-testid="calendar-day"]:not(.datepainter__day--empty):not(.datepainter__day--disabled)',
 			{
