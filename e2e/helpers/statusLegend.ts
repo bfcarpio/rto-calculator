@@ -19,8 +19,7 @@ export async function selectMode(page: Page, mode: MarkingMode): Promise<void> {
 	const legend = getMainLegend(page);
 	const button = legend.locator(`[data-testid="mode-${mode}"]`);
 	await button.waitFor({ state: "visible" });
-	await button.scrollIntoViewIfNeeded();
-	await button.click();
+	await button.click({ force: true });
 }
 
 export async function expectModeActive(
