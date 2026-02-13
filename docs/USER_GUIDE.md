@@ -38,7 +38,9 @@ Welcome to the RTO Calculator! This guide will help you track your Return-to-Off
 - Faster than clicking individual days
 
 **Weekday Quick-Select:**
-- Use the **Mon–Fri buttons** below the calendar to toggle all instances of a weekday
+- Located in a collapsible drawer below the calendar (closed by default)
+- Click **"Quick-Select Weekdays"** to expand it
+- Use the **Mon–Fri buttons** to toggle all instances of a weekday
 - Click **Wed** to mark every Wednesday as WFH; click again to clear them all
 - Buttons show as active only when ALL instances of that weekday are marked WFH
 
@@ -103,63 +105,42 @@ Some countries have company-specific holiday settings:
 
 ---
 
-## Validation Modes
+## Validation Policy
 
-### Understanding Validation Modes
+### Best 8 of 12 Weeks
 
-The RTO Calculator supports two validation modes. You can switch between them in Settings.
+The RTO Calculator enforces a single validation policy: **Best 8 of 12 weeks must average at least 3 office days per week (60%).**
 
-#### **Strict Mode** (Week-by-Week)
-
-**How it works:**
-- Each week is checked individually
-- Every week must meet the 3-day minimum
-- Fails immediately on the first violating week
-
-**Use this mode if:**
-- Your policy requires 3 office days every single week
-- No flexibility for averaging across weeks
-- You need to identify specific problem weeks
-
-**Example:**
-```
-Week 1: 3 office days ✓
-Week 2: 2 office days ✗ (FAILS - not enough)
-Week 3: 4 office days ✓
-Result: VIOLATION on Week 2
-```
-
-#### **Average Window Mode** (Rolling 12-Week Average)
+The system evaluates ALL possible 12-week windows across your calendar — if any window fails, you are not compliant.
 
 **How it works:**
-- Looks at 12-week rolling windows
-- Takes the best 8 weeks from each window
-- Average of those 8 weeks must be ≥ 60% (3/5 days)
-- Allows flexibility across weeks
+- Every possible 12-week window in your calendar is checked
+- Within each window, the 4 worst weeks are **dropped** (excluded)
+- The remaining best 8 weeks must average at least 60% office attendance
+- This gives you flexibility for vacation, sick days, or occasional low weeks
 
-**Use this mode if:**
-- Your policy allows averaging over time
-- Occasional low weeks are acceptable if balanced by high weeks
-- You have flexibility in scheduling
-
-**Example:**
+**Example — Passing:**
 ```
 Best 8 weeks in a 12-week window:
 Weeks 1-4: 3 office days each (60%)
-Week 5: 1 office day (20%)
+Week 5: 4 office days (80%)
 Weeks 6-8: 5 office days each (100%)
 
-Average: (3+3+3+3+1+5+5+5) / 8 = 3.5 days = 70%
+Average: (3+3+3+3+4+5+5+5) / 8 = 3.875 days = 77.5%
 Result: ✓ COMPLIANT (meets 60% threshold)
+
+(4 dropped weeks were your lowest-attendance weeks and are excluded)
 ```
 
-### Switching Validation Modes
+**Example — Failing:**
+```
+Best 8 weeks in a 12-week window:
+Weeks 1-4: 2 office days each (40%)
+Weeks 5-8: 3 office days each (60%)
 
-1. Click **Settings**
-2. Find **"Validation Mode"** dropdown
-3. Select **"Strict"** or **"Average window"**
-4. Click **Save**
-5. Run validation again to see results under the new mode
+Average: (2+2+2+2+3+3+3+3) / 8 = 2.5 days = 50%
+Result: ✗ VIOLATION (below 60% threshold)
+```
 
 ---
 
@@ -169,44 +150,27 @@ Result: ✓ COMPLIANT (meets 60% threshold)
 
 Each week row shows a status icon:
 
-- **✓ Green checkmark** - Week is compliant
-- **✗ Red X** - Week has a violation (needs attention)
-- **⏳ Hourglass** - Week is in an invalid window (needs improvement)
-- **(empty)** - Week is not being evaluated
-
-**What the icons mean:**
-
-**Strict Mode:**
-- ✓ = Week has ≥ 3 office days
-- ✗ = Week has < 3 office days
-- (empty) = Week not in evaluation window
-
-**Average Window Mode:**
-- ✓ = Week meets minimum AND overall window is valid
-- ✗ = Week is the lowest-attendance week in invalid window
-- ⏳ = Week is in invalid window but not the lowest
-- (empty) = Week not in current 12-week evaluation window
+- **✓ Green checkmark** - Week is compliant (contributes positively to the window average)
+- **✗ Red X** - Week is the lowest-attendance week in a failing window (needs attention)
+- **⏳ Hourglass** - Week is in a failing window but not the worst offender
+- **—** - Week was **dropped** (one of the 4 worst weeks excluded by the best-8-of-12 policy)
+- **(empty)** - Week is not in any current 12-week evaluation window
 
 ### Validation Messages
 
-**Strict Mode Results:**
-```
-✗ RTO Violation: Week starting Sun Jan 07 has only 2 office days, required: 3
-```
-**Action**: Add at least 1 more office day to that specific week.
-
-**Average Window Mode Results:**
+**Compliant:**
 ```
 ✓ RTO Compliant: Top 8 weeks average 3.6 office days (72%) of 5 weekdays.
 Required: 3 days (60%)
 ```
-**No action needed** - You're meeting the requirement.
+**No action needed** — you are meeting the requirement.
 
+**Violation:**
 ```
 ✗ RTO Violation: Top 8 weeks average 2.8 office days (56%) of 5 weekdays.
 Required: 3 days (60%)
 ```
-**Action**: Add more office days across multiple weeks to improve the average.
+**Action**: Add more office days across multiple weeks to improve the average. Focus on weeks marked with ✗ or ⏳.
 
 ### No Selections Message
 
@@ -293,10 +257,9 @@ The RTO Calculator includes undo/redo functionality:
 ### Planning Your Schedule
 
 1. **Enable holidays first** - This gives you accurate effective weekdays
-2. **Pick a validation mode** - Choose based on your company's policy
-3. **Mark known out-of-office days** - Vacations, appointments, etc.
-4. **Run validation** - See which weeks need adjustment
-5. **Adjust as needed** - Add office days to problem weeks
+2. **Mark known out-of-office days** - Vacations, appointments, etc.
+3. **Run validation** - See which weeks need adjustment
+4. **Adjust as needed** - Add office days to weeks marked with ✗ or ⏳
 
 ### Common Scenarios
 
@@ -315,30 +278,26 @@ Office days: 5 - 1 - 1 = 3 days ✓ Compliant
 Taking Monday-Friday off
 Total weekdays: 5
 WFH: 5
-Office days: 0 days ✗ Violation
-Solution: In Average mode, balance with high-office weeks
+Office days: 0 days
+This week will likely be dropped (one of your 4 worst weeks).
+As long as your best 8 weeks still average ≥ 60%: ✓ Compliant
 ```
 
 **Scenario 3: Flexible schedule**
 ```
-Using Average Window mode
 Some weeks: 2 office days
 Some weeks: 5 office days
+The 4 worst weeks are dropped from each 12-week window.
 As long as best 8 weeks average ≥ 3 days: ✓ Compliant
 ```
 
 ### Validation Tips
 
-**Strict Mode:**
-- Cannot have any week below 3 office days
-- Plan every week carefully
-- Less flexibility but clearer requirements
-
-**Average Window Mode:**
-- Can have occasional low weeks
-- Balance low weeks with high weeks
-- More flexibility for vacation planning
-- Monitor the 12-week rolling average
+- You can have occasional low weeks — the 4 worst weeks in each 12-week window are **dropped**
+- Balance low weeks with high-attendance weeks to keep your average above 60%
+- Vacation weeks and sick weeks are prime candidates for dropped weeks
+- Focus on maintaining at least 3 office days in most weeks to stay safely compliant
+- Monitor weeks marked with ⏳ — they are in a struggling window and may tip into violation
 
 ---
 
@@ -358,7 +317,7 @@ As long as best 8 weeks average ≥ 3 days: ✓ Compliant
 
 **Solution:** Check if holiday markers are present. Count: `Office days = Weekdays - Holidays - WFH days`
 
-**Cause 2:** Using Average Window mode and overall window is below 60%
+**Cause 2:** The best 8 of 12 weeks average is below 60% in a window containing this week
 
 **Solution:** Add more office days across multiple weeks to improve the average
 
@@ -389,11 +348,11 @@ As long as best 8 weeks average ≥ 3 days: ✓ Compliant
 
 ### Issue: Too many weeks showing violations
 
-**Cause:** Using Strict mode which requires every week to meet minimum
+**Cause:** Too many low-attendance weeks are dragging down the best-8 average below 60%
 
 **Solution:**
-- Switch to Average Window mode for more flexibility
-- Or add more office days to each violating week
+- Add more office days to weeks marked ✗ or ⏳
+- Remember that your 4 worst weeks are already being dropped — if you still fail, the remaining 8 weeks need improvement
 
 ---
 
@@ -404,7 +363,6 @@ As long as best 8 weeks average ≥ 3 days: ✓ Compliant
 When data saving is **enabled**:
 - Selected work-from-home days
 - Country/company selection for holidays
-- Validation mode preference
 - Settings preferences
 
 ### Where is Data Stored?
@@ -473,14 +431,14 @@ Complete functionality available via keyboard:
 
 **Quick Steps:**
 1. Enable holidays (Settings → Country)
-2. Choose validation mode (Strict or Average)
-3. Mark work-from-home days
-4. Click **Validate**
-5. Adjust schedule based on results
+2. Mark work-from-home days
+3. Click **Validate**
+4. Adjust schedule based on results
 
 **Key Features:**
+- ✓ Best-8-of-12 validation (4 worst weeks dropped automatically)
 - ✓ 200+ countries for holidays
-- ✓ Two validation modes (Strict & Average)
+- ✓ Weekday quick-select for bulk WFH marking
 - ✓ Keyboard shortcuts and accessibility
 - ✓ Undo/redo support
 - ✓ Privacy-focused (local storage only)

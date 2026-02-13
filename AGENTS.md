@@ -341,7 +341,7 @@ const mockApi = vi.fn().mockResolvedValue(mockData);
 src/
 ├── components/          # Astro UI components
 ├── lib/
-│   ├── validation/     # Validation strategy implementations
+│   ├── validation/     # Sliding window validation (rto-core.ts)
 │   ├── holiday/        # Holiday management logic
 │   └── __tests__/      # Tests co-located with source
 ├── scripts/            # Client-side DOM integration
@@ -350,29 +350,6 @@ src/
 ```
 
 ## Architecture Patterns
-
-### Strategy Pattern
-Use for validation modes. Define base class, extend for concrete implementations.
-
-```typescript
-// Base: src/lib/validation/ValidationStrategy.ts
-// Implementations: StrictDayCountValidator.ts, AverageWindowValidator.ts
-```
-
-### Factory Pattern
-Use for instantiating correct validator by mode.
-
-```typescript
-// ValidationFactory.ts
-export class ValidationFactory {
-  static create(mode: ValidationMode): ValidationStrategy {
-    switch (mode) {
-      case 'strict': return new StrictDayCountValidator();
-      case 'average': return new AverageWindowValidator();
-    }
-  }
-}
-```
 
 ### Singleton Pattern
 Use for stateful managers with `getInstance()` method.

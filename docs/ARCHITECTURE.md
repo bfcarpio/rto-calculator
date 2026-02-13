@@ -2,7 +2,7 @@
 
 ## Overview
 
-The RTO Calculator is an Astro-based web application for tracking Return-to-Office (RTO) compliance. The architecture follows a **3-layer validation flow** with clear separation of concerns, enabling pure business logic that is testable, maintainable, and extensible.
+The RTO Calculator is an Astro-based web application for tracking Return-to-Office (RTO) compliance. The architecture follows a **streamlined validation flow** with clear separation of concerns, enabling pure business logic that is testable, maintainable, and simple to reason about.
 
 **Technology Stack:**
 - **Framework**: Astro v4+ (SSR + client-side hydration)
@@ -28,6 +28,7 @@ Validation runs automatically via the **auto-compliance module** — a singleton
 │  Responsibilities:                                                │
 │  - Subscribe to datepainter onStateChange                         │
 │  - Debounce (1.5s) then read calendar data + run validation       │
+│  - Call validateSlidingWindow() from rto-core.ts                  │
 │  - Compute best-8-of-12 sliding window stats                      │
 │  - Dispatch compliance-updated CustomEvent on window              │
 │  - Toggle .computing opacity fade on sidebar panels               │
@@ -49,14 +50,13 @@ Validation runs automatically via the **auto-compliance module** — a singleton
                                 │
                                 ▼
 ┌──────────────────────────────────────────────────────────────────┐
-│                       Orchestration Layer                         │
-│               (src/lib/validation/ValidationOrchestrator.ts)     │
+│                  Sliding Window Validation                        │
+│              (src/lib/validation/rto-core.ts)                    │
 │                                                                   │
 │  Responsibilities:                                                │
-│  - Coordinate validation workflow                                 │
-│  - Manage configuration and policy application                    │
-│  - No DOM dependencies - works with pure data                     │
-│  - Delegates to concrete strategies via Factory                   │
+│  - validateSlidingWindow(): pure function, no DOM deps            │
+│  - Best-8-of-12 week rolling window compliance check              │
+│  - Returns SlidingWindowResult with per-window stats              │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
@@ -82,9 +82,9 @@ User paints/clears a date
         │
         ▼
 ┌───────────────┐
-│ Orchestrator  │  Step 3: Coordinate validation
-│               │  - Convert data for strategies
-│               │  - Run sliding window validation
+│  rto-core.ts  │  Step 3: Run sliding window validation
+│  (validate-   │  - validateSlidingWindow() pure function
+│  SlidingWindow│  - Best-8-of-12 week compliance check
 └───────┬───────┘
         │
         ▼
@@ -97,57 +97,41 @@ User paints/clears a date
 
 ---
 
-## The Strategy Pattern for Validation
+## Sliding Window Validation
 
-The validation system uses the **Strategy Pattern** to support different validation modes. This allows the system to swap between different validation algorithms without changing the core code.
+The validation system uses a single **sliding window** approach implemented as a pure function. There is no strategy hierarchy or factory — just one function that implements the best-8-of-12 week rolling window compliance check.
 
-### Class Hierarchy
+### How It Works
 
 ```
-                    ValidationStrategy
-                   (Abstract Base Class)
-                          ▲
-                          │ extends
-                          │
-        ┌─────────────────┴─────────────────┐
-        │                                   │
-        ▼                                   ▼
-StrictDayCountValidator          AverageWindowValidator
-        │                                   │
-        │   "strict"                        │   "average"
-        │                                   │
-        ├─ Each week must                  ├─ 12-week rolling
-        │   individually                    │   window averages
-        │   meet minimum                    │   of best 8 weeks
-        │                                   │
-        ├─ Fail-fast on                    ├─ Sort weeks by
-        │   first violation                 │   office days
-        │                                   │
-        └─ Enforces 3/5 rule               └─ Enforces 60%
-            per week                          threshold
+  validateSlidingWindow(weeks, policy)
+          │
+          ▼
+  ┌─────────────────────────────────┐
+  │  For each 12-week window:       │
+  │  1. Sort weeks by officeDays    │
+  │  2. Take best 8 weeks           │
+  │  3. Average office days         │
+  │  4. Compare against threshold   │
+  │     (60% = 3/5 days)            │
+  └─────────────────────────────────┘
+          │
+          ▼
+  SlidingWindowResult
+  - isValid, message
+  - overallCompliance
+  - windowResults[]
+  - compliantWindows[]
+  - violatingWindows[]
 ```
 
 ### Key Components
 
 | Component | Purpose | Location |
 |-----------|---------|----------|
-| **ValidationStrategy** | Abstract base class defining the interface for all validators | `src/lib/validation/ValidationStrategy.ts` |
-| **StrictDayCountValidator** | Validates that each week individually meets minimum office day requirements | `src/lib/validation/StrictDayCountValidator.ts` |
-| **AverageWindowValidator** | Validates using 12-week rolling window averages of best 8 weeks | `src/lib/validation/AverageWindowValidator.ts` |
-| **ValidationFactory** | Factory pattern to create appropriate validator instances | `src/lib/validation/ValidationFactory.ts` |
-| **ValidationManager** | Client-side manager for strategies (exposed as `window.validationManager`) | `src/scripts/ValidationManager.ts` |
-
-### ValidationFactory Usage
-
-```typescript
-// Factory creates appropriate validator based on mode
-const validator = ValidationFactory.createValidator("strict");
-// or
-const validator = ValidationFactory.createValidator("average");
-
-// All validators implement the same interface
-const result = validator.validate(context);
-```
+| **validateSlidingWindow()** | Pure function: best-8-of-12 rolling window compliance check | `src/lib/validation/rto-core.ts` |
+| **constants** | ROLLING_WINDOW_WEEKS, BEST_WEEKS_COUNT, COMPLIANCE_THRESHOLD, etc. | `src/lib/validation/constants.ts` |
+| **ValidationManager** | Simplified client-side config holder (exposed as `window.validationManager`) | `src/scripts/ValidationManager.ts` |
 
 ---
 
@@ -293,7 +277,6 @@ Manages state snapshots for undo functionality.
 - Selected country code
 - Selected company name
 - Holiday preferences
-- Validation mode
 - Sick day policy (`sickDaysPenalize` - whether sick days count against compliance)
 - User settings
 
@@ -350,14 +333,8 @@ src/
 │   └── __tests__/                     # Component tests
 │
 ├── lib/                  # Core business logic (framework-agnostic)
-│   ├── validation/       # Validation domain with Strategy Pattern
-│   │   ├── ValidationStrategy.ts        # Abstract base class
-│   │   ├── StrictDayCountValidator.ts   # Concrete strategy
-│   │   ├── AverageWindowValidator.ts    # Concrete strategy
-│   │   ├── ValidationFactory.ts         # Factory for creating validators
-│   │   ├── ValidationOrchestrator.ts    # Orchestrates validation flow
-│   │   ├── rto-core.ts                  # Pure validation functions
-│   │   ├── RollingPeriodValidation.ts   # Legacy wrapper
+│   ├── validation/       # Validation domain
+│   │   ├── rto-core.ts                  # Pure sliding window validation function
 │   │   ├── constants.ts                 # Validation constants
 │   │   └── index.ts                     # Module exports
 │   │
@@ -380,7 +357,7 @@ src/
 │   └── dateStore.ts               # Legacy stub (use datepainter CalendarInstance instead)
 │
 ├── scripts/              # Client-side DOM integration
-│   ├── ValidationManager.ts       # Strategy orchestration (client-side)
+│   ├── ValidationManager.ts       # Simplified config holder (client-side)
 │   ├── eventHandlers.ts
 │   ├── settings-modal.ts
 │   ├── localStorage.ts
@@ -388,7 +365,6 @@ src/
 │   └── debug.ts
 │
 ├── types/                # TypeScript type definitions
-│   ├── validation-strategy.d.ts
 │   ├── calendar-types.d.ts
 │   ├── holiday-data-source.ts
 │   └── index.ts
@@ -415,9 +391,9 @@ src/
 
 ### 1. Separation of Concerns
 
-- **Auto-Compliance Hub**: Reactive singleton that debounces and dispatches results
+- **Auto-Compliance Hub**: Reactive singleton that debounces, reads data, runs validation, and dispatches results
 - **Data Reader Layer**: Single DOM query, returns typed data
-- **Orchestration Layer**: Coordinates validation without DOM dependencies
+- **Sliding Window Validation**: Pure function in `rto-core.ts`, no DOM dependencies
 - **Sidebar Components**: Consume `compliance-updated` events to render stats
 
 ### 2. Pure Functions
@@ -427,32 +403,11 @@ All validation logic in `src/lib/` uses pure functions:
 - No side effects or DOM manipulation
 - Easy to test and reason about
 
-### 3. Strategy Pattern
+### 3. Single Validation Function
 
-Validation modes are pluggable through the Strategy Pattern:
-- `ValidationStrategy` abstract base class defines the contract
-- Concrete implementations provide specific validation algorithms
-- `ValidationFactory` creates the appropriate validator
+Validation uses a single pure function (`validateSlidingWindow()` in `rto-core.ts`) rather than a class hierarchy. This keeps the validation logic simple, testable, and easy to understand — there is one algorithm (best-8-of-12 sliding window) with no need for runtime strategy selection.
 
-### 4. Factory Pattern
-
-```typescript
-// Centralized validator creation
-export class ValidationFactory {
-  static createValidator(mode: ValidationMode): ValidationStrategy {
-    switch (mode) {
-      case "strict":
-        return new StrictDayCountValidator();
-      case "average":
-        return new AverageWindowValidator();
-      default:
-        throw new Error(`Unsupported mode: ${mode}`);
-    }
-  }
-}
-```
-
-### 5. Singleton Pattern
+### 4. Singleton Pattern
 
 Used for managers that need single instances:
 - `HolidayManager.getInstance()` - async initialization
@@ -495,18 +450,16 @@ interface DayInfo {
 }
 ```
 
-### ValidationResult
+### SlidingWindowResult
 
 ```typescript
-interface ValidationResult {
+interface SlidingWindowResult {
   isValid: boolean;
   message: string;
   overallCompliance: number;
   windowResults: WindowCompliance[];
   violatingWindows: WindowCompliance[];
   compliantWindows: WindowCompliance[];
-  validationMode?: "strict" | "average";
-  invalidWeek?: WeekCompliance;
 }
 ```
 
@@ -549,7 +502,7 @@ interface Holiday {
 - Persists selection to localStorage
 
 #### `components/SettingsModal.astro`
-- Settings dialog for validation mode, holidays, sick day policy, etc.
+- Settings dialog for holidays, sick day policy, etc.
 - Pattern presets (Mon-Wed-Fri, Tue-Thu, All WFH)
 - Sick day policy toggle (`sickDaysPenalize`) — controls whether sick days reduce office count
 - Configuration management
@@ -563,10 +516,11 @@ interface Holiday {
 - Consumes `compliance-updated` events from auto-compliance module
 - Compliance status box (compliant/not compliant with color coding)
 - Week summary, capacity, current week status, non-compliant weeks
-- Non-compliant weeks show "Ignored" (dimmed) for dropped weeks vs "Needs X more" for counted weeks
+- Non-compliant weeks show "Dropped" (dimmed) for dropped weeks vs "Needs X more" for counted weeks
 - Updates after 1.5s debounce as dates are painted
 
 #### `components/WeekdaySelector.astro`
+- Wrapped in a collapsible `<details>`/`<summary>` drawer
 - Row of 5 weekday toggle buttons (Mon–Fri) for bulk WFH marking
 - Toggling a day ON marks every instance of that weekday across the full calendar range as WFH
 - Toggling OFF clears all instances of that weekday
@@ -581,37 +535,6 @@ interface Holiday {
 ---
 
 ## Extension Points
-
-### Adding New Validation Strategies
-
-1. Create new strategy class extending `ValidationStrategy`:
-
-```typescript
-class CustomValidator extends ValidationStrategy {
-  readonly name = "custom";
-  readonly description = "My custom validation logic";
-
-  validate(context: ValidatorContext): ValidationResult {
-    // Implementation
-  }
-
-  getWeekCompliance(weekStart: Date, context: ValidatorContext): WeekCompliance {
-    // Implementation
-  }
-
-  getWindowCompliance(windowStart: number, windowSize: number, context: ValidatorContext): WindowCompliance {
-    // Implementation
-  }
-}
-```
-
-2. Register with ValidationFactory:
-
-```typescript
-// In ValidationFactory._instantiateValidator()
-case "custom":
-  return new CustomValidator();
-```
 
 ### Adding New Holiday Data Sources
 
@@ -647,7 +570,7 @@ Tests are co-located with source files:
 src/
 ├── lib/
 │   └── __tests__/
-│       ├── RollingPeriodValidation.test.ts
+│       ├── sliding-window-validation.test.ts
 │       ├── HolidayManager.test.ts
 │       └── HistoryManager.test.ts
 │
@@ -682,10 +605,10 @@ See [AGENTS.md](../AGENTS.md) for build/test commands.
 
 ### Caching Strategy
 
-1. **Validation Caching**
-   - ValidationStrategy base class provides caching
-   - Week/window results cached by timestamp
-   - Cleared on configuration changes
+1. **Validation**
+   - `validateSlidingWindow()` is a pure function — no internal caching needed
+   - Recomputed on each compliance pass (debounced at 1.5s)
+   - Lightweight: operates on pre-computed WeekInfo[] arrays
 
 2. **Holiday Caching**
    - HolidayDataSourceStrategy provides TTL-based caching
@@ -728,14 +651,13 @@ See [AGENTS.md](../AGENTS.md) for build/test commands.
 
 The RTO Calculator architecture prioritizes:
 
-1. **Clear separation** between UI, orchestration, and data layers
+1. **Clear separation** between UI, data reading, and validation layers
 2. **Pure functions** for business logic (testable, predictable)
-3. **Strategy Pattern** for extensible validation modes
-4. **Factory Pattern** for clean validator and data source instantiation
-5. **Single DOM query** to extract data, then pure operations
-6. **Type safety** throughout with comprehensive TypeScript interfaces
-7. **Pluggable holiday system** with multiple data source support
-8. **Undo functionality** via HistoryManager
-9. **datepainter integration** for efficient calendar state management
+3. **Simple validation** — a single `validateSlidingWindow()` function in `rto-core.ts` (no class hierarchies)
+4. **Single DOM query** to extract data, then pure operations
+5. **Type safety** throughout with comprehensive TypeScript interfaces
+6. **Pluggable holiday system** with Factory Pattern for data source instantiation
+7. **Undo functionality** via HistoryManager
+8. **datepainter integration** for efficient calendar state management
 
 This architecture enables easy testing, maintenance, and extension while maintaining clean separation of concerns and predictable behavior.

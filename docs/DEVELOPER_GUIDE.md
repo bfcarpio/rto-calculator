@@ -59,29 +59,25 @@ npm run check           # All checks (lint + types)
 
 ## Architecture Overview
 
-### 3-Layer Validation Flow
+### Validation Flow
 
 ```
 Auto-Compliance Hub (auto-compliance.ts)
     ↓ subscribes to onStateChange, debounces 1.5s
 Data Reader (calendar-data-reader.ts)
     ↓ enumerates ALL weeks in range, reads datepainter API
-Orchestrator (ValidationOrchestrator.ts)
-    ↓ coordinates validation
-Strategy (StrictDayCountValidator / AverageWindowValidator)
-    ↓ results dispatched as compliance-updated event on window
+Sliding Window Validation (rto-core.ts)
+    ↓ evaluates ALL 12-week windows, best 8 of 12
 Sidebar UI (StatusDetails / SummaryBar)
 ```
 
 **Data Reader key behavior**: Iterates through every Monday-aligned week in the calendar range (not just painted dates). For each Mon-Fri, checks the datepainter state and holiday set. Calculates `officeDays = 5 - holidayCount - wfhCount` (minus `sickCount` if `sickDaysPenalize` is enabled in settings).
 
-See [ARCHITECTURE.md](./ARCHITECTURE.md#the-3-layer-validation-flow) for detailed explanation.
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed explanation.
 
 ### Key Systems
 
-**Validation System** - Strategy pattern with two modes:
-- `StrictDayCountValidator` - Each week must meet 3-day minimum
-- `AverageWindowValidator` - 12-week rolling window, best 8 weeks ≥ 60%
+**Validation System** - Single sliding-window model: evaluates all 12-week windows across the calendar using best-8-of-12 policy (`rto-core.ts`)
 
 **Holiday System** - Pluggable data source architecture:
 - `HolidayManager` - Singleton service for holiday operations
@@ -104,106 +100,6 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md#the-3-layer-validation-flow) for detaile
 - **StatusDetails** - Week summary, capacity, current week, non-compliant weeks (with ignored/dropped distinction)
 - **StatusLegend** - Count badges for WFH/holiday/sick (directly subscribes to `onStateChange`)
 - **WeekdaySelector** - Bulk weekday toggle buttons; subscribes to `onStateChange` for sync
-
----
-
-## Creating a Custom Validation Strategy
-
-1. **Create strategy class** extending `ValidationStrategy`:
-
-```typescript
-// src/lib/validation/CustomValidator.ts
-import { ValidationStrategy } from './ValidationStrategy';
-import type { ValidatorContext, ValidationResult, WeekCompliance, WindowCompliance } from '../../types/validation-strategy';
-
-export class CustomValidator extends ValidationStrategy {
-  readonly name = "custom";
-  readonly description = "My custom validation logic";
-
-  validate(context: ValidatorContext): ValidationResult {
-    // Your validation logic
-    // Access config via this.defaultConfig or context.config
-    // Use helper methods: this._groupDaysByWeek(), this._getStartOfWeek(), etc.
-
-    return {
-      isValid: true,
-      message: "Validation passed",
-      overallCompliance: 100,
-      windowResults: [],
-      violatingWindows: [],
-      compliantWindows: [],
-      validationMode: "custom"
-    };
-  }
-
-  getWeekCompliance(weekStart: Date, context: ValidatorContext): WeekCompliance {
-    // Calculate compliance for a single week
-  }
-
-  getWindowCompliance(
-    windowStart: number,
-    windowSize: number,
-    context: ValidatorContext
-  ): WindowCompliance {
-    // Calculate compliance for a window of weeks
-  }
-}
-```
-
-2. **Register with ValidationFactory**:
-
-```typescript
-// src/lib/validation/ValidationFactory.ts
-import { CustomValidator } from './CustomValidator';
-
-// Add to ValidationMode type
-export type ValidationMode = "strict" | "average" | "custom";
-
-// Add to _instantiateValidator()
-private static _instantiateValidator(mode: ValidationMode): ValidationStrategy {
-  switch (mode) {
-    case "strict":
-      return new StrictDayCountValidator();
-    case "average":
-      return new AverageWindowValidator();
-    case "custom":
-      return new CustomValidator();
-    default:
-      throw new Error(`Unsupported mode: ${mode}`);
-  }
-}
-
-// Add to getAvailableModes()
-static getAvailableModes(): ValidationMode[] {
-  return ["strict", "average", "custom"];
-}
-```
-
-3. **Add to UI** (optional):
-
-```typescript
-// src/components/SettingsModal.astro
-// Add option to validation mode dropdown
-<option value="custom">Custom Validation</option>
-```
-
-4. **Write tests**:
-
-```typescript
-// src/lib/__tests__/CustomValidator.test.ts
-import { describe, it, expect } from 'vitest';
-import { CustomValidator } from '../validation/CustomValidator';
-
-describe('CustomValidator', () => {
-  it('should pass validation for valid scenario', () => {
-    const validator = new CustomValidator();
-    const result = validator.validate({ /* context */ });
-    expect(result.isValid).toBe(true);
-  });
-
-  // More tests...
-});
-```
 
 ---
 
@@ -364,7 +260,6 @@ import { loadFromLocalStorage, saveToLocalStorage } from '../scripts/localStorag
 saveToLocalStorage('rto-settings', {
   countryCode: 'US',
   companyName: 'Acme Corp',
-  validationMode: 'strict'
 });
 
 // Load settings
@@ -499,14 +394,12 @@ error('[MyModule] Error message');        // Always shown
 ### Browser DevTools
 
 **Exposed Globals** (for debugging):
-- `window.validationManager` - ValidationManager instance
 - `window.__holidayCountries` - Array of country objects
 - `window.__getHolidayManager` - Function to get HolidayManager instance
 - `window.__datepainterInstance` - datepainter CalendarInstance
 
 ```javascript
 // In browser console
-window.validationManager.validate(selectedDays, options);
 window.__getHolidayManager().getHolidayDates(2025, 'US');
 window.__datepainterInstance.getAllDates();
 
@@ -518,31 +411,21 @@ JSON.parse(localStorage.getItem('rto-calculator-settings'))?.sickDaysPenalize;
 
 ## Common Patterns
 
-### Strategy Pattern (Validation)
+### Sliding Window Validation
 
 ```typescript
-// Base class defines interface
-abstract class ValidationStrategy {
-  abstract validate(context: ValidatorContext): ValidationResult;
-}
+// rto-core.ts - Single validation model
+// Evaluates all 12-week windows across the calendar range
+// Uses best-8-of-12 policy to determine compliance
+import { evaluateCompliance } from '../lib/rto-core';
 
-// Concrete implementations
-class StrictDayCountValidator extends ValidationStrategy { /* ... */ }
-class AverageWindowValidator extends ValidationStrategy { /* ... */ }
-
-// Factory creates instances
-const validator = ValidationFactory.createValidator("strict");
+const result = evaluateCompliance(weeklyData, policyConfig);
+// result includes: compliant windows, violating windows, overall compliance %
 ```
 
-### Factory Pattern (Creating Objects)
+### Factory Pattern (Holiday Data Sources)
 
 ```typescript
-class ValidationFactory {
-  static createValidator(mode: ValidationMode): ValidationStrategy {
-    // Create and return appropriate instance
-  }
-}
-
 class HolidayDataSourceFactory {
   async registerDataSource(name: string, source: HolidayDataSourceStrategy) {
     // Register data source
@@ -585,13 +468,12 @@ See [../AGENTS.md](../AGENTS.md) for complete guidelines including:
 ```
 src/
 ├── lib/                    # Core business logic (no DOM)
-│   ├── validation/         # Validation strategies
+│   ├── validation/         # Sliding-window validation (rto-core)
 │   ├── holiday/           # Holiday management
 │   ├── history/           # Undo/redo management
 │   └── calendar-data-reader.ts
 │
 ├── scripts/               # Client-side DOM integration
-│   ├── ValidationManager.ts
 │   └── eventHandlers.ts
 │
 ├── components/            # Astro components
@@ -671,9 +553,8 @@ git push && git push --tags
 
 **Validation not working**
 - Check if calendar has selections
-- Verify validation mode is set
 - Check browser console for errors
-- Inspect `window.validationManager` state
+- Enable debug logging to inspect auto-compliance output
 
 ---
 

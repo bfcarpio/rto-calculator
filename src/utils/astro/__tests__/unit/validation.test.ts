@@ -874,7 +874,7 @@ describe("validateTop8Weeks - Message Generation", () => {
 
 		const result = validateTop8Weeks(selections, new Date(2025, 0, 1));
 
-		expect(result.message).toContain("RTO Violation");
+		expect(result.message).toContain("Not compliant");
 		expect(result.averageOfficePercentage).toBeCloseTo(20, 1);
 	});
 });
