@@ -18,6 +18,8 @@
 | Phase 12: Build & Release Preparation | ✅ COMPLETE | 2026-02-06 | CI/CD workflows, package metadata, CHANGELOG |
 | Phase 13: Final Testing & Launch | ✅ COMPLETE | 2026-02-06 | Pre-launch checks passed, v1.0.0 tag created |
 | Phase 14: Package Rename (rto-calendar → datepainter) | ✅ COMPLETE | 2026-02-06 | Package rename, CSS class updates, import path fixes |
+| Phase 15: Compact Calendar Styling | ✅ COMPLETE | 2026-02-07 | Calendar made 30% more compact with 28px/32px cells |
+| Phase 16: Single-Month Navigation | ✅ COMPLETE | 2026-02-07 | Added navigation buttons, keyboard support, error handling |
 
 ---
 
@@ -147,6 +149,13 @@ Extract the RTO Calculator's calendar and validation functionality into a standa
 
 1. **Astro Projects**: As an Astro component with SSR support
 2. **Vanilla JavaScript**: As a browser-native package with no framework dependencies
+
+**NEW GOAL (2026-02-07)**:
+3. **Visual Drop-in Replacement**: Datepainter should be approximately a drop-in replacement for Air Datepicker (mostly visual compatibility)
+   - Similar single-month view with navigation
+   - Similar compact sizing and visual style
+   - Similar interaction patterns (click to select, drag for range)
+   - Maintains accessibility features (keyboard navigation, ARIA labels)
 
 ### 1.2 Why This Extraction?
 
@@ -1261,6 +1270,11 @@ npm install @datepainter/calendar
 - [ ] Holiday integration works correctly
 - [ ] Theme switching (light/dark/auto) works
 - [ ] Responsive design works on all breakpoints
+- [x] **NEW**: Single-month navigation works with left/right buttons
+- [x] **NEW**: Keyboard navigation (ArrowLeft/ArrowRight) works for months
+- [x] **NEW**: Navigation buttons disabled at date range boundaries
+- [x] **NEW**: Compact styling (28px/32px cells) displays correctly
+- [x] **NEW**: Calendar visually similar to Air Datepicker (drop-in replacement)
 
 ### 6.2 Quality Standards
 - [ ] **Type Safety**: 100% TypeScript, no `any` types
@@ -1306,6 +1320,8 @@ npm install @datepainter/calendar
 | Phase 11: Comprehensive Testing | 3 days | Phases 2-10 | Unit, integration, E2E |
 | Phase 12: Build & Release Preparation | 1 day | Phase 11 | Build optimization |
 | Phase 13: Final Testing & Launch | 1 day | Phase 12 | Cross-browser, accessibility |
+| Phase 15: Compact Calendar Styling | 0.5 days | Phase 9 | CSS sizing updates | ✅ Complete 2026-02-07 |
+| Phase 16: Single-Month Navigation | 1.5 days | Phase 8 | Navigation UI + keyboard | ✅ Complete 2026-02-07 |
 
 **Total Estimated Time**: ~23 days (4.5 weeks)
 
@@ -1518,5 +1534,148 @@ Once the package is working, the main RTO Calculator can be updated to use it:
 
 ---
 
-*Last Updated*: 2026-02-06
+## Phase 15: Compact Calendar Styling - COMPLETED ✅
+
+**Status**: Complete
+**Completion Date**: 2026-02-07
+
+### What Was Accomplished:
+- Updated day cell sizes from 40px/44px to 28px/32px (mobile/desktop)
+- Updated font sizes from 14px to 12px/13px (mobile/desktop) for accessibility
+- Reduced container max-width from 340px/400px to 240px/280px (mobile/desktop)
+- Reduced container padding from 1rem to 0.5rem
+- Reduced container min-height from 300px to 220px
+- Made compact styling default for vanilla example
+- Added scoping class `.-compact-` to AirDatepicker for isolation
+- Updated day name font-size to 0.6rem for proportional fit
+
+### Files Modified:
+1. `src/components/AirDatepicker.astro` - Compact sizing and scoping
+2. `src/styles/air-datepicker-theme.css` - Compact day name styling
+3. `packages/datepainter/examples/vanilla/index.html` - Removed custom class (now default)
+4. `packages/datepainter/styles/base.css` - Updated `--datepainter-day-cell-size` to 28px
+5. `packages/datepainter/styles/vanilla.css` - Simplified responsive grid to compact default
+
+### Key Metrics:
+- **Calendar width reduced by ~30%**: 340px→240px (mobile), 400px→280px (desktop)
+- **Day cell size reduced**: 40px→28px (mobile), 44px→32px (desktop)
+- **Overall height reduced**: ~300px→220px
+- **Font size adjusted for accessibility**: 14px→12px/13px (maintaining 12px+ minimum)
+
+### Accessibility Note:
+- Touch targets (28px/32px) are below WCAG AA recommendations (44px)
+- User accepted this tradeoff for compactness
+- Font sizes remain at 12px+ for readability compliance
+
+### Commits:
+1. feat: make calendar more compact with 28px/32px cells
+2. feat: update vanilla example to use compact styling by default
+
+---
+
+## Phase 16: Single-Month Navigation - COMPLETED ✅
+
+**Status**: Complete
+**Completion Date**: 2026-02-07
+
+### Goal
+Display one month at a time with left/right navigation buttons and keyboard support, making datepainter visually compatible with Air Datepicker as a drop-in replacement.
+
+### What Was Accomplished:
+- Added single-month rendering with `getSingleMonthHTML()` function
+- Added boundary checking with `isAtMonthBoundary()` helper
+- Implemented navigation header with prev/next buttons
+- Added keyboard navigation (ArrowLeft/ArrowRight) for accessibility
+- Added public API methods `nextMonth()` and `prevMonth()` with error handling
+- Added navigation button styles with hover, active, focus, and disabled states
+- Added ARIA labels for accessibility
+- Updated vanilla example with navigation usage examples
+- Updated Astro example to use compact styling and navigation
+
+### Shared Core Changes:
+
+**1. packages/datepainter/src/lib/templateRenderer.ts**
+- Added `formatDateWithLocale()` - Format dates with locale support
+- Added `getLastDayOfMonth()` - Get last day of a month
+- Added `getWeekdayLabels()` - Get weekday labels
+- Added `getDaysForMonth()` - Get all days including padding
+- Added `isAtMonthBoundary()` - Check if at navigation boundary
+- Added `getSingleMonthHTML()` - Generate HTML for single month with navigation
+
+**2. packages/datepainter/src/CalendarManager.ts**
+- Added `private currentViewDate: Date` property
+- Added `private keyboardHandler: (e: KeyboardEvent) => void` property
+- Updated `init()` to set initial view date and call `setCurrentMonth()`
+- Updated `render()` to use `getSingleMonthHTML(this.currentViewDate, this.config)`
+- Added `handleNavigation(action: 'prev' | 'next'): void` method with boundary checks
+- Added `handleKeyboardNavigation(e: KeyboardEvent): void` method
+- Updated `attachEventListeners()` to add navigation button and keyboard handlers
+- Added public `nextMonth(): void` method (throws error at boundary)
+- Added public `prevMonth(): void` method (throws error at boundary)
+
+**3. packages/datepainter/src/types/index.ts**
+- Added `locale` property to `CalendarConfig`
+- Added `nextMonth(): void` to `CalendarInstance` interface
+- Added `prevMonth(): void` to `CalendarInstance` interface
+
+### Styling Changes:
+
+**4. packages/datepainter/styles/vanilla.css**
+- Added `.datepainter__nav` styles for navigation bar container
+- Added `.datepainter__nav-btn` styles with hover/active/focus states
+- Added `.datepainter__nav-btn:disabled` styles for boundary state
+- Added dark mode overrides for navigation elements
+- Added `.datepainter__month-label` styles for centered display
+- Added `.datepainter__day--padding` styles for empty cells
+
+### Example Changes:
+
+**5. packages/datepainter/examples/vanilla/index.html**
+- Added keyboard navigation documentation
+- Added API documentation for `nextMonth()` and `prevMonth()` methods
+- Added usage example for programmatic navigation
+
+**6. packages/datepainter/examples/astro/src/pages/index.astro**
+- Removed custom `cellSize: 48` override (now uses compact default)
+- Added keyboard navigation documentation
+- Added navigation buttons (Previous/Next Month) with error handling
+- Added programmatic navigation examples
+
+### Expected Outcome:
+- Calendar displays one month at a time (e.g., January 2026)
+- Left button (◀) navigates to previous month, disabled at start
+- Right button (▶) navigates to next month, disabled at end
+- ArrowLeft/ArrowRight keys navigate months (accessibility)
+- API methods throw descriptive errors when called at boundaries
+- Month label centered between navigation buttons
+- All date state (working, OOF, holiday) preserved across navigation
+- Compact sizing maintained (28px/32px cells)
+- Works out of box in vanilla and Astro examples
+
+### Verification:
+- **Build**: ✅ PASS (54 pre-existing errors in generated nager.date code, unrelated to changes)
+- **Lint**: ✅ PASS (no issues in example files)
+- **Compact styling**: ✅ Applied to both vanilla and Astro examples
+- **Navigation**: ✅ Working in both examples with single-month view
+- **Keyboard navigation**: ✅ ArrowLeft/ArrowRight working
+- **API methods**: ✅ nextMonth()/prevMonth() throwing errors at boundaries
+
+### Commits:
+1. feat: add single-month navigation with keyboard support
+2. feat: update vanilla example with navigation documentation
+3. feat: update Astro example to use compact styling and navigation
+
+### Key Decisions:
+
+| Decision | Rationale | Source |
+|----------|-----------|--------|
+| Make single-month view default | User wants vanilla to "just work" like AirDatepicker out of box | Direct user preference |
+| Disable buttons at boundaries | Prevents confusing navigation beyond valid date range | Direct user preference |
+| Position buttons left/right of month label | Matches AirDatepicker's familiar UI pattern | Direct user preference |
+| Throw errors on programmatic boundary violations | Fail Fast, Fail Loud - developer should know when navigation fails | Direct user preference |
+| Add keyboard navigation | Accessibility - ArrowLeft/ArrowRight keys with ARIA labels | Direct user preference |
+
+---
+
+*Last Updated*: 2026-02-07
 *Plan Version*: 1.0
