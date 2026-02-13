@@ -1,0 +1,212 @@
+---
+---
+
+<dialog id="shortcuts-dialog" class="shortcuts-modal" aria-labelledby="shortcuts-title">
+  <div class="modal-content">
+    <header class="modal-header">
+      <h2 id="shortcuts-title">Keyboard Shortcuts</h2>
+      <button class="close-button" aria-label="Close shortcuts">&times;</button>
+    </header>
+    <div class="modal-body">
+      <section class="shortcuts-section">
+        <h3>Painting Modes</h3>
+        <div class="shortcut-row"><kbd>1</kbd><span>WFH mode</span></div>
+        <div class="shortcut-row"><kbd>2</kbd><span>Holiday mode</span></div>
+        <div class="shortcut-row"><kbd>3</kbd><span>Sick mode</span></div>
+      </section>
+      <hr class="section-divider" />
+      <section class="shortcuts-section">
+        <h3>Actions</h3>
+        <div class="shortcut-row"><div><kbd>Ctrl</kbd> + <kbd>Z</kbd></div><span>Undo</span></div>
+        <div class="shortcut-row"><div><kbd>Ctrl</kbd> + <kbd>S</kbd></div><span>Validate</span></div>
+      </section>
+      <hr class="section-divider" />
+      <section class="shortcuts-section">
+        <h3>Calendar Grid</h3>
+        <div class="shortcut-row"><kbd>Arrow Keys</kbd><span>Navigate months</span></div>
+        <div class="shortcut-row"><div><kbd>Space</kbd> / <kbd>Enter</kbd></div><span>Toggle day</span></div>
+        <div class="shortcut-row"><kbd>Escape</kbd><span>Cancel / close modal</span></div>
+      </section>
+      <hr class="section-divider" />
+      <section class="shortcuts-section">
+        <h3>Other</h3>
+        <div class="shortcut-row"><kbd>?</kbd><span>Show this help</span></div>
+      </section>
+    </div>
+  </div>
+</dialog>
+
+<style>
+  .shortcuts-modal {
+    border: none;
+    border-radius: 12px;
+    padding: 0;
+    max-width: 480px;
+    width: 90vw;
+    max-height: 85vh;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  }
+
+  .shortcuts-modal::backdrop {
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+  }
+
+  .modal-content {
+    display: flex;
+    flex-direction: column;
+    max-height: 85vh;
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+    border-radius: 12px 12px 0 0;
+  }
+
+  .modal-header h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1e293b;
+  }
+
+  .close-button {
+    background: none;
+    border: none;
+    font-size: 1.75rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    color: #64748b;
+    border-radius: 4px;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  .close-button:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+  }
+
+  .modal-body {
+    padding: 1.5rem;
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  .shortcuts-section {
+    margin-bottom: 0.5rem;
+  }
+
+  .shortcuts-section h3 {
+    margin: 0 0 0.75rem 0;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .section-divider {
+    border: none;
+    height: 1px;
+    background: #e2e8f0;
+    margin: 1rem 0;
+  }
+
+  .shortcut-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+  }
+
+  .shortcut-row span:last-child {
+    color: #64748b;
+    font-size: 0.9rem;
+  }
+
+  kbd {
+    display: inline-block;
+    padding: 0.15em 0.4em;
+    font-size: 0.85em;
+    font-family: inherit;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    box-shadow: 0 1px 0 #94a3b8;
+    min-width: 1.6em;
+    text-align: center;
+    color: #334155;
+  }
+
+  /* Dark mode */
+  :global(body.dark-mode) .shortcuts-modal {
+    background-color: #1e293b;
+    color: #f1f5f9;
+  }
+
+  :global(body.dark-mode) .modal-header {
+    background: #1e293b;
+    border-bottom-color: #334155;
+  }
+
+  :global(body.dark-mode) .modal-header h2 {
+    color: #f1f5f9;
+  }
+
+  :global(body.dark-mode) .close-button {
+    color: #94a3b8;
+  }
+
+  :global(body.dark-mode) .close-button:hover {
+    background: #334155;
+    color: #f1f5f9;
+  }
+
+  :global(body.dark-mode) .shortcuts-section h3 {
+    color: #94a3b8;
+  }
+
+  :global(body.dark-mode) .section-divider {
+    background: #334155;
+  }
+
+  :global(body.dark-mode) .shortcut-row span:last-child {
+    color: #94a3b8;
+  }
+
+  :global(body.dark-mode) kbd {
+    background: #334155;
+    border-color: #475569;
+    box-shadow: 0 1px 0 #1e293b;
+    color: #e2e8f0;
+  }
+
+  @media (max-width: 480px) {
+    .shortcuts-modal {
+      width: 95vw;
+      max-height: 90vh;
+      border-radius: 12px;
+    }
+  }
+</style>
+
+<script>
+  const dialog = document.getElementById('shortcuts-dialog') as HTMLDialogElement | null;
+  const closeButton = dialog?.querySelector('.close-button');
+
+  closeButton?.addEventListener('click', () => {
+    dialog?.close();
+  });
+
+  dialog?.addEventListener('click', (e) => {
+    if (e.target === dialog) {
+      dialog.close();
+    }
+  });
+</script>
