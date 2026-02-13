@@ -59,18 +59,46 @@
       display: inline-block;
       font-size: 14px;
     }
+
+    .api-docs {
+      background: #f1f5f9;
+      padding: 1rem;
+      border-radius: 4px;
+      margin-top: 1rem;
+    }
+
+    .api-docs pre {
+      margin: 0;
+    }
+
+    .api-docs code {
+      font-size: 13px;
+      line-height: 1.5;
+      color: #374151;
+    }
   </style>
 </head>
 <body>
   <main>
     <h1>Datepainter - Vanilla JS Example</h1>
-    <p>Click on dates to select them. Click again to deselect.</p>
+    <p>Click on dates to select them. Click again to deselect. Use navigation buttons or arrow keys to change months.</p>
 
     <div id="calendar-container"></div>
 
     <div class="info">
       <h2>Selected Dates</h2>
       <div id="selected-dates">No dates selected</div>
+
+      <h2>CalendarManager API</h2>
+      <div class="api-docs">
+        <pre><code>// CalendarManager API now includes:
+// manager.nextMonth(); // Go to next month (throws error at boundary)
+// manager.prevMonth(); // Go to previous month (throws error at boundary)
+//
+// Keyboard Navigation:
+// ArrowLeft - Navigate to previous month
+// ArrowRight - Navigate to next month</code></pre>
+      </div>
     </div>
   </main>
 
