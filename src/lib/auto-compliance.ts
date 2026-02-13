@@ -171,11 +171,21 @@ function computeComplianceData(allWeeks: WeekInfo[]): ComplianceEventData {
 	).length;
 	const bufferWeeks = Math.max(0, droppableSlots - droppedNonCompliant);
 
-	const nextWfhWeek = bufferWeeks > 0
-		? annotated
-			.filter((w) => w.isIgnored && w.isCompliant)
-			.sort((a, b) => a.weekStart.getTime() - b.weekStart.getTime())[0]?.weekStart ?? null
-		: null;
+	const nextWfhWeek =
+		bufferWeeks > 0
+			? (() => {
+					const today = new Date();
+					today.setHours(0, 0, 0, 0);
+					return (
+						annotated
+							.filter(
+								(w) => w.isIgnored && w.isCompliant && w.weekStart > today,
+							)
+							.sort((a, b) => a.weekStart.getTime() - b.weekStart.getTime())[0]
+							?.weekStart ?? null
+					);
+				})()
+			: null;
 
 	// Day counts from display window
 	let totalWfhDays = 0;
