@@ -6,7 +6,9 @@
 		"packages/*"
 	],
 	"scripts": {
+		"predev": "node scripts/check-workspaces.js",
 		"dev": "astro dev",
+		"prebuild": "npm run build --workspaces --if-present",
 		"build": "astro check && astro build",
 		"preview": "astro preview",
 		"astro": "astro",

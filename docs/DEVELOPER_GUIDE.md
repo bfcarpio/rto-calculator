@@ -20,12 +20,19 @@ git clone <repo-url>
 cd rto-calculator
 npm install
 
+# Build workspace dependencies (required once)
+npm run build:all      # Builds nager.date and datepainter packages
+
 # Verify setup
 npm run check          # Type checking
 npm run lint           # Linting
 npm run test:run       # Unit tests
 npm run build          # Production build
 ```
+
+**Important:** This project uses npm workspaces. The workspace packages (`nager.date`, `datepainter`) must be built before running the main application. Run `npm run build:all` after cloning or when workspace code changes.
+
+> **Note:** `npm run dev` will automatically check if workspaces are built and remind you if needed.
 
 ### Development Commands
 
