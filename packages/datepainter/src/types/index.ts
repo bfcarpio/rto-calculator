@@ -80,6 +80,7 @@ export interface CalendarInstance {
 	onStateChange(
 		callback: (date: DateString, state: DateState | null) => void,
 	): () => void;
+	navigateToDate(date: Date): void;
 	nextMonth(): void;
 	prevMonth(): void;
 	destroy(): void;

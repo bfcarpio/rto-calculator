@@ -501,6 +501,37 @@ export class CalendarManager implements CalendarInstance {
 	}
 
 	/**
+	 * Navigate to a specific date's month, clamped to the calendar date range
+	 * @param date - The target date to navigate to
+	 * @throws Error if calendar not initialized
+	 */
+	navigateToDate(date: Date): void {
+		if (!this.isInitialized) {
+			throw new Error("Calendar not initialized. Call init() first.");
+		}
+		const target = new Date(date.getFullYear(), date.getMonth(), 1);
+		const rangeStart = new Date(
+			this.config.dateRange.start.getFullYear(),
+			this.config.dateRange.start.getMonth(),
+			1,
+		);
+		const rangeEnd = new Date(
+			this.config.dateRange.end.getFullYear(),
+			this.config.dateRange.end.getMonth(),
+			1,
+		);
+		if (target < rangeStart) {
+			this.currentViewDate = new Date(rangeStart);
+		} else if (target > rangeEnd) {
+			this.currentViewDate = new Date(rangeEnd);
+		} else {
+			this.currentViewDate = target;
+		}
+		setCurrentMonth(this.currentViewDate);
+		this.render();
+	}
+
+	/**
 	 * Navigate to next month in date range
 	 * @throws Error if at end of date range
 	 */

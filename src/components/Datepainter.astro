@@ -101,17 +101,17 @@ const { id = `datepainter-container-${Math.random().toString(36).slice(2, 9)}` }
    */
   const getDefaultStates = () => ({
     oof: {
-      label: 'Out of Office',
+      label: 'Work From Home',
       color: '#ffffff',
       bgColor: '#ef4444', // Red for violations
-      icon: '🏖️',
+      icon: '🏠',
       position: 'below' as const,
     },
     holiday: {
       label: 'Holiday',
       color: '#ffffff',
       bgColor: '#f59e0b', // Amber for holidays (matches defaultConfig)
-      icon: '🎉',
+      icon: '☀️',
       position: 'below' as const,
     },
     sick: {
@@ -215,6 +215,9 @@ const { id = `datepainter-container-${Math.random().toString(36).slice(2, 9)}` }
 
     // Initialize the calendar
     calendarManager.init();
+
+    // Navigate to current month on load
+    calendarManager.navigateToDate(new Date());
 
     // Expose calendar manager globally for StatusLegend component
     (window as any).__datepainterInstance = calendarManager;
