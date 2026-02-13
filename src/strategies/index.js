@@ -8,7 +8,7 @@
  */
 
 // Export validation strategies
-export { default as RollingPeriodValidation } from "./RollingPeriodValidation.js";
+export { default as RollingPeriodValidation } from "../lib/validation/RollingPeriodValidation.js";
 
 // Re-export holiday data sources
 export * from "./holiday-data-sources/index.js";
