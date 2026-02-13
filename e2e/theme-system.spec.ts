@@ -73,8 +73,8 @@ test.describe("Theme System", () => {
 		await cycleTheme(page);
 		await expectTheme(page, "dark");
 
-		// Refresh
-		await page.reload();
+		// Navigate fresh instead of reload (avoids connection reset on WSL2/preview server)
+		await page.goto("/rto-calculator/");
 
 		// Theme should reset to system (default)
 		await openSettings(page);

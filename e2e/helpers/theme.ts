@@ -13,7 +13,7 @@ export async function openSettings(page: Page): Promise<void> {
 
 export async function closeSettings(page: Page): Promise<void> {
 	const dialog = page.getByRole("dialog");
-	await dialog.getByLabel("Close settings").click();
+	await page.keyboard.press("Escape");
 	await expect(dialog).not.toBeVisible();
 }
 

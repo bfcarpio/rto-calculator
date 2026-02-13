@@ -8,14 +8,15 @@ import { expect, test } from "@playwright/test";
 test("Verify UI styling and elements", async ({ page, isMobile }) => {
 	// Firefox does not support isMobile: true, so we skip if the project configures it
 	// This prevents crashes when running with mobile projects in playwright.config.ts
-	if (isMobile) {
-		test.skip();
-	}
+	test.skip(isMobile, "CSS color assertions unreliable on mobile viewports");
 
 	// Navigate to the app
 	// Explicitly use the base path defined in astro.config.mjs
 	await page.goto("/rto-calculator/");
-	await page.waitForLoadState("networkidle");
+	await page.waitForSelector(
+		'[data-testid="calendar-day"]:not(.datepainter__day--empty):not(.datepainter__day--disabled)',
+		{ state: "visible" },
+	);
 
 	// 1. Check header background color is NOT teal
 	const header = page.locator("header.hero");
@@ -61,6 +62,10 @@ test("Verify UI styling and elements", async ({ page, isMobile }) => {
 			.first();
 		await firstDay.waitFor({ state: "visible" });
 		await firstDay.click();
+		await page.waitForSelector(
+			'[data-testid="calendar-day"].datepainter-day--oof',
+			{ state: "visible", timeout: 5000 },
+		);
 		selectedCell = page
 			.locator(
 				'[data-testid="calendar-day"].datepainter-day--oof, [data-testid="calendar-day"].datepainter-day--holiday, [data-testid="calendar-day"].datepainter-day--sick',
@@ -70,12 +75,21 @@ test("Verify UI styling and elements", async ({ page, isMobile }) => {
 
 	await expect(selectedCell).toBeVisible();
 
+	// Wait for computed style to settle (webkit may lag behind class application)
+	await expect
+		.poll(
+			async () =>
+				selectedCell.evaluate(
+					(el) => window.getComputedStyle(el).backgroundColor,
+				),
+			{ timeout: 5000 },
+		)
+		.not.toBe("rgb(255, 255, 255)");
+
 	const cellColor = await selectedCell.evaluate((el) => {
 		return window.getComputedStyle(el).backgroundColor;
 	});
 
 	// Verify the cell has a non-default background (not white or transparent)
-	// The exact color depends on CSS specificity between base.css and vanilla.css
-	expect(cellColor).not.toBe("rgb(255, 255, 255)"); // Not default white
 	expect(cellColor).not.toBe("rgba(0, 0, 0, 0)"); // Not transparent
 });
