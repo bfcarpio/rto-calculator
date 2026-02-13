@@ -280,18 +280,13 @@ const months = Array.from({ length: 12 }, (_, index) => {
 
             .months-grid {
                 display: grid;
-                grid-template-columns: repeat(3, 1fr);
+                grid-template-columns: repeat(4, 1fr);
                 gap: 0.75rem;
                 padding: 1rem 0;
                 justify-items: center;
             }
 
             /* Wide monitors - 4 columns */
-            @media (min-width: 1400px) {
-                .months-grid {
-                    grid-template-columns: repeat(4, 1fr);
-                }
-            }
 
             /* Responsive layout for smaller screens */
             @media (max-width: 1024px) {
