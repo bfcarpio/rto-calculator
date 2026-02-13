@@ -42,6 +42,24 @@ export function getDayCellClasses(date: DateString, state: DateState | null): st
 }
 
 /**
+ * Escape HTML entities to prevent XSS attacks
+ *
+ * Converts special HTML characters to their entity equivalents to prevent
+ * injection of malicious HTML/JavaScript when rendering user-provided content.
+ *
+ * @param text - The text to escape
+ * @returns The escaped HTML string with special characters converted to entities
+ */
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/**
  * Get icon HTML for a day cell
  *
  * Generates HTML markup for an icon element to be displayed within a day cell.
@@ -67,7 +85,7 @@ export function getIconHTML(
   if (!icon) return "";
 
   const positionClass = `datepainter-day__icon--${position}`;
-  return `<span class="datepainter-day__icon ${positionClass}" aria-hidden="true">${icon}</span>`;
+  return `<span class="datepainter-day__icon ${positionClass}" aria-hidden="true">${escapeHtml(icon)}</span>`;
 }
 
 /**

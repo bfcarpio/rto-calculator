@@ -1,5 +1,6 @@
 import { validateConfig } from "./config/validate";
 import { formatDate } from "./lib/dateUtils";
+import { getCalendarHTML, getDayCellClasses, getIconHTML } from "./lib/templateRenderer";
 import { clearDateState, getAllDates, selectedDates, setDateState } from "./stores/calendarStore";
 import type { CalendarConfig, CalendarInstance, DateState, DateString } from "./types";
 
@@ -38,6 +39,13 @@ export class CalendarManager implements CalendarInstance {
 
   /** Unsubscribe functions for store subscriptions */
   private unsubscribeFns: Array<() => void> = [];
+
+  /** Tracked event listeners for cleanup */
+  private attachedListeners: Array<{
+    element: EventTarget;
+    type: string;
+    handler: EventListener;
+  }> = [];
 
   /**
    * Creates a new CalendarManager instance
@@ -97,18 +105,25 @@ export class CalendarManager implements CalendarInstance {
    * After calling destroy, the instance cannot be used again.
    */
   destroy(): void {
-    // Remove all event listener subscriptions
-    for (const fn of this.unsubscribeFns) {
-      fn();
+    // Remove all event listeners
+    for (const { element, type, handler } of this.attachedListeners) {
+      element.removeEventListener(type, handler);
+    }
+    this.attachedListeners = [];
+
+    // Unsubscribe from store
+    for (const unsubscribe of this.unsubscribeFns) {
+      unsubscribe();
     }
     this.unsubscribeFns = [];
 
     // Clear state change callbacks
     this.stateChangeCallbacks = [];
 
-    // Clear container HTML
+    // Clear container
     if (this.container) {
       this.container.innerHTML = "";
+      this.container = null;
     }
 
     this.isInitialized = false;
@@ -322,40 +337,160 @@ export class CalendarManager implements CalendarInstance {
   /**
    * Renders the calendar UI
    *
-   * Generates and inserts the HTML structure for the calendar.
-   * Placeholder implementation - full rendering will be added in Phase 6.
+   * Generates and inserts the HTML structure for the calendar using the
+   * templateRenderer. Updates day cells to show current state icons.
    *
    * @private
    */
   private render(): void {
     if (!this.container) return;
-    // TODO: Will be implemented in Phase 6 (templateRenderer)
-    this.container.innerHTML = '<div class="datepainter">Calendar rendering placeholder</div>';
+    const html = getCalendarHTML(this.config);
+    this.container.innerHTML = html;
+    this.updateDayCells();
+  }
+
+  /**
+   * Updates day cell classes and icons based on current state
+   *
+   * Iterates through all day cells in the calendar and updates their CSS
+   * classes and icon elements to reflect the current state from the store.
+   *
+   * @private
+   */
+  private updateDayCells(): void {
+    if (!this.container) return;
+    const allDates = getAllDates();
+
+    const dayCells = this.container.querySelectorAll(".datepainter__day");
+    for (const cell of dayCells) {
+      const date = cell.getAttribute("data-date") as DateString;
+      if (!date) continue;
+
+      const state = allDates.get(date) ?? null;
+
+      cell.className = `datepainter__day ${getDayCellClasses(date, state)}`;
+
+      const oldIcon = cell.querySelector(".datepainter-day__icon");
+      if (oldIcon) oldIcon.remove();
+
+      if (state) {
+        const stateConfig = this.config.states[state];
+        if (stateConfig?.icon) {
+          const iconHtml = getIconHTML(stateConfig.icon, "below");
+          cell.insertAdjacentHTML("beforeend", iconHtml);
+        }
+      }
+    }
   }
 
   /**
    * Attaches DOM event listeners to calendar elements
    *
-   * Sets up click, drag, and other interaction handlers.
-   * Placeholder implementation - full event handling will be added in Phase 7.
+   * Sets up click, drag, and other interaction handlers. Supports single-click
+   * date toggling and drag-to-select painting when enabled.
    *
    * @private
    */
   private attachEventListeners(): void {
-    // TODO: Will be implemented in Phase 7 (event handlers)
+    if (!this.container) return;
+
+    let isDragging = false;
+    let dragDate: DateString | null = null;
+
+    const mousedownHandler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const dayCell = target.closest(".datepainter__day");
+
+      if (dayCell && !dayCell.classList.contains("datepainter__day--empty")) {
+        const date = dayCell.getAttribute("data-date") as DateString | null;
+        if (date && this.config.painting?.enabled) {
+          isDragging = true;
+          dragDate = date;
+
+          const currentState = this.getState(date);
+          const defaultState = this.config.painting.defaultState || "working";
+          const newState = currentState === defaultState ? null : defaultState;
+
+          if (newState) {
+            this.toggleDate(date, newState);
+          } else {
+            this.clearDates([date]);
+          }
+        }
+      }
+    };
+
+    const mouseoverHandler = (e: MouseEvent) => {
+      if (!isDragging) return;
+
+      const target = e.target as HTMLElement;
+      const dayCell = target.closest(".datepainter__day");
+
+      if (dayCell && !dayCell.classList.contains("datepainter__day--empty")) {
+        const date = dayCell.getAttribute("data-date") as DateString | null;
+        if (date) {
+          const defaultState = this.config.painting?.defaultState || "working";
+          if (!this.getState(date)) {
+            this.toggleDate(date, defaultState);
+          }
+        }
+      }
+    };
+
+    const mouseupHandler = () => {
+      isDragging = false;
+      dragDate = null;
+    };
+
+    const clickHandler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const dayCell = target.closest(".datepainter__day");
+
+      if (dayCell && !dayCell.classList.contains("datepainter__day--empty")) {
+        const date = dayCell.getAttribute("data-date") as DateString | null;
+        if (date && !dragDate) {
+          const currentState = this.getState(date);
+          const stateOrder: (DateState | null)[] = ["working", "oof", "holiday", null];
+          const currentIndex = stateOrder.indexOf(currentState);
+          const nextIndex = (currentIndex + 1) % stateOrder.length;
+          const newState = stateOrder[nextIndex];
+
+          if (newState) {
+            this.toggleDate(date, newState);
+          } else {
+            this.clearDates([date]);
+          }
+        }
+      }
+    };
+
+    // Store references for cleanup
+    this.attachedListeners.push(
+      { element: this.container, type: "mousedown", handler: mousedownHandler as EventListener },
+      { element: this.container, type: "mouseover", handler: mouseoverHandler as EventListener },
+      { element: this.container, type: "click", handler: clickHandler as EventListener },
+      { element: document, type: "mouseup", handler: mouseupHandler as EventListener }
+    );
+
+    // Attach listeners
+    this.container.addEventListener("mousedown", mousedownHandler);
+    this.container.addEventListener("mouseover", mouseoverHandler);
+    this.container.addEventListener("click", clickHandler);
+    document.addEventListener("mouseup", mouseupHandler);
   }
 
   /**
    * Subscribes to store changes for reactive updates
    *
    * Monitors the selected dates store and notifies registered callbacks
-   * when any date state changes.
+   * when any date state changes. Also updates the calendar UI to reflect changes.
    *
    * @private
    */
   private subscribeToStoreChanges(): void {
     const unsubscribe = selectedDates.subscribe(() => {
-      // Notify all registered callbacks of state changes
+      this.updateDayCells();
+
       const allDates = getAllDates();
       for (const [dateStr, state] of allDates) {
         for (const cb of this.stateChangeCallbacks) {
