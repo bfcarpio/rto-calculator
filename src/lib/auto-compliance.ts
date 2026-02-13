@@ -97,6 +97,82 @@ function setComputingState(active: boolean): void {
 	}
 }
 
+// ─── Evaluated Set Algorithm ────────────────────────────────────────
+
+/**
+ * Build a set of week timestamps that appear in the best-K of at least one
+ * sliding window. A week NOT in this set is safe to zero out — it's already
+ * dropped in every window that contains it.
+ *
+ * Sort contract must match rto-core.ts evaluateWindow:
+ *   b.officeDays - a.officeDays || b.weekStart.getTime() - a.weekStart.getTime()
+ */
+function buildEvaluatedSet(
+	allWeeks: WeekInfo[],
+	policy: RTOPolicyConfig,
+): Set<number> {
+	const evaluated = new Set<number>();
+	const W = policy.rollingPeriodWeeks;
+	const K = policy.topWeeksToCheck;
+	const weeks = convertWeeksToCompliance(allWeeks);
+
+	if (weeks.length < W) {
+		const sorted = [...weeks].sort(
+			(a, b) =>
+				b.officeDays - a.officeDays ||
+				b.weekStart.getTime() - a.weekStart.getTime(),
+		);
+		for (const w of sorted.slice(0, K)) {
+			evaluated.add(w.weekStart.getTime());
+		}
+		return evaluated;
+	}
+
+	for (let start = 0; start <= weeks.length - W; start++) {
+		const windowWeeks = weeks.slice(start, start + W);
+		const sorted = [...windowWeeks].sort(
+			(a, b) =>
+				b.officeDays - a.officeDays ||
+				b.weekStart.getTime() - a.weekStart.getTime(),
+		);
+		for (const w of sorted.slice(0, K)) {
+			evaluated.add(w.weekStart.getTime());
+		}
+	}
+
+	return evaluated;
+}
+
+/**
+ * Find the earliest future week that can safely be taken as full WFH.
+ * A week is safe iff: it's in the future, currently compliant, and NOT in the
+ * evaluated set (i.e., it's already dropped in every sliding window containing it).
+ *
+ * Returns null if not currently compliant or no safe week exists.
+ */
+function findNextSafeWfhWeek(
+	allWeeks: WeekInfo[],
+	policy: RTOPolicyConfig,
+	isCompliant: boolean,
+): Date | null {
+	if (!isCompliant) return null;
+
+	const evaluated = buildEvaluatedSet(allWeeks, policy);
+	const today = new Date();
+	today.setHours(0, 0, 0, 0);
+
+	const candidates = allWeeks
+		.filter(
+			(w) =>
+				w.weekStart > today &&
+				w.officeDays >= REQUIRED_OFFICE_DAYS &&
+				!evaluated.has(w.weekStart.getTime()),
+		)
+		.sort((a, b) => a.weekStart.getTime() - b.weekStart.getTime());
+
+	return candidates[0]?.weekStart ?? null;
+}
+
 // ─── Core Computation ───────────────────────────────────────────────
 
 function isWeekComplete(weekStart: Date): boolean {
@@ -171,21 +247,13 @@ function computeComplianceData(allWeeks: WeekInfo[]): ComplianceEventData {
 	).length;
 	const bufferWeeks = Math.max(0, droppableSlots - droppedNonCompliant);
 
-	const nextWfhWeek =
-		bufferWeeks > 0
-			? (() => {
-					const today = new Date();
-					today.setHours(0, 0, 0, 0);
-					return (
-						annotated
-							.filter(
-								(w) => w.isIgnored && w.isCompliant && w.weekStart > today,
-							)
-							.sort((a, b) => a.weekStart.getTime() - b.weekStart.getTime())[0]
-							?.weekStart ?? null
-					);
-				})()
-			: null;
+	// Find the earliest future week safe for full WFH using evaluated-set algorithm.
+	// Gates on overall compliance (slidingWindowResult.isValid checks ALL windows).
+	const nextWfhWeek = findNextSafeWfhWeek(
+		allWeeks,
+		policy,
+		slidingWindowResult.isValid,
+	);
 
 	// Day counts from display window
 	let totalWfhDays = 0;

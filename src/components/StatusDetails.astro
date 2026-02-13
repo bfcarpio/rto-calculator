@@ -297,7 +297,7 @@ const BEST_WEEKS_REQUIRED = 8;
 	const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 	function fmtDate(d: Date): string {
-		return `${MONTHS[d.getMonth()]} ${d.getDate()}`;
+		return `${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
 	}
 
 	function getStatusColor(current: number, target: number): string {
