@@ -29,6 +29,8 @@
 	flex-direction: column;
 	gap: var(--datepainter-month-gap, 1rem);
 	width: 280px;
+	max-width: 280px; /* ADD: Prevent expansion */
+	flex-shrink: 0; /* ADD: Prevent flex shrinking */
 	margin: 0 auto;
 }
 
@@ -163,7 +165,7 @@ body.dark-mode .datepainter__month-label {
 /* Grid layout for multiple months */
 .datepainter.datepainter--multi-month {
 	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
 	gap: 1.5rem;
 }
 
