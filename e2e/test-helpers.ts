@@ -281,10 +281,9 @@ export async function applyWeekdayPattern(
 		return;
 	}
 
-	// Map pattern to weekday column indices and WFH counts
-	// Columns: 0=status, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=weekNumber
+	// Map pattern to weekday indices (0=Sun, 1=Mon, ..., 6=Sat)
 	// WFH counts align with unit test WEEKLY_PATTERNS:
-	const patternToColumns: Record<Exclude<WeekdayPattern, "none">, number[]> = {
+	const patternToDays: Record<Exclude<WeekdayPattern, "none">, number[]> = {
 		// 3 WFH days = 2 office = 40% = POOR (non-compliant)
 		mwf: [1, 3, 5], // Monday, Wednesday, Friday
 		// 2 WFH days = 3 office = 60% = GOOD (compliant)
@@ -293,35 +292,42 @@ export async function applyWeekdayPattern(
 		all: [1, 2, 3, 4, 5], // All weekdays
 	};
 
-	const columns = patternToColumns[pattern];
-	if (!columns) {
+	const targetDays = patternToDays[pattern];
+	if (!targetDays) {
 		throw new Error(`Unknown pattern: ${pattern}`);
 	}
 
-	// Get all calendar weeks
-	const weekRows = page.locator('[data-testid="calendar-week"]');
-	const rowCount = await weekRows.count();
+	// Get all enabled calendar day cells (datepainter structure)
+	const allCells = page.locator(
+		'[data-testid="calendar-day"]:not(.datepainter__day--empty):not(.datepainter__day--disabled)'
+	);
+	const cellCount = await allCells.count();
 
-	// Apply pattern to each week (up to the specified number of weeks)
-	const weeksToConfigure = Math.min(weeks, rowCount);
+	let weeksConfigured = 0;
+	const today = new Date();
+	const startDate = new Date(today.getFullYear(), today.getMonth(), 1); // Start of current month
 
-	for (let week = 0; week < weeksToConfigure; week++) {
-		const row = weekRows.nth(week);
+	// Click cells matching the pattern for specified number of weeks
+	for (let i = 0; i < cellCount && weeksConfigured < weeks; i++) {
+		const cell = allCells.nth(i);
 
-		for (const columnIndex of columns) {
-			// Find day cell at this column index in the row
-			const dayCell = row.locator("td").nth(columnIndex);
+		// Get the date from the cell
+		const dateStr = await cell.getAttribute('data-date');
+		if (!dateStr) continue;
 
-			// Check if cell exists and is not empty
-			const isVisible = await dayCell.isVisible().catch(() => false);
-			if (isVisible) {
-				const isEmpty = await dayCell.evaluate((el) =>
-					el.classList.contains("empty"),
-				);
-				if (!isEmpty) {
-					await dayCell.click();
-				}
-			}
+		const cellDate = new Date(dateStr);
+		const dayOfWeek = cellDate.getDay();
+
+		// Check if this day matches our pattern
+		if (targetDays.includes(dayOfWeek)) {
+			await cell.click();
+			// Small delay between clicks
+			await page.waitForTimeout(50);
+		}
+
+		// Count weeks based on Mondays encountered
+		if (dayOfWeek === 1) {
+			weeksConfigured++;
 		}
 	}
 }
