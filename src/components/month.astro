@@ -1,5 +1,7 @@
 ---
 import "/src/styles/utilities.css";
+import Day from "./day.astro";
+import { getISOWeekNumber } from "../utils/dateUtils";
 
 const { month, year } = Astro.props;
 
@@ -185,14 +187,14 @@ const _clearButtonId = `clear-${year}-${month}`;
                             <td
                                 class="week-number-cell"
                                 role="gridcell"
-                                aria-label={`Week ${weekStartStr ? _getISOWeekNumber(new Date(parseInt(weekStartStr))) : ""}`}
+                                aria-label={`Week ${weekStartStr ? getISOWeekNumber(new Date(parseInt(weekStartStr))) : ""}`}
                             >
                                 <span
                                     aria-hidden="true"
                                     class="week-number-content"
                                 >
                                     {weekStartStr
-                                        ? `${_getISOWeekNumber(new Date(parseInt(weekStartStr)))}`
+                                        ? `${getISOWeekNumber(new Date(parseInt(weekStartStr)))}`
                                         : ""}
                                 </span>
                             </td>
