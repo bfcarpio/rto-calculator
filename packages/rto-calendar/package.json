@@ -7,7 +7,11 @@
 			"types": "./dist/index.d.ts",
 			"import": "./dist/index.js"
 		},
-		"./styles": "./dist/styles/calendar.css",
+		"./styles/calendar.css": "./dist/styles/calendar.css",
+		"./styles/base.css": "./dist/styles/base.css",
+		"./styles/astro.css": "./dist/styles/astro.css",
+		"./styles/vanilla.css": "./dist/styles/vanilla.css",
+		"./styles/themes.css": "./dist/styles/themes.css",
 		"./Calendar.astro": "./dist/components/Calendar.astro"
 	},
 	"files": [
@@ -16,7 +20,8 @@
 		"LICENSE"
 	],
 	"scripts": {
-		"build": "tsup",
+		"build": "tsup && npm run copy:styles",
+		"copy:styles": "mkdir -p dist/styles && cp -r styles/* dist/styles/",
 		"test": "vitest",
 		"test:ui": "vitest --ui",
 		"test:run": "vitest run",

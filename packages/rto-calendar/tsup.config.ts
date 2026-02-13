@@ -1,7 +1,7 @@
 import { defineConfig } from "tsup";
 
 export default defineConfig({
-	entry: ["src/index.ts"],
+	entry: ["src/vanilla/index.ts"],
 	format: ["esm"],
 	dts: true,
 	clean: true,
@@ -10,4 +10,8 @@ export default defineConfig({
 	minify: process.env.NODE_ENV === "production",
 	splitting: false,
 	treeshake: true,
+	// Copy styles directory to dist
+	banner: {
+		js: '// CSS styles are available in the styles/ directory',
+	},
 });

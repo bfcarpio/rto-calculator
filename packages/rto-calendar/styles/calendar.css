@@ -1,0 +1,26 @@
+/**
+ * RTO Calendar Styles - Complete Bundle
+ * Import this file to get all calendar styles
+ *
+ * Order:
+ * 1. themes.css - CSS custom properties and theme system
+ * 2. base.css - Reset, base styles, and layout
+ * 3. astro.css - Astro-specific styles (scoped)
+ * 4. vanilla.css - Vanilla-specific styles (global)
+ *
+ * Usage:
+ *   - In Astro: import '@datepainter/styles'
+ *   - In Vanilla: <link rel="stylesheet" href="/node_modules/@datepainter/styles/calendar.css">
+ */
+
+/* Import theme system first (defines CSS custom properties) */
+@import url('./themes.css');
+
+/* Import base styles (uses theme variables) */
+@import url('./base.css');
+
+/* Import Astro-specific styles (scoped for Astro components) */
+@import url('./astro.css');
+
+/* Import Vanilla-specific styles (global for standalone usage) */
+@import url('./vanilla.css');
