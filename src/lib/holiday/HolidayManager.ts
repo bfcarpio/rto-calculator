@@ -10,9 +10,11 @@
 
 import { logger } from "../../utils/logger";
 import type { Holiday } from "../types/holiday-data-source";
-import companyFilters from "./data/company-filters.json";
+import companyFiltersJson from "./data/company-filters.json";
 import { HolidayDataSourceFactory } from "./sources";
 import type { HolidayDataSource } from "./sources/types";
+
+const { $schema: _, ...companyFilters } = companyFiltersJson;
 
 /**
  * Extra holiday: fixed date or day-after another holiday

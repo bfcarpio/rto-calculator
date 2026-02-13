@@ -1,4 +1,5 @@
 {
+	"$schema": "./company-filters.schema.json",
 	"US": {
 		"name": "United States",
 		"companies": {

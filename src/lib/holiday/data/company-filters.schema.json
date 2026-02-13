@@ -1,0 +1,68 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"type": "object",
+	"properties": {
+		"$schema": {
+			"type": "string"
+		}
+	},
+	"additionalProperties": {
+		"$ref": "#/$defs/CountryEntry"
+	},
+	"$defs": {
+		"CountryEntry": {
+			"type": "object",
+			"properties": {
+				"name": { "type": "string" },
+				"companies": {
+					"type": "object",
+					"additionalProperties": {
+						"$ref": "#/$defs/CompanyEntry"
+					}
+				}
+			},
+			"required": ["name", "companies"],
+			"additionalProperties": false
+		},
+		"CompanyEntry": {
+			"type": "object",
+			"properties": {
+				"holidays": {
+					"type": "array",
+					"items": { "type": "string" }
+				},
+				"extra": {
+					"type": "array",
+					"items": {
+						"$ref": "#/$defs/ExtraHoliday"
+					}
+				}
+			},
+			"required": ["holidays"],
+			"additionalProperties": false
+		},
+		"ExtraHoliday": {
+			"oneOf": [
+				{
+					"type": "object",
+					"properties": {
+						"name": { "type": "string" },
+						"month": { "type": "integer", "minimum": 1, "maximum": 12 },
+						"day": { "type": "integer", "minimum": 1, "maximum": 31 }
+					},
+					"required": ["name", "month", "day"],
+					"additionalProperties": false
+				},
+				{
+					"type": "object",
+					"properties": {
+						"name": { "type": "string" },
+						"after": { "type": "string" }
+					},
+					"required": ["name", "after"],
+					"additionalProperties": false
+				}
+			]
+		}
+	}
+}
