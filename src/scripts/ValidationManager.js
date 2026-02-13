@@ -12,6 +12,7 @@ class ValidationManager {
 			totalWeekdaysPerWeek: 5,
 			rollingPeriodWeeks: 12,
 			thresholdPercentage: 0.6, // 3/5 = 60%
+			validationMode: "strict",
 			debug: false,
 		};
 		this.observers = new Set();
@@ -206,7 +207,7 @@ class ValidationManager {
 			console.log("[ValidationManager] Selected days:", selectedDays.length);
 		}
 
-		const result = await strategy.validate(context);
+		const result = await strategy.validate(context, this.config.validationMode);
 
 		this._notifyObservers({ type: "validation-complete", result });
 
