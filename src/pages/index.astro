@@ -18,10 +18,45 @@ const description =
 	<header class="hero is-small is-primary">
 		<div class="hero-body">
 			<div class="container">
-				<h1 class="title is-4">RTO Compliance Tracker</h1>
-				<p class="subtitle is-6">
-					Plan your time off while staying compliant with office attendance policies
-				</p>
+				<div class="header-content">
+					<div class="header-text">
+						<h1 class="title is-4">RTO Compliance Tracker</h1>
+						<p class="subtitle is-6">
+							Plan your time off while staying compliant with office attendance policies
+						</p>
+					</div>
+					<button
+						id="settings-button"
+						class="settings-button"
+						data-testid="settings-button"
+						aria-label="Open settings"
+						title="Settings"
+					>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="24"
+							height="24"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							class="gear-icon"
+						>
+							<path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z" />
+							<path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" />
+							<path d="M12 2v2" />
+							<path d="M12 20v2" />
+							<path d="m4.93 4.93 1.41 1.41" />
+							<path d="m17.66 17.66 1.41 1.41" />
+							<path d="M2 12h2" />
+							<path d="M20 12h2" />
+							<path d="m6.34 17.66-1.41 1.41" />
+							<path d="m19.07 4.93-1.41 1.41" />
+						</svg>
+					</button>
+				</div>
 			</div>
 		</div>
 	</header>
@@ -90,6 +125,59 @@ const description =
 		padding: 1.5rem 1rem;
 	}
 
+	/* Header layout with gear button */
+	.header-content {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-start;
+		gap: 1rem;
+	}
+
+	.header-text {
+		flex: 1;
+	}
+
+	.settings-button {
+		width: 44px;
+		height: 44px;
+		border-radius: 50%;
+		border: none;
+		background: white;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+		transition: transform 0.2s ease, box-shadow 0.2s ease;
+		flex-shrink: 0;
+	}
+
+	.settings-button:hover {
+		transform: scale(1.1);
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+	}
+
+	.settings-button:active {
+		transform: scale(0.95);
+	}
+
+	.gear-icon {
+		color: #475569;
+		transition: transform 0.3s ease;
+	}
+
+	.settings-button:hover .gear-icon {
+		transform: rotate(90deg);
+	}
+
+	:global(body.dark-mode) .settings-button {
+		background: #1e293b;
+	}
+
+	:global(body.dark-mode) .gear-icon {
+		color: #cbd5e1;
+	}
+
 	/* Ensure footer stays at bottom */
 	.footer {
 		background-color: #fafafa;
@@ -116,4 +204,14 @@ const description =
 <script>
 	import { initializeDateStore } from "../lib/dateStore";
 	initializeDateStore();
+
+	// Wire up settings button to open modal
+	const settingsButton = document.getElementById("settings-button");
+	const settingsDialog = document.getElementById("settings-dialog") as HTMLDialogElement | null;
+	
+	if (settingsButton && settingsDialog) {
+		settingsButton.addEventListener("click", () => {
+			settingsDialog.showModal();
+		});
+	}
 </script>
