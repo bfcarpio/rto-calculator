@@ -5,14 +5,17 @@
   <button class="legend-item" data-mode="oof" data-testid="mode-oof" data-shortcut="1">
     <span class="icon is-oof">❌</span>
     <span class="label">OOF (1)</span>
+    <span class="count" id="count-oof">0</span>
   </button>
   <button class="legend-item" data-mode="holiday" data-testid="mode-holiday" data-shortcut="2">
     <span class="icon is-holiday">☀️</span>
     <span class="label">Holiday (2)</span>
+    <span class="count" id="count-holiday">0</span>
   </button>
   <button class="legend-item" data-mode="sick" data-testid="mode-sick" data-shortcut="3">
     <span class="icon is-sick">💊</span>
     <span class="label">Sick (3)</span>
+    <span class="count" id="count-sick">0</span>
   </button>
 </div>
 
@@ -84,11 +87,57 @@
   .icon.is-sick {
     color: #1890ff;
   }
+
+  .count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.4em;
+    height: 1.4em;
+    padding: 0 0.3em;
+    border-radius: 9999px;
+    background: #e2e8f0;
+    color: #475569;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  body.dark-mode .count {
+    background: #475569;
+    color: #e2e8f0;
+  }
 </style>
 
 <script>
   import type { DateState } from 'datepainter';
   import type { CalendarInstance } from 'datepainter';
+
+  /**
+   * Update count badge elements based on current calendar state
+   */
+  function updateCounts(): void {
+    if (!calendarManager) return;
+
+    const allDates = calendarManager.getAllDates();
+    let oofCount = 0;
+    let holidayCount = 0;
+    let sickCount = 0;
+
+    allDates.forEach((state) => {
+      if (state === 'oof') oofCount++;
+      else if (state === 'holiday') holidayCount++;
+      else if (state === 'sick') sickCount++;
+    });
+
+    const oofEl = document.getElementById('count-oof');
+    const holidayEl = document.getElementById('count-holiday');
+    const sickEl = document.getElementById('count-sick');
+
+    if (oofEl) oofEl.textContent = String(oofCount);
+    if (holidayEl) holidayEl.textContent = String(holidayCount);
+    if (sickEl) sickEl.textContent = String(sickCount);
+  }
 
   /**
    * Set the marking mode for date painting
@@ -112,19 +161,12 @@
       }
     });
 
-    // Update datepainter's painting config to change default state
-    try {
-      calendarManager.updateConfig({
-        painting: { defaultState: mode }
-      });
-    } catch (error) {
-      console.error('Failed to update calendar config:', error);
-    }
+    // Use setPaintingState to avoid full re-render
+    calendarManager.setPaintingState(mode);
   }
 
   /**
    * Get calendar manager instance from window
-   * @returns The calendar manager instance or null if not initialized
    */
   const getCalendarManager = (): CalendarInstance | null => {
     return (window as any).__datepainterInstance || null;
@@ -134,7 +176,6 @@
 
   /**
    * Initialize calendar manager with polling fallback
-   * Polls every 50ms until the datepainter instance is available on window
    */
   const initCalendarManager = (): void => {
     calendarManager = getCalendarManager();
@@ -142,6 +183,14 @@
       setTimeout(initCalendarManager, 50);
       return;
     }
+
+    // Subscribe to state changes for count updates
+    calendarManager.onStateChange(() => {
+      updateCounts();
+    });
+
+    // Initial count update
+    updateCounts();
   };
 
   initCalendarManager();

@@ -35,22 +35,14 @@ export async function getModeCounts(page: Page): Promise<{
 	holiday: number;
 	sick: number;
 }> {
-	const legend = getMainLegend(page);
-	const oofText = await legend.getByTestId("mode-oof").textContent();
-	const holidayText = await legend.getByTestId("mode-holiday").textContent();
-	const sickText = await legend.getByTestId("mode-sick").textContent();
-
-	// Extract numbers from text like "OOF: 3"
-	const extractCount = (text: string | null): number => {
-		if (!text) return 0;
-		const match = text.match(/(\d+)/);
-		return match?.[1] ? parseInt(match[1], 10) : 0;
-	};
+	const oofText = await page.locator("#count-oof").textContent();
+	const holidayText = await page.locator("#count-holiday").textContent();
+	const sickText = await page.locator("#count-sick").textContent();
 
 	return {
-		oof: extractCount(oofText),
-		holiday: extractCount(holidayText),
-		sick: extractCount(sickText),
+		oof: parseInt(oofText || "0", 10),
+		holiday: parseInt(holidayText || "0", 10),
+		sick: parseInt(sickText || "0", 10),
 	};
 }
 
@@ -59,6 +51,6 @@ export async function expectModeCount(
 	mode: "oof" | "holiday" | "sick",
 	expected: number,
 ): Promise<void> {
-	const counts = await getModeCounts(page);
-	expect(counts[mode]).toBe(expected);
+	const countId = `#count-${mode}`;
+	await expect(page.locator(countId)).toHaveText(String(expected));
 }
