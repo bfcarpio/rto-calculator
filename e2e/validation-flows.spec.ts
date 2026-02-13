@@ -22,7 +22,7 @@ import {
 
 test.describe("Validation Flows", () => {
 	test.beforeEach(async ({ page }) => {
-		await page.goto("/");
+		await page.goto("/rto-calculator/");
 		await waitForCalendarReady(page);
 	});
 	test.describe("60% Threshold (Compliant)", () => {

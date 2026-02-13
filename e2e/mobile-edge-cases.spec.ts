@@ -19,7 +19,7 @@ test.describe("Mobile Edge Cases", () => {
 	test.beforeEach(async ({ page }) => {
 		// Set mobile viewport before each test
 		await page.setViewportSize({ width: 375, height: 667 });
-		await page.goto("/");
+		await page.goto("/rto-calculator/");
 		await waitForCalendarReady(page);
 	});
 	test.describe("Touch Scrolling", () => {

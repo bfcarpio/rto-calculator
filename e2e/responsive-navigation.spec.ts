@@ -12,7 +12,7 @@ import { waitForCalendarReady } from "./test-helpers";
 
 test.describe("Responsive Navigation", () => {
 	test.beforeEach(async ({ page }) => {
-		await page.goto("/");
+		await page.goto("/rto-calculator/");
 		await waitForCalendarReady(page);
 	});
 	test.describe("Mobile Viewport (375px)", () => {
@@ -233,7 +233,7 @@ test.describe("Responsive Navigation", () => {
 		}) => {
 			// Start with mobile viewport
 			await page.setViewportSize({ width: 375, height: 667 });
-			await page.goto("/");
+			await page.goto("/rto-calculator/");
 			await waitForCalendarReady(page);
 
 			// Verify mobile layout
@@ -254,7 +254,7 @@ test.describe("Responsive Navigation", () => {
 		}) => {
 			// Start with desktop viewport
 			await page.setViewportSize({ width: 1920, height: 1080 });
-			await page.goto("/");
+			await page.goto("/rto-calculator/");
 			await waitForCalendarReady(page);
 
 			// Verify desktop layout

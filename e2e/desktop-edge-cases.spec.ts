@@ -19,7 +19,7 @@ test.describe("Desktop Edge Cases", () => {
 	test.beforeEach(async ({ page }) => {
 		// Set desktop viewport before each test
 		await page.setViewportSize({ width: 1920, height: 1080 });
-		await page.goto("/");
+		await page.goto("/rto-calculator/");
 		await waitForCalendarReady(page);
 	});
 	test.describe("Rapid Mouse Clicks", () => {
