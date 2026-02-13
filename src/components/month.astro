@@ -1,4 +1,6 @@
 ---
+import Day from "./day.astro";
+
 interface Props {
     month: number; // 0-11 (January-December)
     year: number;
@@ -54,12 +56,11 @@ const cols = 7;
                                 cellIndex < offset + daysInMonth
                             ) {
                                 return (
-                                    <td
-                                        class="calendar-day"
-                                        data-day={dayNumber}
-                                    >
-                                        {dayNumber}
-                                    </td>
+                                    <Day
+                                        dayNumber={dayNumber}
+                                        year={year}
+                                        month={month}
+                                    />
                                 );
                             } else {
                                 return <td class="calendar-day empty" />;
@@ -114,22 +115,6 @@ const cols = 7;
     .calendar-table td {
         width: 2rem;
         height: 2rem;
-    }
-
-    .calendar-day {
-        font-size: 0.9rem;
-        vertical-align: middle;
-        transition: all 0.2s ease;
-        cursor: pointer;
-    }
-
-    .calendar-day:hover {
-        transform: scale(1.1);
-        background-color: #e6f7ff;
-        border: 1px solid #1890ff;
-        z-index: 1;
-        position: relative;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     }
 
     .calendar-day.empty {

@@ -1,0 +1,158 @@
+---
+interface Props {
+    dayNumber: number;
+    year: number;
+    month: number;
+    isSelected?: boolean;
+    selectionType?: string;
+}
+
+const {
+    dayNumber,
+    year,
+    month,
+    isSelected = false,
+    selectionType = "",
+} = Astro.props;
+
+// Create the full date string for this day
+const date = new Date(year, month, dayNumber);
+const dateString = date.toISOString().split("T")[0]; // Format: YYYY-MM-DD
+
+const selectionColors: Record<string, string> = {
+    "work-from-home": "#1890ff", // Blue
+    vacation: "#52c41a",
+    "sick-leave": "#faad14",
+    personal: "#722ed1",
+    office: "#f5222d", // Red
+    default: "#d9d9d9",
+};
+
+// Create a unique ID for this day cell
+const cellId = `day-cell-${dateString}-${dayNumber}`;
+---
+
+<td
+    id={cellId}
+    class="calendar-day"
+    data-day={dayNumber}
+    data-date={dateString}
+    data-year={year}
+    data-month={month}
+    data-selected={isSelected}
+    data-selection-type={selectionType}
+    style={{
+        backgroundColor:
+            isSelected && selectionType
+                ? selectionColors[selectionType]
+                : "transparent",
+    }}
+>
+    <span class="day-number">{dayNumber}</span>
+</td>
+
+<script define:vars={{ cellId }}>
+    // Wait for DOM to be ready
+    function initDayCell() {
+        const cell = document.getElementById(cellId);
+        if (!cell) {
+            console.warn(`Day cell not found: ${cellId}`);
+            return;
+        }
+
+        // Remove existing event listeners by cloning
+        const newCell = cell.cloneNode(true);
+        cell.parentNode?.replaceChild(newCell, cell);
+
+        // Handle left click - turn blue (work-from-home)
+        newCell.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const currentType = newCell.dataset.selectionType || "";
+
+            console.log(
+                `Left click on ${cellId}, current type: ${currentType}`,
+            );
+
+            // Toggle: if already work-from-home, unselect; otherwise, set to work-from-home
+            if (currentType === "work-from-home") {
+                newCell.dataset.selected = "false";
+                newCell.dataset.selectionType = "";
+                newCell.style.backgroundColor = "transparent";
+            } else {
+                newCell.dataset.selected = "true";
+                newCell.dataset.selectionType = "work-from-home";
+                newCell.style.backgroundColor = "#1890ff";
+            }
+        });
+
+        // Handle right click - turn red (office)
+        newCell.addEventListener("contextmenu", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const currentType = newCell.dataset.selectionType || "";
+
+            console.log(
+                `Right click on ${cellId}, current type: ${currentType}`,
+            );
+
+            // Toggle: if already office, unselect; otherwise, set to office
+            if (currentType === "office") {
+                newCell.dataset.selected = "false";
+                newCell.dataset.selectionType = "";
+                newCell.style.backgroundColor = "transparent";
+            } else {
+                newCell.dataset.selected = "true";
+                newCell.dataset.selectionType = "office";
+                newCell.style.backgroundColor = "#f5222d";
+            }
+        });
+    }
+
+    // Initialize when DOM is ready
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initDayCell);
+    } else {
+        initDayCell();
+    }
+</script>
+
+<style>
+    .calendar-day {
+        width: 2rem;
+        height: 2rem;
+        font-size: 0.9rem;
+        vertical-align: middle;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        position: relative;
+        text-align: center;
+        padding: 0;
+        border: 1px solid transparent;
+        user-select: none; /* Prevent text selection */
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+    }
+
+    .day-number {
+        display: inline-block;
+        width: 100%;
+        height: 100%;
+        line-height: 2rem;
+        pointer-events: none; /* Allow clicks to pass through to the td */
+    }
+
+    /* Change hover outline to dark grey */
+    .calendar-day:hover {
+        box-shadow: 0 0 0 2px #555 inset;
+        border-color: #555;
+    }
+
+    .calendar-day.empty {
+        background-color: #f9f9f9;
+        pointer-events: none;
+    }
+</style>
