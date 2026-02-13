@@ -1,0 +1,142 @@
+---
+---
+
+<div class="weekday-selector" id="weekday-selector">
+  <button class="weekday-btn" data-day="1">Mon</button>
+  <button class="weekday-btn" data-day="2">Tue</button>
+  <button class="weekday-btn" data-day="3">Wed</button>
+  <button class="weekday-btn" data-day="4">Thu</button>
+  <button class="weekday-btn" data-day="5">Fri</button>
+</div>
+
+<style>
+  .weekday-selector {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.5rem;
+  }
+
+  .weekday-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 1rem;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+    font-size: 0.9rem;
+    color: var(--color-text);
+  }
+
+  .weekday-btn:hover {
+    border-color: #94a3b8;
+    background: #f8fafc;
+  }
+
+  .weekday-btn.is-active {
+    border-color: #475569;
+    background: #e2e8f0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  body.dark-mode .weekday-btn {
+    background: #1e293b;
+    color: var(--color-bg-alt);
+  }
+
+  body.dark-mode .weekday-btn:hover {
+    border-color: #94a3b8;
+    background: #334155;
+  }
+
+  body.dark-mode .weekday-btn.is-active {
+    border-color: #94a3b8;
+    background: #475569;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+</style>
+
+<script>
+  import type { CalendarInstance } from 'datepainter';
+  import { getDateRange, getDateRangeArray, formatDate } from '../lib/dateUtils';
+
+  /**
+   * Get all DateString instances of a given weekday (1=Mon..5=Fri) in the calendar range
+   */
+  function getWeekdayDates(dayIndex: number): string[] {
+    const range = getDateRange();
+    const allDays = getDateRangeArray(range.startDate, range.endDate);
+    return allDays
+      .filter((date) => date.getDay() === dayIndex)
+      .map((date) => formatDate(date));
+  }
+
+  /**
+   * Sync button active states based on current calendar data
+   */
+  function syncButtonStates(calendarManager: CalendarInstance): void {
+    const selector = document.getElementById('weekday-selector');
+    if (!selector) return;
+
+    const allDates = calendarManager.getAllDates();
+
+    selector.querySelectorAll('.weekday-btn').forEach((btn) => {
+      const dayIndex = Number(btn.getAttribute('data-day'));
+      const weekdayDates = getWeekdayDates(dayIndex);
+
+      // Button is active only if ALL instances of this weekday are marked as 'oof'
+      const allMarked = weekdayDates.length > 0 &&
+        weekdayDates.every((d) => allDates.get(d as any) === 'oof');
+
+      btn.classList.toggle('is-active', allMarked);
+    });
+  }
+
+  const getCalendarManager = (): CalendarInstance | null => {
+    return (window as any).__datepainterInstance || null;
+  };
+
+  let calendarManager: CalendarInstance | null = null;
+
+  const selector = document.getElementById('weekday-selector');
+
+  if (selector) {
+    selector.querySelectorAll('.weekday-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        if (!calendarManager) return;
+
+        const dayIndex = Number(btn.getAttribute('data-day'));
+        const dates = getWeekdayDates(dayIndex);
+        const isActive = btn.classList.contains('is-active');
+
+        if (isActive) {
+          calendarManager.clearDates(dates as any[]);
+        } else {
+          calendarManager.setDates(dates as any[], 'oof');
+        }
+        // Button state will be synced via onStateChange callback
+      });
+    });
+  }
+
+  const initCalendarManager = (): void => {
+    calendarManager = getCalendarManager();
+    if (!calendarManager) {
+      setTimeout(initCalendarManager, 50);
+      return;
+    }
+
+    calendarManager.onStateChange(() => {
+      syncButtonStates(calendarManager!);
+    });
+
+    // Initial sync
+    syncButtonStates(calendarManager);
+  };
+
+  initCalendarManager();
+</script>
