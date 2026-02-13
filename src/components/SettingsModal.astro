@@ -164,6 +164,15 @@
                         Import
                     </button>
                 </div>
+                <div class="setting-row">
+                    <div class="setting-info">
+                        <span class="setting-label">Clear saved data</span>
+                        <span class="setting-description">Remove all saved calendar and settings data</span>
+                    </div>
+                    <button id="clear-data-button" class="action-button danger" type="button">
+                        Clear
+                    </button>
+                </div>
             </section>
         </div>
     </div>
@@ -419,6 +428,17 @@
         border-color: #475569;
     }
 
+    .action-button.danger {
+        background: white;
+        border: 2px solid #fca5a5;
+        color: #dc2626;
+    }
+
+    .action-button.danger:hover {
+        background: #fef2f2;
+        border-color: #dc2626;
+    }
+
     @media (max-width: 480px) {
         .settings-modal {
             width: 95vw;
@@ -510,6 +530,17 @@
     :global(body.dark-mode) .action-button.secondary:hover {
         background: #334155;
         border-color: #64748b;
+    }
+
+    :global(body.dark-mode) .action-button.danger {
+        background: #1e293b;
+        border-color: #7f1d1d;
+        color: #f87171;
+    }
+
+    :global(body.dark-mode) .action-button.danger:hover {
+        background: #371717;
+        border-color: #dc2626;
     }
 
     :global(body.dark-mode) .toggle-button {

@@ -7,6 +7,7 @@ import {
 } from "../lib/settings-reader";
 import { getStartOfWeek } from "../lib/validation/rto-core";
 import { logger } from "../utils/logger";
+import { clearAllData } from "../utils/storage";
 import { debugLog } from "./debug";
 import { initializeIndex } from "./index-init";
 
@@ -44,6 +45,7 @@ class SettingsModal {
 	private rollingWindowInput: HTMLInputElement | null = null;
 	private bestWeeksInput: HTMLInputElement | null = null;
 	private startingWeekSelect: HTMLSelectElement | null = null;
+	private clearDataButton: HTMLButtonElement | null = null;
 
 	constructor() {
 		initializeIndex();
@@ -101,6 +103,9 @@ class SettingsModal {
 		this.startingWeekSelect = document.getElementById(
 			"starting-week-select",
 		) as HTMLSelectElement | null;
+		this.clearDataButton = document.getElementById(
+			"clear-data-button",
+		) as HTMLButtonElement | null;
 	}
 
 	private initializeEventListeners(): void {
@@ -161,6 +166,9 @@ class SettingsModal {
 		);
 		this.startingWeekSelect?.addEventListener("change", () =>
 			this.onStartingWeekChange(),
+		);
+		this.clearDataButton?.addEventListener("click", () =>
+			this.clearSavedData(),
 		);
 	}
 
@@ -446,6 +454,14 @@ class SettingsModal {
 
 		this.modal?.close();
 		this.announceToScreenReader("Settings reset to defaults");
+	}
+
+	private clearSavedData(): void {
+		if (!window.confirm("Clear all saved data? This cannot be undone.")) return;
+		clearAllData();
+		localStorage.removeItem("datepainter:selectedDates");
+		localStorage.removeItem(SETTINGS_KEY);
+		window.location.reload();
 	}
 
 	private clearPatternSelection(): void {
