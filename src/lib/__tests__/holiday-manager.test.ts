@@ -6,8 +6,8 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { HolidayDataSourceFactory } from "../holiday-data-sources";
-import { HolidayManager } from "../holiday-manager";
+import { HolidayManager } from "../holiday/HolidayManager";
+import { HolidayDataSourceFactory } from "../holiday/sources";
 
 // Mock holiday data for testing
 const mockHolidays = {
