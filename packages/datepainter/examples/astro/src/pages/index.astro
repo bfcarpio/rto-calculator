@@ -1,150 +1,167 @@
 ---
-import type { CalendarConfig } from '../../../types';
-import { getCalendarHTML } from '../../../lib/templateRenderer';
-import '../../../styles/astro.css';
-
-const config: CalendarConfig = {
-  dateRange: {
-    start: new Date('2026-01-01'),
-    end: new Date('2026-12-31')
-  },
-  states: {
-    working: {
-      label: 'Working',
-      color: '#10b981',
-      bgColor: '#d1fae5',
-      icon: '💼'
-    },
-    oof: {
-      label: 'OOF',
-      color: '#ef4444',
-      bgColor: '#fee2e2',
-      icon: '🏠'
-    },
-    holiday: {
-      label: 'Holiday',
-      color: '#f59e0b',
-      bgColor: '#fef3c7',
-      icon: '🏖️'
-    }
-  },
-  styling: {
-    cellSize: 48,
-    showWeekdays: true,
-    showWeekNumbers: true,
-    firstDayOfWeek: 1
-  },
-  painting: {
-    enabled: true,
-    paintOnDrag: true,
-    defaultState: 'working'
-  }
-};
-
-const calendarHTML = getCalendarHTML(config);
+// No server-side setup needed - CalendarManager runs client-side
 ---
 
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Datepainter - Astro Example</title>
-  </head>
-  <body>
-    <main>
-      <h1>Datepainter - Astro Example</h1>
-      <p>Click on dates to select them. Click again to deselect.</p>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Datepainter - Astro Example</title>
+  <style>
+    import 'datepainter/styles/base.css';
+    import 'datepainter/styles/astro.css';
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Datepainter - Astro Example</h1>
+    <p>Use <strong>ArrowLeft</strong> and <strong>ArrowRight</strong> keys to navigate months. 
+       Click on dates to select them. Click again to cycle through states (Working → OOF → Holiday).</p>
 
-      <div id="calendar-container">
-        <div class="datepainter" set:html={calendarHTML} />
-      </div>
+    <div id="calendar-container"></div>
 
-      <div class="info">
-        <h2>Selected Dates</h2>
-        <div id="selected-dates">No dates selected</div>
-      </div>
-    </main>
+    <div class="info">
+      <h2>Selected Dates</h2>
+      <div id="selected-dates">No dates selected</div>
+    </div>
+  </main>
 
-    <script>
-      import type { DateState, DateString } from '../../../types';
-      import { setDateState, clearDateState, getAllDates } from '../../../stores/calendarStore';
-      import { formatDate } from '../../../lib/dateUtils';
+  <script is:client>
+    import { CalendarManager } from 'datepainter';
 
-      const configStates = {
-        working: { color: '#10b981', bgColor: '#d1fae5' },
-        oof: { color: '#ef4444', bgColor: '#fee2e2' },
-        holiday: { color: '#f59e0b', bgColor: '#fef3c7' }
-      };
-
-      let currentPaintState: DateState = 'working';
-      const stateOrder: DateState[] = ['working', 'oof', 'holiday', ''];
-
-      function updateSelectedDatesDisplay() {
-        const container = document.getElementById('selected-dates');
-        if (!container) return;
-
-        const dates = getAllDates();
-        const dateArray = Array.from(dates.entries())
-          .sort((a, b) => a[0].localeCompare(b[0]));
-
-        if (dateArray.length === 0) {
-          container.textContent = 'No dates selected';
-          return;
+    // Initialize calendar with config
+    const manager = new CalendarManager('#calendar-container', {
+      dateRange: {
+        start: new Date('2026-01-01'),
+        end: new Date('2026-12-31')
+      },
+      states: {
+        working: {
+          label: 'Working',
+          color: '#10b981',
+          bgColor: '#d1fae5',
+          icon: '💼'
+        },
+        oof: {
+          label: 'OOF',
+          color: '#ef4444',
+          bgColor: '#fee2e2',
+          icon: '🏠'
+        },
+        holiday: {
+          label: 'Holiday',
+          color: '#f59e0b',
+          bgColor: '#fef3c7',
+          icon: '🏖️'
         }
-
-        container.innerHTML = dateArray.map(([date, state]) => {
-          const stateConfig = configStates[state as DateState];
-          return `
-            <span class="date-chip" style="
-              background-color: ${stateConfig?.bgColor};
-              color: ${stateConfig?.color};
-              padding: 4px 8px;
-              border-radius: 4px;
-              margin: 2px;
-              display: inline-block;
-            ">
-              ${date} (${state})
-            </span>
-          `;
-        }).join('');
+      },
+      styling: {
+        showWeekdays: true,
+        showWeekNumbers: true,
+        firstDayOfWeek: 1
+      },
+      painting: {
+        enabled: true,
+        paintOnDrag: true,
+        defaultState: 'working'
       }
+    });
 
-      function handleDayClick(dayEl: HTMLElement) {
-        const date = dayEl.dataset.date;
-        if (!date) return;
+    // Initialize the calendar
+    manager.init();
 
-        const currentState = getAllDates().get(date);
-        const currentIndex = stateOrder.indexOf(currentState as DateState);
-        const nextIndex = (currentIndex + 1) % stateOrder.length;
-        const newState = stateOrder[nextIndex];
+    // Navigation controls
+    const navContainer = document.createElement('div');
+    navContainer.className = 'nav-controls';
+    navContainer.style.cssText = 'margin-bottom: 1rem; display: flex; gap: 1rem;';
 
-        if (newState) {
-          setDateState(date, newState as DateState);
-          dayEl.classList.add(`datepainter-day--${newState}`);
-        } else {
-          clearDateState(date);
-          stateOrder.slice(0, -1).forEach(s => {
-            dayEl.classList.remove(`datepainter-day--${s}`);
-          });
+    const prevBtn = document.createElement('button');
+    prevBtn.textContent = '← Previous Month';
+    prevBtn.onclick = () => {
+      try {
+        manager.prevMonth();
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.log('Already at start of date range:', errorMessage);
+      }
+    };
+
+    const nextBtn = document.createElement('button');
+    nextBtn.textContent = 'Next Month →';
+    nextBtn.onclick = () => {
+      try {
+        manager.nextMonth();
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.log('Already at end of date range:', errorMessage);
+      }
+    };
+
+    navContainer.appendChild(prevBtn);
+    navContainer.appendChild(nextBtn);
+
+    // Insert before info section
+    const infoSection = document.querySelector('.info');
+    if (infoSection && infoSection.parentNode) {
+      infoSection.parentNode.insertBefore(navContainer, infoSection);
+    }
+
+    // State colors for display
+    const stateColors = {
+      working: '#10b981',
+      oof: '#ef4444',
+      holiday: '#f59e0b'
+    };
+
+    function updateSelectedDatesDisplay() {
+      const container = document.getElementById('selected-dates');
+      if (!container) return;
+
+      const dates = manager.getSelectedDates();
+      const dateMap = new Map();
+
+      // Get state for each date
+      dates.forEach(date => {
+        const state = manager.getState(date);
+        if (state) {
+          dateMap.set(date, state);
         }
+      });
 
-        updateSelectedDatesDisplay();
+      if (dateMap.size === 0) {
+        container.textContent = 'No dates selected';
+        return;
       }
 
-      // Set up event delegation
-      const calendar = document.querySelector('.datepainter');
-      if (calendar) {
-        calendar.addEventListener('click', (e) => {
-          const target = e.target as HTMLElement;
-          const dayEl = target.closest('.datepainter-day') as HTMLElement;
+      const sortedDates = Array.from(dateMap.entries()).sort((a, b) => a[0].localeCompare(b[0]));
 
-          if (dayEl && !dayEl.classList.contains('datepainter-day--empty')) {
-            handleDayClick(dayEl);
-          }
-        });
-      }
-    </script>
-  </body>
+      container.innerHTML = sortedDates.map(([date, state]) => {
+        const actualColor = (state === 'working' && stateColors.working) ||
+                          (state === 'oof' && stateColors.oof) ||
+                          (state === 'holiday' && stateColors.holiday) ||
+                          '#6b7280';
+        return `<span class="date-chip" style="
+          background-color: ${actualColor};
+          color: white;
+          padding: 4px 8px;
+          border-radius: 4px;
+          margin: 2px;
+          display: inline-block;
+        ">
+          ${date} (${state})
+        </span>`;
+      }).join('');
+    }
+
+    // Subscribe to state changes
+    manager.onStateChange(() => {
+      updateSelectedDatesDisplay();
+    });
+
+    // Initial display update
+    updateSelectedDatesDisplay();
+  </script>
+</body>
 </html>
 
 <style>
