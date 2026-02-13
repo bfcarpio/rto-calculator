@@ -8,8 +8,11 @@
  *
  * @module Datepainter
  */
+
+// Generate unique ID for this instance to support multiple calendars per page
+const { id = `datepainter-container-${Math.random().toString(36).slice(2, 9)}` } = Astro.props;
 ---
-<div class="datepicker-container" id="datepainter-container">
+<div class="datepicker-container" id={id}>
   <!-- CalendarManager renders into this container -->
 </div>
 
@@ -71,7 +74,7 @@
   }
 </style>
 
-<script>
+<script define:vars={{ containerId: id }}>
   // Import datepainter core and styles
   import { CalendarManager } from 'datepainter';
   import 'datepainter/styles/calendar.css';
@@ -187,9 +190,9 @@
    */
   const initializeCalendar = (): void => {
     // Guard clause: ensure DOM is ready
-    const container = document.getElementById('datepainter-container');
+    const container = document.getElementById(containerId);
     if (!container) {
-      throw new Error('Datepainter container not found');
+      throw new Error(`Datepainter container not found: ${containerId}`);
     }
 
     // Guard clause: ensure ValidationManager is available

@@ -11,6 +11,9 @@ test.describe("Mobile Edge Cases", () => {
 		// Set mobile viewport
 		await page.setViewportSize({ width: 375, height: 667 });
 		await navigateToApp(page);
+		// Calendar panel is open by default on mobile
+		// Wait for page to fully load including JavaScript
+		await page.waitForLoadState("networkidle");
 		// Wait for calendar to be ready (datepainter)
 		await page.waitForSelector(
 			'[data-testid="calendar-day"]:not(.datepainter__day--empty):not(.datepainter__day--disabled)',
