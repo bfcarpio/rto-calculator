@@ -220,19 +220,16 @@ const months = Array.from({ length: 12 }, (_, index) => {
         <style>
             .months-grid {
                 display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                grid-template-columns: repeat(4, 1fr);
                 gap: 1.5rem;
                 padding: 1rem 0;
                 justify-items: center;
             }
 
             /* Responsive layout for smaller screens */
-            @media (max-width: 768px) {
+            @media (max-width: 1024px) {
                 .months-grid {
-                    grid-template-columns: repeat(
-                        auto-fill,
-                        minmax(150px, 1fr)
-                    );
+                    grid-template-columns: repeat(2, 1fr);
                     gap: 1rem;
                 }
             }
