@@ -2,52 +2,64 @@
 	"US": {
 		"name": "United States",
 		"companies": {
-			"Amazon": [
-				"New Year's Day",
-				"Martin Luther King, Jr. Day",
-				"Presidents Day",
-				"Memorial Day",
-				"Juneteenth National Independence Day",
-				"Independence Day",
-				"Labour Day",
-				"Thanksgiving Day",
-				"Christmas Day"
-			],
-			"Google": [
-				"New Year's Day",
-				"Martin Luther King, Jr. Day",
-				"Presidents Day",
-				"Memorial Day",
-				"Juneteenth National Independence Day",
-				"Independence Day",
-				"Labour Day",
-				"Columbus Day",
-				"Veterans Day",
-				"Thanksgiving Day",
-				"Christmas Day"
-			],
-			"Microsoft": [
-				"New Year's Day",
-				"Martin Luther King, Jr. Day",
-				"Presidents Day",
-				"Memorial Day",
-				"Independence Day",
-				"Labour Day",
-				"Thanksgiving Day",
-				"Christmas Day"
-			],
-			"Meta": [
-				"New Year's Day",
-				"Martin Luther King, Jr. Day",
-				"Presidents Day",
-				"Memorial Day",
-				"Juneteenth National Independence Day",
-				"Independence Day",
-				"Labour Day",
-				"Veterans Day",
-				"Thanksgiving Day",
-				"Christmas Day"
-			]
+			"Amazon": {
+				"holidays": [
+					"New Year's Day",
+					"Martin Luther King, Jr. Day",
+					"Presidents Day",
+					"Memorial Day",
+					"Juneteenth National Independence Day",
+					"Independence Day",
+					"Labour Day",
+					"Thanksgiving Day",
+					"Christmas Day"
+				]
+			},
+			"Google": {
+				"holidays": [
+					"New Year's Day",
+					"Martin Luther King, Jr. Day",
+					"Presidents Day",
+					"Memorial Day",
+					"Juneteenth National Independence Day",
+					"Independence Day",
+					"Labour Day",
+					"Columbus Day",
+					"Veterans Day",
+					"Thanksgiving Day",
+					"Christmas Day"
+				]
+			},
+			"Microsoft": {
+				"holidays": [
+					"New Year's Day",
+					"Martin Luther King, Jr. Day",
+					"Presidents Day",
+					"Memorial Day",
+					"Independence Day",
+					"Labour Day",
+					"Thanksgiving Day",
+					"Christmas Day"
+				],
+				"extra": [
+					{ "name": "Day after Thanksgiving", "after": "Thanksgiving Day" },
+					{ "name": "Christmas Eve", "month": 12, "day": 24 }
+				]
+			},
+			"Meta": {
+				"holidays": [
+					"New Year's Day",
+					"Martin Luther King, Jr. Day",
+					"Presidents Day",
+					"Memorial Day",
+					"Juneteenth National Independence Day",
+					"Independence Day",
+					"Labour Day",
+					"Veterans Day",
+					"Thanksgiving Day",
+					"Christmas Day"
+				]
+			}
 		}
 	}
 }

@@ -22,8 +22,8 @@ vi.mock("../holiday/data/company-filters.json", () => ({
 		US: {
 			name: "United States",
 			companies: {
-				Amazon: ["New Year's Day", "Christmas Day"],
-				Google: ["New Year's Day"],
+				Amazon: { holidays: ["New Year's Day", "Christmas Day"] },
+				Google: { holidays: ["New Year's Day"] },
 			},
 		},
 	},

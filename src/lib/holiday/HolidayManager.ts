@@ -15,13 +15,28 @@ import { HolidayDataSourceFactory } from "./sources";
 import type { HolidayDataSource } from "./sources/types";
 
 /**
+ * Extra holiday: fixed date or day-after another holiday
+ */
+type ExtraHoliday =
+	| { name: string; month: number; day: number }
+	| { name: string; after: string };
+
+/**
+ * Company holiday filter entry
+ */
+interface CompanyEntry {
+	holidays: string[];
+	extra?: ExtraHoliday[];
+}
+
+/**
  * Type for company filters JSON structure
  */
 interface CompanyFilters {
 	[countryCode: string]: {
 		name: string;
 		companies: {
-			[companyName: string]: string[];
+			[companyName: string]: CompanyEntry;
 		};
 	};
 }
@@ -182,11 +197,58 @@ export class HolidayManager {
 		}
 
 		const companyData = countryData.companies[companyName];
-		if (!companyData || !Array.isArray(companyData)) {
+		if (!companyData || !companyData.holidays) {
 			return null;
 		}
 
-		return new Set(companyData);
+		return new Set(companyData.holidays);
+	}
+
+	/**
+	 * Resolve extra holidays for a company into HolidayInfo objects
+	 */
+	private resolveExtraHolidays(
+		countryCode: string,
+		companyName: string,
+		apiHolidays: HolidayInfo[],
+		years: number[],
+	): HolidayInfo[] {
+		const filters = companyFilters as CompanyFilters;
+		const companyData = filters[countryCode]?.companies?.[companyName];
+		if (!companyData?.extra) {
+			return [];
+		}
+
+		const extras: HolidayInfo[] = [];
+		for (const rule of companyData.extra) {
+			if ("month" in rule) {
+				// Fixed date: create one per year
+				for (const year of years) {
+					const date = new Date(year, rule.month - 1, rule.day);
+					extras.push({
+						date: this.normalizeDate(date),
+						name: rule.name,
+						countryCode,
+						isWeekday: this.isWeekday(date),
+					});
+				}
+			} else if ("after" in rule) {
+				// Day after a named holiday
+				for (const h of apiHolidays) {
+					if (h.name === rule.after) {
+						const date = new Date(h.date);
+						date.setDate(date.getDate() + 1);
+						extras.push({
+							date: this.normalizeDate(date),
+							name: rule.name,
+							countryCode,
+							isWeekday: this.isWeekday(date),
+						});
+					}
+				}
+			}
+		}
+		return extras;
 	}
 
 	/**
@@ -255,6 +317,21 @@ export class HolidayManager {
 					}
 					return true;
 				});
+
+			// Inject extra company holidays (fixed dates, day-after rules)
+			if (companyFilter && companyFilter !== "") {
+				const extras = this.resolveExtraHolidays(
+					countryCode,
+					companyFilter,
+					holidayInfoList,
+					years,
+				);
+				for (const extra of extras) {
+					if (!onlyWeekdays || extra.isWeekday) {
+						holidayInfoList.push(extra);
+					}
+				}
+			}
 
 			const weekdayHolidays = holidayInfoList.filter((h) => h.isWeekday).length;
 
