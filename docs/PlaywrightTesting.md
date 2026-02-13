@@ -19,7 +19,7 @@ e2e/
 ├── helpers/
 │   ├── common.ts              # navigateToApp, waitForAppLoad
 │   ├── datepainter.ts         # clickDate, getDateCells, navigateToMonth
-│   ├── settingsModal.ts       # openSettings, setTargetDays, selectValidationMode
+│   ├── settingsModal.ts       # openSettings, setTargetDays
 │   ├── statusLegend.ts        # selectMode, expectModeActive, getModeCounts
 │   └── theme.ts               # openSettings, closeSettings, cycleTheme
 ├── test-helpers.ts            # Legacy shared utilities (waitForCalendarReady, etc.)

@@ -291,12 +291,23 @@ export const DEFAULT_POLICY = {
 ### Validation Constants
 
 ```typescript
-// src/lib/validation/constants.ts
+// src/lib/validation/constants.ts (defaults, overridable via Settings)
 export const MINIMUM_COMPLIANT_DAYS = 3;
 export const TOTAL_WEEK_DAYS = 5;
-export const ROLLING_WINDOW_WEEKS = 12;
+export const ROLLING_WINDOW_WEEKS = 12;  // customizable in settings
 export const COMPLIANCE_THRESHOLD = 0.6;
-export const BEST_WEEKS_COUNT = 8;
+export const BEST_WEEKS_COUNT = 8;       // customizable in settings
+```
+
+### Shared Settings Reader
+
+```typescript
+// src/lib/settings-reader.ts
+import { readSettings, writeSettings } from "./settings-reader";
+
+const settings = readSettings(); // parses localStorage once, merges defaults
+settings.rollingWindowWeeks; // 12 (default)
+settings.bestWeeksCount;     // 8 (default, clamped to <= rollingWindowWeeks)
 ```
 
 ---
@@ -402,9 +413,13 @@ error('[MyModule] Error message');        // Always shown
 window.__getHolidayManager().getHolidayDates(2025, 'US');
 window.__datepainterInstance.getAllDates();
 
-// Check penalize policy settings
-JSON.parse(localStorage.getItem('rto-calculator-settings'))?.sickDaysPenalize;
-JSON.parse(localStorage.getItem('rto-calculator-settings'))?.holidayPenalize;
+// Check policy settings via shared reader (preferred)
+import { readSettings } from './lib/settings-reader';
+const s = readSettings();
+s.sickDaysPenalize;   // boolean
+s.holidayPenalize;    // boolean
+s.rollingWindowWeeks; // number
+s.bestWeeksCount;     // number
 ```
 
 ---

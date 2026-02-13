@@ -150,7 +150,7 @@ There are two helper systems. **Prefer `e2e/helpers/`** for new code:
 | `e2e/helpers/common.ts` | Navigation | `navigateToApp`, `waitForAppLoad` |
 | `e2e/helpers/datepainter.ts` | Calendar | `clickDate`, `expectDateHasState`, `getDateCells`, `navigateToMonth` |
 | `e2e/helpers/statusLegend.ts` | Palette | `selectMode`, `expectModeActive`, `getModeCounts` |
-| `e2e/helpers/settingsModal.ts` | Settings | `openSettings`, `setTargetDays`, `selectValidationMode` |
+| `e2e/helpers/settingsModal.ts` | Settings | `openSettings`, `setTargetDays` |
 | `e2e/helpers/theme.ts` | Theme | `openSettings`, `cycleTheme`, `expectTheme` |
 | `e2e/test-helpers.ts` | Legacy (mixed) | `waitForCalendarReady`, `applyWeekdayPattern`, `setupValidationScenario` |
 
