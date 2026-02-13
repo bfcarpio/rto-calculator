@@ -601,9 +601,7 @@ git push && git push --tags
 
 ### CI/CD
 
-- `.github/workflows/ci.yml` - Linting, type checking, unit tests, build
-- `.github/workflows/e2e.yml` - E2E tests with Playwright
-- `.github/workflows/release.yml` - Release workflow (manual trigger)
+- `.github/workflows/astro.yml` - Unified pipeline: unit tests, E2E tests, build, deploy
 
 ---
 

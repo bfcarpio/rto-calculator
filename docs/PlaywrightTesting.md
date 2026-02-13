@@ -19,10 +19,10 @@ e2e/
 ├── helpers/
 │   ├── common.ts              # navigateToApp, waitForAppLoad
 │   ├── datepainter.ts         # clickDate, getDateCells, navigateToMonth
+│   ├── settingsModal.ts       # openSettings, setTargetDays, selectValidationMode
 │   ├── statusLegend.ts        # selectMode, expectModeActive, getModeCounts
 │   └── theme.ts               # openSettings, closeSettings, cycleTheme
-├── test-helpers.ts            # Legacy shared utilities
-├── hello-world.spec.ts        # Basic smoke test
+├── test-helpers.ts            # Legacy shared utilities (waitForCalendarReady, etc.)
 ├── navigation.spec.ts         # Page load, routing, page structure
 ├── date-marking.spec.ts       # Day marking, palette switching, drag
 ├── validation-flows.spec.ts   # Compliance checking, target days
@@ -184,15 +184,16 @@ test.describe("Feature Name", () => {
 
 ### Existing Test Files
 
-| File | Purpose | Coverage |
-|------|---------|----------|
-| `hello-world.spec.ts` | Smoke test | Page loads, title correct, heading visible |
-| `navigation.spec.ts` | Navigation | URL routing, base path handling |
-| `calendar-interactions.spec.ts` | Calendar UI | Day selection, patterns, clearing, drag |
-| `validation-flows.spec.ts` | Validation | Compliant/violation scenarios, status checks |
-| `responsive-navigation.spec.ts` | Responsive | Mobile menu, panel toggles |
-| `mobile-edge-cases.spec.ts` | Mobile issues | Touch targets, viewport handling |
-| `desktop-edge-cases.spec.ts` | Desktop issues | Large screens, keyboard nav |
+| File | Purpose | Browser scope |
+|------|---------|---------------|
+| `navigation.spec.ts` | Page load, URL routing, page structure | Firefox only |
+| `responsive-navigation.spec.ts` | Mobile/tablet/desktop layouts, viewport changes | Firefox only |
+| `desktop-edge-cases.spec.ts` | Rapid clicks, window resizing | Firefox only |
+| `date-marking.spec.ts` | Day marking, palette switching, drag, keyboard shortcuts | Core (all desktop browsers) |
+| `validation-flows.spec.ts` | Compliance checking, target days, holiday handling | Core (all desktop browsers) |
+| `theme-system.spec.ts` | Settings modal, theme cycling, dark mode | Core (all desktop browsers) |
+| `verify-ui.spec.ts` | UI styling, element verification | Core (all desktop browsers) |
+| `mobile-edge-cases.spec.ts` | Mobile viewport interactions, orientation changes | Mobile + tablet only |
 
 ---
 
@@ -394,38 +395,38 @@ await page.locator(".btn-primary").click();
 await page.locator("#input-123").fill("test");
 ```
 
-### 3. Wait for Network/Animations
+### 3. Wait for Readiness, Never Sleep
+
+See [TestingBestPractices.md](./TestingBestPractices.md#wait-strategy-never-sleep-always-assert) for the full rationale.
 
 ```typescript
-// Wait for specific element
-await page.waitForSelector("[data-testid='results']", {
-  timeout: 5000,
-});
+// Good — wait for a specific element that proves JS has initialized
+await page.waitForSelector(
+  '[data-testid="calendar-day"]:not(.datepainter__day--empty):not(.datepainter__day--disabled)',
+  { state: "visible" },
+);
 
-// Wait for network idle (after API calls)
+// Good — use the shared helper
+await waitForCalendarReady(page);
+
+// Bad — never use networkidle (unreliable with timers/WebSockets)
 await page.waitForLoadState("networkidle");
 
-// Wait for custom event
-await page.evaluate(() =>
-  new Promise((resolve) =>
-    document.addEventListener("calendar-ready", resolve, { once: true })
-  )
-);
+// Bad — never use hardcoded sleeps for synchronization
+await page.waitForTimeout(500);
 ```
 
-### 4. Handle Flakiness
+### 4. Handle Flakiness with Auto-Retrying Assertions
 
 ```typescript
-// Retry assertions automatically
+// Playwright assertions auto-retry until they pass or timeout
 await expect(page.locator(".status")).toHaveText("Complete", {
   timeout: 10000,
 });
 
-// Use web-first assertions (auto-retrying)
+// Use web-first assertions — they auto-retry
 await expect(page.locator("button")).toBeEnabled();
-
-// Avoid fixed timeouts when possible
-await page.waitForTimeout(100); // Last resort
+await expect(mobileMenu).toBeHidden();
 ```
 
 ### 5. Isolate Tests
@@ -587,13 +588,14 @@ export default defineConfig({
     timeout: 120000,
   },
 
-  // Browser projects
+  // Browser projects (scoped — see TestingBestPractices.md)
+  // Firefox runs all tests; others scoped to core/mobile tests
   projects: [
     { name: "firefox-desktop", use: { ...devices["Desktop Firefox"] } },
-    { name: "chromium-desktop", use: { ...devices["Desktop Chrome"] } },
-    { name: "chromium-mobile", use: { ...devices["iPhone 12"] } },
-    { name: "webkit-desktop", use: { ...devices["Desktop Safari"] } },
-    { name: "tablet", use: { ...devices["iPad (gen 7)"] } },
+    { name: "chromium-desktop", testMatch: CORE_TEST_FILES, use: { ...devices["Desktop Chrome"] } },
+    { name: "chromium-mobile", testMatch: MOBILE_TEST_FILES, use: { ...devices["iPhone 12"] } },
+    { name: "webkit-desktop", testMatch: CORE_TEST_FILES, use: { ...devices["Desktop Safari"] } },
+    { name: "tablet", testMatch: MOBILE_TEST_FILES, use: { ...devices["iPad (gen 7)"] } },
   ],
 });
 ```
