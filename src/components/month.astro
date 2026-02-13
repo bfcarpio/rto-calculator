@@ -143,12 +143,13 @@ const _clearButtonId = `clear-${year}-${month}`;
                         weekStartStr = mondayDate.getTime().toString();
 
                         return (
-                        <tr role="row" class="calendar-week">
+                        <tr role="row" class="calendar-week" data-testid="calendar-week">
                             <td
                                 class="week-status-cell"
                                 role="gridcell"
                                 aria-label="Week status indicator"
                                 data-week-start={weekStartStr}
+                                data-testid="week-status"
                             >
                                 <div class="week-status-container">
                                     <span
