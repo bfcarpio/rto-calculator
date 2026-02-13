@@ -2,24 +2,24 @@
  * Auto-Compliance Module
  *
  * Singleton that subscribes to datepainter state changes, debounces computation,
- * reads calendar data, computes best-8-of-12 sliding window stats (excluding
- * the current incomplete week), and dispatches a `compliance-updated` CustomEvent.
+ * reads calendar data, runs sliding-window validation across ALL 12-week windows,
+ * and dispatches a `compliance-updated` CustomEvent.
  *
  * @module auto-compliance
  */
 
 import type { CalendarInstance } from "../../packages/datepainter/src/types";
-import { readCalendarData, type WeekInfo } from "./calendar-data-reader";
 import {
-	BEST_WEEKS_COUNT,
-	REQUIRED_OFFICE_DAYS,
-	ROLLING_WINDOW_WEEKS,
-} from "./validation/constants";
+	convertWeeksToCompliance,
+	readCalendarData,
+	type WeekInfo,
+} from "./calendar-data-reader";
+import { BEST_WEEKS_COUNT, REQUIRED_OFFICE_DAYS } from "./validation/constants";
 import {
-	orchestrateValidation,
-	type OrchestratedValidationResult,
-} from "./validation/ValidationOrchestrator";
-import { DEFAULT_RTO_POLICY } from "./validation/rto-core";
+	DEFAULT_RTO_POLICY,
+	type SlidingWindowResult,
+	validateSlidingWindow,
+} from "./validation/rto-core";
 
 // ─── Public Types ───────────────────────────────────────────────────
 
@@ -41,9 +41,9 @@ export interface ComplianceEventData {
 	bestWeekCount: number;
 	/** Average office days across best weeks */
 	averageOfficeDays: number;
-	/** Weeks with >= REQUIRED_OFFICE_DAYS in window */
+	/** Weeks with >= REQUIRED_OFFICE_DAYS in the window */
 	goodWeeks: number;
-	/** max(0, goodWeeks - BEST_WEEKS_COUNT) */
+	/** max(0, goodWeeks in all 12 window weeks - BEST_WEEKS_COUNT) */
 	bufferWeeks: number;
 
 	/** Current (possibly incomplete) week, shown separately */
@@ -60,8 +60,8 @@ export interface ComplianceEventData {
 	compliancePercentage: number;
 	message: string;
 
-	/** Sliding-window validation result (orchestrator output) */
-	validationResult: OrchestratedValidationResult;
+	/** Sliding-window validation result */
+	slidingWindowResult: SlidingWindowResult;
 }
 
 // ─── Event Helpers ──────────────────────────────────────────────────
@@ -103,45 +103,59 @@ function isWeekComplete(weekStart: Date): boolean {
 	return friday <= today;
 }
 
-function computeComplianceData(
-	allWeeks: WeekInfo[],
-): Omit<ComplianceEventData, "validationResult"> {
+function computeComplianceData(allWeeks: WeekInfo[]): ComplianceEventData {
 	// Separate current incomplete week
 	const completedWeeks = allWeeks.filter((w) => isWeekComplete(w.weekStart));
 	const currentWeekInfo = allWeeks.find((w) => !isWeekComplete(w.weekStart));
 
-	// Take up to ROLLING_WINDOW_WEEKS most recent completed weeks
-	const windowWeeks = completedWeeks.slice(-ROLLING_WINDOW_WEEKS);
+	// Run sliding window validation on ALL completed weeks
+	const weeksForValidation = convertWeeksToCompliance(completedWeeks);
+	const slidingWindowResult = validateSlidingWindow(
+		weeksForValidation,
+		DEFAULT_RTO_POLICY,
+	);
 
-	// Sort by officeDays descending to pick best
-	const sorted = [...windowWeeks].sort((a, b) => b.officeDays - a.officeDays);
-	const bestCount = Math.min(BEST_WEEKS_COUNT, sorted.length);
-	const bestWeeks = new Set(sorted.slice(0, bestCount));
+	// Determine which 12-week window to display:
+	// - If invalid: the first failing window
+	// - If valid: the last window evaluated
+	const windowWeekStartSet = new Set(slidingWindowResult.windowWeekStarts);
+	const bestWeekStartSet = new Set(slidingWindowResult.evaluatedWeekStarts);
+
+	// Get the weeks in the display window
+	const windowWeeks = completedWeeks.filter((w) =>
+		windowWeekStartSet.has(w.weekStart.getTime()),
+	);
 
 	// Annotate weeks
-	const annotated: AnnotatedWeek[] = windowWeeks.map((w) => ({
-		weekStart: w.weekStart,
-		officeDays: w.officeDays,
-		oofCount: w.oofCount,
-		holidayCount: w.holidayCount,
-		sickCount: w.sickCount,
-		isBest: bestWeeks.has(w),
-		isIgnored: !bestWeeks.has(w),
-		isCompliant: w.officeDays >= REQUIRED_OFFICE_DAYS,
-	}));
+	const annotated: AnnotatedWeek[] = windowWeeks.map((w) => {
+		const isBest = bestWeekStartSet.has(w.weekStart.getTime());
+		return {
+			weekStart: w.weekStart,
+			officeDays: w.officeDays,
+			oofCount: w.oofCount,
+			holidayCount: w.holidayCount,
+			sickCount: w.sickCount,
+			isBest,
+			isIgnored: !isBest,
+			isCompliant: w.officeDays >= REQUIRED_OFFICE_DAYS,
+		};
+	});
 
-	// Stats over best weeks only
+	// Stats over best weeks
 	const bestAnnotated = annotated.filter((w) => w.isBest);
-	const goodWeeks = bestAnnotated.filter((w) => w.isCompliant).length;
+	const bestCount = bestAnnotated.length;
 	const totalOfficeDays = bestAnnotated.reduce(
 		(sum, w) => sum + w.officeDays,
 		0,
 	);
-	const averageOfficeDays =
-		bestAnnotated.length > 0 ? totalOfficeDays / bestAnnotated.length : 0;
-	const bufferWeeks = Math.max(0, goodWeeks - BEST_WEEKS_COUNT);
+	const averageOfficeDays = bestCount > 0 ? totalOfficeDays / bestCount : 0;
 
-	// Day counts from window (all weeks in window)
+	// goodWeeks = weeks with >= REQUIRED_OFFICE_DAYS in all 12 window weeks
+	const goodWeeksInWindow = annotated.filter((w) => w.isCompliant).length;
+	// bufferWeeks = good weeks in the full window minus required best weeks
+	const bufferWeeks = Math.max(0, goodWeeksInWindow - BEST_WEEKS_COUNT);
+
+	// Day counts from display window
 	let totalWfhDays = 0;
 	let totalHolidayDays = 0;
 	let totalSickDays = 0;
@@ -170,21 +184,19 @@ function computeComplianceData(
 		officeDays: currentWeekInfo?.officeDays ?? 0,
 	};
 
-	// Overall compliance
-	const isCompliant = goodWeeks >= BEST_WEEKS_COUNT;
+	// Overall compliance from sliding window
+	const isCompliant = slidingWindowResult.isValid;
 	const compliancePercentage =
-		bestAnnotated.length > 0
-			? (goodWeeks / bestAnnotated.length) * 100
+		bestCount > 0
+			? (bestAnnotated.filter((w) => w.isCompliant).length / bestCount) * 100
 			: 0;
-	const message = isCompliant
-		? `Compliant: ${goodWeeks} of ${bestCount} weeks meet the ${REQUIRED_OFFICE_DAYS}-day target`
-		: `Not compliant: only ${goodWeeks} of ${bestCount} weeks meet the ${REQUIRED_OFFICE_DAYS}-day target (need ${BEST_WEEKS_COUNT})`;
+	const message = slidingWindowResult.message;
 
 	return {
 		windowWeeks: annotated,
 		bestWeekCount: bestCount,
 		averageOfficeDays,
-		goodWeeks,
+		goodWeeks: goodWeeksInWindow,
 		bufferWeeks,
 		currentWeek,
 		totalWfhDays,
@@ -194,6 +206,7 @@ function computeComplianceData(
 		isCompliant,
 		compliancePercentage,
 		message,
+		slidingWindowResult,
 	};
 }
 
@@ -213,13 +226,7 @@ async function runComputation(
 	// Stale check: if a newer invocation started, bail
 	if (myId !== invocationId) return;
 
-	const complianceData = computeComplianceData(calendarData.weeks);
-	const validationResult = orchestrateValidation(calendarData, {
-		policy: DEFAULT_RTO_POLICY,
-		DEBUG: false,
-	});
-
-	const data: ComplianceEventData = { ...complianceData, validationResult };
+	const data = computeComplianceData(calendarData.weeks);
 	latestResult = data;
 
 	setComputingState(false);
@@ -232,9 +239,9 @@ async function runComputation(
 function initAutoCompliance(): void {
 	if (initialized) return;
 
-	const calendarManager = (window as any).__datepainterInstance as
-		| CalendarInstance
-		| undefined;
+	const calendarManager = (
+		window as unknown as { __datepainterInstance?: CalendarInstance }
+	).__datepainterInstance;
 	if (!calendarManager) {
 		setTimeout(initAutoCompliance, 50);
 		return;

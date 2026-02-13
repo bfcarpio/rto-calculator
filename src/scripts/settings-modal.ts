@@ -9,7 +9,6 @@ interface Settings {
 	minOfficeDays: number;
 	defaultPattern: number[] | null;
 	holidays: { countryCode: string | null; holidaysAsOOF: boolean };
-	validationMode: "strict" | "average";
 	sickDaysPenalize: boolean;
 }
 
@@ -18,7 +17,6 @@ declare global {
 		validationManager?: {
 			setDebugMode(enabled: boolean): void;
 			getDebugMode(): boolean;
-			SetValidator(strategy: string): void;
 			updateConfig(config: { minOfficeDaysPerWeek: number }): void;
 			getConfig(): { minOfficeDaysPerWeek?: number };
 		};
@@ -36,7 +34,6 @@ class SettingsModal {
 	private resetButton: HTMLElement | null = null;
 	private debugToggle: HTMLButtonElement | null = null;
 	private saveDataToggle: HTMLButtonElement | null = null;
-	private strategySelect: HTMLSelectElement | null = null;
 	private minOfficeDaysInput: HTMLInputElement | null = null;
 	private countrySelect: HTMLSelectElement | null = null;
 	private patternSelector: HTMLElement | null = null;
@@ -45,8 +42,6 @@ class SettingsModal {
 	private selectedPattern: number[] = [];
 	private holidayOofToggle: HTMLButtonElement | null = null;
 	private sickPenalizeToggle: HTMLButtonElement | null = null;
-	private validationModeStrictButton: HTMLButtonElement | null = null;
-	private validationModeAverageButton: HTMLButtonElement | null = null;
 
 	constructor() {
 		initializeIndex();
@@ -77,9 +72,6 @@ class SettingsModal {
 		this.saveDataToggle = document.getElementById(
 			"save-data-toggle",
 		) as HTMLButtonElement | null;
-		this.strategySelect = document.getElementById(
-			"validation-strategy",
-		) as HTMLSelectElement | null;
 		this.minOfficeDaysInput = document.getElementById(
 			"min-office-days",
 		) as HTMLInputElement | null;
@@ -94,12 +86,6 @@ class SettingsModal {
 		) as HTMLButtonElement | null;
 		this.sickPenalizeToggle = document.getElementById(
 			"sick-penalize-toggle",
-		) as HTMLButtonElement | null;
-		this.validationModeStrictButton = document.getElementById(
-			"validation-mode-strict",
-		) as HTMLButtonElement | null;
-		this.validationModeAverageButton = document.getElementById(
-			"validation-mode-average",
 		) as HTMLButtonElement | null;
 	}
 
@@ -127,9 +113,6 @@ class SettingsModal {
 
 		this.debugToggle?.addEventListener("click", () => this.toggleDebugMode());
 		this.saveDataToggle?.addEventListener("click", () => this.toggleSaveData());
-		this.strategySelect?.addEventListener("change", (e) =>
-			this.onStrategyChange(e),
-		);
 		this.minOfficeDaysInput?.addEventListener("change", (e) =>
 			this.onMinOfficeDaysChange(e),
 		);
@@ -152,12 +135,6 @@ class SettingsModal {
 		);
 		this.sickPenalizeToggle?.addEventListener("click", () =>
 			this.toggleSickPenalize(),
-		);
-		this.validationModeStrictButton?.addEventListener("click", () =>
-			this.setValidationMode("strict"),
-		);
-		this.validationModeAverageButton?.addEventListener("click", () =>
-			this.setValidationMode("average"),
 		);
 	}
 
@@ -213,35 +190,6 @@ class SettingsModal {
 		debugLog(
 			`[Settings] Sick days penalize ${newState ? "enabled" : "disabled"}`,
 		);
-	}
-
-	private setValidationMode(mode: "strict" | "average"): void {
-		if (!this.validationModeStrictButton || !this.validationModeAverageButton)
-			return;
-
-		const isStrict = mode === "strict";
-		this.validationModeStrictButton.setAttribute(
-			"aria-pressed",
-			isStrict.toString(),
-		);
-		this.validationModeAverageButton.setAttribute(
-			"aria-pressed",
-			(!isStrict).toString(),
-		);
-
-		debugLog(`[Settings] Validation mode changed to: ${mode}`);
-		document.dispatchEvent(
-			new CustomEvent("settings-changed", {
-				bubbles: true,
-				detail: { validationMode: mode },
-			}),
-		);
-	}
-
-	private onStrategyChange(e: Event): void {
-		const strategy = (e.target as HTMLSelectElement).value;
-		debugLog(`[Settings] Strategy changed to: ${strategy}`);
-		window.validationManager?.SetValidator(strategy);
 	}
 
 	private onMinOfficeDaysChange(e: Event): void {
@@ -316,11 +264,6 @@ class SettingsModal {
 		this.debugToggle?.setAttribute("aria-checked", "false");
 		window.validationManager?.setDebugMode(false);
 
-		if (this.strategySelect) {
-			this.strategySelect.value = "rolling-period";
-		}
-		window.validationManager?.SetValidator("rolling-period");
-
 		if (this.minOfficeDaysInput) {
 			this.minOfficeDaysInput.value = "3";
 		}
@@ -342,15 +285,6 @@ class SettingsModal {
 		);
 
 		this.sickPenalizeToggle?.setAttribute("aria-checked", "true");
-
-		this.validationModeStrictButton?.setAttribute("aria-pressed", "true");
-		this.validationModeAverageButton?.setAttribute("aria-pressed", "false");
-		document.dispatchEvent(
-			new CustomEvent("settings-changed", {
-				bubbles: true,
-				detail: { validationMode: "strict" },
-			}),
-		);
 
 		localStorage.removeItem("rto-calculator-settings");
 		debugLog("[Settings] Settings reset to defaults");
@@ -476,7 +410,7 @@ class SettingsModal {
 		const settings: Settings = {
 			debug: this.debugToggle?.getAttribute("aria-checked") === "true",
 			saveData: this.saveDataToggle?.getAttribute("aria-checked") === "true",
-			strategy: this.strategySelect?.value ?? "rolling-period",
+			strategy: "rolling-period",
 			minOfficeDays: this.minOfficeDaysInput
 				? parseInt(this.minOfficeDaysInput.value, 10)
 				: 3,
@@ -487,10 +421,6 @@ class SettingsModal {
 				holidaysAsOOF:
 					this.holidayOofToggle?.getAttribute("aria-checked") === "true",
 			},
-			validationMode:
-				this.validationModeStrictButton?.getAttribute("aria-pressed") === "true"
-					? "strict"
-					: "average",
 			sickDaysPenalize:
 				this.sickPenalizeToggle?.getAttribute("aria-checked") !== "false",
 		};
@@ -525,11 +455,6 @@ class SettingsModal {
 					settings.saveData.toString(),
 				);
 				window.storageManager?.setDataSavingEnabled(settings.saveData);
-			}
-
-			if (settings.strategy && this.strategySelect) {
-				this.strategySelect.value = settings.strategy;
-				window.validationManager?.SetValidator(settings.strategy);
 			}
 
 			if (settings.minOfficeDays !== undefined && this.minOfficeDaysInput) {
@@ -572,28 +497,6 @@ class SettingsModal {
 				this.sickPenalizeToggle.setAttribute(
 					"aria-checked",
 					settings.sickDaysPenalize.toString(),
-				);
-			}
-
-			if (
-				settings.validationMode &&
-				this.validationModeStrictButton &&
-				this.validationModeAverageButton
-			) {
-				const isStrict = settings.validationMode === "strict";
-				this.validationModeStrictButton.setAttribute(
-					"aria-pressed",
-					isStrict.toString(),
-				);
-				this.validationModeAverageButton.setAttribute(
-					"aria-pressed",
-					(!isStrict).toString(),
-				);
-				document.dispatchEvent(
-					new CustomEvent("settings-changed", {
-						bubbles: true,
-						detail: { validationMode: settings.validationMode },
-					}),
 				);
 			}
 

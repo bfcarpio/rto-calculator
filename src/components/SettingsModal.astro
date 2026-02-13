@@ -73,42 +73,6 @@
 
             <hr class="section-divider" />
 
-            <!-- Validation Mode Section -->
-            <section class="settings-section" id="validation-mode-section">
-                <h3>Validation Mode</h3>
-                <p class="section-description">Choose how compliance is calculated.</p>
-
-                <div class="radio-group">
-                    <label class="radio-label">
-                        <input
-                            type="radio"
-                            name="validationMode"
-                            value="strict"
-                            checked
-                        />
-                        <span class="radio-text">
-                            <strong>Strict</strong> - Each week must individually meet the target
-                        </span>
-                    </label>
-                    <label class="radio-label">
-                        <input type="radio" name="validationMode" value="average4" />
-                        <span class="radio-text">
-                            <strong>4-Week Average</strong> - Compliance based on rolling 4-week
-                            average
-                        </span>
-                    </label>
-                    <label class="radio-label">
-                        <input type="radio" name="validationMode" value="average12" />
-                        <span class="radio-text">
-                            <strong>12-Week Average</strong> - Compliance based on rolling 12-week
-                            average
-                        </span>
-                    </label>
-                </div>
-            </section>
-
-            <hr class="section-divider" />
-
             <!-- Week Labels Section -->
             <section class="settings-section" id="week-labels-section">
                 <h3>Week Labels</h3>
@@ -337,40 +301,6 @@
         border-color: #475569;
     }
 
-    .radio-group {
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-    }
-
-    .radio-label {
-        display: flex;
-        align-items: flex-start;
-        gap: 0.75rem;
-        cursor: pointer;
-        padding: 0.5rem;
-        border-radius: 6px;
-        transition: background-color 0.2s ease;
-    }
-
-    .radio-label:hover {
-        background: #f8fafc;
-    }
-
-    .radio-label input[type='radio'] {
-        margin-top: 0.25rem;
-        cursor: pointer;
-    }
-
-    .radio-text {
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-        font-size: 0.875rem;
-        color: #475569;
-        line-height: 1.4;
-    }
-
     .week-labels-container {
         display: flex;
         flex-direction: column;
@@ -576,14 +506,6 @@
         background: #1e293b;
         border-color: #334155;
         color: #e2e8f0;
-    }
-
-    :global(body.dark-mode) .radio-text {
-        color: #cbd5e1;
-    }
-
-    :global(body.dark-mode) .radio-label:hover {
-        background: #334155;
     }
 
     :global(body.dark-mode) .action-button.secondary {
