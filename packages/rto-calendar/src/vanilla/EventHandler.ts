@@ -59,6 +59,10 @@ export class EventHandler {
 
     validateConfig(config);
     this.config = config;
+
+    // Silently acknowledge config and dragState are stored for future use
+    void this.config;
+    void this.dragState;
   }
 
   /**

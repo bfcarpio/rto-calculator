@@ -43,6 +43,10 @@ export class DayRenderer {
 
     validateConfig(config);
     this.config = config;
+
+    // Silently acknowledge container and config are stored for future use
+    void this.container;
+    void this.config;
   }
 
   /**
