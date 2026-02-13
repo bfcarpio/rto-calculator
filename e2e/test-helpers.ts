@@ -208,8 +208,10 @@ export async function selectWorkFromHomeDays(
 	count: number,
 	weeks = 8,
 ): Promise<void> {
-	// Get all calendar day cells
-	const dayCells = page.locator('[data-testid="calendar-day"]:not(.empty)');
+	// Get all calendar day cells (exclude empty and disabled)
+	const dayCells = page.locator(
+		'[data-testid="calendar-day"]:not(.datepainter-day--empty):not(.datepainter__day--disabled)',
+	);
 	const visibleCells = await dayCells.all();
 
 	if (visibleCells.length === 0) {

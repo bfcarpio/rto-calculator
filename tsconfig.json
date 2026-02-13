@@ -6,6 +6,7 @@
 		"node_modules",
 		"playwright-report",
 		"nager.date",
+		"packages/nager.date",
 		"test-results"
 	],
 	"compilerOptions": {

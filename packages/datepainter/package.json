@@ -29,6 +29,10 @@
 			"types": "./dist/index.d.ts",
 			"import": "./dist/index.js"
 		},
+		"./stores": {
+			"types": "./dist/stores/calendarStore.d.ts",
+			"import": "./dist/stores/calendarStore.js"
+		},
 		"./styles/calendar.css": "./dist/styles/calendar.css",
 		"./styles/base.css": "./dist/styles/base.css",
 		"./styles/astro.css": "./dist/styles/astro.css",
@@ -42,8 +46,9 @@
 		"LICENSE"
 	],
 	"scripts": {
-		"build": "tsup && npm run copy:styles",
+		"build": "tsup && npm run copy:styles && npm run copy:stores",
 		"copy:styles": "mkdir -p dist/styles && cp -r styles/* dist/styles/",
+		"copy:stores": "mkdir -p dist/stores && cp -r src/stores/* dist/stores/",
 		"test": "vitest",
 		"test:ui": "vitest --ui",
 		"test:run": "vitest run",
@@ -57,7 +62,7 @@
 		"nanostores": "1.1.0"
 	},
 	"peerDependencies": {
-		"astro": "4.16.12"
+		"astro": "^4.16.12 || ^5.0.0"
 	},
 	"devDependencies": {
 		"tsup": "^8.0.0",

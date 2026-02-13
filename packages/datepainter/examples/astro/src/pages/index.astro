@@ -15,8 +15,26 @@
 <body>
   <main>
     <h1>Datepainter - Astro Example</h1>
-    <p>Use <strong>ArrowLeft</strong> and <strong>ArrowRight</strong> keys to navigate months. 
-       Click on dates to select them. Click again to cycle through states (Working → OOF → Holiday).</p>
+    <p>Use <strong>ArrowLeft</strong> and <strong>ArrowRight</strong> keys to navigate months.
+       Click on dates to select them. Click again to cycle through states (OOF → Holiday → Sick → Clear).</p>
+
+    <div class="status-legend" id="status-legend">
+      <button class="legend-item is-active" data-mode="oof" data-shortcut="1" aria-label="Switch to OOF mode">
+        <span class="icon is-oof">❌</span>
+        <span class="label">OOF</span>
+        <span class="shortcut-hint">(1)</span>
+      </button>
+      <button class="legend-item" data-mode="holiday" data-shortcut="2" aria-label="Switch to Holiday mode">
+        <span class="icon is-holiday">☀️</span>
+        <span class="label">Holiday</span>
+        <span class="shortcut-hint">(2)</span>
+      </button>
+      <button class="legend-item" data-mode="sick" data-shortcut="3" aria-label="Switch to Sick mode">
+        <span class="icon is-sick">💊</span>
+        <span class="label">Sick</span>
+        <span class="shortcut-hint">(3)</span>
+      </button>
+    </div>
 
     <div id="calendar-container"></div>
 
@@ -36,12 +54,6 @@
         end: new Date('2026-12-31')
       },
       states: {
-        working: {
-          label: 'Working',
-          color: '#10b981',
-          bgColor: '#d1fae5',
-          icon: '💼'
-        },
         oof: {
           label: 'OOF',
           color: '#ef4444',
@@ -53,7 +65,13 @@
           color: '#f59e0b',
           bgColor: '#fef3c7',
           icon: '🏖️'
-        }
+        },
+        sick: {
+          label: 'Sick Day',
+          color: '#1890ff',
+          bgColor: '#e6f7ff',
+          icon: '💊'
+        },
       },
       styling: {
         showWeekdays: true,
@@ -108,9 +126,9 @@
 
     // State colors for display
     const stateColors = {
-      working: '#10b981',
       oof: '#ef4444',
-      holiday: '#f59e0b'
+      holiday: '#f59e0b',
+      sick: '#1890ff'
     };
 
     function updateSelectedDatesDisplay() {
@@ -136,9 +154,9 @@
       const sortedDates = Array.from(dateMap.entries()).sort((a, b) => a[0].localeCompare(b[0]));
 
       container.innerHTML = sortedDates.map(([date, state]) => {
-        const actualColor = (state === 'working' && stateColors.working) ||
-                          (state === 'oof' && stateColors.oof) ||
+        const actualColor = (state === 'oof' && stateColors.oof) ||
                           (state === 'holiday' && stateColors.holiday) ||
+                          (state === 'sick' && stateColors.sick) ||
                           '#6b7280';
         return `<span class="date-chip" style="
           background-color: ${actualColor};
@@ -160,6 +178,57 @@
 
     // Initial display update
     updateSelectedDatesDisplay();
+
+    /**
+     * Sets the active mode for painting and updates UI state
+     * @param {string} mode - The mode to activate ('oof', 'holiday', or 'sick')
+     */
+    function setActiveMode(mode: string) {
+      if (!['oof', 'holiday', 'sick'].includes(mode)) {
+        console.warn('Invalid mode:', mode);
+        return;
+      }
+
+      const legendItems = document.querySelectorAll<HTMLElement>('.legend-item');
+      legendItems.forEach(item => {
+        if (item.dataset.mode === mode) {
+          item.classList.add('is-active');
+        } else {
+          item.classList.remove('is-active');
+        }
+      });
+
+      manager.updateConfig({
+        painting: {
+          ...manager['config'].painting,
+          defaultState: mode as 'oof' | 'holiday' | 'sick'
+        }
+      });
+    }
+
+    // Initialize palette click handlers
+    const legend = document.getElementById('status-legend');
+    if (legend) {
+      legend.addEventListener('click', (e) => {
+        if (!e.target) return;
+
+        const target = e.target as Element;
+        const button = target.closest<HTMLElement>('.legend-item');
+        if (!button) return;
+
+        const mode = button.dataset.mode;
+        if (mode) {
+          setActiveMode(mode);
+        }
+      });
+    }
+
+    // Add keyboard shortcuts for palette (1=OOF, 2=Holiday, 3=Sick)
+    document.addEventListener('keydown', (e) => {
+      if (e.key === '1') setActiveMode('oof');
+      if (e.key === '2') setActiveMode('holiday');
+      if (e.key === '3') setActiveMode('sick');
+    });
   </script>
 </body>
 </html>
@@ -210,5 +279,64 @@
 
   #selected-dates {
     min-height: 40px;
+  }
+
+  .status-legend {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    padding: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+    color: var(--text-color);
+  }
+
+  .legend-item:hover {
+    border-color: var(--text-color);
+    background: #f8fafc;
+  }
+
+  .legend-item.is-active {
+    border-color: var(--text-color);
+    background: #f1f5f9;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .icon {
+    font-size: 1rem;
+    display: inline-block;
+    width: 1.2em;
+    text-align: center;
+  }
+
+  .icon.is-oof {
+    color: #ef4444;
+  }
+
+  .icon.is-holiday {
+    color: #f59e0b;
+  }
+
+  .icon.is-sick {
+    color: #1890ff;
+  }
+
+  .shortcut-hint {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    margin-left: 0.25rem;
   }
 </style>

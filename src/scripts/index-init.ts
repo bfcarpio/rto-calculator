@@ -1,8 +1,4 @@
 import { initializeHolidayIntegration } from "../lib/holiday/CalendarHolidayIntegration";
-import {
-	type CalendarEventManager,
-	initializeCalendarEvents,
-} from "../scripts/calendar-events";
 import { initializeLocalStorage } from "../scripts/localStorage";
 import {
 	displayInitialPrompt,
@@ -23,7 +19,6 @@ declare global {
 			updateConfig(config: { minOfficeDaysPerWeek: number }): void;
 			getConfig(): { minOfficeDaysPerWeek?: number };
 		};
-		__calendarEventManager?: CalendarEventManager;
 	}
 }
 
@@ -58,12 +53,6 @@ export function initializeIndex() {
 
 	initializeHolidayIntegration();
 
-	if (document.readyState === "loading") {
-		document.addEventListener("DOMContentLoaded", initializeCalendarEvents);
-	} else {
-		initializeCalendarEvents();
-	}
-
 	window.displayValidationResults = (validationResult: ValidationResult) => {
 		displayValidationResults(validationResult);
 	};
@@ -93,12 +82,6 @@ export function initializeIndex() {
  * Removes event listeners and clears timers
  */
 export function cleanupIndex(): void {
-	const manager = (window as { __calendarEventManager?: CalendarEventManager })
-		.__calendarEventManager;
-	if (manager) {
-		manager.destroy();
-		delete (window as { __calendarEventManager?: CalendarEventManager })
-			.__calendarEventManager;
-		debugLog("[Index] Cleaned up calendar event manager");
-	}
+	// Datepainter handles its own cleanup
+	debugLog("[Index] Cleaned up calendar resources");
 }
