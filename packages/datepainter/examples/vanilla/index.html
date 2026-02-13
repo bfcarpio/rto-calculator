@@ -33,6 +33,65 @@
       margin-bottom: 2rem;
     }
 
+    .status-legend {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      padding: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      border: 2px solid transparent;
+      border-radius: 8px;
+      background: white;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 0.9rem;
+      color: var(--text-color);
+    }
+
+    .legend-item:hover {
+      border-color: #cbd5e1;
+      background: #f8fafc;
+    }
+
+    .legend-item.is-active {
+      border-color: #94a3b8;
+      background: #f1f5f9;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .dot.is-oof {
+      background-color: #f5222d;
+    }
+
+    .dot.is-holiday {
+      background-color: #faad14;
+    }
+
+    .dot.is-sick {
+      background-color: #1890ff;
+    }
+
+    .shortcut-hint {
+      font-size: 0.75rem;
+      color: #9ca3af;
+      margin-left: 0.25rem;
+    }
+
     #calendar-container {
       margin-bottom: 2rem;
     }
@@ -82,6 +141,24 @@
   <main>
     <h1>Datepainter - Vanilla JS Example</h1>
     <p>Click on dates to select them. Click again to deselect. Use navigation buttons or arrow keys to change months.</p>
+
+    <div class="status-legend" id="status-legend">
+      <button class="legend-item is-active" data-mode="oof" data-shortcut="1" aria-label="Switch to Out of Office mode">
+        <span class="dot is-oof"></span>
+        <span class="label">OOF</span>
+        <span class="shortcut-hint">(1)</span>
+      </button>
+      <button class="legend-item" data-mode="holiday" data-shortcut="2" aria-label="Switch to Holiday mode">
+        <span class="dot is-holiday"></span>
+        <span class="label">Holiday</span>
+        <span class="shortcut-hint">(2)</span>
+      </button>
+      <button class="legend-item" data-mode="sick" data-shortcut="3" aria-label="Switch to Sick mode">
+        <span class="dot is-sick"></span>
+        <span class="label">Sick</span>
+        <span class="shortcut-hint">(3)</span>
+      </button>
+    </div>
 
     <div id="calendar-container"></div>
 
