@@ -732,3 +732,106 @@ describe("Integration Tests", () => {
     expect(result.weeksData.length).toBe(8);
   });
 });
+
+describe("Sliding Window Optimization", () => {
+  it("should calculate compliance for first 8 weeks (expanding window)", () => {
+    const selections: DaySelection[] = [
+      // Week 1: 3 WFH = 2 office days (40%)
+      createDaySelection(2025, 0, 6, "work-from-home"), // Mon
+      createDaySelection(2025, 0, 7, "work-from-home"), // Tue
+      createDaySelection(2025, 0, 8, "work-from-home"), // Wed
+      // Week 2: 2 WFH = 3 office days (60%)
+      createDaySelection(2025, 0, 13, "work-from-home"), // Mon
+      createDaySelection(2025, 0, 14, "work-from-home"), // Tue
+      // Week 3: 1 WFH = 4 office days (80%)
+      createDaySelection(2025, 0, 20, "work-from-home"), // Mon
+      // Week 4: 0 WFH = 5 office days (100%)
+      // Week 5: 2 WFH = 3 office days (60%)
+      createDaySelection(2025, 1, 3, "work-from-home"), // Mon
+      createDaySelection(2025, 1, 4, "work-from-home"), // Tue
+      // Week 6: 1 WFH = 4 office days (80%)
+      createDaySelection(2025, 1, 10, "work-from-home"), // Mon
+      // Week 7: 0 WFH = 5 office days (100%)
+      // Week 8: 2 WFH = 3 office days (60%)
+      createDaySelection(2025, 1, 24, "work-from-home"), // Mon
+      createDaySelection(2025, 1, 25, "work-from-home"), // Tue
+      // Week 9: 4 WFH = 1 office day (20%) - should not affect top 8
+      createDaySelection(2025, 2, 3, "work-from-home"), // Mon
+      createDaySelection(2025, 2, 4, "work-from-home"), // Tue
+      createDaySelection(2025, 2, 5, "work-from-home"), // Wed
+      createDaySelection(2025, 2, 6, "work-from-home"), // Thu
+      // Week 10: 0 WFH = 5 office days (100%) - should not affect top 8
+      // Week 11: 1 WFH = 4 office days (80%) - should not affect top 8
+      createDaySelection(2025, 2, 17, "work-from-home"), // Mon
+      // Week 12: 3 WFH = 2 office days (40%) - should not affect top 8
+      createDaySelection(2025, 2, 24, "work-from-home"), // Mon
+      createDaySelection(2025, 2, 25, "work-from-home"), // Tue
+      createDaySelection(2025, 2, 26, "work-from-home"), // Wed
+    ];
+
+    const result = validateTop8Weeks(selections, new Date(2025, 0, 1));
+
+    // Top 8 weeks only: 2+3+4+5+3+4+5+3 = 29 office days
+    // Average: 29/8 = 3.625 days = 72.5%
+    // Weeks 9-12 should NOT affect the calculation
+    expect(result.averageOfficeDays).toBeCloseTo(3.63, 1);
+    expect(result.isValid).toBe(true); // 72.5% > 60%
+    expect(result.weeksData.length).toBe(8);
+  });
+
+  it("should handle mixed compliance across all 12 weeks", () => {
+    const selections: DaySelection[] = [];
+
+    // Create patterns for all 12 weeks
+    for (let week = 0; week < 12; week++) {
+      const weekStart = new Date(2025, 0, 6 + week * 7);
+      const wfhCount = week < 8 ? 3 : 0; // First 8 weeks non-compliant, last 4 compliant
+
+      for (let day = 0; day < wfhCount; day++) {
+        selections.push(
+          createDaySelection(
+            weekStart.getFullYear(),
+            weekStart.getMonth(),
+            weekStart.getDate() + day,
+            "work-from-home",
+          ),
+        );
+      }
+    }
+
+    const result = validateTop8Weeks(selections, new Date(2025, 0, 1));
+
+    // Top 8 weeks all have 3 WFH = 2 office days each
+    // Total office: 2 * 8 = 16 days
+    // Average: 16/8 = 2 days = 40%
+    expect(result.averageOfficeDays).toBe(2);
+    expect(result.isValid).toBe(false); // 40% < 60%
+  });
+
+  it("should correctly calculate top 8 weeks regardless of later weeks", () => {
+    const selections: DaySelection[] = [
+      // Week 1: 0 WFH = 5 office days (in top 8)
+      // Week 2: 0 WFH = 5 office days (in top 8)
+      // Week 3: 5 WFH = 0 office days (in top 8)
+      createDaySelection(2025, 0, 20, "work-from-home"), // Mon
+      createDaySelection(2025, 0, 21, "work-from-home"), // Tue
+      createDaySelection(2025, 0, 22, "work-from-home"), // Wed
+      createDaySelection(2025, 0, 23, "work-from-home"), // Thu
+      createDaySelection(2025, 0, 24, "work-from-home"), // Fri
+      // Week 4: 0 WFH = 5 office days (in top 8)
+      // Week 5: 0 WFH = 5 office days (in top 8)
+      // Week 6: 0 WFH = 5 office days (in top 8)
+      // Week 7: 0 WFH = 5 office days (in top 8)
+      // Week 8: 0 WFH = 5 office days (in top 8)
+      // Week 9-12: NOT in top 8, so they don't affect calculation
+    ];
+
+    const result = validateTop8Weeks(selections, new Date(2025, 0, 1));
+
+    // Top 8 weeks: 5+5+0+5+5+5+5+5 = 35 office days
+    // Average: 35/8 = 4.375 days = 87.5%
+    // Week 9-12 should NOT affect calculation (not in top 8)
+    expect(result.averageOfficeDays).toBe(4.375);
+    expect(result.isValid).toBe(true); // 87.5% > 60%
+  });
+});
