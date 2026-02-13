@@ -86,6 +86,9 @@ const BEST_WEEKS_REQUIRED = 8;
 					<p class="has-text-weight-bold" id="stat-next-wfh">&mdash;</p>
 				</div>
 			</div>
+			<p class="buffer-warning is-size-7 has-text-warning-dark mt-2" id="buffer-warning" style="display: none;">
+				Only 1 buffer week remaining — one more bad week will cause non-compliance.
+			</p>
 		</div>
 	</div>
 
@@ -110,16 +113,16 @@ const BEST_WEEKS_REQUIRED = 8;
 		</div>
 	</div>
 
-	<!-- Non-Compliant Weeks Box -->
-	<div class="box non-compliant">
-		<h3 class="title is-6 mb-3">
-			<span class="icon has-text-warning" aria-hidden="true">&#x26A0;&#xFE0F;</span>
-			Non-Compliant Weeks
-		</h3>
-		<div class="content" id="non-compliant-content">
-			<div class="notification is-success is-light">
-				<p class="has-text-centered">All weeks are compliant!</p>
-			</div>
+	<!-- Window Breakdown Box -->
+	<div class="box window-breakdown">
+		<h3 class="title is-6 mb-3">Window Breakdown</h3>
+		<p class="is-size-7 has-text-grey mb-3" id="window-breakdown-label">
+			Mark dates to see window breakdown
+		</p>
+		<div class="content" id="window-breakdown-content">
+			<p class="has-text-centered has-text-grey-light is-size-7">
+				Mark dates to see window breakdown
+			</p>
 		</div>
 	</div>
 </div>
@@ -178,18 +181,39 @@ const BEST_WEEKS_REQUIRED = 8;
 		margin-bottom: 0.5rem;
 	}
 
-	.non-compliant-list .notification {
-		padding: 1rem;
+	.buffer-warning {
+		background: #fef3c7;
+		border: 1px solid #f59e0b;
+		border-radius: 6px;
+		padding: 0.4rem 0.6rem;
 	}
 
-	.non-compliant-list .notification:not(:last-child) {
-		margin-bottom: 0.75rem;
+	.breakdown-section-label {
+		font-size: 0.75rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: #6b7280;
+		margin-bottom: 0.5rem;
+		margin-top: 0.75rem;
 	}
 
-	.non-compliant-ignored {
+	.breakdown-week {
+		padding: 0.6rem 0.75rem;
+		border-radius: 6px;
+		background: #f9fafb;
+		border: 1px solid #e5e7eb;
+		margin-bottom: 0.4rem;
+	}
+
+	.breakdown-week--dropped {
 		opacity: 0.6;
-		background-color: #e5e7eb !important;
+		background: #f3f4f6;
 		border-left: 3px solid #9ca3af;
+	}
+
+	.breakdown-week--warn {
+		border-left: 3px solid #f59e0b;
 	}
 
 	.public-holidays {
@@ -248,9 +272,29 @@ const BEST_WEEKS_REQUIRED = 8;
 		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 	}
 
-	:global(body.dark-mode) .non-compliant-ignored {
-		background-color: #0f172a !important;
+	:global(body.dark-mode) .buffer-warning {
+		background: #451a03;
+		border-color: #b45309;
+		color: #fde68a;
+	}
+
+	:global(body.dark-mode) .breakdown-week {
+		background: #1e293b;
+		border-color: #334155;
+		color: #e2e8f0;
+	}
+
+	:global(body.dark-mode) .breakdown-week--dropped {
+		background: #0f172a;
 		border-left-color: #475569;
+	}
+
+	:global(body.dark-mode) .breakdown-week--warn {
+		border-left-color: #f59e0b;
+	}
+
+	:global(body.dark-mode) .breakdown-section-label {
+		color: #94a3b8;
 	}
 
 	:global(body.dark-mode) .public-holidays {
@@ -287,14 +331,10 @@ const BEST_WEEKS_REQUIRED = 8;
 
 <script>
 	import { onComplianceUpdated, getLatestCompliance, type ComplianceEventData, type AnnotatedWeek } from '../lib/auto-compliance';
+	import { fmtDate } from '../lib/dateUtils';
 	import { REQUIRED_OFFICE_DAYS } from '../lib/validation/constants';
 
 	const MAX_DAYS = 5;
-	const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-
-	function fmtDate(d: Date): string {
-		return `${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
-	}
 
 	function getStatusColor(current: number, target: number): string {
 		if (current >= target) return 'has-text-success';
@@ -302,48 +342,82 @@ const BEST_WEEKS_REQUIRED = 8;
 		return 'has-text-danger';
 	}
 
-	function renderNonCompliantWeeks(data: ComplianceEventData): void {
-		const elNonCompliant = document.getElementById('non-compliant-content');
-		if (!elNonCompliant) return;
+	function renderWindowBreakdown(data: ComplianceEventData): void {
+		const elContent = document.getElementById('window-breakdown-content');
+		const elLabel = document.getElementById('window-breakdown-label');
+		if (!elContent) return;
 
-		const nonCompliantWeeks = data.windowWeeks.filter((w) => !w.isCompliant);
-
-		if (nonCompliantWeeks.length === 0) {
-			elNonCompliant.innerHTML =
-				'<div class="notification is-success is-light"><p class="has-text-centered">All weeks are compliant!</p></div>';
+		if (data.windowWeeks.length === 0) {
+			if (elLabel) elLabel.textContent = 'Mark dates to see window breakdown';
+			elContent.innerHTML = '<p class="has-text-centered has-text-grey-light is-size-7">Mark dates to see window breakdown</p>';
 			return;
 		}
 
-		elNonCompliant.innerHTML = '<div class="non-compliant-list">' +
-			nonCompliantWeeks.map((w: AnnotatedWeek) => {
-				const weekEnd = new Date(w.weekStart);
-				weekEnd.setDate(weekEnd.getDate() + 6);
-				const range = `${fmtDate(w.weekStart)} - ${fmtDate(weekEnd)}`;
-				const needed = REQUIRED_OFFICE_DAYS - w.officeDays;
+		// Window selection label
+		if (elLabel) {
+			const ws = data.slidingWindowResult.windowStart;
+			if (ws !== null) {
+				const windowStart = new Date(ws);
+				const windowWeeks = data.windowWeeks;
+				const lastWeek = windowWeeks[windowWeeks.length - 1]!;
+				const windowEnd = new Date(lastWeek.weekStart);
+				windowEnd.setDate(windowEnd.getDate() + 4);
+				const rangeStr = `${fmtDate(windowStart)} – ${fmtDate(windowEnd)}`;
+				elLabel.textContent = data.isCompliant
+					? `Showing most recent window (${rangeStr})`
+					: `Showing first failing window (${rangeStr})`;
+			}
+		}
 
-				if (w.isIgnored) {
-					return `<div class="notification is-light mb-2 non-compliant-ignored">
-						<div class="is-flex is-justify-content-space-between is-align-items-center">
-							<div>
-								<p class="has-text-weight-semibold has-text-grey">${range}</p>
-								<p class="is-size-7 has-text-grey-light">Only ${w.officeDays} of ${REQUIRED_OFFICE_DAYS} days worked</p>
-							</div>
-							<span class="tag is-light has-text-grey">Dropped</span>
-						</div>
-					</div>`;
-				}
+		const bestWeeks = data.windowWeeks.filter((w) => w.isBest);
+		const droppedWeeks = data.windowWeeks.filter((w) => w.isIgnored);
 
-				return `<div class="notification is-warning is-light mb-2">
-					<div class="is-flex is-justify-content-space-between is-align-items-center">
-						<div>
-							<p class="has-text-weight-semibold">${range}</p>
-							<p class="is-size-7">Only ${w.officeDays} of ${REQUIRED_OFFICE_DAYS} days worked</p>
-						</div>
-						<span class="tag is-warning">Needs ${needed} more</span>
-					</div>
-				</div>`;
-			}).join('') +
-			'</div>';
+		let html = '';
+
+		// Best K section
+		if (bestWeeks.length > 0) {
+			html += `<p class="breakdown-section-label">Best ${bestWeeks.length}</p>`;
+			html += bestWeeks.map((w) => renderBreakdownWeek(w, false)).join('');
+		}
+
+		// Dropped section
+		if (droppedWeeks.length > 0) {
+			html += `<p class="breakdown-section-label">Dropped</p>`;
+			html += droppedWeeks.map((w) => renderBreakdownWeek(w, true)).join('');
+		}
+
+		elContent.innerHTML = html;
+	}
+
+	function renderBreakdownWeek(w: AnnotatedWeek, isDropped: boolean): string {
+		const weekEnd = new Date(w.weekStart);
+		weekEnd.setDate(weekEnd.getDate() + 4);
+		const range = `${fmtDate(w.weekStart)} – ${fmtDate(weekEnd)}`;
+		const needed = REQUIRED_OFFICE_DAYS - w.officeDays;
+
+		const warnClass = !isDropped && !w.isCompliant ? ' breakdown-week--warn' : '';
+		const droppedClass = isDropped ? ' breakdown-week--dropped' : '';
+
+		let tag: string;
+		if (isDropped) {
+			tag = w.isCompliant
+				? '<span class="tag is-light has-text-grey">Compliant</span>'
+				: '<span class="tag is-light has-text-grey">Non-compliant</span>';
+		} else if (w.isCompliant) {
+			tag = `<span class="tag is-success is-light">${w.officeDays} days</span>`;
+		} else {
+			tag = `<span class="tag is-warning">Needs ${needed} more</span>`;
+		}
+
+		return `<div class="breakdown-week${droppedClass}${warnClass}">
+			<div class="is-flex is-justify-content-space-between is-align-items-center">
+				<div>
+					<p class="has-text-weight-semibold is-size-7">${range}</p>
+					<p class="is-size-7 has-text-grey">${w.officeDays} office days</p>
+				</div>
+				${tag}
+			</div>
+		</div>`;
 	}
 
 	function updateStats(data: ComplianceEventData): void {
@@ -367,6 +441,14 @@ const BEST_WEEKS_REQUIRED = 8;
 		if (elBuffer) elBuffer.textContent = `Good weeks = ${data.goodWeeks} of ${data.bestWeekCount} needed`;
 		if (elOof) elOof.textContent = `${data.bufferWeeks} full weeks WFH`;
 
+		// Buffer warning: show when exactly 1 buffer week and total drop slots > 1
+		const elBufferWarning = document.getElementById('buffer-warning');
+		if (elBufferWarning) {
+			const totalDropSlots = data.windowWeeks.length - data.bestWeekCount;
+			const showWarning = data.isCompliant && data.bufferWeeks === 1 && totalDropSlots > 1;
+			elBufferWarning.style.display = showWarning ? '' : 'none';
+		}
+
 		const elNextWfh = document.getElementById('stat-next-wfh');
 		if (elNextWfh) {
 			elNextWfh.textContent = data.nextWfhWeek
@@ -379,7 +461,7 @@ const BEST_WEEKS_REQUIRED = 8;
 			elWeekDays.className = `has-text-weight-bold ${getStatusColor(data.currentWeek.officeDays, REQUIRED_OFFICE_DAYS)}`;
 		}
 
-		renderNonCompliantWeeks(data);
+		renderWindowBreakdown(data);
 
 		// Update compliance status box
 		const elStatus = document.getElementById('compliance-status-message');
