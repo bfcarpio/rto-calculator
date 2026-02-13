@@ -243,13 +243,13 @@
   .datepainter *,
   .datepainter *::before,
   .datepainter *::after {
-    /* biome-ignore */
+    /* biome-ignore lint/complexity/noImportantStyles: respects prefers-reduced-motion accessibility preference */
     animation-duration: 0.01ms !important;
-    /* biome-ignore */
+    /* biome-ignore lint/complexity/noImportantStyles: respects prefers-reduced-motion accessibility preference */
     animation-iteration-count: 1 !important;
-    /* biome-ignore */
+    /* biome-ignore lint/complexity/noImportantStyles: respects prefers-reduced-motion accessibility preference */
     transition-duration: 0.01ms !important;
-    /* biome-ignore */
+    /* biome-ignore lint/complexity/noImportantStyles: respects prefers-reduced-motion accessibility preference */
     scroll-behavior: auto !important;
   }
 
