@@ -302,6 +302,34 @@ export abstract class ValidationStrategy {
 			console.log(`[${this.name}] ${message}`);
 		}
 	}
+
+	/**
+	 * Select the best N weeks by compliance percentage
+	 *
+	 * @param weeks - Array of week compliance data
+	 * @param count - Number of best weeks to select
+	 * @returns Array of top N weeks sorted by compliance percentage (descending)
+	 * @protected
+	 */
+	protected _selectBestWeeks(
+		weeks: WeekCompliance[],
+		count: number,
+	): WeekCompliance[] {
+		// Early exit: if count exceeds weeks length, return sorted copy of all weeks
+		if (count >= weeks.length) {
+			return [...weeks].sort((a, b) => b.percentage - a.percentage);
+		}
+
+		// Early exit: if count is 0 or negative, return empty array
+		if (count <= 0) {
+			return [];
+		}
+
+		// Sort by compliance percentage descending and take top N
+		return [...weeks]
+			.sort((a, b) => b.percentage - a.percentage)
+			.slice(0, count);
+	}
 }
 
 export default ValidationStrategy;

@@ -65,6 +65,10 @@ export interface ValidationResult {
 	windowResults: WindowCompliance[];
 	violatingWindows: WindowCompliance[];
 	compliantWindows: WindowCompliance[];
+	/** Validation mode used for this result */
+	validationMode?: string | undefined;
+	/** First invalid week (available in strict mode on failure) */
+	invalidWeek?: WeekCompliance | undefined;
 }
 
 /**
@@ -76,6 +80,10 @@ export interface ValidationConfig {
 	rollingPeriodWeeks: number;
 	thresholdPercentage: number;
 	debug: boolean;
+	/** Number of best weeks to evaluate (defaults to window size when not specified) */
+	bestWeeksCount?: number;
+	/** Whether to evaluate only the best performing weeks */
+	evaluateBestWeeksOnly?: boolean;
 }
 
 /**
@@ -86,6 +94,8 @@ export interface ValidatorContext {
 	config: ValidationConfig;
 	calendarStartDate?: Date;
 	calendarEndDate?: Date;
+	/** Pre-computed weeks map (optional, for internal use) */
+	weeksByWFH?: Map<number, number>;
 }
 
 /**

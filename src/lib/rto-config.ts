@@ -39,6 +39,12 @@ export const DEFAULT_POLICY = {
 
 	/** Number of top weeks to check for compliance */
 	topWeeksToCheck: 8,
+
+	/** Number of best weeks to evaluate (defaults to window size) */
+	bestWeeksCount: undefined as number | undefined,
+
+	/** Whether to evaluate only the best performing weeks (disabled by default for backward compatibility) */
+	evaluateBestWeeksOnly: false,
 };
 
 /**

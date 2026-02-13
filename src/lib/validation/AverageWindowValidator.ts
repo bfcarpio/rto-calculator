@@ -129,8 +129,6 @@ export class AverageWindowValidator extends ValidationStrategy {
 				this._getStartOfWeek(context.selectedDays?.[0]),
 			);
 
-		let totalOfficeDays = 0;
-		let totalWeekdays = 0;
 		const weeks: WeekCompliance[] = [];
 
 		for (let i = windowStart; i < windowStart + windowSize; i++) {
@@ -141,13 +139,31 @@ export class AverageWindowValidator extends ValidationStrategy {
 			});
 
 			weeks.push(weekCompliance);
-			totalOfficeDays += weekCompliance.officeDays;
-			totalWeekdays += weekCompliance.totalDays;
 		}
 
-		const averageOfficeDaysPerWeek = totalOfficeDays / windowSize;
+		// Apply "best X of Y weeks" filtering if enabled
+		const weeksToEvaluate = this._getWeeksForEvaluation(
+			weeks,
+			config,
+			windowSize,
+		);
+
+		// Recalculate totals from filtered weeks
+		const filteredOfficeDays = weeksToEvaluate.reduce(
+			(sum, week) => sum + week.officeDays,
+			0,
+		);
+		const filteredWeekdays = weeksToEvaluate.reduce(
+			(sum, week) => sum + week.totalDays,
+			0,
+		);
+		const weeksCountForAverage = weeksToEvaluate.length || 1; // Avoid division by zero
+
+		const averageOfficeDaysPerWeek = filteredOfficeDays / weeksCountForAverage;
 		const compliancePercentage =
-			totalWeekdays > 0 ? (totalOfficeDays / totalWeekdays) * 100 : 100;
+			filteredWeekdays > 0
+				? (filteredOfficeDays / filteredWeekdays) * 100
+				: 100;
 		const isCompliant =
 			compliancePercentage >= config.thresholdPercentage * 100;
 
@@ -160,8 +176,8 @@ export class AverageWindowValidator extends ValidationStrategy {
 			windowStart,
 			windowEnd: windowStart + windowSize - 1,
 			weeks,
-			totalOfficeDays,
-			totalWeekdays,
+			totalOfficeDays: filteredOfficeDays,
+			totalWeekdays: filteredWeekdays,
 			averageOfficeDaysPerWeek,
 			compliancePercentage,
 			isCompliant,
@@ -171,6 +187,37 @@ export class AverageWindowValidator extends ValidationStrategy {
 
 		this._setCachedResult(cacheKey, result);
 		return result;
+	}
+
+	/**
+	 * Get the weeks to evaluate based on "best X of Y" configuration
+	 *
+	 * @param allWeeks - All weeks in the window
+	 * @param config - Validation configuration
+	 * @param windowSize - Size of the window
+	 * @returns Weeks to evaluate (either all weeks or best N weeks)
+	 * @private
+	 */
+	private _getWeeksForEvaluation(
+		allWeeks: WeekCompliance[],
+		config: ValidationConfig,
+		windowSize: number,
+	): WeekCompliance[] {
+		// Early exit: if feature not enabled, return all weeks
+		if (!config.evaluateBestWeeksOnly) {
+			return allWeeks;
+		}
+
+		// Determine how many best weeks to evaluate
+		const bestWeeksCount = config.bestWeeksCount ?? windowSize;
+
+		// Early exit: if bestWeeksCount equals or exceeds window size, return all weeks
+		if (bestWeeksCount >= windowSize) {
+			return allWeeks;
+		}
+
+		// Select the best N weeks
+		return this._selectBestWeeks(allWeeks, bestWeeksCount);
 	}
 
 	/**
