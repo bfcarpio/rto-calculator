@@ -282,7 +282,7 @@ const BEST_WEEKS_REQUIRED = 8;
 
 <script>
 	import { onComplianceUpdated, getLatestCompliance, type ComplianceEventData, type AnnotatedWeek } from '../lib/auto-compliance';
-	import { REQUIRED_OFFICE_DAYS, BEST_WEEKS_COUNT } from '../lib/validation/constants';
+	import { REQUIRED_OFFICE_DAYS } from '../lib/validation/constants';
 
 	const MAX_DAYS = 5;
 	const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -359,7 +359,7 @@ const BEST_WEEKS_REQUIRED = 8;
 			elAverage.textContent = `${data.averageOfficeDays.toFixed(1)}/${MAX_DAYS} days`;
 			elAverage.className = `has-text-weight-bold ${getStatusColor(data.averageOfficeDays, REQUIRED_OFFICE_DAYS)}`;
 		}
-		if (elBuffer) elBuffer.textContent = `Good weeks = ${data.goodWeeks} of ${BEST_WEEKS_COUNT} needed`;
+		if (elBuffer) elBuffer.textContent = `Good weeks = ${data.goodWeeks} of ${data.bestWeekCount} needed`;
 		if (elOof) elOof.textContent = `${data.bufferWeeks} full weeks WFH`;
 		if (elWeekRange) elWeekRange.textContent = `${fmtDate(data.currentWeek.weekStart)} - ${fmtDate(data.currentWeek.weekEnd)}`;
 		if (elWeekDays) {

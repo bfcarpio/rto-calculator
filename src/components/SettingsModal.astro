@@ -89,31 +89,42 @@
 
             <hr class="section-divider" />
 
-            <!-- Week Labels Section -->
-            <section class="settings-section" id="week-labels-section">
-                <h3>Week Labels</h3>
+            <!-- Evaluation Window Section -->
+            <section class="settings-section">
+                <h3>Evaluation Window</h3>
                 <p class="section-description">
-                    Add labels to identify weeks (e.g., "Vacation", "Conference"). These don't
-                    affect compliance calculation.
+                    Configure the rolling window and how many best weeks are evaluated.
                 </p>
 
-                <div class="week-labels-container">
-                    <div class="add-label-row">
-                        <select id="week-select" class="week-select">
-                            <option value="">Select week...</option>
-                        </select>
-                        <input
-                            type="text"
-                            id="week-label-input"
-                            class="week-label-input"
-                            placeholder="Label (e.g., Vacation)"
-                            maxlength="30"
-                        />
-                        <button id="add-label-button" class="add-label-button" type="button">
-                            Add
-                        </button>
+                <div class="setting-row">
+                    <div class="setting-info">
+                        <span class="setting-label">Rolling window size</span>
+                        <span class="setting-description">Total weeks in each evaluation window</span>
                     </div>
-                    <ul id="labels-list" class="labels-list"></ul>
+                    <input
+                        type="number"
+                        id="rolling-window-input"
+                        class="target-days-input"
+                        min="1"
+                        max="52"
+                        value="12"
+                        aria-label="Rolling window weeks"
+                    />
+                </div>
+                <div class="setting-row">
+                    <div class="setting-info">
+                        <span class="setting-label">Best weeks to evaluate</span>
+                        <span class="setting-description">Top weeks counted toward compliance</span>
+                    </div>
+                    <input
+                        type="number"
+                        id="best-weeks-input"
+                        class="target-days-input"
+                        min="1"
+                        max="12"
+                        value="8"
+                        aria-label="Best weeks to evaluate"
+                    />
                 </div>
             </section>
 
@@ -317,61 +328,6 @@
         border-color: #475569;
     }
 
-    .week-labels-container {
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-    }
-
-    .add-label-row {
-        display: flex;
-        gap: 0.5rem;
-        align-items: center;
-    }
-
-    .week-select {
-        flex: 1;
-        padding: 0.5rem;
-        border: 2px solid #e2e8f0;
-        border-radius: 8px;
-        font-size: 0.875rem;
-        background: white;
-        min-width: 140px;
-    }
-
-    .week-label-input {
-        flex: 2;
-        padding: 0.5rem;
-        border: 2px solid #e2e8f0;
-        border-radius: 8px;
-        font-size: 0.875rem;
-    }
-
-    .add-label-button {
-        padding: 0.5rem 1rem;
-        background: #475569;
-        color: white;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        font-weight: 500;
-        white-space: nowrap;
-        transition: background-color 0.2s ease;
-    }
-
-    .add-label-button:hover {
-        background: #334155;
-    }
-
-    .labels-list {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-
     /* Toggle Switch */
     .toggle-button {
         position: relative;
@@ -449,17 +405,6 @@
             gap: 0.75rem;
         }
 
-        .add-label-row {
-            flex-direction: column;
-            align-items: stretch;
-        }
-
-        .week-select,
-        .week-label-input,
-        .add-label-button {
-            width: 100%;
-        }
-
         .theme-cycle-button {
             width: 100%;
             justify-content: center;
@@ -516,9 +461,7 @@
         color: #e2e8f0;
     }
 
-    :global(body.dark-mode) .target-days-input,
-    :global(body.dark-mode) .week-select,
-    :global(body.dark-mode) .week-label-input {
+    :global(body.dark-mode) .target-days-input {
         background: #1e293b;
         border-color: #334155;
         color: #e2e8f0;
@@ -533,14 +476,6 @@
     :global(body.dark-mode) .action-button.secondary:hover {
         background: #334155;
         border-color: #64748b;
-    }
-
-    :global(body.dark-mode) .add-label-button {
-        background: #64748b;
-    }
-
-    :global(body.dark-mode) .add-label-button:hover {
-        background: #94a3b8;
     }
 
     :global(body.dark-mode) .toggle-button {

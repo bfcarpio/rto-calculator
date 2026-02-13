@@ -14,9 +14,11 @@ import {
 	readCalendarData,
 	type WeekInfo,
 } from "./calendar-data-reader";
-import { BEST_WEEKS_COUNT, REQUIRED_OFFICE_DAYS } from "./validation/constants";
+import { readSettings } from "./settings-reader";
+import { REQUIRED_OFFICE_DAYS } from "./validation/constants";
 import {
 	DEFAULT_RTO_POLICY,
+	type RTOPolicyConfig,
 	type SlidingWindowResult,
 	validateSlidingWindow,
 } from "./validation/rto-core";
@@ -43,7 +45,7 @@ export interface ComplianceEventData {
 	averageOfficeDays: number;
 	/** Weeks with >= REQUIRED_OFFICE_DAYS in the window */
 	goodWeeks: number;
-	/** max(0, goodWeeks in all 12 window weeks - BEST_WEEKS_COUNT) */
+	/** Droppable slots minus non-compliant dropped weeks */
 	bufferWeeks: number;
 
 	/** Current (possibly incomplete) week, shown separately */
@@ -108,12 +110,17 @@ function computeComplianceData(allWeeks: WeekInfo[]): ComplianceEventData {
 	// (including future) in validation so marking future months triggers violations
 	const currentWeekInfo = allWeeks.find((w) => !isWeekComplete(w.weekStart));
 
+	// Build dynamic policy from user settings
+	const settings = readSettings();
+	const policy: RTOPolicyConfig = {
+		...DEFAULT_RTO_POLICY,
+		rollingPeriodWeeks: settings.rollingWindowWeeks,
+		topWeeksToCheck: settings.bestWeeksCount,
+	};
+
 	// Run sliding window validation on ALL weeks in the calendar
 	const weeksForValidation = convertWeeksToCompliance(allWeeks);
-	const slidingWindowResult = validateSlidingWindow(
-		weeksForValidation,
-		DEFAULT_RTO_POLICY,
-	);
+	const slidingWindowResult = validateSlidingWindow(weeksForValidation, policy);
 
 	// Determine which 12-week window to display:
 	// - If invalid: the first failing window
@@ -150,10 +157,17 @@ function computeComplianceData(allWeeks: WeekInfo[]): ComplianceEventData {
 	);
 	const averageOfficeDays = bestCount > 0 ? totalOfficeDays / bestCount : 0;
 
-	// goodWeeks = weeks with >= REQUIRED_OFFICE_DAYS in all 12 window weeks
+	// goodWeeks = weeks with >= REQUIRED_OFFICE_DAYS in all window weeks
 	const goodWeeksInWindow = annotated.filter((w) => w.isCompliant).length;
-	// bufferWeeks = good weeks in the full window minus required best weeks
-	const bufferWeeks = Math.max(0, goodWeeksInWindow - BEST_WEEKS_COUNT);
+	// bufferWeeks = droppable slots minus slots used by non-compliant weeks
+	const droppableSlots = Math.max(
+		0,
+		annotated.length - settings.bestWeeksCount,
+	);
+	const droppedNonCompliant = annotated.filter(
+		(w) => w.isIgnored && !w.isCompliant,
+	).length;
+	const bufferWeeks = Math.max(0, droppableSlots - droppedNonCompliant);
 
 	// Day counts from display window
 	let totalWfhDays = 0;
@@ -262,6 +276,16 @@ function initAutoCompliance(): void {
 		debounceTimer = setTimeout(() => {
 			runComputation(calendarManager);
 		}, 1500);
+	});
+
+	// Re-compute when settings change (shorter debounce for responsiveness)
+	document.addEventListener("settings-changed", () => {
+		setComputingState(true);
+
+		if (debounceTimer) clearTimeout(debounceTimer);
+		debounceTimer = setTimeout(() => {
+			runComputation(calendarManager);
+		}, 300);
 	});
 }
 

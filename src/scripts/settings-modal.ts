@@ -1,17 +1,12 @@
+import {
+	DEFAULTS,
+	readSettings,
+	SETTINGS_KEY,
+	writeSettings,
+} from "../lib/settings-reader";
 import { logger } from "../utils/logger";
 import { debugLog } from "./debug";
 import { initializeIndex } from "./index-init";
-
-interface Settings {
-	debug: boolean;
-	saveData: boolean;
-	strategy: string;
-	minOfficeDays: number;
-	defaultPattern: number[] | null;
-	holidays: { countryCode: string | null; holidaysAsOOF: boolean };
-	sickDaysPenalize: boolean;
-	holidayPenalize: boolean;
-}
 
 declare global {
 	interface Window {
@@ -44,6 +39,8 @@ class SettingsModal {
 	private holidayOofToggle: HTMLButtonElement | null = null;
 	private sickPenalizeToggle: HTMLButtonElement | null = null;
 	private holidayPenalizeToggle: HTMLButtonElement | null = null;
+	private rollingWindowInput: HTMLInputElement | null = null;
+	private bestWeeksInput: HTMLInputElement | null = null;
 
 	constructor() {
 		initializeIndex();
@@ -92,6 +89,12 @@ class SettingsModal {
 		this.holidayPenalizeToggle = document.getElementById(
 			"holiday-penalize-toggle",
 		) as HTMLButtonElement | null;
+		this.rollingWindowInput = document.getElementById(
+			"rolling-window-input",
+		) as HTMLInputElement | null;
+		this.bestWeeksInput = document.getElementById(
+			"best-weeks-input",
+		) as HTMLInputElement | null;
 	}
 
 	private initializeEventListeners(): void {
@@ -144,6 +147,12 @@ class SettingsModal {
 		this.holidayPenalizeToggle?.addEventListener("click", () =>
 			this.toggleHolidayPenalize(),
 		);
+		this.rollingWindowInput?.addEventListener("change", () =>
+			this.onRollingWindowChange(),
+		);
+		this.bestWeeksInput?.addEventListener("change", () =>
+			this.onBestWeeksChange(),
+		);
 	}
 
 	private toggleDebugMode(): void {
@@ -193,8 +202,8 @@ class SettingsModal {
 		const newState = !currentState;
 		this.sickPenalizeToggle.setAttribute("aria-checked", newState.toString());
 
-		// Persist immediately so calendar-data-reader and StatusDetails can read it
 		this.saveSettingsToLocalStorage();
+		this.dispatchSettingsChanged();
 		debugLog(
 			`[Settings] Sick days penalize ${newState ? "enabled" : "disabled"}`,
 		);
@@ -211,6 +220,7 @@ class SettingsModal {
 		);
 
 		this.saveSettingsToLocalStorage();
+		this.dispatchSettingsChanged();
 		debugLog(
 			`[Settings] Holiday penalize ${newState ? "enabled" : "disabled"}`,
 		);
@@ -222,6 +232,45 @@ class SettingsModal {
 			debugLog(`[Settings] Min office days changed to: ${value}`);
 			window.validationManager?.updateConfig({ minOfficeDaysPerWeek: value });
 		}
+	}
+
+	private onRollingWindowChange(): void {
+		if (!this.rollingWindowInput) return;
+		const value = parseInt(this.rollingWindowInput.value, 10);
+		if (value < 1 || value > 52) return;
+
+		// Clamp best weeks to not exceed rolling window
+		if (this.bestWeeksInput) {
+			this.bestWeeksInput.max = value.toString();
+			const bestWeeks = parseInt(this.bestWeeksInput.value, 10);
+			if (bestWeeks > value) {
+				this.bestWeeksInput.value = value.toString();
+			}
+		}
+
+		this.saveSettingsToLocalStorage();
+		this.dispatchSettingsChanged();
+		debugLog(`[Settings] Rolling window changed to: ${value}`);
+	}
+
+	private onBestWeeksChange(): void {
+		if (!this.bestWeeksInput) return;
+		const value = parseInt(this.bestWeeksInput.value, 10);
+		const maxWeeks = this.rollingWindowInput
+			? parseInt(this.rollingWindowInput.value, 10)
+			: DEFAULTS.rollingWindowWeeks;
+
+		if (value < 1 || value > maxWeeks) return;
+
+		this.saveSettingsToLocalStorage();
+		this.dispatchSettingsChanged();
+		debugLog(`[Settings] Best weeks changed to: ${value}`);
+	}
+
+	private dispatchSettingsChanged(): void {
+		document.dispatchEvent(
+			new CustomEvent("settings-changed", { bubbles: true }),
+		);
 	}
 
 	private onCountryChange(e: Event): void {
@@ -311,7 +360,16 @@ class SettingsModal {
 		this.sickPenalizeToggle?.setAttribute("aria-checked", "true");
 		this.holidayPenalizeToggle?.setAttribute("aria-checked", "true");
 
-		localStorage.removeItem("rto-calculator-settings");
+		if (this.rollingWindowInput) {
+			this.rollingWindowInput.value = DEFAULTS.rollingWindowWeeks.toString();
+		}
+		if (this.bestWeeksInput) {
+			this.bestWeeksInput.value = DEFAULTS.bestWeeksCount.toString();
+			this.bestWeeksInput.max = DEFAULTS.rollingWindowWeeks.toString();
+		}
+
+		localStorage.removeItem(SETTINGS_KEY);
+		this.dispatchSettingsChanged();
 		debugLog("[Settings] Settings reset to defaults");
 
 		this.modal?.close();
@@ -432,13 +490,18 @@ class SettingsModal {
 	}
 
 	private saveSettingsToLocalStorage(): void {
-		const settings: Settings = {
+		writeSettings({
 			debug: this.debugToggle?.getAttribute("aria-checked") === "true",
 			saveData: this.saveDataToggle?.getAttribute("aria-checked") === "true",
-			strategy: "rolling-period",
 			minOfficeDays: this.minOfficeDaysInput
 				? parseInt(this.minOfficeDaysInput.value, 10)
-				: 3,
+				: DEFAULTS.minOfficeDays,
+			rollingWindowWeeks: this.rollingWindowInput
+				? parseInt(this.rollingWindowInput.value, 10)
+				: DEFAULTS.rollingWindowWeeks,
+			bestWeeksCount: this.bestWeeksInput
+				? parseInt(this.bestWeeksInput.value, 10)
+				: DEFAULTS.bestWeeksCount,
 			defaultPattern:
 				this.selectedPattern.length > 0 ? [...this.selectedPattern] : null,
 			holidays: {
@@ -450,25 +513,20 @@ class SettingsModal {
 				this.sickPenalizeToggle?.getAttribute("aria-checked") !== "false",
 			holidayPenalize:
 				this.holidayPenalizeToggle?.getAttribute("aria-checked") !== "false",
-		};
-
-		localStorage.setItem("rto-calculator-settings", JSON.stringify(settings));
-		debugLog("[Settings] Settings saved to localStorage:", settings);
+		});
+		debugLog("[Settings] Settings saved to localStorage");
 	}
 
 	private loadSettingsFromLocalStorage(): void {
 		try {
-			const saved = localStorage.getItem("rto-calculator-settings");
-			if (!saved) return;
-
-			const settings = JSON.parse(saved) as Settings;
+			const settings = readSettings();
 
 			if (settings.saveData !== true) {
 				debugLog("[Settings] Data saving disabled, using default settings");
 				return;
 			}
 
-			if (settings.debug !== undefined && this.debugToggle) {
+			if (this.debugToggle) {
 				this.debugToggle.setAttribute(
 					"aria-checked",
 					settings.debug.toString(),
@@ -476,7 +534,7 @@ class SettingsModal {
 				window.validationManager?.setDebugMode(settings.debug);
 			}
 
-			if (settings.saveData !== undefined && this.saveDataToggle) {
+			if (this.saveDataToggle) {
 				this.saveDataToggle.setAttribute(
 					"aria-checked",
 					settings.saveData.toString(),
@@ -484,11 +542,20 @@ class SettingsModal {
 				window.storageManager?.setDataSavingEnabled(settings.saveData);
 			}
 
-			if (settings.minOfficeDays !== undefined && this.minOfficeDaysInput) {
+			if (this.minOfficeDaysInput) {
 				this.minOfficeDaysInput.value = settings.minOfficeDays.toString();
 				window.validationManager?.updateConfig({
 					minOfficeDaysPerWeek: settings.minOfficeDays,
 				});
+			}
+
+			if (this.rollingWindowInput) {
+				this.rollingWindowInput.value = settings.rollingWindowWeeks.toString();
+			}
+
+			if (this.bestWeeksInput) {
+				this.bestWeeksInput.value = settings.bestWeeksCount.toString();
+				this.bestWeeksInput.max = settings.rollingWindowWeeks.toString();
 			}
 
 			if (settings.defaultPattern && Array.isArray(settings.defaultPattern)) {
@@ -502,10 +569,7 @@ class SettingsModal {
 				this.countrySelect.value = settings.holidays.countryCode ?? "";
 			}
 
-			if (
-				settings.holidays?.holidaysAsOOF !== undefined &&
-				this.holidayOofToggle
-			) {
+			if (this.holidayOofToggle) {
 				this.holidayOofToggle.setAttribute(
 					"aria-checked",
 					settings.holidays.holidaysAsOOF.toString(),
@@ -514,30 +578,29 @@ class SettingsModal {
 					new CustomEvent("settings-changed", {
 						bubbles: true,
 						detail: {
-							holidays: { holidaysAsOOF: settings.holidays.holidaysAsOOF },
+							holidays: {
+								holidaysAsOOF: settings.holidays.holidaysAsOOF,
+							},
 						},
 					}),
 				);
 			}
 
-			if (settings.sickDaysPenalize !== undefined && this.sickPenalizeToggle) {
+			if (this.sickPenalizeToggle) {
 				this.sickPenalizeToggle.setAttribute(
 					"aria-checked",
 					settings.sickDaysPenalize.toString(),
 				);
 			}
 
-			if (
-				settings.holidayPenalize !== undefined &&
-				this.holidayPenalizeToggle
-			) {
+			if (this.holidayPenalizeToggle) {
 				this.holidayPenalizeToggle.setAttribute(
 					"aria-checked",
 					settings.holidayPenalize.toString(),
 				);
 			}
 
-			debugLog("[Settings] Settings loaded from localStorage:", settings);
+			debugLog("[Settings] Settings loaded from localStorage");
 		} catch (error) {
 			logger.error("[Settings] Error loading settings:", error);
 		}
