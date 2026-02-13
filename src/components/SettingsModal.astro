@@ -97,6 +97,102 @@ const { id = "settings-modal" } = Astro.props;
                     />
                 </div>
             </div>
+
+            <div class="setting-item">
+                <div class="setting-info">
+                    <label class="setting-label">
+                        Default Selection Pattern
+                    </label>
+                    <p class="setting-description">
+                        Select days to always apply to unselected calendar days
+                    </p>
+                </div>
+                <div class="setting-control pattern-selector-container">
+                    <div class="pattern-selector" id="pattern-selector" role="toolbar" aria-label="Default pattern selector">
+                        <div class="pattern-header">
+                            <span class="sr-only">Select default pattern days</span>
+                        </div>
+                        <div class="pattern-days-row">
+                            <button
+                                type="button"
+                                class="pattern-day"
+                                data-day="0"
+                                aria-label="Sunday"
+                                aria-pressed="false"
+                            >
+                                Sun
+                            </button>
+                            <button
+                                type="button"
+                                class="pattern-day"
+                                data-day="1"
+                                aria-label="Monday"
+                                aria-pressed="false"
+                            >
+                                Mon
+                            </button>
+                            <button
+                                type="button"
+                                class="pattern-day"
+                                data-day="2"
+                                aria-label="Tuesday"
+                                aria-pressed="false"
+                            >
+                                Tue
+                            </button>
+                            <button
+                                type="button"
+                                class="pattern-day"
+                                data-day="3"
+                                aria-label="Wednesday"
+                                aria-pressed="false"
+                            >
+                                Wed
+                            </button>
+                            <button
+                                type="button"
+                                class="pattern-day"
+                                data-day="4"
+                                aria-label="Thursday"
+                                aria-pressed="false"
+                            >
+                                Thu
+                            </button>
+                            <button
+                                type="button"
+                                class="pattern-day"
+                                data-day="5"
+                                aria-label="Friday"
+                                aria-pressed="false"
+                            >
+                                Fri
+                            </button>
+                            <button
+                                type="button"
+                                class="pattern-day"
+                                data-day="6"
+                                aria-label="Saturday"
+                                aria-pressed="false"
+                            >
+                                Sat
+                            </button>
+                        </div>
+                        <div class="pattern-actions">
+                            <button
+                                type="button"
+                                id="clear-pattern-button"
+                                class="button button-secondary"
+                                aria-label="Clear pattern selection"
+                            >
+                                Clear
+                            </button>
+                        </div>
+                        <div class="pattern-status" id="pattern-status" role="status" aria-live="polite">
+                            No pattern selected
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <footer class="modal-footer">
@@ -152,6 +248,7 @@ const { id = "settings-modal" } = Astro.props;
         font-size: 1.25rem;
         font-weight: 600;
         color: #333;
+        flex: 1;
     }
 
     .close-button {
@@ -321,6 +418,98 @@ const { id = "settings-modal" } = Astro.props;
         cursor: not-allowed;
     }
 
+    /* Pattern Selector */
+    .pattern-selector-container {
+        flex: 1;
+        max-width: 400px;
+    }
+
+    .pattern-selector {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        padding: 0.75rem;
+        background-color: #fafafa;
+        border: 1px solid #e8e8e8;
+        border-radius: 4px;
+    }
+
+    .pattern-header {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .pattern-days-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.25rem;
+    }
+
+    .pattern-day {
+        flex: 1;
+        padding: 0.5rem 0.25rem;
+        border: 1px solid #d9d9d9;
+        border-radius: 4px;
+        background-color: white;
+        color: #333;
+        font-size: 0.8rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-align: center;
+    }
+
+    .pattern-day:hover {
+        background-color: #f0f0f0;
+        border-color: #40a9ff;
+    }
+
+    .pattern-day:focus {
+        outline: 2px solid #1890ff;
+        outline-offset: 2px;
+    }
+
+    .pattern-day[aria-pressed="true"] {
+        background-color: #e6f7ff;
+        border-color: #1890ff;
+        color: #1890ff;
+        font-weight: 600;
+    }
+
+    .pattern-day[aria-pressed="true"]:hover {
+        background-color: #bae7ff;
+    }
+
+    .pattern-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .pattern-actions .button {
+        flex: 1;
+        padding: 0.4rem 0.75rem;
+        font-size: 0.85rem;
+    }
+
+    .pattern-status {
+        font-size: 0.8rem;
+        color: #666;
+        text-align: center;
+        padding: 0.25rem;
+        border-radius: 2px;
+    }
+
+    .pattern-status.valid {
+        color: #52c41a;
+        background-color: #f6ffed;
+    }
+
+    .pattern-status.invalid {
+        color: #ff4d4f;
+        background-color: #fff1f0;
+    }
+
     /* Modal footer */
     .modal-footer {
         display: flex;
@@ -475,6 +664,12 @@ const { id = "settings-modal" } = Astro.props;
         const minOfficeDaysInput = document.getElementById(
             "min-office-days",
         ) as HTMLInputElement | null;
+        const patternSelector = document.getElementById("pattern-selector");
+        const clearPatternButton = document.getElementById("clear-pattern-button");
+        const patternStatus = document.getElementById("pattern-status");
+
+        // Default pattern state
+        let selectedPattern: number[] = [];
 
         // Open modal
         if (settingsButton) {
@@ -569,10 +764,20 @@ const { id = "settings-modal" } = Astro.props;
         // Save settings
         if (saveButton) {
             saveButton.addEventListener("click", () => {
+                // Apply pattern if one is selected
+                if (selectedPattern.length > 0) {
+                    const appliedCount = applyPatternToCalendar();
+                    if (appliedCount > 0) {
+                        console.log(`[Settings] Pattern applied to ${appliedCount} day(s)`);
+                        announceToScreenReader(`Pattern applied to ${appliedCount} day(s). Settings saved`);
+                    }
+                }
+
                 // Save to localStorage
                 saveSettingsToLocalStorage();
+
+                // Close modal
                 if (modal) modal.close();
-                announceToScreenReader("Settings saved");
             });
         }
 
@@ -618,6 +823,133 @@ const { id = "settings-modal" } = Astro.props;
             ) {
                 minOfficeDaysInput.value = config.minOfficeDaysPerWeek;
             }
+
+            // Sync pattern selector
+            syncPatternSelector();
+        }
+
+        /**
+         * Sync pattern selector with current pattern
+         */
+        function syncPatternSelector(): void {
+            try {
+                const saved = localStorage.getItem("rto-calculator-settings");
+                if (saved) {
+                    const settings = JSON.parse(saved);
+                    if (settings.defaultPattern && Array.isArray(settings.defaultPattern)) {
+                        selectedPattern = settings.defaultPattern;
+                        updatePatternSelectorUI();
+                    }
+                }
+            } catch (error) {
+                console.error("Error loading pattern settings:", error);
+            }
+        }
+
+        /**
+         * Update pattern selector UI based on selected pattern
+         */
+        function updatePatternSelectorUI(): void {
+            const patternDays = document.querySelectorAll('.pattern-day');
+            patternDays.forEach(day => {
+                const dayIndex = parseInt(day.getAttribute('data-day') || '0');
+                const isSelected = selectedPattern.includes(dayIndex);
+                day.setAttribute('aria-pressed', isSelected.toString());
+            });
+            updatePatternStatus();
+        }
+
+        /**
+         * Update pattern status message
+         */
+        function updatePatternStatus(): void {
+            if (!patternStatus) return;
+
+            const officeDays = 5 - selectedPattern.length; // Assuming 5-day work week (Mon-Fri)
+            const minOfficeDays = minOfficeDaysInput ? parseInt(minOfficeDaysInput.value) : 3;
+            const isValid = officeDays >= minOfficeDays;
+
+            if (selectedPattern.length === 0) {
+                patternStatus.textContent = "No pattern selected";
+                patternStatus.className = "pattern-status";
+            } else {
+                const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+                const selectedDayNames = selectedPattern.map(day => dayNames[day]).join(", ");
+                patternStatus.textContent = `${selectedDayNames} (${officeDays} office days)`;
+                patternStatus.className = isValid ? "pattern-status valid" : "pattern-status invalid";
+            }
+        }
+
+        /**
+         * Apply pattern to calendar
+         */
+        function applyPatternToCalendar(): number {
+            const minOfficeDays = minOfficeDaysInput ? parseInt(minOfficeDaysInput.value) : 3;
+            const officeDays = 5 - selectedPattern.length;
+
+            // Validate pattern
+            if (officeDays < minOfficeDays) {
+                alert(`Pattern has only ${officeDays} office days, but ${minOfficeDays} are required.`);
+                return 0;
+            }
+
+            // Apply pattern to unselected days
+            const calendarCells = document.querySelectorAll('.calendar-day:not(.empty)');
+            let appliedCount = 0;
+
+            calendarCells.forEach(cell => {
+                const cellElement = cell as HTMLElement;
+                const isSelected = cellElement.dataset.selected === "true";
+                const selectionType = cellElement.dataset.selectionType;
+
+                // Only apply to unselected days
+                if (!isSelected && !selectionType) {
+                    // Use data attributes to get day of week (more reliable than parsing aria-label)
+                    const year = parseInt(cellElement.dataset.year || "0");
+                    const month = parseInt(cellElement.dataset.month || "0");
+                    const day = parseInt(cellElement.dataset.day || "0");
+                    const date = new Date(year, month, day);
+                    const dayIndex = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
+
+                    // Only apply pattern to weekdays (1-5 = Mon-Fri)
+                    const isWeekday = dayIndex >= 1 && dayIndex <= 5;
+                    if (isWeekday && selectedPattern.includes(dayIndex)) {
+                        // Apply work-from-home selection
+                        cellElement.dataset.selected = "true";
+                        cellElement.dataset.selectionType = "work-from-home";
+                        cellElement.classList.add("selected", "work-from-home");
+                        cellElement.setAttribute("aria-selected", "true");
+
+                        // Update aria-label
+                        const dateStr = cellElement.getAttribute('aria-label') || "";
+                        const newLabel = dateStr.replace(/\.[^.]*$/, ""); // Remove existing selection
+                        cellElement.setAttribute("aria-label", `${newLabel}. Work from home`);
+
+                        // Dispatch custom event to trigger validation
+                        const selectionEvent = new CustomEvent("rto-selection-changed", {
+                            bubbles: true,
+                            detail: {
+                                cell: cellElement,
+                                selectionType: "work-from-home",
+                            },
+                        });
+                        cellElement.dispatchEvent(selectionEvent);
+
+                        appliedCount++;
+                    }
+                }
+            });
+
+            return appliedCount;
+        }
+
+        /**
+         * Clear pattern selection
+         */
+        function clearPatternSelection(): void {
+            selectedPattern = [];
+            updatePatternSelectorUI();
+            announceToScreenReader("Pattern selection cleared");
         }
 
         /**
@@ -634,6 +966,7 @@ const { id = "settings-modal" } = Astro.props;
                 minOfficeDays: minOfficeDaysInput
                     ? parseInt(minOfficeDaysInput.value)
                     : 3,
+                defaultPattern: selectedPattern.length > 0 ? [...selectedPattern] : null,
             };
 
             localStorage.setItem(
@@ -641,6 +974,31 @@ const { id = "settings-modal" } = Astro.props;
                 JSON.stringify(settings),
             );
             console.log("[Settings] Settings saved to localStorage:", settings);
+        }
+
+        // Pattern selector event handlers
+        if (patternSelector) {
+            patternSelector.addEventListener('click', (e) => {
+                const target = e.target as HTMLElement;
+                if (target.classList.contains('pattern-day')) {
+                    const dayIndex = parseInt(target.getAttribute('data-day') || '0');
+                    const index = selectedPattern.indexOf(dayIndex);
+
+                    if (index > -1) {
+                        selectedPattern.splice(index, 1); // Remove if already selected
+                    } else {
+                        selectedPattern.push(dayIndex); // Add if not selected
+                    }
+
+                    updatePatternSelectorUI();
+                }
+            });
+        }
+
+        if (clearPatternButton) {
+            clearPatternButton.addEventListener('click', () => {
+                clearPatternSelection();
+            });
         }
 
         /**
@@ -690,6 +1048,18 @@ const { id = "settings-modal" } = Astro.props;
                         }
                     }
 
+                    // Apply default pattern
+                    if (
+                        settings.defaultPattern &&
+                        Array.isArray(settings.defaultPattern)
+                    ) {
+                        selectedPattern = settings.defaultPattern;
+                        updatePatternSelectorUI();
+                    } else {
+                        selectedPattern = [];
+                        updatePatternSelectorUI();
+                    }
+
                     console.log(
                         "[Settings] Settings loaded from localStorage:",
                         settings,
@@ -728,6 +1098,10 @@ const { id = "settings-modal" } = Astro.props;
                     });
                 }
             }
+
+            // Clear pattern selection
+            selectedPattern = [];
+            updatePatternSelectorUI();
 
             // Clear localStorage
             localStorage.removeItem("rto-calculator-settings");
