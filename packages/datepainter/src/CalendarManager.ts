@@ -728,15 +728,32 @@ export class CalendarManager implements CalendarInstance {
 	 * @private
 	 */
 	private subscribeToStoreChanges(): void {
+		let previousDates = new Map(getAllDates());
+
 		const unsubscribe = selectedDates.subscribe(() => {
 			this.updateDayCells();
 
-			const allDates = getAllDates();
-			for (const [dateStr, state] of allDates) {
-				for (const cb of this.stateChangeCallbacks) {
-					cb(dateStr, state);
+			const currentDates = getAllDates();
+
+			// Notify for added/changed dates
+			for (const [dateStr, state] of currentDates) {
+				if (previousDates.get(dateStr) !== state) {
+					for (const cb of this.stateChangeCallbacks) {
+						cb(dateStr, state);
+					}
 				}
 			}
+
+			// Notify for removed dates
+			for (const [dateStr] of previousDates) {
+				if (!currentDates.has(dateStr)) {
+					for (const cb of this.stateChangeCallbacks) {
+						cb(dateStr, null);
+					}
+				}
+			}
+
+			previousDates = new Map(currentDates);
 		});
 		this.unsubscribeFns.push(unsubscribe);
 	}
