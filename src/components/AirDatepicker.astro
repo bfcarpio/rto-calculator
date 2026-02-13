@@ -88,6 +88,7 @@
 <script>
   import AirDatepicker from 'air-datepicker';
   import 'air-datepicker/air-datepicker.css';
+  import localeEn from 'air-datepicker/locale/en';
   import {
     getDateStore,
     getDateState,
@@ -104,12 +105,13 @@
   if (container) {
     const dateRange = getDateRange();
 
-    // Initialize Air Datepicker
+    // Initialize Air Datepicker with English locale
     picker = new AirDatepicker(container, {
       inline: true,
       range: false,
       multipleDates: false,
       toggleSelected: false,
+      locale: localeEn,
       
       // Custom cell renderer to show state colors and disable out-of-range dates
       onRenderCell({ date, cellType }) {
