@@ -1,5 +1,8 @@
 import { expect, test } from "@playwright/test";
 
+// Migrated from air-datepicker to datepainter with 3-state system (oof, holiday, sick)
+// Previous "working" state has been replaced with "sick"
+
 // test.use({ browserName: "firefox" });
 
 test("Verify UI styling and elements", async ({ page, isMobile }) => {
@@ -33,24 +36,36 @@ test("Verify UI styling and elements", async ({ page, isMobile }) => {
 	const weeksProgress = page.locator(".weeks-progress");
 	await expect(weeksProgress).not.toBeVisible();
 
-	// 3. Verify Air Datepicker is present
-	const datepicker = page.locator(".air-datepicker");
+	// 3. Verify Datepainter is present
+	const datepicker = page.locator('[data-testid="datepainter-container"]');
 	await expect(datepicker).toBeVisible();
 
 	// 4. Verify Status Legend is present
 	const legend = page.locator(".status-legend").first();
 	await expect(legend).toBeVisible();
 
-	// 5. Verify Air Datepicker day cell selected color matches slate
+	// 5. Verify Datepainter day cell selected color matches slate
 	// First, find a selected cell or select one
-	let selectedCell = page.locator(".air-datepicker-cell.-selected-").first();
+	let selectedCell = page
+		.locator(
+			'[data-testid="calendar-day"].datepainter-day--oof, [data-testid="calendar-day"].datepainter-day--holiday, [data-testid="calendar-day"].datepainter-day--sick',
+		)
+		.first();
 
 	// If no cell is selected by default, click the first day
 	if ((await selectedCell.count()) === 0) {
-		const firstDay = page.locator(".air-datepicker-cell.-day-").first();
+		const firstDay = page
+			.locator(
+				'[data-testid="calendar-day"]:not(.datepainter-day--empty):not(.datepainter__day--disabled)',
+			)
+			.first();
 		await firstDay.waitFor({ state: "visible" });
 		await firstDay.click();
-		selectedCell = page.locator(".air-datepicker-cell.-selected-").first();
+		selectedCell = page
+			.locator(
+				'[data-testid="calendar-day"].datepainter-day--oof, [data-testid="calendar-day"].datepainter-day--holiday, [data-testid="calendar-day"].datepainter-day--sick',
+			)
+			.first();
 	}
 
 	await expect(selectedCell).toBeVisible();

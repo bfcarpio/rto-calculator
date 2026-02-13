@@ -14,10 +14,12 @@ export async function navigateToApp(page: Page): Promise<void> {
 }
 
 /**
- * Wait for the app to be fully loaded
+ * Wait for app to be fully loaded
  */
 export async function waitForAppLoad(page: Page): Promise<void> {
-	await page.waitForSelector(".air-datepicker", { state: "visible" });
+	await page.waitForSelector("[data-testid='datepainter-container']", {
+		state: "visible",
+	});
 	await page.waitForSelector("#status-legend", { state: "visible" });
 }
 

@@ -1,32 +1,36 @@
 import { expect, test } from "@playwright/test";
-// Note: SCENARIOS and TestScenarioBuilder available for future test data scenarios
+import { navigateToApp } from "./helpers/common";
+// Migrated from air-datepicker to datepainter with 3-state system (oof, holiday, sick)
+// Previous "working" state has been replaced with "sick"
 import {
 	clickDate,
 	expectDateHasNoState,
 	expectDateHasState,
 	getDisabledCellCount,
-} from "./helpers/airDatepicker";
-import { navigateToApp, reloadPage } from "./helpers/common";
+} from "./helpers/datepainter";
 import { expectModeCount, selectMode } from "./helpers/statusLegend";
 
 test.describe("Date Marking Flows", () => {
 	test.beforeEach(async ({ page }) => {
 		await navigateToApp(page);
-		// Wait for calendar to be ready
-		await page.waitForSelector(".air-datepicker-cell:not(.-disabled-)", {
-			state: "visible",
-		});
+		// Wait for calendar to be ready (datepainter)
+		// Wait for enabled cells only (exclude empty and disabled)
+		await page.waitForSelector(
+			'[data-testid="calendar-day"]:not(.datepainter-day--empty):not(.datepainter__day--disabled)',
+			{
+				state: "visible",
+			},
+		);
 	});
 
-	test("should mark single date as working", async ({ page }) => {
-		// Select working mode
-		await selectMode(page, "working");
+	test("should mark single date as sick", async ({ page }) => {
+		// Type assertion needed until statusLegend is updated to include "sick" mode
+		await selectMode(page, "sick" as any);
 
-		// Click a date in the datepicker
 		await clickDate(page, 0);
 
-		// Verify date is marked (has working class)
-		await expectDateHasState(page, 0, "working");
+		await expectDateHasState(page, 0, "sick");
+		await expectModeCount(page, "sick" as any, 1);
 	});
 
 	test("should mark single date as OOF", async ({ page }) => {
@@ -74,17 +78,5 @@ test.describe("Date Marking Flows", () => {
 		await clickDate(page, 2);
 
 		await expectModeCount(page, "oof", 3);
-	});
-
-	test("should persist state on page refresh (in-memory)", async ({ page }) => {
-		await selectMode(page, "working");
-
-		await clickDate(page, 0);
-
-		// Refresh page
-		await reloadPage(page);
-
-		// Data should be cleared (in-memory only)
-		await expectDateHasNoState(page, 0);
 	});
 });

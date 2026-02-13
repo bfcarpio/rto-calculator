@@ -1,6 +1,8 @@
+// Migrated from air-datepicker to datepainter with 3-state system (oof, holiday, sick)
+// Previous "working" state has been replaced with "sick"
 import { expect, test } from "@playwright/test";
-import { clickDate } from "./helpers/airDatepicker";
 import { navigateToApp } from "./helpers/common";
+import { clickDate } from "./helpers/datepainter";
 import {
 	openSettings,
 	selectValidationMode,
@@ -11,7 +13,10 @@ import { selectMode } from "./helpers/statusLegend";
 test.describe("Validation Flows", () => {
 	test.beforeEach(async ({ page }) => {
 		await navigateToApp(page);
-		await page.waitForSelector(".air-datepicker", { state: "visible" });
+		await page.waitForSelector(
+			'[data-testid="calendar-day"]:not(.datepainter-day--empty):not(.datepainter__day--disabled)',
+			{ state: "visible" },
+		);
 	});
 
 	test.describe("Strict Validation Mode", () => {
@@ -25,8 +30,8 @@ test.describe("Validation Flows", () => {
 		test("should show compliant when meeting weekly target", async ({
 			page,
 		}) => {
-			// Mark 3 working days in current week
-			await selectMode(page, "working");
+			// Mark 3 sick days in current week
+			await selectMode(page, "sick");
 			await clickDate(page, 0); // First available date
 			await clickDate(page, 1);
 			await clickDate(page, 2);
@@ -37,8 +42,8 @@ test.describe("Validation Flows", () => {
 		});
 
 		test("should show violation when below weekly target", async ({ page }) => {
-			// Mark only 1 working day
-			await selectMode(page, "working");
+			// Mark only 1 sick day
+			await selectMode(page, "sick");
 			await clickDate(page, 0);
 
 			const summary = page.locator(".summary-bar");
@@ -53,8 +58,8 @@ test.describe("Validation Flows", () => {
 			await setTargetDays(page, 3);
 			await page.keyboard.press("Escape");
 
-			// Mark some working days
-			await selectMode(page, "working");
+			// Mark some sick days
+			await selectMode(page, "sick");
 			await clickDate(page, 0);
 			await clickDate(page, 1);
 
@@ -69,7 +74,7 @@ test.describe("Validation Flows", () => {
 			await setTargetDays(page, 3);
 			await page.keyboard.press("Escape");
 
-			await selectMode(page, "working");
+			await selectMode(page, "sick");
 			await clickDate(page, 0);
 
 			const summary = page.locator(".summary-bar");
@@ -87,7 +92,7 @@ test.describe("Validation Flows", () => {
 			await page.keyboard.press("Escape");
 
 			// Mark 2 days (below target)
-			await selectMode(page, "working");
+			await selectMode(page, "sick");
 			await clickDate(page, 0);
 			await clickDate(page, 1);
 
@@ -116,17 +121,17 @@ test.describe("Validation Flows", () => {
 	});
 
 	test.describe("Holiday Handling", () => {
-		test("should not count holidays toward working days", async ({ page }) => {
+		test("should not count holidays toward sick days", async ({ page }) => {
 			// Mark a holiday
 			await selectMode(page, "holiday");
 			await clickDate(page, 0);
 
-			// Mark 2 working days
-			await selectMode(page, "working");
+			// Mark 2 sick days
+			await selectMode(page, "sick");
 			await clickDate(page, 1);
 			await clickDate(page, 2);
 
-			// Should only count 2 working days, not the holiday
+			// Should only count 2 sick days, not the holiday
 			const summary = page.locator(".summary-bar");
 			await expect(summary).toBeVisible();
 		});
@@ -135,7 +140,7 @@ test.describe("Validation Flows", () => {
 	test.describe("Summary Statistics", () => {
 		test("should display total statistics", async ({ page }) => {
 			// Mark various dates
-			await selectMode(page, "working");
+			await selectMode(page, "sick");
 			await clickDate(page, 0);
 			await clickDate(page, 1);
 
@@ -155,6 +160,9 @@ test.describe("Validation Flows", () => {
 
 			const holidayCount = page.locator("#count-holiday");
 			await expect(holidayCount).toHaveText("1");
+
+			const sickCount = page.locator("#count-sick");
+			await expect(sickCount).toHaveText("2");
 		});
 	});
 });
