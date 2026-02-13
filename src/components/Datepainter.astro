@@ -1,0 +1,275 @@
+---
+/**
+ * Datepainter Calendar Component
+ *
+ * Replaces AirDatepicker with @datepainter/core CalendarManager.
+ * Implements date state painting (oof, holiday, sick) with smart toggle
+ * and undo/redo support via KeyboardShortcuts and HistoryManager.
+ *
+ * @module Datepainter
+ */
+---
+<div class="datepicker-container" id="datepainter-container">
+  <!-- CalendarManager renders into this container -->
+</div>
+
+<style>
+  /* Container styling matching AirDatepicker */
+  .datepicker-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.5rem;
+    width: 100%;
+    min-height: 220px;
+  }
+
+  /* Main calendar container with responsive max-width */
+  #datepainter-calendar {
+    width: 100%;
+    max-width: 240px;
+  }
+
+  @media (min-width: 768px) {
+    #datepainter-calendar {
+      max-width: 280px;
+    }
+  }
+
+  /* Dark mode support */
+  body.dark-mode .datepainter {
+    background: #1e293b;
+    border-color: #334155;
+  }
+
+  body.dark-mode .datepainter__nav {
+    background: #1e293b;
+    border-color: #334155;
+  }
+
+  body.dark-mode .datepainter__month-label {
+    color: #e2e8f0;
+  }
+
+  body.dark-mode .datepainter__day {
+    color: var(--text-muted);
+    background: #1e293b;
+    border-color: #334155;
+  }
+
+  body.dark-mode .datepainter__day--padding {
+    color: #64748b;
+  }
+
+  body.dark-mode .datepainter__day--disabled {
+    color: #475569;
+    opacity: 0.4;
+  }
+
+  body.dark-mode .datepainter__weekday {
+    color: #94a3b8;
+  }
+</style>
+
+<script>
+  // Import datepainter core and styles
+  import { CalendarManager } from 'datepainter';
+  import 'datepainter/styles/calendar.css';
+
+  // Import date utilities
+  import {
+    getDateRange,
+    isDateInRange,
+  } from '../lib/dateUtils';
+
+  // Import history and keyboard shortcuts
+  import { HistoryManager } from '../lib/history/HistoryManager';
+  import { KeyboardShortcuts } from '../scripts/keyboard-shortcuts';
+  import validationManager from '../scripts/ValidationManager';
+
+  // Guard clause: ensure ValidationManager is available at module level
+  if (!validationManager) {
+    console.error('ValidationManager not available');
+  }
+
+
+
+  /**
+   * Get the default configuration for date states
+   * Matches the styling from AirDatepicker using defaultConfig from datepainter
+   */
+  const getDefaultStates = () => ({
+    oof: {
+      label: 'Out of Office',
+      color: '#ffffff',
+      bgColor: '#ef4444', // Red for violations
+      icon: '🏖️',
+      position: 'below' as const,
+    },
+    holiday: {
+      label: 'Holiday',
+      color: '#ffffff',
+      bgColor: '#f59e0b', // Amber for holidays (matches defaultConfig)
+      icon: '🎉',
+      position: 'below' as const,
+    },
+    sick: {
+      label: 'Sick Day',
+      color: '#ffffff',
+      bgColor: '#1890ff', // Blue for sick days
+      icon: '💊',
+      position: 'below' as const,
+    },
+  });
+
+  /**
+   * Disable dates outside the allowed range
+   *
+   * @param container - The calendar container element
+   * @param dateRange - The date range object with startDate and endDate
+   */
+  const disableOutOfRangeDates = (
+    container: HTMLElement,
+    dateRange: { startDate: Date; endDate: Date },
+  ): void => {
+    const dayCells = container.querySelectorAll<HTMLElement>('.datepainter__day');
+    dayCells.forEach((cell) => {
+      const date = cell.getAttribute('data-date');
+      if (!date) return;
+
+      const dateObj = new Date(date);
+      if (!isDateInRange(dateObj, dateRange)) {
+        cell.classList.add('datepainter__day--disabled');
+        cell.setAttribute('data-disabled', 'true');
+      }
+    });
+  };
+
+  /**
+   * Add data-testid attributes to all calendar day cells
+   * Required for E2E testing with Playwright
+   *
+   * @param container - The calendar container element
+   */
+  const addTestIdsToDayCells = (container: HTMLElement): void => {
+    const dayCells = container.querySelectorAll<HTMLElement>('.datepainter__day');
+    dayCells.forEach((cell) => {
+      const date = cell.getAttribute('data-date');
+      if (!date) return;
+
+      // Parse date string (YYYY-MM-DD) to extract year, month, day
+      const parts = date.split('-');
+      if (parts.length !== 3) return;
+
+      const year = Number.parseInt(parts[0] ?? '', 10);
+      const month = Number.parseInt(parts[1] ?? '', 10) - 1; // Convert to 0-indexed
+      const day = Number.parseInt(parts[2] ?? '', 10);
+
+      if (Number.isNaN(year) || Number.isNaN(month) || Number.isNaN(day)) {
+        return;
+      }
+
+      cell.setAttribute('data-testid', 'calendar-day');
+      cell.setAttribute('data-year', String(year));
+      cell.setAttribute('data-month', String(month));
+      cell.setAttribute('data-day', String(day));
+    });
+  };
+
+  /**
+   * Initialize the calendar with CalendarManager
+   *
+   * Sets up the calendar instance, attaches event listeners,
+   * and initializes keyboard shortcuts with undo/redo support.
+   *
+   * @throws {Error} If container not found
+   * @throws {Error} If ValidationManager not available
+   */
+  const initializeCalendar = (): void => {
+    // Guard clause: ensure DOM is ready
+    const container = document.getElementById('datepainter-container');
+    if (!container) {
+      throw new Error('Datepainter container not found');
+    }
+
+    // Guard clause: ensure ValidationManager is available
+    if (!validationManager) {
+      throw new Error('ValidationManager not found');
+    }
+
+    // Get the date range for the calendar
+    const dateRange = getDateRange();
+
+    // Create CalendarManager with configuration matching requirements
+    const calendarManager = new CalendarManager(container, {
+      dateRange: {
+        start: dateRange.startDate,
+        end: dateRange.endDate,
+      },
+      states: getDefaultStates(),
+      styling: {
+        cellSize: 32,
+        showWeekdays: true,
+        showWeekNumbers: true,
+        firstDayOfWeek: 0,
+      },
+      painting: {
+        enabled: true,
+        paintOnDrag: true,
+        defaultState: 'oof',
+      },
+    });
+
+    // Initialize the calendar
+    calendarManager.init();
+
+    // Add data-testid attributes to day cells after initialization
+    addTestIdsToDayCells(container);
+
+    // Disable dates outside the range
+    disableOutOfRangeDates(container, dateRange);
+
+    // Initialize HistoryManager with max stack of 10
+    const historyManager = new HistoryManager(10);
+
+    // Initialize KeyboardShortcuts with HistoryManager, CalendarManager, and ValidationManager
+    const keyboardShortcuts = new KeyboardShortcuts(
+      historyManager,
+      calendarManager,
+      validationManager,
+    );
+    keyboardShortcuts.initialize();
+
+    // Subscribe to state changes to trigger undo tracking
+    const unsubscribe = calendarManager.onStateChange(() => {
+      // Push state to history on change (debounced via KeyboardShortcuts)
+      keyboardShortcuts.pushStateToHistory();
+    });
+
+    // Mutation observer to add data-testid and disable dates on new cells (after month navigation)
+    const observer = new MutationObserver(() => {
+      addTestIdsToDayCells(container);
+      disableOutOfRangeDates(container, dateRange);
+    });
+
+    observer.observe(container, {
+      childList: true,
+      subtree: true,
+    });
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+      unsubscribe();
+      keyboardShortcuts.destroy();
+      calendarManager.destroy();
+      observer.disconnect();
+    });
+  };
+
+  // Initialize calendar when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeCalendar);
+  } else {
+    initializeCalendar();
+  }
+</script>

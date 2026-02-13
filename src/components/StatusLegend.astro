@@ -87,45 +87,76 @@
 </style>
 
 <script>
-  import {
-    getDateStore,
-    setMarkingMode,
-    type MarkingMode
-  } from '../lib/dateStore';
+  import type { DateState } from 'datepainter';
 
-  const store = getDateStore();
+  /**
+   * Set the marking mode for date painting
+   * @param mode - The mode to set ('oof', 'holiday', or 'sick')
+   */
+  function setMarkingMode(mode: DateState): void {
+    if (!calendarManager) {
+      console.error('CalendarManager not available');
+      return;
+    }
+
+    const legend = document.getElementById('status-legend');
+    if (!legend) return;
+
+    legend.querySelectorAll('.legend-item').forEach((item) => {
+      const itemMode = item.getAttribute('data-mode') as DateState;
+      if (itemMode === mode) {
+        item.classList.add('is-active');
+      } else {
+        item.classList.remove('is-active');
+      }
+    });
+
+    // The actual painting mode is managed by datepainter's defaultState config
+    // We only update the UI to show which mode is active
+  }
+
+  /**
+   * Get calendar manager instance from window
+   * @returns The calendar manager instance or null if not initialized
+   */
+  const getCalendarManager = (): unknown | null => {
+    return (window as any).__datepainterInstance || null;
+  };
+
+  let calendarManager: unknown | null = null;
+
+  /**
+   * Initialize calendar manager with polling fallback
+   * Polls every 50ms until the datepainter instance is available on window
+   */
+  const initCalendarManager = (): void => {
+    calendarManager = getCalendarManager();
+    if (!calendarManager) {
+      setTimeout(initCalendarManager, 50);
+      return;
+    }
+  };
+
+  initCalendarManager();
+
   const legend = document.getElementById('status-legend');
 
   if (legend) {
-    // Subscribe to store updates
-    store.subscribe((state, _stats) => {
-      // Update active state
-      const currentMode = state.markingMode;
-      legend.querySelectorAll('.legend-item').forEach((item) => {
-        const mode = item.getAttribute('data-mode') as MarkingMode;
-        if (mode === currentMode) {
-          item.classList.add('is-active');
-        } else {
-          item.classList.remove('is-active');
-        }
-      });
-    });
-
-    // Handle click events
     legend.querySelectorAll('.legend-item').forEach((item) => {
       item.addEventListener('click', () => {
-        const mode = item.getAttribute('data-mode') as MarkingMode;
+        const mode = item.getAttribute('data-mode') as DateState;
         if (mode) {
           setMarkingMode(mode);
         }
       });
     });
 
-    // Handle keyboard shortcuts
     document.addEventListener('keydown', (e) => {
-      if (e.key === '1') setMarkingMode('oof' as MarkingMode);
-      if (e.key === '2') setMarkingMode('holiday' as MarkingMode);
-      if (e.key === '3') setMarkingMode('sick' as MarkingMode);
+      if (e.key === '1') setMarkingMode('oof');
+      if (e.key === '2') setMarkingMode('holiday');
+      if (e.key === '3') setMarkingMode('sick');
     });
+
+    setMarkingMode('oof');
   }
 </script>

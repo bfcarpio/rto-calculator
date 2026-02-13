@@ -56,8 +56,6 @@ interface ValidationOptions {
 	calendarEndDate?: Date;
 }
 
-type ScriptSelectedDay = SelectedDay & { type: string };
-
 const DEFAULT_MANAGER_CONFIG: ValidationConfig & {
 	validationMode: ValidationMode;
 } = {
@@ -71,7 +69,15 @@ const DEFAULT_MANAGER_CONFIG: ValidationConfig & {
 };
 
 /**
- * Validation Manager orchestrates validation strategies using the Strategy pattern.
+ * Validation Manager orchestrates validation strategies using the datepainter API.
+ *
+ * This class manages validation strategies and provides methods to validate
+ * calendar data. It uses the Strategy pattern to support multiple validation modes.
+ *
+ * @example
+ * // Get selected days from datepainter API via calendar-data-reader
+ * const calendarData = readCalendarData(calendarManager);
+ * const result = await validationManager.validate(calendarData.selectedDays, options);
  */
 export class ValidationManager {
 	private readonly strategies: Map<string, ManagedValidator> = new Map();
@@ -197,6 +203,19 @@ export class ValidationManager {
 
 	/**
 	 * Run validation using the active strategy.
+	 *
+	 * @param selectedDays - Array of selected days from datepainter API.
+	 *                      Use `readCalendarData(calendarManager)` to retrieve this.
+	 * @param options - Optional validation configuration and calendar date bounds
+	 * @returns Promise resolving to validation result
+	 *
+	 * @example
+	 * // Get selected days from datepainter API
+	 * const calendarData = readCalendarData(calendarManager);
+	 * const result = await validationManager.validate(
+	 *   calendarData.selectedDays,
+	 *   { config: { minOfficeDaysPerWeek: 3 } }
+	 * );
 	 */
 	async validate(
 		selectedDays: SelectedDay[],
@@ -305,35 +324,6 @@ export class ValidationManager {
 		if (options.config) {
 			this.updateConfig(options.config);
 		}
-	}
-
-	/**
-	 * Extract selected days from DOM.
-	 */
-	getSelectedDaysFromDOM(): ScriptSelectedDay[] {
-		const selectedCells = document.querySelectorAll<HTMLElement>(
-			".calendar-day.selected[data-year][data-month][data-day]",
-		);
-
-		const selectedDays: ScriptSelectedDay[] = [];
-		selectedCells.forEach((cell) => {
-			const year = Number.parseInt(cell.dataset.year ?? "", 10);
-			const month = Number.parseInt(cell.dataset.month ?? "", 10);
-			const day = Number.parseInt(cell.dataset.day ?? "", 10);
-			const selectionType = cell.dataset.selectionType;
-			const type: SelectedDay["type"] =
-				selectionType === "out-of-office" || selectionType === "none"
-					? selectionType
-					: "out-of-office";
-
-			if (Number.isNaN(year) || Number.isNaN(month) || Number.isNaN(day)) {
-				return;
-			}
-
-			selectedDays.push({ year, month, day, type });
-		});
-
-		return selectedDays;
 	}
 
 	private _notifyObservers(event: ValidationEvent): void {

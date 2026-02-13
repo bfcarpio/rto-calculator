@@ -6,11 +6,12 @@
  * library layers (data reader and orchestrator).
  *
  * Layer Architecture:
- * - Data extraction: src/lib/calendar-data-reader.ts (pure function, DOM reading)
+ * - Data extraction: src/lib/calendar-data-reader.ts (pure function, datepainter API)
  * - Validation orchestration: src/lib/validation/ValidationOrchestrator.ts (no DOM dependencies)
  * - UI integration: This file (only UI event handlers)
  */
 
+import type { CalendarInstance } from "../../packages/datepainter/src/types";
 import { readCalendarData } from "../lib/calendar-data-reader";
 import { DEFAULT_RTO_POLICY } from "../lib/validation/rto-core";
 import {
@@ -49,23 +50,64 @@ const ORCHESTRATOR_CONFIG: RTOOrchestratorConfig = {
 	DEBUG: false,
 };
 
+/** Global calendar manager instance - must be set before validation can run */
+let globalCalendarManager: CalendarInstance | null = null;
+
+/**
+ * Set the global calendar manager instance
+ * Must be called before running validation
+ *
+ * @param manager - CalendarInstance providing access to calendar state
+ * @throws {Error} If manager is null or undefined
+ */
+export function setCalendarManager(manager: CalendarInstance): void {
+	if (!manager) {
+		throw new Error("calendarManager is required");
+	}
+	globalCalendarManager = manager;
+	logger.info("[RTO Validation UI] Calendar manager set");
+}
+
+/**
+ * Get the global calendar manager instance
+ *
+ * @returns The current CalendarInstance or null if not set
+ */
+export function getCalendarManager(): CalendarInstance | null {
+	return globalCalendarManager;
+}
+
 // ==================== Main Validation Functions ====================
 
 /**
  * Run validation with real-time highlighting of evaluated weeks
  * Uses the layered architecture: data reader → orchestrator → UI update
+ *
+ * @throws {Error} If calendar manager is not set
  */
 export async function runValidationWithHighlights(): Promise<void> {
+	// Guard clause - ensure calendar manager is set
+	if (!globalCalendarManager) {
+		throw new Error(
+			"Calendar manager not set. Call setCalendarManager() before running validation.",
+		);
+	}
+
+	// Local variable with narrowed type (TypeScript doesn't narrow outer scope variables)
+	const calendarManager = globalCalendarManager;
+
 	try {
 		logger.info(
 			"[RTO Validation UI] ==================== Validation Started ====================",
 		);
 
-		// Step 1: Read DOM once into pure data structure (holiday-aware)
+		// Step 1: Read calendar data from datepainter API (holiday-aware)
 		logger.info(
-			"[RTO Validation UI] Step 1: Reading calendar data from DOM...",
+			"[RTO Validation UI] Step 1: Reading calendar data from datepainter API...",
 		);
-		const calendarData = await readCalendarData({ DEBUG: CONFIG.DEBUG });
+		const calendarData = await readCalendarData(calendarManager, {
+			DEBUG: CONFIG.DEBUG,
+		});
 
 		if (calendarData.totalWeeks === 0) {
 			logger.warn(

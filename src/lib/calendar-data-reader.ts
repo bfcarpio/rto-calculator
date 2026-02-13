@@ -1,12 +1,13 @@
 /**
  * Calendar Data Reader Layer
  *
- * Pure function layer that reads calendar data from DOM and returns typed data structures.
- * This is the only part of the validation system that has DOM dependencies.
+ * Pure function layer that reads calendar data from datepainter API and returns typed data structures.
+ * This layer extracts data from the calendar manager for validation and statistics.
  *
  * @module calendar-data-reader
  */
 
+import type { CalendarInstance } from "../../packages/datepainter/src/types";
 import { logger } from "../utils/logger";
 import { getHolidayDatesForValidation } from "./holiday/CalendarHolidayIntegration";
 import { RTO_CONFIG } from "./rto-config";
@@ -83,17 +84,25 @@ export interface CalendarDataResult {
 }
 
 /**
- * Read calendar data from DOM into pure data structure
+ * Read calendar data from datepainter API into pure data structure
  *
- * This function queries the DOM once and builds a complete data model.
+ * This function queries the calendar manager's internal state and builds a complete data model.
  * Integrates holiday dates to properly treat holidays as non-office days.
  *
+ * @param calendarManager - CalendarInstance providing access to calendar state
  * @param config - Configuration options for reading
  * @returns Promise resolving to calendar data result
+ * @throws {Error} If calendarManager is null or undefined
  */
 export async function readCalendarData(
+	calendarManager: CalendarInstance,
 	config: Partial<CalendarReaderConfig> = {},
 ): Promise<CalendarDataResult> {
+	// Guard clause - validate calendarManager
+	if (!calendarManager) {
+		throw new Error("calendarManager is required");
+	}
+
 	const mergedConfig = { ...DEFAULT_CALENDAR_READER_CONFIG, ...config };
 	const startTime = performance.now();
 
@@ -103,17 +112,15 @@ export async function readCalendarData(
 		Array.from(holidayDates).map((d: Date) => d.toDateString()),
 	);
 
-	// Find all calendar cells - single DOM query, excluding empty cells
-	const cells = document.querySelectorAll(
-		".calendar-day:not(.empty)[data-year][data-month][data-day]",
-	);
+	// Get all dates from calendar manager
+	const allDates = calendarManager.getAllDates();
 
 	// Query all status cells and build lookup map keyed by week start timestamp
 	const statusCellElements = document.querySelectorAll(
 		".week-status-cell[data-week-start]",
 	);
 	const statusCellMap = new Map<number, HTMLElement>();
-	for (const cell of statusCellElements) {
+	Array.from(statusCellElements).forEach((cell) => {
 		const element = cell as HTMLElement;
 		const weekStartAttr = element.dataset.weekStart;
 		if (!weekStartAttr) {
@@ -122,7 +129,7 @@ export async function readCalendarData(
 					"[Calendar Data Reader] Skipping status cell without week-start attribute",
 				);
 			}
-			continue;
+			return;
 		}
 
 		const weekStartTimestamp = parseInt(weekStartAttr, 10);
@@ -132,22 +139,39 @@ export async function readCalendarData(
 					"[Calendar Data Reader] Skipping status cell with invalid week-start timestamp",
 				);
 			}
-			continue;
+			return;
 		}
 
 		statusCellMap.set(weekStartTimestamp, element);
-	}
+	});
 
-	// Group cells by week - element references stored in DayInfo objects
+	// Group dates by week
 	const weekMap = new Map<number, DayInfo[]>();
 	const dayCountPerWeek = new Map<number, number>();
 
-	cells.forEach((cell) => {
-		const element = cell as HTMLElement;
-		const year = parseInt(element.dataset.year || "0", 10);
-		const month = parseInt(element.dataset.month || "0", 10);
-		const day = parseInt(element.dataset.day || "0", 10);
-		const date = new Date(year, month, day);
+	// Process all dates from calendar manager
+	Array.from(allDates.entries()).forEach(([dateString, state]) => {
+		// Parse date string (YYYY-MM-DD format)
+		const [year, month, day] = dateString.split("-").map(Number);
+
+		// Guard clause - validate parsed date parts
+		if (
+			year === undefined ||
+			month === undefined ||
+			day === undefined ||
+			Number.isNaN(year) ||
+			Number.isNaN(month) ||
+			Number.isNaN(day)
+		) {
+			if (mergedConfig.DEBUG) {
+				logger.debug(
+					`[Calendar Data Reader] Skipping invalid date string: ${dateString}`,
+				);
+			}
+			return;
+		}
+
+		const date = new Date(year, month - 1, day); // Month is 0-indexed
 
 		// Check if this is a weekday using library function
 		const weekday = isWeekday(date);
@@ -155,16 +179,14 @@ export async function readCalendarData(
 		// Check if this is a holiday (holidays are non-office days)
 		const isHoliday = holidaySet.has(date.toDateString());
 
-		// Check selection state
-		const isSelected = element.classList.contains("selected");
-		const selectionType = element.dataset.selectionType as
-			| "out-of-office"
-			| null;
+		// Get selection type from state
+		const selectionType = state === "oof" ? "out-of-office" : null;
+		const isSelected = state !== null && state !== undefined;
 
-		// Store element reference directly in DayInfo
+		// DayInfo no longer needs element reference (datepainter API handles updates)
 		const dayInfo: DayInfo = {
 			date,
-			element, // Direct DOM reference embedded in data structure
+			element: null, // No longer needed with datepainter API
 			isWeekday: weekday,
 			isSelected,
 			selectionType,

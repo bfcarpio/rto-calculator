@@ -1,5 +1,5 @@
 ---
-import AirDatepicker from "../components/AirDatepicker.astro";
+import Datepainter from "../components/Datepainter.astro";
 import HolidayCountrySelector from "../components/HolidayCountrySelector.astro";
 import MobileMenu from "../components/MobileMenu.astro";
 import PanelToggle from "../components/PanelToggle.astro";
@@ -74,7 +74,7 @@ const description =
 				<!-- Calendar Section -->
 				<section class="section py-4" id="calendar-container">
 					<div class="box">
-						<AirDatepicker />
+						<Datepainter />
 						<HolidayCountrySelector />
 						<div class="mt-4">
 							<StatusLegend />
@@ -100,7 +100,7 @@ const description =
 
 		<PanelToggle title="📅 Calendar" open={false}>
 			<div class="box" id="calendar-container-mobile">
-				<AirDatepicker />
+				<Datepainter />
 				<HolidayCountrySelector />
 				<div class="mt-4">
 					<StatusLegend />
@@ -205,16 +205,58 @@ const description =
 </style>
 
 <script>
-	import { initializeDateStore } from "../lib/dateStore";
-	initializeDateStore();
-
-	// Wire up settings button to open modal
+	/**
+	 * Wire up settings button to open modal
+	 */
 	const settingsButton = document.getElementById("settings-button");
 	const settingsDialog = document.getElementById("settings-dialog") as HTMLDialogElement | null;
-	
+
 	if (settingsButton && settingsDialog) {
 		settingsButton.addEventListener("click", () => {
 			settingsDialog.showModal();
 		});
 	}
+
+	/**
+	 * Initialize calendar manager reference for validation integration
+	 * This connects the Datepainter component with the RTO UI controller
+	 */
+	type CalendarInstance = {
+		getSelectedDates: () => Date[];
+		setSelectedDates: (dates: Date[]) => void;
+		markDate: (date: Date, type: string) => void;
+		unmarkDate: (date: Date) => void;
+	};
+
+	/**
+	 * Calendar manager reference used by validation logic
+	 * Gets initialized when Datepainter component mounts
+	 */
+	let calendarManager: CalendarInstance | null = null;
+
+	/**
+	 * Initialize calendar manager by retrieving the Datepainter instance
+	 * from the window object and connecting it to the RTO UI controller
+	 */
+	const initCalendarManager = (): void => {
+		const globalWindow = window as any;
+
+		// Guard clause: no instance available yet
+		if (!globalWindow.__datepainterInstance) {
+			return;
+		}
+
+		calendarManager = globalWindow.__datepainterInstance;
+
+		// Connect calendar manager to RTO UI controller if available
+		if (globalWindow.rtoUiController?.setCalendarManager) {
+			globalWindow.rtoUiController.setCalendarManager(calendarManager);
+		}
+	};
+
+	// Try to initialize immediately (synchronous case)
+	initCalendarManager();
+
+	// Also try after a short delay (for async initialization)
+	setTimeout(initCalendarManager, 100);
 </script>
