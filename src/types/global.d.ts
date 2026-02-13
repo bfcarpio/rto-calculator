@@ -25,34 +25,4 @@ declare global {
 	}
 }
 
-// Declare nager_date_api_reference module
-declare module "nager_date_api_reference" {
-	export class ApiClient {
-		constructor(baseUrl?: string);
-		static instance: ApiClient;
-	}
-
-	export class CountryApi {
-		constructor(apiClient?: ApiClient);
-		apiV3AvailableCountriesGet(
-			callback: (
-				error: Error | null,
-				data: Array<{ countryCode: string; name: string }> | undefined,
-			) => void,
-		): void;
-	}
-
-	export class PublicHolidayApi {
-		constructor(apiClient?: ApiClient);
-		apiV3PublicHolidaysYearCountryCodeGet(
-			year: number,
-			countryCode: string,
-			callback: (
-				error: Error | null,
-				data:
-					| Array<{ date: string; name: string; localName: string }>
-					| undefined,
-			) => void,
-		): void;
-	}
-}
+// nager_date_api_reference types are provided by the installed package
