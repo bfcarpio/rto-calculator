@@ -12,7 +12,7 @@
 // Generate unique ID for this instance to support multiple calendars per page
 const { id = `datepainter-container-${Math.random().toString(36).slice(2, 9)}` } = Astro.props;
 ---
-<div class="datepicker-container" id={id}>
+<div class="datepicker-container" id={id} data-container-id={id}>
   <!-- CalendarManager renders into this container -->
 </div>
 
@@ -74,7 +74,7 @@ const { id = `datepainter-container-${Math.random().toString(36).slice(2, 9)}` }
   }
 </style>
 
-<script define:vars={{ containerId: id }}>
+<script>
   // Import datepainter core and styles
   import { CalendarManager } from 'datepainter';
   import 'datepainter/styles/calendar.css';
@@ -94,8 +94,6 @@ const { id = `datepainter-container-${Math.random().toString(36).slice(2, 9)}` }
   if (!validationManager) {
     console.error('ValidationManager not available');
   }
-
-
 
   /**
    * Get the default configuration for date states
@@ -127,9 +125,6 @@ const { id = `datepainter-container-${Math.random().toString(36).slice(2, 9)}` }
 
   /**
    * Disable dates outside the allowed range
-   *
-   * @param container - The calendar container element
-   * @param dateRange - The date range object with startDate and endDate
    */
   const disableOutOfRangeDates = (
     container: HTMLElement,
@@ -151,8 +146,6 @@ const { id = `datepainter-container-${Math.random().toString(36).slice(2, 9)}` }
   /**
    * Add data-testid attributes to all calendar day cells
    * Required for E2E testing with Playwright
-   *
-   * @param container - The calendar container element
    */
   const addTestIdsToDayCells = (container: HTMLElement): void => {
     const dayCells = container.querySelectorAll<HTMLElement>('.datepainter__day');
@@ -182,17 +175,14 @@ const { id = `datepainter-container-${Math.random().toString(36).slice(2, 9)}` }
   /**
    * Initialize the calendar with CalendarManager
    *
-   * Sets up the calendar instance, attaches event listeners,
-   * and initializes keyboard shortcuts with undo/redo support.
-   *
-   * @throws {Error} If container not found
-   * @throws {Error} If ValidationManager not available
+   * Reads the container ID from the data-container-id attribute
+   * on the closest .datepicker-container element.
    */
   const initializeCalendar = (): void => {
-    // Guard clause: ensure DOM is ready
-    const container = document.getElementById(containerId);
-    if (!container) {
-      throw new Error(`Datepainter container not found: ${containerId}`);
+    // Find the container by querying for our data attribute
+    const containerEl = document.querySelector<HTMLElement>('.datepicker-container[data-container-id]');
+    if (!containerEl) {
+      throw new Error('Datepainter container not found');
     }
 
     // Guard clause: ensure ValidationManager is available
@@ -204,7 +194,7 @@ const { id = `datepainter-container-${Math.random().toString(36).slice(2, 9)}` }
     const dateRange = getDateRange();
 
     // Create CalendarManager with configuration matching requirements
-    const calendarManager = new CalendarManager(container, {
+    const calendarManager = new CalendarManager(containerEl, {
       dateRange: {
         start: dateRange.startDate,
         end: dateRange.endDate,
@@ -230,10 +220,10 @@ const { id = `datepainter-container-${Math.random().toString(36).slice(2, 9)}` }
     (window as any).__datepainterInstance = calendarManager;
 
     // Add data-testid attributes to day cells after initialization
-    addTestIdsToDayCells(container);
+    addTestIdsToDayCells(containerEl);
 
     // Disable dates outside the range
-    disableOutOfRangeDates(container, dateRange);
+    disableOutOfRangeDates(containerEl, dateRange);
 
     // Initialize HistoryManager with max stack of 10
     const historyManager = new HistoryManager(10);
@@ -254,11 +244,11 @@ const { id = `datepainter-container-${Math.random().toString(36).slice(2, 9)}` }
 
     // Mutation observer to add data-testid and disable dates on new cells (after month navigation)
     const observer = new MutationObserver(() => {
-      addTestIdsToDayCells(container);
-      disableOutOfRangeDates(container, dateRange);
+      addTestIdsToDayCells(containerEl);
+      disableOutOfRangeDates(containerEl, dateRange);
     });
 
-    observer.observe(container, {
+    observer.observe(containerEl, {
       childList: true,
       subtree: true,
     });

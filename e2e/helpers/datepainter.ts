@@ -259,7 +259,7 @@ export async function navigateToMonth(
 
 		// Parse current month/year to determine direction
 		const match = currentLabel.match(/(\w+)\s+(\d{4})/);
-		if (!match) break;
+		if (!match || !match[1] || !match[2]) break;
 		const currentMonthIdx = monthNames.indexOf(match[1]);
 		const currentYear = parseInt(match[2], 10);
 		const currentTotal = currentYear * 12 + currentMonthIdx;

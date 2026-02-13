@@ -304,8 +304,6 @@ export async function applyWeekdayPattern(
 	const cellCount = await allCells.count();
 
 	let weeksConfigured = 0;
-	const today = new Date();
-	const startDate = new Date(today.getFullYear(), today.getMonth(), 1); // Start of current month
 
 	// Click cells matching the pattern for specified number of weeks
 	for (let i = 0; i < cellCount && weeksConfigured < weeks; i++) {
