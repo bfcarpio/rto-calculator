@@ -179,6 +179,22 @@ Required: 3 days (60%)
 ```
 **Action**: Mark at least one day as out-of-office, then run validation.
 
+### Capacity Card
+
+The **Capacity** card on the right panel shows:
+
+- **Buffer** — How many of your best weeks meet the 3-day minimum
+- **You can take** — Number of full WFH weeks you can afford without breaking compliance
+- **Next available** — The earliest future week you can safely take as full WFH
+
+**How "Next available" works:**
+
+The calculator checks every sliding window across your calendar — not just the one currently displayed. A future week is only recommended if zeroing it out would not cause a violation in *any* window.
+
+Specifically, the algorithm identifies which weeks are actively contributing to compliance (appearing in the "best K" of at least one 12-week window). Any future compliant week that is NOT contributing to any window is safe to take off. The earliest such week is shown as "Next available."
+
+If no safe week exists or you are currently non-compliant, the field shows a dash (—).
+
 ---
 
 ## Clearing Data

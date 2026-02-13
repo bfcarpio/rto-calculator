@@ -132,6 +132,46 @@ The validation system uses a single **sliding window** approach implemented as a
 | **validateSlidingWindow()** | Pure function: best-8-of-12 rolling window compliance check | `src/lib/validation/rto-core.ts` |
 | **constants** | ROLLING_WINDOW_WEEKS, BEST_WEEKS_COUNT, COMPLIANCE_THRESHOLD, etc. | `src/lib/validation/constants.ts` |
 | **ValidationManager** | Simplified client-side config holder (exposed as `window.validationManager`) | `src/scripts/ValidationManager.ts` |
+| **buildEvaluatedSet()** | Identifies weeks contributing to compliance across all windows | `src/lib/auto-compliance.ts` |
+| **findNextSafeWfhWeek()** | Finds earliest future week safe for full WFH | `src/lib/auto-compliance.ts` |
+
+### Evaluated Set Algorithm (Next Safe WFH Week)
+
+The "Next available WFH week" feature uses an **evaluated set** algorithm to determine which future weeks can safely be taken as full WFH without breaking compliance in any sliding window.
+
+**Problem**: A week may appear in up to W sliding windows (where W = rolling period, typically 12). Simply checking the display window misses windows earlier in the calendar where removing a week could cause a violation.
+
+**Key insight**: A week is safe to zero out if and only if it is NOT in the best-K of ANY sliding window containing it. If it's already dropped (outside the best-K) in every window, zeroing it changes nothing — compliance is unaffected.
+
+**Algorithm** (`buildEvaluatedSet`):
+
+```
+1. Convert all calendar weeks to compliance format
+2. For each sliding window position [start .. start+W]:
+   a. Sort window weeks by officeDays DESC, weekStart DESC (tiebreak)
+   b. Take the top-K weeks (the "best" weeks the validator evaluates)
+   c. Add their timestamps to a Set<number>
+3. Return the set of all "evaluated" week timestamps
+```
+
+```
+findNextSafeWfhWeek:
+1. Gate: if not currently compliant → return null
+2. Build the evaluated set
+3. Find the first future week where:
+   - officeDays >= REQUIRED_OFFICE_DAYS (currently compliant)
+   - timestamp NOT in the evaluated set (safe to zero out)
+4. Return earliest match, or null
+```
+
+**Sort contract**: The sort in `buildEvaluatedSet` must match `evaluateWindow` in `rto-core.ts`:
+```typescript
+(a, b) => b.officeDays - a.officeDays || b.weekStart.getTime() - a.weekStart.getTime()
+```
+
+**Complexity**: O((N−W+1) × W log W) — same cost as validation itself. For a 12-month calendar (~52 weeks, W=12, K=8): ~41 windows × 12 × log(12) ≈ 1,700 comparisons. Completes in <1ms.
+
+**Trade-off**: This is intentionally conservative. A week that appears in some window's best-K might theoretically still be removable if its replacement keeps the average up. But for a user-facing suggestion, conservative is correct — we never recommend removing a week that's actively contributing to compliance in any window.
 
 ---
 

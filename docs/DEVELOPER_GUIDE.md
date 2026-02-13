@@ -94,6 +94,7 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed explanation.
 - Computes best-8-of-12 sliding window stats excluding current incomplete week
 - Dispatches `compliance-updated` CustomEvent consumed by StatusDetails
 - Loading bar at top of viewport shows progress during debounce
+- `buildEvaluatedSet()` — single-pass helper that collects timestamps of weeks appearing in the best-K of any sliding window into a `Set<number>`. Used by `findNextSafeWfhWeek()` to identify weeks safe to zero out without breaking compliance in any window. See ARCHITECTURE.md "Evaluated Set Algorithm" for full details.
 
 **Reactive Components** (consume `compliance-updated` events):
 - **StatusDetails** - Week summary, capacity, current week, non-compliant weeks (with ignored/dropped distinction)
