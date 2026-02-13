@@ -114,7 +114,6 @@ const clearButtonId = `clear-${year}-${month}`;
                         // Check if this row has any valid days
                         for (let colIndex = 0; colIndex < cols; colIndex++) {
                             const cellIndex = rowIndex * cols + colIndex;
-                            const dayNumber = cellIndex - offset + 1;
 
                             if (
                                 cellIndex >= offset &&
@@ -129,28 +128,23 @@ const clearButtonId = `clear-${year}-${month}`;
                         // Calculate the first valid day in this row
                         let weekStartStr = "";
 
-                        // Find the Monday of this week row for unique week numbering
-                        for (let colIndex = 0; colIndex < cols; colIndex++) {
-                            const cellIndex = rowIndex * cols + colIndex;
-                            const dayNumber = cellIndex - offset + 1;
+                        // Find the Monday of this week row
+                        // Each row represents exactly one week (Sunday-Saturday) in the calendar grid
+                        // The first day of this row is at column offset + rowIndex * cols
+                        // We need to map this to the Monday-Friday week used by validation
+                        const firstDayOfRow = 1 - offset + rowIndex * cols;
+                        const firstDateOfRow = new Date(year, month, firstDayOfRow);
 
-                            if (
-                                cellIndex >= offset &&
-                                cellIndex < offset + daysInMonth
-                            ) {
-                                // Find the Monday of this week row
-                                const rowDate = new Date(year, month, dayNumber);
-                                const dayOfWeek = rowDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
-                                const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Subtract to get to Monday
-                                const mondayDate = new Date(rowDate);
-                                mondayDate.setDate(
-                                    rowDate.getDate() - daysToSubtract,
-                                );
-                                mondayDate.setHours(0, 0, 0, 0);
-                                weekStartStr = mondayDate.getTime().toString();
-                                break;
-                            }
-                        }
+                        // The firstDateOfRow is always a Sunday (column 0 of the calendar grid)
+                        // We need to find the Monday of that week for the validation system
+                        // If it's Sunday (day 0), add 1 day to get Monday
+                        // If it's Monday (day 1), it's already Monday (shouldn't happen)
+                        const mondayDate = new Date(firstDateOfRow);
+                        const dayOfWeek = firstDateOfRow.getDay();
+                        const daysToAdd = dayOfWeek === 0 ? 1 : dayOfWeek === 1 ? 0 : 8 - dayOfWeek;
+                        mondayDate.setDate(firstDateOfRow.getDate() + daysToAdd);
+                        mondayDate.setHours(0, 0, 0, 0);
+                        weekStartStr = mondayDate.getTime().toString();
 
                         return (
                         <tr role="row" class="calendar-week">

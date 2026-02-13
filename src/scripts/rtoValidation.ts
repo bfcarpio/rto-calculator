@@ -175,6 +175,7 @@ function readCalendarData(): WeekInfo[] {
     const weekStart = new Date(weekKey);
 
     // Find status cell for this week (single DOM query per week)
+    // Find status cell for this week (single DOM query per week)
     // Convert weekKey to string for reliable matching
     const statusCell = document.querySelector(
       `.week-status-cell[data-week-start="${String(weekKey)}"] .week-status-container`,
@@ -764,7 +765,7 @@ export function initializeApp(): void {
 
       const selectedCells = document.querySelectorAll(".calendar-day.selected");
       if (selectedCells.length === 0) {
-        alert("No selections to clear");
+        // No selections to clear - silently return
         return;
       }
 
@@ -775,7 +776,7 @@ export function initializeApp(): void {
 
       clearAllValidationHighlights();
 
-      alert(`Cleared ${selectedCells.length} selection(s)`);
+      // Removed alert popup for better UX
       buttonElement.focus();
     });
 
