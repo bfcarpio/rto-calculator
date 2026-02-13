@@ -65,6 +65,10 @@ body.dark-mode {
 	font-weight: 600;
 }
 
+.air-datepicker.-compact- .air-datepicker-body--day-name {
+	font-size: 0.6rem;
+}
+
 /* Dot indicators */
 .adp-cell-dot {
 	position: absolute;
