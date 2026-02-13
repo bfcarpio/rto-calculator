@@ -10,6 +10,10 @@ import {
 	MINIMUM_COMPLIANT_DAYS,
 	ROLLING_WINDOW_WEEKS,
 } from "./validation/constants";
+import {
+	DEFAULT_RTO_POLICY,
+	type RTOPolicyConfig,
+} from "./validation/rto-core";
 
 export const SETTINGS_KEY = "rto-calculator-settings";
 
@@ -64,6 +68,16 @@ export function readSettings(): AppSettings {
 	} catch {
 		return { ...DEFAULTS };
 	}
+}
+
+/** Build RTOPolicyConfig from current user settings */
+export function buildPolicyFromSettings(): RTOPolicyConfig {
+	const settings = readSettings();
+	return {
+		...DEFAULT_RTO_POLICY,
+		rollingPeriodWeeks: settings.rollingWindowWeeks,
+		topWeeksToCheck: settings.bestWeeksCount,
+	};
 }
 
 /** Merge partial update into stored settings */

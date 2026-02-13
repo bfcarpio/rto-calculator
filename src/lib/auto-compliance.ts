@@ -14,10 +14,10 @@ import {
 	readCalendarData,
 	type WeekInfo,
 } from "./calendar-data-reader";
-import { readSettings } from "./settings-reader";
+import { buildPolicyFromSettings, readSettings } from "./settings-reader";
 import { REQUIRED_OFFICE_DAYS } from "./validation/constants";
 import {
-	DEFAULT_RTO_POLICY,
+	evaluateSingleWindow,
 	type RTOPolicyConfig,
 	type SlidingWindowResult,
 	validateSlidingWindow,
@@ -103,9 +103,6 @@ function setComputingState(active: boolean): void {
  * Build a set of week timestamps that appear in the best-K of at least one
  * sliding window. A week NOT in this set is safe to zero out — it's already
  * dropped in every window that contains it.
- *
- * Sort contract must match rto-core.ts evaluateWindow:
- *   b.officeDays - a.officeDays || b.weekStart.getTime() - a.weekStart.getTime()
  */
 function buildEvaluatedSet(
 	allWeeks: WeekInfo[],
@@ -113,16 +110,10 @@ function buildEvaluatedSet(
 ): Set<number> {
 	const evaluated = new Set<number>();
 	const W = policy.rollingPeriodWeeks;
-	const K = policy.topWeeksToCheck;
 	const weeks = convertWeeksToCompliance(allWeeks);
 
 	if (weeks.length < W) {
-		const sorted = [...weeks].sort(
-			(a, b) =>
-				b.officeDays - a.officeDays ||
-				b.weekStart.getTime() - a.weekStart.getTime(),
-		);
-		for (const w of sorted.slice(0, K)) {
+		for (const w of evaluateSingleWindow(weeks, policy).bestWeeks) {
 			evaluated.add(w.weekStart.getTime());
 		}
 		return evaluated;
@@ -130,12 +121,7 @@ function buildEvaluatedSet(
 
 	for (let start = 0; start <= weeks.length - W; start++) {
 		const windowWeeks = weeks.slice(start, start + W);
-		const sorted = [...windowWeeks].sort(
-			(a, b) =>
-				b.officeDays - a.officeDays ||
-				b.weekStart.getTime() - a.weekStart.getTime(),
-		);
-		for (const w of sorted.slice(0, K)) {
+		for (const w of evaluateSingleWindow(windowWeeks, policy).bestWeeks) {
 			evaluated.add(w.weekStart.getTime());
 		}
 	}
@@ -190,11 +176,7 @@ function computeComplianceData(allWeeks: WeekInfo[]): ComplianceEventData {
 
 	// Build dynamic policy from user settings
 	const settings = readSettings();
-	const policy: RTOPolicyConfig = {
-		...DEFAULT_RTO_POLICY,
-		rollingPeriodWeeks: settings.rollingWindowWeeks,
-		topWeeksToCheck: settings.bestWeeksCount,
-	};
+	const policy = buildPolicyFromSettings();
 
 	// Trim weeks to starting week if configured
 	let weeks = allWeeks;

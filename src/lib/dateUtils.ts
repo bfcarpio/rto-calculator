@@ -195,3 +195,30 @@ export function getTotalDaysInRange(range: DateRange): number {
 export function getWeeksCount(): number {
 	return WEEKS_BACK + WEEKS_FORWARD + 1;
 }
+
+// ─── Display Formatting ─────────────────────────────────────────
+
+const MONTH_ABBRS = [
+	"Jan",
+	"Feb",
+	"Mar",
+	"Apr",
+	"May",
+	"Jun",
+	"Jul",
+	"Aug",
+	"Sep",
+	"Oct",
+	"Nov",
+	"Dec",
+];
+
+/** Format as "Jan 6, 2025" */
+export function fmtDate(d: Date): string {
+	return `${MONTH_ABBRS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+}
+
+/** Format as "Jan 6" (no year) */
+export function fmtShort(d: Date): string {
+	return `${MONTH_ABBRS[d.getMonth()]} ${d.getDate()}`;
+}
