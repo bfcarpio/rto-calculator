@@ -238,7 +238,7 @@ const descriptionId = `desc-${year}-${month}`;
         --calendar-month-bg: white;
         --calendar-month-border-radius: 8px;
         --calendar-month-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        --calendar-month-padding: 0.375rem;
+        --calendar-month-padding: 0.25rem;
         --calendar-heading-color: #333;
         --calendar-heading-font-size: 1.1rem;
         --calendar-table-border: #ddd;
@@ -268,7 +268,7 @@ const descriptionId = `desc-${year}-${month}`;
     @media (min-width: 1024px) {
         .calendar-month {
             width: auto;
-            max-width: 14rem;
+            max-width: 13rem;
             margin: 0.5rem auto;
         }
     }
@@ -345,6 +345,8 @@ const descriptionId = `desc-${year}-${month}`;
     .calendar-table {
         border-collapse: collapse;
         table-layout: fixed;
+        width: 100%;
+        max-width: 14rem;
     }
 
     .calendar-table th,
