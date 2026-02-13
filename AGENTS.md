@@ -1,103 +1,408 @@
 # Agent Guidelines for RTO Calculator
-You are a senior software engineer. Writing readable maintable code and fixing or preventing bugs brings you closer to receiving a performance bonus.
 
-Write code that follows the conventions of the project's tool stack.
+## Role
+You are a senior software engineer focused on writing maintainable, bug-free code.
 
-Write brief and consise text with minimal code output in the chat.
+## Core Principles
+1. Write brief, concise responses with minimal code output in chat
+2. Follow the project's existing conventions and tool stack
+3. Prefer TypeScript over JavaScript always
 
-Before making commits make sure that the changes pass lints, checks, and tests to ensure there are no regressions and continual code quality. Update tests as needed if the new result is the intended one.
+## CRITICAL RULES
 
-Prefer Typescript files to Javascript files.
+### DO NOT
+- ❌ **NEVER run `npm run dev`** - Use `scripts/start-playwright-server.sh` and Playwright MCP instead
+- ❌ Do not use `any` type - Use `unknown` with type guards
+- ❌ Do not use wildcard imports - Use explicit imports: `import { Thing } from './path'`
+- ❌ Do not nest deeply - Use early returns and guard clauses
+- ❌ Do not optimize prematurely - Prioritize clarity over performance
+- ❌ Do not commit without verification - Always run lints, checks, and tests first
 
-## Build / Lint / Test Commands
+### DO
+- ✅ Use TypeScript for all new/modified files
+- ✅ Add explicit return types to public functions
+- ✅ Throw descriptive errors with context
+- ✅ Write tests for all changes
+- ✅ Update documentation when changing behavior
 
-Never ever run `npm run dev` to start a dev server. Use `scripts/start-playwright-server.sh` and the playwright mcp to navigate the website.
+## Development Workflow
+
+Follow this exact sequence for every change:
+
+1. **Implement** - Make the code changes
+2. **Report** - Provide a brief summary of what changed and why
+3. **Test** - Update or add tests to cover the changes
+4. **Document** - Update relevant documentation (README, ARCHITECTURE, etc.)
+5. **Verify** - Run all quality checks:
+   ```bash
+   npm run check        # Lint + type check
+   npm run test:run     # Unit tests
+   npm run test:e2e     # E2E tests
+   ```
+6. **Commit** - Create focused, atomic commits with clear messages
+
+**Critical:** Steps 3 (Test) and 4 (Document) MUST happen before commits.
+
+## Documentation Reference
+
+Read these before making significant changes:
+- **[docs/README.md](./docs/README.md)** - Documentation index
+- **[docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)** - System architecture and data flow
+- **[docs/DEVELOPER_GUIDE.md](./docs/DEVELOPER_GUIDE.md)** - Development workflows
+- **[docs/PlaywrightTesting.md](./docs/PlaywrightTesting.md)** - E2E testing guide
+
+## Commands Reference
 
 ```bash
-# Development
-npm run build           # Build for production (runs type check + build)
+# Build & Preview
+npm run build           # Build for production (type check + build)
 npm run preview         # Preview production build
 
-# Testing (Unit)
+# Unit Testing
 npm test                # Run tests in watch mode
-npm run test:run        # Run tests once (CI)
+npm run test:run        # Run tests once (CI mode)
 npm run test:ui         # Run tests with UI
-# Run single test: npm test -- src/lib/__tests__/specific.test.ts
+npm test -- path/to/specific.test.ts  # Run single test
 
 # E2E Testing (Playwright)
 npm run test:e2e              # Run all E2E tests (Firefox desktop)
-npm run test:e2e:ui           # Open Playwright UI mode for debugging
-npm run test:e2e:debug        # Run with step-through debugger
-npm run test:e2e:raw         # Run without server management
-npm run test:e2e:server       # Start preview server only
-npm run test:e2e:mobile       # Run mobile viewport tests
-npm run test:e2e:desktop      # Run desktop viewport tests
-npm run test:e2e:report      # Open HTML test report
-# See docs/PlaywrightTesting.md for detailed guide
+npm run test:e2e:ui           # Open Playwright UI mode
+npm run test:e2e:debug        # Step-through debugger
+npm run test:e2e:mobile       # Mobile viewport tests
+npm run test:e2e:desktop      # Desktop viewport tests
+npm run test:e2e:report       # View HTML test report
 
-# Linting & Formatting
+# Quality Checks
 npm run lint            # Check linting
-npm run lint:fix        # Fix linting issues
-npm run format          # Format code
+npm run lint:fix        # Auto-fix linting issues
+npm run format          # Format code with Prettier
 npm run check           # Run all checks (lint + types)
 ```
 
-## Code Style Guidelines
+## NPM Workspaces
 
-### 1. The 5 Laws of Elegant Defense
-- **Early Exit:** Handle edge cases at the top with guard clauses. No deep nesting.
-- **Parse, Don't Validate:** Parse inputs at boundaries. Internal logic trusts typed data.
-- **Atomic Predictability:** Functions should be pure. Same input = same output.
-- **Fail Fast, Fail Loud:** Invalid states throw descriptive errors immediately.
-- **Intentional Naming:** Names should read like English. `isUserEligible` not `check()`.
+This project uses npm workspaces to manage multiple packages in the `packages/` directory:
+- **datepainter** - Calendar component package
+- **nager.date** - Holiday API client package
 
-### 2. TypeScript
-- Prefer TypeScript over JavaScript. Convert JS files when modifying.
-- Use explicit return types on public functions.
-- Avoid `any`. Use `unknown` with type guards when type is uncertain.
-- Enable strict mode features. No implicit returns.
+### Workspace Commands
 
-### 3. Naming Conventions
-- **Files:** PascalCase for classes (`ValidationStrategy.ts`), camelCase for utilities (`dateUtils.ts`)
-- **Classes:** PascalCase (`ValidationStrategy`, `HolidayManager`)
-- **Functions:** camelCase, descriptive (`getWeekCompliance`, `calculateOfficeDays`)
-- **Constants:** UPPER_SNAKE_CASE for true constants
-- **Interfaces:** PascalCase with descriptive names (`ValidationResult`, `WeekCompliance`)
+```bash
+# Run scripts in specific workspace
+npm run dev --workspace=datepainter        # Run dev in datepainter
+npm run dev --workspace=nager-date         # Run dev in nager.date
+npm run dev:datepainter                    # Shorthand for datepainter dev
+npm run dev:nager                          # Shorthand for nager dev
 
-### 4. Imports & Exports
-- Use explicit imports: `import { Thing } from './path'` not `import * as ...`
-- Export named exports for multiple items, default export for main class
-- Order imports: external libraries → internal types → internal modules
-- Group by: Astro imports → utility imports → component imports
+# Run scripts across all workspaces
+npm run build --workspaces --if-present    # Build all packages that have build script
+npm run build:all                          # Shorthand for building all
+npm run clean:all                          # Clean all workspaces + root node_modules
+npm run install:all                        # Install dependencies in all workspaces
 
-### 5. Project Structure
-- `src/components/` - Astro UI components
-- `src/lib/validation/` - Validation strategy pattern implementations
-- `src/lib/holiday/` - Holiday management logic
-- `src/scripts/` - Client-side DOM integration scripts
-- `src/types/` - TypeScript type definitions
-- `src/utils/` - Utility functions
+# Install dependencies in workspaces
+npm install <package> --workspace=datepainter     # Add dep to specific workspace
+npm install <package> --workspace=nager-date      # Add dep to nager.date
+npm install <package> --workspaces                # Add dep to all workspaces
+npm install                                       # Install all workspace dependencies
 
-### 6. Error Handling
-- Throw descriptive errors with context: `throw new Error('Week start not initialized')`
-- Use guard clauses to fail fast, not try-catch for expected failures
-- Log debug info only when `config.debug` is enabled
+# Run commands in workspace directories
+npm run test --workspace=datepainter       # Run tests in datepainter
+npm run lint --workspace=datepainter       # Lint datepainter
 
-### 7. Testing
-- Co-locate tests with source: `src/lib/__tests__/Module.test.ts`
-- Use descriptive test names: `should return compliant when office days >= 3`
-- Mock external dependencies (API calls, DOM)
-- Test edge cases: empty inputs, null values, boundary conditions
+# List workspaces
+npm list --workspaces                      # List all workspaces
+```
 
-### 8. Performance
-- Avoid premature optimization. Clarity first.
-- Remove unused caches. Simple computation > cached complexity.
-- Use Web Workers only for truly CPU-intensive tasks (>50ms blocking).
+### When to Use Workspace Commands
 
-## Key Patterns
+**Use workspace-specific commands when:**
+- ✅ Developing or testing a specific package in isolation
+- ✅ Adding dependencies to a specific package
+- ✅ Running package-specific scripts
 
-**Strategy Pattern:** Use for validation modes. Base class in `ValidationStrategy.ts`, concrete implementations in `StrictDayCountValidator.ts` and `AverageWindowValidator.ts`.
+**Use root commands when:**
+- ✅ Running application-wide tests (E2E tests)
+- ✅ Building the entire application
+- ✅ Linting/formatting the entire codebase
+- ✅ Running the main Astro application
 
-**Factory Pattern:** Use `ValidationFactory.ts` to instantiate correct validator by mode.
+**Important:** Dependencies for workspace packages should be added using `--workspace=<name>`, not by directly modifying package.json files.
 
-**Singleton:** Use for managers (HolidayManager) with `getInstance()` method.
+## Code Style Rules
+
+### The 5 Laws of Elegant Defense
+
+Apply these principles to all code:
+
+1. **Early Exit** - Handle edge cases at the top with guard clauses
+   ```typescript
+   // ✅ Good
+   function process(data: Data | null) {
+     if (!data) return null;
+     if (!data.isValid) return null;
+     return transform(data);
+   }
+
+   // ❌ Bad
+   function process(data: Data | null) {
+     if (data) {
+       if (data.isValid) {
+         return transform(data);
+       }
+     }
+     return null;
+   }
+   ```
+
+2. **Parse, Don't Validate** - Parse inputs at boundaries, trust typed data internally
+   ```typescript
+   // ✅ Good - Parse once at boundary
+   function handleInput(raw: unknown): Result {
+     const validated = parseInput(raw); // Returns typed data or throws
+     return processValidData(validated); // Trusts the type
+   }
+
+   // ❌ Bad - Validate repeatedly
+   function handleInput(raw: any): Result {
+     if (isValid(raw)) {
+       if (hasProperty(raw)) {
+         return process(raw);
+       }
+     }
+   }
+   ```
+
+3. **Atomic Predictability** - Pure functions: same input = same output
+   ```typescript
+   // ✅ Good - Pure function
+   function calculateDays(start: Date, end: Date): number {
+     return differenceInDays(end, start);
+   }
+
+   // ❌ Bad - Depends on external state
+   function calculateDays(): number {
+     return differenceInDays(this.endDate, this.startDate);
+   }
+   ```
+
+4. **Fail Fast, Fail Loud** - Throw descriptive errors immediately for invalid states
+   ```typescript
+   // ✅ Good
+   if (!weekStart) {
+     throw new Error('Week start not initialized. Call setWeekStart() first.');
+   }
+
+   // ❌ Bad
+   if (!weekStart) {
+     console.log('no week start');
+     return;
+   }
+   ```
+
+5. **Intentional Naming** - Names read like English sentences
+   ```typescript
+   // ✅ Good
+   isUserEligible()
+   calculateOfficeDays()
+   getWeekCompliance()
+
+   // ❌ Bad
+   check()
+   calc()
+   get()
+   ```
+
+### TypeScript Rules
+
+```typescript
+// ✅ DO: Explicit return types on public functions
+export function calculateDays(start: Date, end: Date): number {
+  return differenceInDays(end, start);
+}
+
+// ✅ DO: Use unknown with type guards instead of any
+function process(data: unknown): string {
+  if (typeof data !== 'string') {
+    throw new Error('Expected string');
+  }
+  return data.toUpperCase();
+}
+
+// ❌ DON'T: Implicit return types
+export function calculateDays(start: Date, end: Date) {
+  return differenceInDays(end, start);
+}
+
+// ❌ DON'T: Use any
+function process(data: any): string {
+  return data.toUpperCase();
+}
+```
+
+### Naming Conventions
+
+| Type | Convention | Examples |
+|------|-----------|----------|
+| **Files (classes)** | PascalCase | `ValidationStrategy.ts`, `HolidayManager.ts` |
+| **Files (utilities)** | camelCase | `dateUtils.ts`, `formatters.ts` |
+| **Classes** | PascalCase | `ValidationStrategy`, `HolidayManager` |
+| **Functions** | camelCase | `getWeekCompliance`, `calculateOfficeDays` |
+| **Constants** | UPPER_SNAKE_CASE | `MAX_DAYS`, `DEFAULT_CONFIG` |
+| **Interfaces** | PascalCase | `ValidationResult`, `WeekCompliance` |
+
+### Import/Export Rules
+
+```typescript
+// ✅ DO: Explicit named imports
+import { ValidationStrategy } from './ValidationStrategy';
+import { formatDate, parseDate } from './dateUtils';
+
+// ✅ DO: Order imports logically
+import { Component } from 'astro:components';  // External libs
+import type { ValidationResult } from './types';  // Types
+import { ValidationFactory } from './validation';  // Internal modules
+
+// ✅ DO: Named exports for utilities, default for main class
+export class ValidationStrategy { }  // default
+export { helper1, helper2 };  // named
+
+// ❌ DON'T: Wildcard imports
+import * as utils from './dateUtils';
+```
+
+### Error Handling
+
+```typescript
+// ✅ DO: Descriptive errors with context
+if (!weekStart) {
+  throw new Error('Week start not initialized. Call setWeekStart() before validation.');
+}
+
+// ✅ DO: Guard clauses for expected failures
+function validate(data: Data | null): ValidationResult {
+  if (!data) return { valid: false, reason: 'No data provided' };
+  if (!data.startDate) return { valid: false, reason: 'Missing start date' };
+  // ... continue with valid data
+}
+
+// ✅ DO: Conditional logging
+if (config.debug) {
+  console.log('Validation result:', result);
+}
+
+// ❌ DON'T: Generic errors
+throw new Error('Invalid');
+
+// ❌ DON'T: Try-catch for expected failures
+try {
+  const result = validate(data);
+} catch (e) {
+  return null;
+}
+```
+
+### Testing Guidelines
+
+```typescript
+// ✅ DO: Co-locate tests with source
+// src/lib/validation/ValidationStrategy.ts
+// src/lib/validation/__tests__/ValidationStrategy.test.ts
+
+// ✅ DO: Descriptive test names
+test('should return compliant when office days >= 3', () => {
+  const result = validator.validate(threeOfficeDays);
+  expect(result.compliant).toBe(true);
+});
+
+// ✅ DO: Test edge cases
+test('should handle null input gracefully', () => {
+  expect(() => validator.validate(null)).toThrow();
+});
+
+test('should handle empty array', () => {
+  expect(validator.validate([])).toEqual({ compliant: true, violations: [] });
+});
+
+// ✅ DO: Mock external dependencies
+const mockApi = vi.fn().mockResolvedValue(mockData);
+```
+
+## Project Structure
+
+```
+src/
+├── components/          # Astro UI components
+├── lib/
+│   ├── validation/     # Validation strategy implementations
+│   ├── holiday/        # Holiday management logic
+│   └── __tests__/      # Tests co-located with source
+├── scripts/            # Client-side DOM integration
+├── types/              # TypeScript type definitions
+└── utils/              # Utility functions
+```
+
+## Architecture Patterns
+
+### Strategy Pattern
+Use for validation modes. Define base class, extend for concrete implementations.
+
+```typescript
+// Base: src/lib/validation/ValidationStrategy.ts
+// Implementations: StrictDayCountValidator.ts, AverageWindowValidator.ts
+```
+
+### Factory Pattern
+Use for instantiating correct validator by mode.
+
+```typescript
+// ValidationFactory.ts
+export class ValidationFactory {
+  static create(mode: ValidationMode): ValidationStrategy {
+    switch (mode) {
+      case 'strict': return new StrictDayCountValidator();
+      case 'average': return new AverageWindowValidator();
+    }
+  }
+}
+```
+
+### Singleton Pattern
+Use for stateful managers with `getInstance()` method.
+
+```typescript
+// HolidayManager.ts
+export class HolidayManager {
+  private static instance: HolidayManager;
+
+  static getInstance(): HolidayManager {
+    if (!HolidayManager.instance) {
+      HolidayManager.instance = new HolidayManager();
+    }
+    return HolidayManager.instance;
+  }
+}
+```
+
+## Performance Guidelines
+
+1. **Clarity First** - Write clear code, optimize only when profiling shows need
+2. **Remove Unused Complexity** - Delete unused caches and optimizations
+3. **Web Workers** - Only for CPU-intensive tasks blocking >50ms
+
+```typescript
+// ✅ Good - Clear and simple
+function calculateTotal(items: Item[]): number {
+  return items.reduce((sum, item) => sum + item.price, 0);
+}
+
+// ❌ Bad - Premature optimization
+const cache = new Map();
+function calculateTotal(items: Item[]): number {
+  const key = JSON.stringify(items);
+  if (cache.has(key)) return cache.get(key);
+  const total = items.reduce((sum, item) => sum + item.price, 0);
+  cache.set(key, total);
+  return total;
+}
+```
