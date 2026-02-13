@@ -58,6 +58,8 @@ const _buttons: ButtonConfig[] = [
     ))}
 </div>
 
+<div id="validation-message" class="validation-message"></div>
+
 <style>
     .action-buttons {
         display: flex;
@@ -215,6 +217,43 @@ const _buttons: ButtonConfig[] = [
         .button {
             border: 2px solid currentColor;
         }
+    }
+
+    .validation-message {
+        display: none;
+        text-align: center;
+        padding: 0.75rem 1rem;
+        border-radius: 6px;
+        font-weight: 600;
+        margin-top: 0.75rem;
+    }
+
+    .validation-message.success {
+        display: block;
+        background-color: #f0fdf4;
+        color: #166534;
+        border: 1px solid #bbf7d0;
+    }
+
+    .validation-message.error {
+        display: block;
+        background-color: #fef2f2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+    }
+
+    .validation-message.warning {
+        display: block;
+        background-color: #fffbeb;
+        color: #92400e;
+        border: 1px solid #fde68a;
+    }
+
+    .validation-message.centered-message {
+        display: block;
+        background-color: #f0f9ff;
+        color: #1e40af;
+        border: 1px solid #bfdbfe;
     }
 </style>
 

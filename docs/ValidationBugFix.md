@@ -193,36 +193,41 @@ export function orchestrateValidation(
 
 ### 2. Data Reader Individual Compliance
 
-**File:** `src/lib/calendar-data-reader.ts` (lines 200-267)
+**File:** `src/lib/calendar-data-reader.ts`
 
-Individual week compliance is calculated during data reading:
+The data reader now enumerates ALL Monday-aligned weeks in the calendar range (not just painted dates). For each Mon-Fri, it checks the datepainter state lookup and holiday set. It also respects the `sickDaysPenalize` setting from localStorage:
 
 ```typescript
-// In readCalendarData() function
-for (const weekStartTimestamp of sortedWeekStarts) {
-  // ... gather day info ...
-  
-  // Calculate week statistics
-  const weekdayDays = days.filter((d) => d.isWeekday);
-  const holidayDays = days.filter((d) => d.isHoliday && d.isWeekday);
-  totalHolidayDays += holidayDays.length;
-  
-  const oofCount = days.filter(
-    (d) => d.selectionType === "out-of-office" && d.isWeekday && !d.isHoliday,
-  ).length;
+// In readCalendarData() — iterates ALL weeks in the calendar range
+while (weekStart <= range.endDate) {
+  // Check each Mon-Fri against datepainter state lookup
+  for (let i = 0; i < 5; i++) {
+    const date = new Date(weekStart);
+    date.setDate(weekStart.getDate() + i);
+    const state = dateStateLookup.get(dateKey) ?? null;
+    const isHoliday = holidaySet.has(date.toDateString()) || state === "holiday";
 
-  // Office days = weekdays that are not OOF and not holidays
-  const officeDays = weekdayDays.length - holidayDays.length - oofCount;
-  const totalEffectiveDays = weekdayDays.length - holidayDays.length;
-  
-  // Individual compliance check - set in Data Reader layer
+    if (isHoliday) holidayCount++;
+    else if (state === "oof") oofCount++;
+    else if (state === "sick") sickCount++;
+  }
+
+  // Office days = 5 - deductions (sick included if sickDaysPenalize is true)
+  if (sickDaysPenalize) {
+    officeDays = 5 - holidayCount - oofCount - sickCount;
+  } else {
+    officeDays = 5 - holidayCount - oofCount;
+  }
+
   const isCompliant = officeDays >= mergedConfig.minOfficeDaysPerWeek;
 
   const weekInfo: WeekInfo = {
-    weekStart,
+    weekStart: new Date(weekStart),
     weekNumber: weeks.length + 1,
     days,
     oofCount,
+    holidayCount,
+    sickCount,
     officeDays,
     totalDays: totalEffectiveDays,
     oofDays: oofCount,
@@ -231,7 +236,6 @@ for (const weekStartTimestamp of sortedWeekStarts) {
     status: isCompliant ? "compliant" : "invalid",
     statusCellElement,
   };
-
   weeks.push(weekInfo);
 }
 ```

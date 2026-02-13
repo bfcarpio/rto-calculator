@@ -172,51 +172,5 @@ export function clearAllValidationHighlightsUI(): void {
 	clearAllValidationHighlights();
 }
 
-// ==================== Event Listeners ====================
-
-/**
- * Attach event listeners to validate buttons (wait for DOM if needed)
- */
-function attachValidateButtonListeners(): void {
-	const validateButtons = document.querySelectorAll('[id^="validate-button-"]');
-	logger.info(
-		`[RTO Validation UI] Found ${validateButtons.length} validate button(s)`,
-	);
-
-	validateButtons.forEach((button) => {
-		const buttonElement = button as HTMLElement;
-		buttonElement.addEventListener("click", () => {
-			logger.debug("[RTO Validation UI] Validate button clicked");
-			runValidationWithHighlights();
-		});
-		logger.debug(
-			`[RTO Validation UI] Attached click listener to validate button: ${buttonElement.id}`,
-		);
-	});
-}
-
-// Attach event listeners to validate buttons (wait for DOM if needed)
-if (document.readyState === "loading") {
-	document.addEventListener("DOMContentLoaded", attachValidateButtonListeners);
-} else {
-	attachValidateButtonListeners();
-}
-
-// Expose validation functions to window for global access
-if (typeof window !== "undefined") {
-	(
-		window as {
-			rtoValidation?: {
-				clearAllValidationHighlights(): void;
-				runValidationWithHighlights(): void;
-			};
-		}
-	).rtoValidation = {
-		clearAllValidationHighlights: clearAllValidationHighlightsUI,
-		runValidationWithHighlights,
-	};
-}
-
-if (CONFIG.DEBUG) {
-	logger.debug("[RTO Validation UI] Attached validate button event listeners");
-}
+// Note: Validation button listeners are handled in ActionButtons.astro
+// This module only exports functions for external callers

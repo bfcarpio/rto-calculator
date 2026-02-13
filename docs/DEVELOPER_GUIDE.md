@@ -62,14 +62,16 @@ npm run check           # All checks (lint + types)
 ### 3-Layer Validation Flow
 
 ```
-UI Controller (rto-ui-controller.ts)
+UI Controller (ActionButtons.astro / rto-ui-controller.ts)
     ↓ triggers
 Data Reader (calendar-data-reader.ts)
-    ↓ reads datepainter API
+    ↓ enumerates ALL weeks in range, reads datepainter API
 Orchestrator (ValidationOrchestrator.ts)
     ↓ coordinates validation
 Strategy (StrictDayCountValidator / AverageWindowValidator)
 ```
+
+**Data Reader key behavior**: Iterates through every Monday-aligned week in the calendar range (not just painted dates). For each Mon-Fri, checks the datepainter state and holiday set. Calculates `officeDays = 5 - holidayCount - oofCount` (minus `sickCount` if `sickDaysPenalize` is enabled in settings).
 
 See [ARCHITECTURE.md](./ARCHITECTURE.md#the-3-layer-validation-flow) for detailed explanation.
 
@@ -87,7 +89,12 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md#the-3-layer-validation-flow) for detaile
 **State Management**:
 - **datepainter** - Primary calendar state via `window.__datepainterInstance`
 - **HistoryManager** - Undo/redo functionality with state snapshots
-- **localStorage** - Persists user settings
+- **localStorage** - Persists user settings (including `sickDaysPenalize`)
+
+**Reactive Components** (subscribe to `onStateChange`):
+- **SummaryBar** - Average in-office, working days, OOF/holiday counts
+- **StatusDetails** - Week summary, capacity, current week, non-compliant weeks
+- **StatusLegend** - Count badges for OOF/holiday/sick
 
 ---
 
@@ -493,6 +500,9 @@ error('[MyModule] Error message');        // Always shown
 window.validationManager.validate(selectedDays, options);
 window.__getHolidayManager().getHolidayDates(2025, 'US');
 window.__datepainterInstance.getAllDates();
+
+// Check sick day policy setting
+JSON.parse(localStorage.getItem('rto-calculator-settings'))?.sickDaysPenalize;
 ```
 
 ---

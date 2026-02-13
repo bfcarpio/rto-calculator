@@ -23,7 +23,8 @@ The validation system is organized into three distinct layers, each with specifi
 ```
 ┌──────────────────────────────────────────────────────────────────┐
 │                         UI Controller Layer                       │
-│                     (src/scripts/rto-ui-controller.ts)           │
+│              (src/components/ActionButtons.astro +                │
+│               src/scripts/rto-ui-controller.ts)                  │
 │                                                                   │
 │  Responsibilities:                                                │
 │  - Handle user interactions (click events)                        │
@@ -38,9 +39,11 @@ The validation system is organized into three distinct layers, each with specifi
 │                   (src/lib/calendar-data-reader.ts)              │
 │                                                                   │
 │  Responsibilities:                                                │
-│  - Single DOM query to read calendar state                        │
+│  - Enumerate ALL weeks in the calendar range                      │
 │  - Extract selections via datepainter API                         │
 │  - Query holidays from HolidayManager                             │
+│  - Calculate officeDays = 5 - holidays - OOF (- sick)             │
+│  - Respect sickDaysPenalize setting from localStorage             │
 │  - Return typed data structures (DayInfo, WeekInfo)               │
 │  - Only layer with DOM access                                     │
 └───────────────────────────────┬──────────────────────────────────┘
@@ -74,9 +77,10 @@ User clicks "Validate" button
         ▼
 ┌───────────────┐
 │  Data Reader  │  Step 2: Read calendar state via datepainter API
-│ (calendar-    │  - Query all dates from datepainter
-│ data-reader)  │  - Fetch holidays from HolidayManager
-│               │  - Return WeekInfo[]
+│ (calendar-    │  - Enumerate ALL weeks in calendar range
+│ data-reader)  │  - Check each weekday against datepainter state
+│               │  - Fetch holidays from HolidayManager
+│               │  - Return WeekInfo[] (officeDays = 5 - deductions)
 └───────┬───────┘
         │
         ▼
@@ -273,6 +277,7 @@ Manages state snapshots for undo functionality.
 - Selected company name
 - Holiday preferences
 - Validation mode
+- Sick day policy (`sickDaysPenalize` - whether sick days count against compliance)
 - User settings
 
 **Managed by:** `src/scripts/localStorage.ts`
@@ -448,8 +453,11 @@ interface WeekInfo {
   weekNumber: number;                 // Sequential (1, 2, 3...)
   days: DayInfo[];                    // Days in this week
   oofCount: number;                   // Out-of-office days
-  officeDays: number;                 // Calculated office days
-  totalDays: number;                  // Effective weekdays (excluding holidays)
+  holidayCount: number;               // Holiday days in this week
+  sickCount: number;                  // Sick days in this week
+  officeDays: number;                 // Calculated: 5 - holidays - OOF (- sick if penalizing)
+  totalDays: number;                  // Effective weekdays (excluding holidays/sick)
+  oofDays: number;                    // Alias for oofCount
   isCompliant: boolean;               // Meets 3-day minimum?
   isUnderEvaluation: boolean;         // In 12-week window?
   status: WeekStatus;                 // "compliant" | "invalid" | "pending" | "excluded" | "ignored"
@@ -524,14 +532,21 @@ interface Holiday {
 - Persists selection to localStorage
 
 #### `components/SettingsModal.astro`
-- Settings dialog for validation mode, holidays, etc.
+- Settings dialog for validation mode, holidays, sick day policy, etc.
 - Pattern presets (Mon-Wed-Fri, Tue-Thu, All WFH)
+- Sick day policy toggle (`sickDaysPenalize`) — controls whether sick days reduce office count
 - Configuration management
 
 #### `components/StatusDetails.astro`
-- Week-by-week status visualization
-- Shows compliance indicators (✓, ✗, ⏳, empty)
-- ISO 8601 week numbers
+- Reactive client-side component (subscribes to `onStateChange`)
+- Week summary, capacity, current week status, non-compliant weeks
+- Respects `sickDaysPenalize` setting from localStorage
+- Updates in real-time as dates are painted
+
+#### `components/SummaryBar.astro`
+- Reactive client-side component (subscribes to `onStateChange`)
+- Average in-office days, working days, OOF count, holiday count
+- Updates in real-time as dates are painted
 
 ---
 
@@ -667,7 +682,6 @@ See [AGENTS.md](../AGENTS.md) for build/test commands.
 2. **Single User**: No multi-user or collaboration features
 3. **Fixed 12-Month View**: Cannot navigate to different years
 4. **Client-Side Validation**: All validation runs in browser
-5. **dateStore Legacy**: `StatusDetails.astro` still uses the dateStore stub
 
 ---
 

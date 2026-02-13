@@ -1,11 +1,6 @@
 ---
 // SummaryBar.astro - Display compliance metrics
-// Placeholder data - real data integration comes in later phases
-
-const _averageDays = 3.2;
-const _workingDays = 45;
-const _oofDays = 12;
-const _holidayDays = 4;
+// Reactive client-side component that reads from datepainter API
 ---
 
 <section class="hero is-light summary-bar" aria-labelledby="summary-heading">
@@ -14,7 +9,7 @@ const _holidayDays = 4;
 			<!-- Left Column: Compliance Status -->
 			<div class="column">
 				<h2 id="summary-heading" class="title is-5 mb-2">
-					Average In-Office: <span class="has-text-weight-bold has-text-primary">{_averageDays}</span>/5 days
+					Average In-Office: <span id="summary-average" class="has-text-weight-bold has-text-primary">0</span>/5 days
 				</h2>
 				<p class="subtitle is-7 mb-0">
 					Based on your tracked attendance
@@ -25,13 +20,13 @@ const _holidayDays = 4;
 			<div class="column is-narrow">
 				<div class="tags has-addons is-flex-direction-column is-align-items-flex-end">
 					<div class="tag is-info is-light mb-2">
-						<span class="has-text-weight-semibold">Working:</span>&nbsp;{_workingDays} days
+						<span class="has-text-weight-semibold">Working:</span>&nbsp;<span id="summary-working">0</span> days
 					</div>
 					<div class="tag is-warning is-light mb-2">
-						<span class="has-text-weight-semibold">OOF:</span>&nbsp;{_oofDays} days
+						<span class="has-text-weight-semibold">OOF:</span>&nbsp;<span id="summary-oof">0</span> days
 					</div>
 					<div class="tag is-light">
-						<span class="has-text-weight-semibold">Holiday:</span>&nbsp;{_holidayDays} days
+						<span class="has-text-weight-semibold">Holiday:</span>&nbsp;<span id="summary-holiday">0</span> days
 					</div>
 				</div>
 			</div>
@@ -75,3 +70,69 @@ const _holidayDays = 4;
 		}
 	}
 </style>
+
+<script>
+	import type { CalendarInstance } from 'datepainter';
+	import { addDays, startOfWeek } from 'date-fns';
+	import { getDateRange } from '../lib/dateUtils';
+
+	function updateSummary(): void {
+		const calendarManager = (window as any).__datepainterInstance as CalendarInstance | null;
+		if (!calendarManager) return;
+
+		const allDates = calendarManager.getAllDates();
+		const range = getDateRange();
+
+		// Count states from painted dates
+		let oofCount = 0;
+		let holidayCount = 0;
+		let sickCount = 0;
+		for (const [, state] of allDates) {
+			if (state === 'oof') oofCount++;
+			else if (state === 'holiday') holidayCount++;
+			else if (state === 'sick') sickCount++;
+		}
+
+		// Count total weeks in range (Monday-aligned)
+		let totalWeeks = 0;
+		let weekStart = startOfWeek(range.startDate, { weekStartsOn: 1 });
+		if (weekStart < range.startDate) {
+			weekStart = addDays(weekStart, 7);
+		}
+		while (weekStart <= range.endDate) {
+			totalWeeks++;
+			weekStart = addDays(weekStart, 7);
+		}
+
+		const totalWeekdays = totalWeeks * 5;
+		const workingDays = totalWeekdays - oofCount - holidayCount - sickCount;
+		const avg = totalWeeks > 0 ? workingDays / totalWeeks : 0;
+
+		// Update DOM
+		const elAvg = document.getElementById('summary-average');
+		const elWorking = document.getElementById('summary-working');
+		const elOof = document.getElementById('summary-oof');
+		const elHoliday = document.getElementById('summary-holiday');
+
+		if (elAvg) elAvg.textContent = avg.toFixed(1);
+		if (elWorking) elWorking.textContent = String(workingDays);
+		if (elOof) elOof.textContent = String(oofCount);
+		if (elHoliday) elHoliday.textContent = String(holidayCount);
+	}
+
+	function init(): void {
+		const calendarManager = (window as any).__datepainterInstance as CalendarInstance | null;
+		if (calendarManager) {
+			updateSummary();
+			calendarManager.onStateChange(() => updateSummary());
+		} else {
+			setTimeout(init, 200);
+		}
+	}
+
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', init);
+	} else {
+		init();
+	}
+</script>

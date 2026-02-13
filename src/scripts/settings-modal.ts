@@ -10,6 +10,7 @@ interface Settings {
 	defaultPattern: number[] | null;
 	holidays: { countryCode: string | null; holidaysAsOOF: boolean };
 	validationMode: "strict" | "average";
+	sickDaysPenalize: boolean;
 }
 
 declare global {
@@ -43,6 +44,7 @@ class SettingsModal {
 	private patternStatus: HTMLElement | null = null;
 	private selectedPattern: number[] = [];
 	private holidayOofToggle: HTMLButtonElement | null = null;
+	private sickPenalizeToggle: HTMLButtonElement | null = null;
 	private validationModeStrictButton: HTMLButtonElement | null = null;
 	private validationModeAverageButton: HTMLButtonElement | null = null;
 
@@ -89,6 +91,9 @@ class SettingsModal {
 		this.patternStatus = document.getElementById("pattern-status");
 		this.holidayOofToggle = document.getElementById(
 			"holiday-oof-toggle",
+		) as HTMLButtonElement | null;
+		this.sickPenalizeToggle = document.getElementById(
+			"sick-penalize-toggle",
 		) as HTMLButtonElement | null;
 		this.validationModeStrictButton = document.getElementById(
 			"validation-mode-strict",
@@ -145,6 +150,9 @@ class SettingsModal {
 		this.holidayOofToggle?.addEventListener("click", () =>
 			this.toggleHolidayOofMode(),
 		);
+		this.sickPenalizeToggle?.addEventListener("click", () =>
+			this.toggleSickPenalize(),
+		);
 		this.validationModeStrictButton?.addEventListener("click", () =>
 			this.setValidationMode("strict"),
 		);
@@ -190,6 +198,20 @@ class SettingsModal {
 				bubbles: true,
 				detail: { holidays: { holidaysAsOOF: newState } },
 			}),
+		);
+	}
+
+	private toggleSickPenalize(): void {
+		if (!this.sickPenalizeToggle) return;
+		const currentState =
+			this.sickPenalizeToggle.getAttribute("aria-checked") === "true";
+		const newState = !currentState;
+		this.sickPenalizeToggle.setAttribute("aria-checked", newState.toString());
+
+		// Persist immediately so calendar-data-reader and StatusDetails can read it
+		this.saveSettingsToLocalStorage();
+		debugLog(
+			`[Settings] Sick days penalize ${newState ? "enabled" : "disabled"}`,
 		);
 	}
 
@@ -318,6 +340,8 @@ class SettingsModal {
 				detail: { holidays: { holidaysAsOOF: true } },
 			}),
 		);
+
+		this.sickPenalizeToggle?.setAttribute("aria-checked", "true");
 
 		this.validationModeStrictButton?.setAttribute("aria-pressed", "true");
 		this.validationModeAverageButton?.setAttribute("aria-pressed", "false");
@@ -467,6 +491,8 @@ class SettingsModal {
 				this.validationModeStrictButton?.getAttribute("aria-pressed") === "true"
 					? "strict"
 					: "average",
+			sickDaysPenalize:
+				this.sickPenalizeToggle?.getAttribute("aria-checked") !== "false",
 		};
 
 		localStorage.setItem("rto-calculator-settings", JSON.stringify(settings));
@@ -539,6 +565,13 @@ class SettingsModal {
 							holidays: { holidaysAsOOF: settings.holidays.holidaysAsOOF },
 						},
 					}),
+				);
+			}
+
+			if (settings.sickDaysPenalize !== undefined && this.sickPenalizeToggle) {
+				this.sickPenalizeToggle.setAttribute(
+					"aria-checked",
+					settings.sickDaysPenalize.toString(),
 				);
 			}
 

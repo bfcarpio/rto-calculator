@@ -9,6 +9,7 @@
 
 import type { CalendarInstance } from "../../packages/datepainter/src/types";
 import { logger } from "../utils/logger";
+import { getDateRange } from "./dateUtils";
 import { getHolidayDatesForValidation } from "./holiday/CalendarHolidayIntegration";
 import { RTO_CONFIG } from "./rto-config";
 import { getStartOfWeek, isWeekday } from "./validation/rto-core";
@@ -46,6 +47,8 @@ export interface WeekInfo {
 	weekNumber: number;
 	days: DayInfo[];
 	oofCount: number;
+	holidayCount: number;
+	sickCount: number;
 	officeDays: number;
 	totalDays: number;
 	oofDays: number;
@@ -84,9 +87,24 @@ export interface CalendarDataResult {
 }
 
 /**
+ * Read the sickDaysPenalize setting from localStorage
+ */
+function getSickDaysPenalizeSetting(): boolean {
+	try {
+		const saved = localStorage.getItem("rto-calculator-settings");
+		if (!saved) return true; // default: sick days penalize
+		const settings = JSON.parse(saved);
+		return settings.sickDaysPenalize !== false; // default true
+	} catch {
+		return true;
+	}
+}
+
+/**
  * Read calendar data from datepainter API into pure data structure
  *
  * This function queries the calendar manager's internal state and builds a complete data model.
+ * Iterates through ALL weeks in the calendar range, not just painted dates.
  * Integrates holiday dates to properly treat holidays as non-office days.
  *
  * @param calendarManager - CalendarInstance providing access to calendar state
@@ -112,8 +130,15 @@ export async function readCalendarData(
 		Array.from(holidayDates).map((d: Date) => d.toDateString()),
 	);
 
-	// Get all dates from calendar manager
+	// Build lookup map from datepainter state: dateString -> DateState
 	const allDates = calendarManager.getAllDates();
+	const dateStateLookup = new Map<string, string>();
+	for (const [dateString, state] of allDates) {
+		dateStateLookup.set(dateString, state);
+	}
+
+	// Get the full calendar range
+	const range = getDateRange();
 
 	// Query all status cells and build lookup map keyed by week start timestamp
 	const statusCellElements = document.querySelectorAll(
@@ -123,151 +148,125 @@ export async function readCalendarData(
 	Array.from(statusCellElements).forEach((cell) => {
 		const element = cell as HTMLElement;
 		const weekStartAttr = element.dataset.weekStart;
-		if (!weekStartAttr) {
-			if (mergedConfig.DEBUG) {
-				logger.debug(
-					"[Calendar Data Reader] Skipping status cell without week-start attribute",
-				);
-			}
-			return;
-		}
+		if (!weekStartAttr) return;
 
 		const weekStartTimestamp = parseInt(weekStartAttr, 10);
-		if (Number.isNaN(weekStartTimestamp)) {
-			if (mergedConfig.DEBUG) {
-				logger.debug(
-					"[Calendar Data Reader] Skipping status cell with invalid week-start timestamp",
-				);
-			}
-			return;
-		}
+		if (Number.isNaN(weekStartTimestamp)) return;
 
 		statusCellMap.set(weekStartTimestamp, element);
 	});
 
-	// Group dates by week
-	const weekMap = new Map<number, DayInfo[]>();
-	const dayCountPerWeek = new Map<number, number>();
+	// Read sick-penalize setting
+	const sickDaysPenalize = getSickDaysPenalizeSetting();
 
-	// Process all dates from calendar manager
-	Array.from(allDates.entries()).forEach(([dateString, state]) => {
-		// Parse date string (YYYY-MM-DD format)
-		const [year, month, day] = dateString.split("-").map(Number);
-
-		// Guard clause - validate parsed date parts
-		if (
-			year === undefined ||
-			month === undefined ||
-			day === undefined ||
-			Number.isNaN(year) ||
-			Number.isNaN(month) ||
-			Number.isNaN(day)
-		) {
-			if (mergedConfig.DEBUG) {
-				logger.debug(
-					`[Calendar Data Reader] Skipping invalid date string: ${dateString}`,
-				);
-			}
-			return;
-		}
-
-		const date = new Date(year, month - 1, day); // Month is 0-indexed
-
-		// Check if this is a weekday using library function
-		const weekday = isWeekday(date);
-
-		// Check if this is a holiday (holidays are non-office days)
-		const isHoliday = holidaySet.has(date.toDateString());
-
-		// Get selection type from state
-		const selectionType = state === "oof" ? "out-of-office" : null;
-		const isSelected = state !== null && state !== undefined;
-
-		// DayInfo no longer needs element reference (datepainter API handles updates)
-		const dayInfo: DayInfo = {
-			date,
-			element: null, // No longer needed with datepainter API
-			isWeekday: weekday,
-			isSelected,
-			selectionType,
-			isHoliday,
-		};
-
-		// Group by week start using library function
-		const weekStart = getStartOfWeek(date);
-		const weekKey = weekStart.getTime();
-
-		if (!weekMap.has(weekKey)) {
-			// Preallocate array for weekdays (typical work week)
-			weekMap.set(weekKey, new Array<DayInfo>(WEEKDAY_COUNT));
-			dayCountPerWeek.set(weekKey, 0);
-		}
-		const weekDays = weekMap.get(weekKey);
-		const currentCount = dayCountPerWeek.get(weekKey);
-		if (!weekDays || currentCount === undefined) {
-			throw new Error(
-				`Week data not found for week key: ${weekKey}. ` +
-					"This should never happen after initialization.",
-			);
-		}
-		weekDays[currentCount] = dayInfo;
-		dayCountPerWeek.set(weekKey, currentCount + 1);
-	});
-
-	// Convert map to sorted array of WeekInfo
-	const sortedWeekStarts = Array.from(weekMap.keys()).sort((a, b) => a - b);
-
-	// Build weeks array with holiday-aware statistics
+	// Iterate through ALL Monday-aligned weeks in the calendar range
 	const weeks: WeekInfo[] = [];
-	let totalHolidayDays = 0; // Track total holidays across all weeks
+	let totalHolidayDays = 0;
 
-	for (const weekStartTimestamp of sortedWeekStarts) {
-		const weekStart = new Date(weekStartTimestamp);
-		const weekDays = weekMap.get(weekStartTimestamp);
-		const actualDayCount = dayCountPerWeek.get(weekStartTimestamp);
+	// Start from the first Monday on or after the range start
+	let weekStart = getStartOfWeek(range.startDate);
+	// If weekStart is before range start, advance to next Monday
+	if (weekStart < range.startDate) {
+		weekStart = new Date(weekStart);
+		weekStart.setDate(weekStart.getDate() + 7);
+	}
 
-		if (!weekDays || actualDayCount === undefined) {
-			throw new Error(
-				`Week data not found for timestamp: ${weekStartTimestamp}. ` +
-					"This should never happen for a sorted week key.",
-			);
+	while (weekStart <= range.endDate) {
+		const days: DayInfo[] = [];
+		let oofCount = 0;
+		let holidayCount = 0;
+		let sickCount = 0;
+
+		// Check each Mon-Fri in this week
+		for (let i = 0; i < WEEKDAY_COUNT; i++) {
+			const date = new Date(weekStart);
+			date.setDate(weekStart.getDate() + i);
+
+			// Skip days beyond the range
+			if (date > range.endDate) break;
+
+			const weekday = isWeekday(date);
+			if (!weekday) continue;
+
+			// Format as YYYY-MM-DD to match datepainter keys
+			const year = date.getFullYear();
+			const month = String(date.getMonth() + 1).padStart(2, "0");
+			const day = String(date.getDate()).padStart(2, "0");
+			const dateKey = `${year}-${month}-${day}`;
+
+			const state = dateStateLookup.get(dateKey) ?? null;
+			const isHoliday =
+				holidaySet.has(date.toDateString()) || state === "holiday";
+
+			const selectionType = state === "oof" ? "out-of-office" : null;
+			const isSelected = state !== null;
+
+			const dayInfo: DayInfo = {
+				date,
+				element: null,
+				isWeekday: weekday,
+				isSelected,
+				selectionType,
+				isHoliday,
+			};
+
+			days.push(dayInfo);
+
+			// Count deductions (don't double-count holiday+painted)
+			if (isHoliday) {
+				holidayCount++;
+			} else if (state === "oof") {
+				oofCount++;
+			} else if (state === "sick") {
+				sickCount++;
+			}
 		}
 
-		// Trim to actual day count (handles partial weeks)
-		const days = weekDays.slice(0, actualDayCount);
+		if (days.length > 0) {
+			totalHolidayDays += holidayCount;
 
-		// Calculate week statistics (holidays are not counted as WFH or office)
-		const weekdayDays = days.filter((d) => d.isWeekday);
-		const holidayDays = days.filter((d) => d.isHoliday && d.isWeekday);
-		totalHolidayDays += holidayDays.length;
-		const oofCount = days.filter(
-			(d) => d.selectionType === "out-of-office" && d.isWeekday && !d.isHoliday,
-		).length;
+			// Office days = weekdays that are not OOF, not holidays, and (if penalizing) not sick
+			let officeDays: number;
+			let totalEffectiveDays: number;
 
-		// Office days = weekdays that are not OOF and not holidays
-		const officeDays = weekdayDays.length - holidayDays.length - oofCount;
+			if (sickDaysPenalize) {
+				// Sick days reduce office days (like OOF)
+				officeDays = WEEKDAY_COUNT - holidayCount - oofCount - sickCount;
+				totalEffectiveDays = WEEKDAY_COUNT - holidayCount;
+			} else {
+				// Sick days reduce effective total (don't penalize)
+				officeDays = WEEKDAY_COUNT - holidayCount - oofCount;
+				totalEffectiveDays = WEEKDAY_COUNT - holidayCount - sickCount;
+			}
 
-		const totalEffectiveDays = weekdayDays.length - holidayDays.length;
-		const isCompliant = officeDays >= mergedConfig.minOfficeDaysPerWeek;
+			const isCompliant = officeDays >= mergedConfig.minOfficeDaysPerWeek;
 
-		// Look up status cell element for this week
-		const statusCellElement = statusCellMap.get(weekStartTimestamp) ?? null;
+			// Look up status cell element for this week
+			const weekKey = weekStart.getTime();
+			const statusCellElement = statusCellMap.get(weekKey) ?? null;
 
-		const weekInfo: WeekInfo = {
-			weekStart,
-			weekNumber: weeks.length + 1,
-			days,
-			oofCount,
-			officeDays,
-			totalDays: totalEffectiveDays,
-			oofDays: oofCount,
-			isCompliant,
-			isUnderEvaluation: true,
-			status: isCompliant ? "compliant" : "invalid",
-			statusCellElement,
-		};
+			const weekInfo: WeekInfo = {
+				weekStart: new Date(weekStart),
+				weekNumber: weeks.length + 1,
+				days,
+				oofCount,
+				holidayCount,
+				sickCount,
+				officeDays,
+				totalDays: totalEffectiveDays,
+				oofDays: oofCount,
+				isCompliant,
+				isUnderEvaluation: true,
+				status: isCompliant ? "compliant" : "invalid",
+				statusCellElement,
+			};
 
-		weeks.push(weekInfo);
+			weeks.push(weekInfo);
+		}
+
+		// Advance to next Monday
+		weekStart = new Date(weekStart);
+		weekStart.setDate(weekStart.getDate() + 7);
 	}
 
 	const readTimeMs = performance.now() - startTime;

@@ -1,129 +1,10 @@
 ---
 // StatusDetails.astro - Display compliance status, capacity, and non-compliant weeks
-// Uses real data from dateStore and validation utilities
+// Dynamic client-side component that reads from datepainter API
 
-import { getDateStore } from "../lib/dateStore";
-import type { WeekData } from "../types";
-import { getStartOfWeek, getWeekDates } from "../utils/dateUtils";
-import { DEFAULT_POLICY, validateWeek } from "../utils/validation";
-
-const store = getDateStore();
-const allMarkedDates = store.getAllMarkedDates();
-const selectedDatesSet = new Set(allMarkedDates.map((d) => d.date));
-const dateRange = store.getDateRange();
-
-// Configuration
-const TARGET_DAYS_PER_WEEK = DEFAULT_POLICY.minOfficeDaysPerWeek;
+const TARGET_DAYS_PER_WEEK = 3;
 const MAX_DAYS_PER_WEEK = 5;
 const BEST_WEEKS_REQUIRED = 8;
-
-// Get all weeks in the date range
-function getAllWeeksInRange(dateRange: {
-	startDate: Date;
-	endDate: Date;
-}): WeekData[] {
-	const weeks: WeekData[] = [];
-	let currentWeekStart = getStartOfWeek(dateRange.startDate);
-
-	while (currentWeekStart <= dateRange.endDate) {
-		const weekDates = getWeekDates(currentWeekStart);
-		// Only include weeks that have weekdays in our range
-		const hasRelevantDays = weekDates.some(
-			(d) => d >= dateRange.startDate && d <= dateRange.endDate,
-		);
-		if (hasRelevantDays) {
-			const weekData = validateWeek(
-				weekDates,
-				selectedDatesSet,
-				TARGET_DAYS_PER_WEEK,
-			);
-			weeks.push(weekData);
-		}
-		// Step 3: Window is invalid - mark lowest week
-		currentWeekStart = new Date(
-			currentWeekStart.getTime() + 7 * 24 * 60 * 60 * 1000,
-		);
-	}
-
-	return weeks;
-}
-
-// Calculate statistics
-const allWeeks = getAllWeeksInRange(dateRange);
-const compliantWeeks = allWeeks.filter(
-	(w) => w.officeDays >= TARGET_DAYS_PER_WEEK,
-);
-const totalBestWeeks = allWeeks.length;
-const bestWeeks = compliantWeeks.length;
-
-// Average days per week
-const totalOfficeDays = allWeeks.reduce(
-	(sum: number, w: WeekData) => sum + w.officeDays,
-	0,
-);
-const averageDays: number =
-	allWeeks.length > 0 ? totalOfficeDays / allWeeks.length : 0;
-const averageDaysFormatted: string = averageDays.toFixed(1);
-
-// Capacity calculation
-const goodWeeks = compliantWeeks.length;
-const weeksNeeded = BEST_WEEKS_REQUIRED;
-const oofWeeksAvailable = Math.max(0, goodWeeks - weeksNeeded);
-
-// Current week info
-const today = new Date();
-today.setHours(0, 0, 0, 0);
-const currentWeekStart = getStartOfWeek(today);
-const currentWeekDates = getWeekDates(currentWeekStart);
-const currentWeekData = validateWeek(
-	currentWeekDates,
-	selectedDatesSet,
-	TARGET_DAYS_PER_WEEK,
-);
-const currentWeekEnd = new Date(
-	currentWeekStart.getTime() + 6 * 24 * 60 * 60 * 1000,
-);
-
-// Format dates for display
-function formatDate(date: Date): string {
-	const months = [
-		"Jan",
-		"Feb",
-		"Mar",
-		"Apr",
-		"May",
-		"Jun",
-		"Jul",
-		"Aug",
-		"Sep",
-		"Oct",
-		"Nov",
-		"Dec",
-	];
-	return `${months[date.getMonth()]} ${date.getDate()}`;
-}
-
-// Get non-compliant weeks
-const nonCompliantWeeks = allWeeks
-	.filter((w) => w.officeDays < TARGET_DAYS_PER_WEEK)
-	.map((w) => {
-		const weekEnd = new Date(w.startDate.getTime() + 6 * 24 * 60 * 60 * 1000);
-		return {
-			weekRange: `${formatDate(w.startDate)} - ${formatDate(weekEnd)}`,
-			daysWorked: w.officeDays,
-			target: TARGET_DAYS_PER_WEEK,
-		};
-	});
-
-// Helper to determine status color
-const getStatusColor = (current: number, target: number): string => {
-	if (current >= target) return "has-text-success";
-	if (current >= target - 0.5) return "has-text-warning";
-	return "has-text-danger";
-};
-
-const complianceStatusClass =
-	averageDays >= TARGET_DAYS_PER_WEEK ? "has-text-success" : "has-text-warning";
 ---
 
 <div class="status-details">
@@ -133,12 +14,10 @@ const complianceStatusClass =
 		<div class="content">
 			<div class="level is-mobile mb-2">
 				<div class="level-left">
-					<p>In best {totalBestWeeks} weeks:</p>
+					<p id="stat-total-weeks-label">In best 0 weeks:</p>
 				</div>
 				<div class="level-right">
-					<p class={`has-text-weight-bold ${complianceStatusClass}`}>
-						{bestWeeks}/{totalBestWeeks}
-					</p>
+					<p class="has-text-weight-bold" id="stat-compliant-weeks">0/0</p>
 				</div>
 			</div>
 
@@ -147,8 +26,8 @@ const complianceStatusClass =
 					<p>Average:</p>
 				</div>
 				<div class="level-right">
-					<p class={`has-text-weight-bold ${getStatusColor(averageDays, TARGET_DAYS_PER_WEEK)}`}>
-						{averageDaysFormatted}/{MAX_DAYS_PER_WEEK} days
+					<p class="has-text-weight-bold" id="stat-average-days">
+						0.0/{MAX_DAYS_PER_WEEK} days
 					</p>
 				</div>
 			</div>
@@ -175,8 +54,8 @@ const complianceStatusClass =
 					<p>Buffer:</p>
 				</div>
 				<div class="level-right">
-					<p class="has-text-weight-bold has-text-info">
-						Good weeks = {goodWeeks} of {weeksNeeded} needed
+					<p class="has-text-weight-bold has-text-info" id="stat-buffer">
+						Good weeks = 0 of {BEST_WEEKS_REQUIRED} needed
 					</p>
 				</div>
 			</div>
@@ -186,8 +65,8 @@ const complianceStatusClass =
 					<p>You can take:</p>
 				</div>
 				<div class="level-right">
-					<p class="has-text-weight-bold has-text-success">
-						{oofWeeksAvailable} full weeks OOF
+					<p class="has-text-weight-bold has-text-success" id="stat-oof-available">
+						0 full weeks OOF
 					</p>
 				</div>
 			</div>
@@ -200,15 +79,15 @@ const complianceStatusClass =
 		<div class="content">
 			<p class="mb-2">
 				<span class="has-text-weight-semibold">Week of:</span>
-				{formatDate(currentWeekStart)} - {formatDate(currentWeekEnd)}
+				<span id="stat-current-week-range"></span>
 			</p>
 			<div class="level is-mobile">
 				<div class="level-left">
 					<p>Days worked:</p>
 				</div>
 				<div class="level-right">
-					<p class={`has-text-weight-bold ${getStatusColor(currentWeekData.officeDays, TARGET_DAYS_PER_WEEK)}`}>
-						{currentWeekData.officeDays}/{TARGET_DAYS_PER_WEEK}
+					<p class="has-text-weight-bold" id="stat-current-week-days">
+						0/{TARGET_DAYS_PER_WEEK}
 					</p>
 				</div>
 			</div>
@@ -218,31 +97,13 @@ const complianceStatusClass =
 	<!-- Non-Compliant Weeks Box -->
 	<div class="box non-compliant">
 		<h3 class="title is-6 mb-3">
-			<span class="icon has-text-warning" aria-hidden="true">⚠️</span>
+			<span class="icon has-text-warning" aria-hidden="true">&#x26A0;&#xFE0F;</span>
 			Non-Compliant Weeks
 		</h3>
-		<div class="content">
-			{nonCompliantWeeks.length === 0 ? (
-				<div class="notification is-success is-light">
-					<p class="has-text-centered">All weeks are compliant! 🎉</p>
-				</div>
-			) : (
-				<div class="non-compliant-list">
-					{nonCompliantWeeks.map((week) => (
-						<div class="notification is-warning is-light mb-2">
-							<div class="is-flex is-justify-content-space-between is-align-items-center">
-								<div>
-									<p class="has-text-weight-semibold">{week.weekRange}</p>
-									<p class="is-size-7">
-										Only {week.daysWorked} of {week.target} days worked
-									</p>
-								</div>
-								<span class="tag is-warning">Needs {week.target - week.daysWorked} more</span>
-							</div>
-						</div>
-					))}
-				</div>
-			)}
+		<div class="content" id="non-compliant-content">
+			<div class="notification is-success is-light">
+				<p class="has-text-centered">All weeks are compliant!</p>
+			</div>
 		</div>
 	</div>
 
@@ -338,3 +199,206 @@ const complianceStatusClass =
 		}
 	}
 </style>
+
+<script>
+	import type { CalendarInstance } from 'datepainter';
+	import { addDays, startOfWeek } from 'date-fns';
+	import { getDateRange } from '../lib/dateUtils';
+
+	const TARGET_DAYS = 3;
+	const MAX_DAYS = 5;
+	const BEST_WEEKS_REQUIRED = 8;
+	const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+	function fmtDate(d: Date): string {
+		return `${MONTHS[d.getMonth()]} ${d.getDate()}`;
+	}
+
+	function getStatusColor(current: number, target: number): string {
+		if (current >= target) return 'has-text-success';
+		if (current >= target - 0.5) return 'has-text-warning';
+		return 'has-text-danger';
+	}
+
+	interface WeekStats {
+		startDate: Date;
+		officeDays: number;
+	}
+
+	function getSickDaysPenalize(): boolean {
+		try {
+			const saved = localStorage.getItem('rto-calculator-settings');
+			if (!saved) return true;
+			const settings = JSON.parse(saved);
+			return settings.sickDaysPenalize !== false;
+		} catch {
+			return true;
+		}
+	}
+
+	function computeWeeks(allDates: Map<string, string>, range: { startDate: Date; endDate: Date }): WeekStats[] {
+		const sickPenalize = getSickDaysPenalize();
+		const weeks: WeekStats[] = [];
+		let weekStart = startOfWeek(range.startDate, { weekStartsOn: 1 }); // Monday
+		// If weekStart is before range start, advance to next Monday
+		if (weekStart < range.startDate) {
+			weekStart = addDays(weekStart, 7);
+		}
+
+		while (weekStart <= range.endDate) {
+			// Count deductions for Mon-Fri
+			let oofCount = 0;
+			let holidayCount = 0;
+			let sickCount = 0;
+			let weekdayCount = 0;
+
+			for (let i = 0; i < 5; i++) {
+				const d = addDays(weekStart, i);
+				if (d > range.endDate) break;
+				weekdayCount++;
+
+				const iso = d.toISOString().split('T')[0] ?? '';
+				const state = allDates.get(iso) ?? null;
+
+				if (state === 'holiday') {
+					holidayCount++;
+				} else if (state === 'oof') {
+					oofCount++;
+				} else if (state === 'sick') {
+					sickCount++;
+				}
+			}
+
+			if (weekdayCount > 0) {
+				let officeDays: number;
+				if (sickPenalize) {
+					officeDays = 5 - holidayCount - oofCount - sickCount;
+				} else {
+					officeDays = 5 - holidayCount - oofCount;
+				}
+				weeks.push({ startDate: new Date(weekStart), officeDays });
+			}
+
+			weekStart = addDays(weekStart, 7);
+		}
+
+		return weeks;
+	}
+
+	function updateStats(): void {
+		const calendarManager = (window as any).__datepainterInstance as CalendarInstance | null;
+		if (!calendarManager) return;
+
+		const allDates = calendarManager.getAllDates();
+		// Build a string->string map for computeWeeks
+		const dateMap = new Map<string, string>();
+		for (const [dateStr, state] of allDates) {
+			dateMap.set(dateStr, state);
+		}
+
+		const range = getDateRange();
+		const allWeeks = computeWeeks(dateMap, range);
+
+		const compliantCount = allWeeks.filter((w) => w.officeDays >= TARGET_DAYS).length;
+		const totalWeeks = allWeeks.length;
+
+		// Average
+		const totalOfficeDays = allWeeks.reduce((sum, w) => sum + w.officeDays, 0);
+		const avg = totalWeeks > 0 ? totalOfficeDays / totalWeeks : 0;
+
+		// Capacity
+		const oofAvailable = Math.max(0, compliantCount - BEST_WEEKS_REQUIRED);
+
+		// Current week
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
+		const currentWeekStart = startOfWeek(today, { weekStartsOn: 1 });
+		const currentWeekEnd = addDays(currentWeekStart, 6);
+		const sickPenalize = getSickDaysPenalize();
+		let currentOfficeDays = 0;
+		for (let i = 0; i < 5; i++) {
+			const d = addDays(currentWeekStart, i);
+			const iso = d.toISOString().split('T')[0] ?? '';
+			const st = dateMap.get(iso) ?? null;
+			if (st === 'holiday' || st === 'oof') continue;
+			if (st === 'sick' && sickPenalize) continue;
+			currentOfficeDays++;
+		}
+
+		// Non-compliant weeks
+		const nonCompliant = allWeeks
+			.filter((w) => w.officeDays < TARGET_DAYS)
+			.map((w) => {
+				const weekEnd = addDays(w.startDate, 6);
+				return {
+					range: `${fmtDate(w.startDate)} - ${fmtDate(weekEnd)}`,
+					daysWorked: w.officeDays,
+				};
+			});
+
+		// --- Update DOM ---
+		const elTotalLabel = document.getElementById('stat-total-weeks-label');
+		const elCompliant = document.getElementById('stat-compliant-weeks');
+		const elAverage = document.getElementById('stat-average-days');
+		const elBuffer = document.getElementById('stat-buffer');
+		const elOof = document.getElementById('stat-oof-available');
+		const elWeekRange = document.getElementById('stat-current-week-range');
+		const elWeekDays = document.getElementById('stat-current-week-days');
+		const elNonCompliant = document.getElementById('non-compliant-content');
+
+		if (elTotalLabel) elTotalLabel.textContent = `In best ${totalWeeks} weeks:`;
+		if (elCompliant) {
+			elCompliant.textContent = `${compliantCount}/${totalWeeks}`;
+			elCompliant.className = `has-text-weight-bold ${avg >= TARGET_DAYS ? 'has-text-success' : 'has-text-warning'}`;
+		}
+		if (elAverage) {
+			elAverage.textContent = `${avg.toFixed(1)}/${MAX_DAYS} days`;
+			elAverage.className = `has-text-weight-bold ${getStatusColor(avg, TARGET_DAYS)}`;
+		}
+		if (elBuffer) elBuffer.textContent = `Good weeks = ${compliantCount} of ${BEST_WEEKS_REQUIRED} needed`;
+		if (elOof) elOof.textContent = `${oofAvailable} full weeks OOF`;
+		if (elWeekRange) elWeekRange.textContent = `${fmtDate(currentWeekStart)} - ${fmtDate(currentWeekEnd)}`;
+		if (elWeekDays) {
+			elWeekDays.textContent = `${currentOfficeDays}/${TARGET_DAYS}`;
+			elWeekDays.className = `has-text-weight-bold ${getStatusColor(currentOfficeDays, TARGET_DAYS)}`;
+		}
+
+		if (elNonCompliant) {
+			if (nonCompliant.length === 0) {
+				elNonCompliant.innerHTML =
+					'<div class="notification is-success is-light"><p class="has-text-centered">All weeks are compliant!</p></div>';
+			} else {
+				elNonCompliant.innerHTML = '<div class="non-compliant-list">' +
+					nonCompliant.map((w) =>
+						`<div class="notification is-warning is-light mb-2">
+							<div class="is-flex is-justify-content-space-between is-align-items-center">
+								<div>
+									<p class="has-text-weight-semibold">${w.range}</p>
+									<p class="is-size-7">Only ${w.daysWorked} of ${TARGET_DAYS} days worked</p>
+								</div>
+								<span class="tag is-warning">Needs ${TARGET_DAYS - w.daysWorked} more</span>
+							</div>
+						</div>`
+					).join('') +
+					'</div>';
+			}
+		}
+	}
+
+	// Poll for datepainter instance then subscribe
+	function init(): void {
+		const calendarManager = (window as any).__datepainterInstance as CalendarInstance | null;
+		if (calendarManager) {
+			updateStats();
+			calendarManager.onStateChange(() => updateStats());
+		} else {
+			setTimeout(init, 200);
+		}
+	}
+
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', init);
+	} else {
+		init();
+	}
+</script>
