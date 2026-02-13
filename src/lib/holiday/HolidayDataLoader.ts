@@ -7,8 +7,10 @@
  * It loads countries data and the holiday manager onto the window object.
  */
 
-import { sortCountriesByName } from "./holiday-data/countries";
-import { getHolidayManager } from "./holiday-manager";
+import type { Country } from "./data/countries";
+import { sortCountriesByName } from "./data/countries";
+import type { HolidayManager } from "./HolidayManager";
+import { getHolidayManager } from "./HolidayManager";
 
 /**
  * Check if debug mode is enabled
@@ -17,7 +19,7 @@ function isDebugEnabled(): boolean {
 	if (typeof window === "undefined") return false;
 	return (
 		localStorage.getItem("rto-debug") === "true" ||
-		(window as any).__RTO_DEBUG__ === true
+		window.__RTO_DEBUG__ === true
 	);
 }
 
@@ -42,10 +44,10 @@ export function initHolidayDataLoader(): void {
 			`[HolidayDataLoader] Document ready state: ${document.readyState}`,
 		);
 		console.log(
-			`[HolidayDataLoader] Window.__holidayCountries exists: ${!!(window as any).__holidayCountries}`,
+			`[HolidayDataLoader] Window.__holidayCountries exists: ${!!window.__holidayCountries}`,
 		);
 		console.log(
-			`[HolidayDataLoader] Window.__getHolidayManager exists: ${!!(window as any).__getHolidayManager}`,
+			`[HolidayDataLoader] Window.__getHolidayManager exists: ${!!window.__getHolidayManager}`,
 		);
 	}
 
@@ -61,9 +63,8 @@ export function initHolidayDataLoader(): void {
 			);
 		}
 
-		// Cast to any to bypass TypeScript's strict typing for window object
-		(window as any).__holidayCountries = sortedCountries;
-		(window as any).__getHolidayManager = getHolidayManager;
+		window.__holidayCountries = sortedCountries;
+		window.__getHolidayManager = getHolidayManager;
 
 		if (isDebugEnabled()) {
 			console.log(
@@ -106,7 +107,7 @@ export function initHolidayDataLoader(): void {
 /**
  * Get countries from global window object
  */
-export function getHolidayCountries(): any[] {
+export function getHolidayCountries(): Country[] {
 	if (typeof window === "undefined") {
 		if (isDebugEnabled()) {
 			console.log(
@@ -115,7 +116,7 @@ export function getHolidayCountries(): any[] {
 		}
 		return [];
 	}
-	const countries = (window as any).__holidayCountries || [];
+	const countries = window.__holidayCountries || [];
 	if (isDebugEnabled()) {
 		console.log(
 			`[HolidayDataLoader] getHolidayCountries: Returning ${countries.length} countries`,
@@ -127,7 +128,9 @@ export function getHolidayCountries(): any[] {
 /**
  * Get holiday manager from global window object
  */
-export function getGlobalHolidayManager(): any {
+export function getGlobalHolidayManager():
+	| (() => Promise<HolidayManager>)
+	| null {
 	if (typeof window === "undefined") {
 		if (isDebugEnabled()) {
 			console.log(
@@ -136,10 +139,10 @@ export function getGlobalHolidayManager(): any {
 		}
 		return null;
 	}
-	const manager = (window as any).__getHolidayManager || null;
+	const manager = window.__getHolidayManager || null;
 	if (isDebugEnabled()) {
 		console.log(
-			`[HolidayDataLoader] getGlobalHolidayManager: Returning ${manager ? "holiday manager instance" : "null"}`,
+			`[HolidayDataLoader] getGlobalHolidayManager: Returning ${manager ? "holiday manager getter" : "null"}`,
 		);
 	}
 	return manager;
@@ -157,8 +160,8 @@ export function isHolidayDataLoaded(): boolean {
 		}
 		return false;
 	}
-	const hasCountries = !!(window as any).__holidayCountries;
-	const hasManager = !!(window as any).__getHolidayManager;
+	const hasCountries = !!window.__holidayCountries;
+	const hasManager = !!window.__getHolidayManager;
 	const isLoaded = hasCountries && hasManager;
 	if (isDebugEnabled()) {
 		console.log(
