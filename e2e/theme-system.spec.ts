@@ -14,7 +14,7 @@ test.describe("Theme System", () => {
 
 	test("should open settings via gear button", async ({ page }) => {
 		await openSettings(page);
-		expect(page.getByText("Appearance")).toBeVisible();
+		await expect(page.getByText("Appearance")).toBeVisible();
 		await closeSettings(page);
 	});
 
