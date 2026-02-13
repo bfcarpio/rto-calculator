@@ -396,6 +396,7 @@ export class CalendarManager implements CalendarInstance {
 
     let isDragging = false;
     let dragDate: DateString | null = null;
+    let hasDragged = false;
 
     const mousedownHandler = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
@@ -406,6 +407,7 @@ export class CalendarManager implements CalendarInstance {
         if (date && this.config.painting?.enabled) {
           isDragging = true;
           dragDate = date;
+          hasDragged = false;
 
           const currentState = this.getState(date);
           const defaultState = this.config.painting.defaultState || "working";
@@ -431,6 +433,7 @@ export class CalendarManager implements CalendarInstance {
         if (date) {
           const defaultState = this.config.painting?.defaultState || "working";
           if (!this.getState(date)) {
+            hasDragged = true;
             this.toggleDate(date, defaultState);
           }
         }
@@ -439,7 +442,6 @@ export class CalendarManager implements CalendarInstance {
 
     const mouseupHandler = () => {
       isDragging = false;
-      dragDate = null;
     };
 
     const clickHandler = (e: MouseEvent) => {
@@ -448,7 +450,7 @@ export class CalendarManager implements CalendarInstance {
 
       if (dayCell && !dayCell.classList.contains("datepainter__day--empty")) {
         const date = dayCell.getAttribute("data-date") as DateString | null;
-        if (date && !dragDate) {
+        if (date && (!dragDate || hasDragged)) {
           const currentState = this.getState(date);
           const stateOrder: (DateState | null)[] = ["working", "oof", "holiday", null];
           const currentIndex = stateOrder.indexOf(currentState);
@@ -460,6 +462,9 @@ export class CalendarManager implements CalendarInstance {
           } else {
             this.clearDates([date]);
           }
+          // Clear drag state after click handler runs
+          dragDate = null;
+          hasDragged = false;
         }
       }
     };
