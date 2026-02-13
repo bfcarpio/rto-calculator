@@ -783,9 +783,21 @@ if (document.readyState === "loading") {
 // Export functions for external access if needed
 declare global {
   interface Window {
-    runValidation: typeof runValidation;
-    clearAllValidationHighlights: typeof clearAllValidationHighlights;
+    RTOValidation: {
+      runValidation: typeof runValidation;
+      runValidationWithHighlights: typeof runValidationWithHighlights;
+      clearAllValidationHighlights: typeof clearAllValidationHighlights;
+    };
   }
+}
+
+// Make functions available globally under RTOValidation namespace
+if (typeof window !== "undefined") {
+  window.RTOValidation = {
+    runValidation,
+    runValidationWithHighlights,
+    clearAllValidationHighlights,
+  };
 }
 
 // Make functions available globally
