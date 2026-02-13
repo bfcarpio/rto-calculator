@@ -300,6 +300,70 @@ describe("SettingsModal - Pattern Functionality Mock", () => {
 		});
 	});
 
+	describe("Penalize Settings Structure", () => {
+		it("should support storing holidayPenalize setting", () => {
+			const settings = {
+				debug: false,
+				strategy: "rolling-period",
+				minOfficeDays: 3,
+				sickDaysPenalize: true,
+				holidayPenalize: false,
+			};
+
+			localStorage.setItem(
+				"rto-calculator-settings",
+				JSON.stringify(settings),
+			);
+
+			const parsed = JSON.parse(
+				localStorage.getItem("rto-calculator-settings") || "{}",
+			);
+			expect(parsed.holidayPenalize).toBe(false);
+			expect(parsed.sickDaysPenalize).toBe(true);
+		});
+
+		it("should default holidayPenalize to true when absent", () => {
+			const settings = {
+				debug: false,
+				strategy: "rolling-period",
+				minOfficeDays: 3,
+				sickDaysPenalize: true,
+			};
+
+			localStorage.setItem(
+				"rto-calculator-settings",
+				JSON.stringify(settings),
+			);
+
+			const parsed = JSON.parse(
+				localStorage.getItem("rto-calculator-settings") || "{}",
+			);
+			// holidayPenalize not set → consumer should treat as true
+			expect(parsed.holidayPenalize).toBeUndefined();
+		});
+
+		it("should support both penalize toggles set to false", () => {
+			const settings = {
+				debug: false,
+				strategy: "rolling-period",
+				minOfficeDays: 3,
+				sickDaysPenalize: false,
+				holidayPenalize: false,
+			};
+
+			localStorage.setItem(
+				"rto-calculator-settings",
+				JSON.stringify(settings),
+			);
+
+			const parsed = JSON.parse(
+				localStorage.getItem("rto-calculator-settings") || "{}",
+			);
+			expect(parsed.sickDaysPenalize).toBe(false);
+			expect(parsed.holidayPenalize).toBe(false);
+		});
+	});
+
 	describe("Pattern Data Structure", () => {
 		it("should support day indices 0-6", () => {
 			const validIndices = [0, 1, 2, 3, 4, 5, 6];
