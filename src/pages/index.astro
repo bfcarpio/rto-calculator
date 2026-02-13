@@ -1,7 +1,7 @@
 ---
 import ActionButtons from "../components/ActionButtons.astro";
 import Datepainter from "../components/Datepainter.astro";
-// import HolidayCountrySelector from "../components/HolidayCountrySelector.astro";
+import HolidayCountrySelector from "../components/HolidayCountrySelector.astro";
 import MobileMenu from "../components/MobileMenu.astro";
 import SettingsModal from "../components/SettingsModal.astro";
 import ShortcutsModal from "../components/ShortcutsModal.astro";
@@ -91,13 +91,15 @@ const description =
 				<section class="section py-4" id="calendar-container">
 					<div class="box">
 						<Datepainter />
-						<!-- <HolidayCountrySelector /> -->
 						<div class="mt-4">
 							<StatusLegend />
 						</div>
 						<ActionButtons position="bottom" />
 						<div class="mt-4">
 							<WeekdaySelector />
+						</div>
+						<div class="mt-4">
+							<HolidayCountrySelector />
 						</div>
 					</div>
 				</section>
