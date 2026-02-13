@@ -168,16 +168,20 @@ export async function setupValidationScenario(
 export async function waitForCompliance(page: Page): Promise<void> {
 	// Wait for the debounce (1.5s) + computation time
 	// The .computing class is removed when done, so wait for that
-	await page.waitForFunction(
-		() => !document.querySelector(".status-details.computing"),
-		{ timeout: 5000 },
-	).catch(() => {
-		// Fallback: just wait for status boxes to be visible
-	});
+	await page
+		.waitForFunction(
+			() => !document.querySelector(".status-details.computing"),
+			{ timeout: 5000 },
+		)
+		.catch(() => {
+			// Fallback: just wait for status boxes to be visible
+		});
 
-	await page.waitForSelector(".status-details .box", {
-		timeout: 5000,
-	}).catch(() => {});
+	await page
+		.waitForSelector(".status-details .box", {
+			timeout: 5000,
+		})
+		.catch(() => {});
 }
 
 /**
@@ -296,7 +300,7 @@ export async function applyWeekdayPattern(
 
 	// Get all enabled calendar day cells (datepainter structure)
 	const allCells = page.locator(
-		'[data-testid="calendar-day"]:not(.datepainter__day--empty):not(.datepainter__day--disabled)'
+		'[data-testid="calendar-day"]:not(.datepainter__day--empty):not(.datepainter__day--disabled)',
 	);
 	const cellCount = await allCells.count();
 
@@ -307,7 +311,7 @@ export async function applyWeekdayPattern(
 		const cell = allCells.nth(i);
 
 		// Get the date from the cell
-		const dateStr = await cell.getAttribute('data-date');
+		const dateStr = await cell.getAttribute("data-date");
 		if (!dateStr) continue;
 
 		const cellDate = new Date(dateStr);
@@ -346,6 +350,29 @@ export async function clearAllSelections(page: Page): Promise<void> {
 	if (await clearButton.isVisible().catch(() => false)) {
 		await clearButton.click();
 		// Wait for UI to update
+		await page.waitForTimeout(200);
+	}
+}
+
+/**
+ * Clear selections in the currently visible month
+ *
+ * Clicks the "Clear Month" button to remove selections for the current month only.
+ *
+ * @param page - Playwright page object
+ *
+ * @example
+ * ```typescript
+ * await clearMonthSelections(page);
+ * ```
+ */
+export async function clearMonthSelections(page: Page): Promise<void> {
+	const clearButton = page
+		.locator('[data-testid="clear-month-button"]')
+		.first();
+
+	if (await clearButton.isVisible().catch(() => false)) {
+		await clearButton.click();
 		await page.waitForTimeout(200);
 	}
 }

@@ -44,9 +44,9 @@ test.describe("Responsive Navigation", () => {
 			// Set mobile viewport
 			await page.setViewportSize({ width: 375, height: 667 });
 
-			const mobileMenuButton = page.locator(
-				"[data-testid='mobile-menu-button']",
-			).first();
+			const mobileMenuButton = page
+				.locator("[data-testid='mobile-menu-button']")
+				.first();
 
 			// Check accessibility attributes
 			await expect(mobileMenuButton).toHaveAttribute("aria-label");
@@ -111,7 +111,11 @@ test.describe("Responsive Navigation", () => {
 			await page.setViewportSize({ width: 768, height: 1024 });
 
 			// Try to select a day
-			const dayCell = page.locator("[data-testid='calendar-day']:not(.datepainter__day--empty):not(.datepainter__day--disabled)").first();
+			const dayCell = page
+				.locator(
+					"[data-testid='calendar-day']:not(.datepainter__day--empty):not(.datepainter__day--disabled)",
+				)
+				.first();
 			await dayCell.click();
 
 			// Selection should work - check for any datepainter state class
@@ -126,6 +130,11 @@ test.describe("Responsive Navigation", () => {
 
 		test("clear-all button should have data-testid", async ({ page }) => {
 			const clearButton = page.locator("[data-testid='clear-all-button']");
+			await expect(clearButton.first()).toBeVisible();
+		});
+
+		test("clear-month button should have data-testid", async ({ page }) => {
+			const clearButton = page.locator("[data-testid='clear-month-button']");
 			await expect(clearButton.first()).toBeVisible();
 		});
 
@@ -148,7 +157,9 @@ test.describe("Responsive Navigation", () => {
 			expect(buttonCount).toBeGreaterThan(0);
 
 			// Check that calendar days are present
-			const dayCells = page.locator('[data-testid="calendar-day"]:not(.datepainter__day--empty)');
+			const dayCells = page.locator(
+				'[data-testid="calendar-day"]:not(.datepainter__day--empty)',
+			);
 			const dayCount = await dayCells.count();
 			expect(dayCount).toBeGreaterThan(0);
 		});
@@ -163,7 +174,9 @@ test.describe("Responsive Navigation", () => {
 			await waitForCalendarReady(page);
 
 			// Verify mobile menu is visible
-			const mobileMenu = page.locator("[data-testid='mobile-menu-button']").first();
+			const mobileMenu = page
+				.locator("[data-testid='mobile-menu-button']")
+				.first();
 			await expect(mobileMenu).toBeVisible();
 
 			// Change to desktop viewport
@@ -182,7 +195,9 @@ test.describe("Responsive Navigation", () => {
 			await waitForCalendarReady(page);
 
 			// Verify mobile menu is hidden on desktop
-			const mobileMenu = page.locator("[data-testid='mobile-menu-button']").first();
+			const mobileMenu = page
+				.locator("[data-testid='mobile-menu-button']")
+				.first();
 			await expect(mobileMenu).toBeHidden();
 
 			// Change to mobile viewport
