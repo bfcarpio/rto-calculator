@@ -353,9 +353,14 @@ export function validateSlidingWindow(
 		const averageOfficeDays = evalCount > 0 ? totalOfficeDays / evalCount : 0;
 		const totalDays = bestWeeks.reduce((sum, week) => sum + week.totalDays, 0);
 		const averageOfficePercentage =
-			totalDays > 0 ? (totalOfficeDays / totalDays) * 100 : 100;
-		const requiredPercentage = policy.thresholdPercentage * 100;
-		const isValid = averageOfficePercentage >= requiredPercentage;
+			totalDays > 0 ? (totalOfficeDays / totalDays) * 100 : 0;
+
+		// Primary check: average office days must meet the minimum.
+		// This handles holiday weeks correctly — a week with 5 holidays
+		// has 0 officeDays and 0 totalDays, so it correctly counts as
+		// 0 office days rather than getting a free pass via percentage.
+		const isValid =
+			averageOfficeDays >= policy.minOfficeDaysPerWeek;
 
 		return { isValid, averageOfficeDays, averageOfficePercentage, bestWeeks };
 	}
@@ -372,7 +377,7 @@ export function validateSlidingWindow(
 		const label = isValid ? "Compliant" : "Not compliant";
 		return {
 			isValid,
-			message: `${label}: Best ${bestWeeks.length} of ${weeksData.length} weeks average ${averageOfficeDays.toFixed(1)} office days (${averageOfficePercentage.toFixed(0)}%). Required: ${requiredPercentage.toFixed(0)}%`,
+			message: `${label}: Best ${bestWeeks.length} of ${weeksData.length} weeks average ${averageOfficeDays.toFixed(1)} office days. Required: ${policy.minOfficeDaysPerWeek}`,
 			overallCompliance: averageOfficePercentage,
 			evaluatedWeekStarts,
 			windowWeekStarts,
@@ -394,7 +399,6 @@ export function validateSlidingWindow(
 			evaluateWindow(windowWeeks);
 
 		if (!isValid) {
-			const requiredPercentage = policy.thresholdPercentage * 100;
 			const evaluatedWeekStarts = bestWeeks.map((w) => w.weekStart.getTime());
 			const windowWeekStarts = windowWeeks.map((w) => w.weekStart.getTime());
 			const invalidWeek = bestWeeks[bestWeeks.length - 1];
@@ -404,7 +408,7 @@ export function validateSlidingWindow(
 
 			return {
 				isValid: false,
-				message: `Not compliant: Best ${weeksToEvaluate} of ${windowSize} weeks average ${averageOfficeDays.toFixed(1)} office days (${averageOfficePercentage.toFixed(0)}%). Required: ${requiredPercentage.toFixed(0)}%`,
+				message: `Not compliant: Best ${weeksToEvaluate} of ${windowSize} weeks average ${averageOfficeDays.toFixed(1)} office days. Required: ${policy.minOfficeDaysPerWeek}`,
 				overallCompliance: averageOfficePercentage,
 				evaluatedWeekStarts,
 				windowWeekStarts,
@@ -422,7 +426,6 @@ export function validateSlidingWindow(
 	);
 	const { averageOfficeDays, averageOfficePercentage, bestWeeks } =
 		evaluateWindow(lastWindowWeeks);
-	const requiredPercentage = policy.thresholdPercentage * 100;
 	const evaluatedWeekStarts = bestWeeks.map((w) => w.weekStart.getTime());
 	const windowWeekStarts = lastWindowWeeks.map((w) => w.weekStart.getTime());
 	const lastWindowWeek = weeksData[lastWindowStart];
@@ -430,7 +433,7 @@ export function validateSlidingWindow(
 
 	return {
 		isValid: true,
-		message: `Compliant: Best ${weeksToEvaluate} of ${windowSize} weeks average ${averageOfficeDays.toFixed(1)} office days (${averageOfficePercentage.toFixed(0)}%). Required: ${requiredPercentage.toFixed(0)}%`,
+		message: `Compliant: Best ${weeksToEvaluate} of ${windowSize} weeks average ${averageOfficeDays.toFixed(1)} office days. Required: ${policy.minOfficeDaysPerWeek}`,
 		overallCompliance: averageOfficePercentage,
 		evaluatedWeekStarts,
 		windowWeekStarts,

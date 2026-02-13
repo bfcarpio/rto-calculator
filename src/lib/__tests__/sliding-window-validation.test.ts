@@ -86,11 +86,10 @@ describe("validateSlidingWindow", () => {
 	// ── Empty / trivial input ────────────────────────────────────
 
 	describe("empty and trivial input", () => {
-		it("returns valid with 100% compliance for 0 weeks", () => {
+		it("returns valid for 0 weeks (no data to evaluate)", () => {
 			const result = validateSlidingWindow([], DEFAULT_RTO_POLICY);
 
 			expect(result.isValid).toBe(true);
-			expect(result.overallCompliance).toBe(100);
 			expect(result.windowWeekStarts).toEqual([]);
 			expect(result.evaluatedWeekStarts).toEqual([]);
 		});
@@ -417,6 +416,83 @@ describe("validateSlidingWindow", () => {
 			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
 
 			expect(result.message).toContain("Not compliant");
+		});
+	});
+
+	// ── Holiday edge cases ──────────────────────────────────────
+
+	describe("holiday weeks (totalDays = 0)", () => {
+		/** Create a week where all 5 days are holidays: officeDays=0, totalDays=0 */
+		function makeHolidayWeek(weekStart: Date, weekNumber = 1): WeekCompliance {
+			return {
+				weekNumber,
+				weekStart,
+				officeDays: 0,
+				totalDays: 0, // All 5 weekdays are holidays
+				oofDays: 0,
+				wfhDays: 0,
+				isCompliant: false,
+				status: "violation",
+			};
+		}
+
+		it("full holiday weeks are NOT compliant (0 office days)", () => {
+			// 12 holiday weeks: officeDays=0, totalDays=0 for each
+			const weeks: WeekCompliance[] = [];
+			for (let i = 0; i < 12; i++) {
+				const ws = new Date(START);
+				ws.setDate(START.getDate() + i * 7);
+				weeks.push(makeHolidayWeek(ws, i + 1));
+			}
+			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
+
+			// 0 office days average — should NOT be compliant
+			expect(result.isValid).toBe(false);
+			expect(result.overallCompliance).toBe(0);
+		});
+
+		it("2 months of holidays in a 12-week window → NOT valid", () => {
+			// 8 holiday weeks (June+July) + 4 normal weeks (3 days each)
+			// Best 8: 4 weeks of 3 + 4 weeks of 0 = 12/8 = 1.5 avg < 3
+			const holidayWeeks: WeekCompliance[] = [];
+			for (let i = 0; i < 8; i++) {
+				const ws = new Date(START);
+				ws.setDate(START.getDate() + i * 7);
+				holidayWeeks.push(makeHolidayWeek(ws, i + 1));
+			}
+			const normalStart = new Date(START);
+			normalStart.setDate(START.getDate() + 8 * 7);
+			const normalWeeks = makeWeeks(normalStart, 4, 3);
+			normalWeeks.forEach((w, i) => (w.weekNumber = 9 + i));
+			const weeks = [...holidayWeeks, ...normalWeeks];
+
+			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
+
+			expect(result.isValid).toBe(false);
+			// avg office days = (4*3 + 4*0)/8 = 1.5 < 3 required
+			expect(result.message).toContain("1.5 office days");
+		});
+
+		it("holiday weeks mixed with good weeks — holidays are worst and get dropped", () => {
+			// 4 holiday weeks + 8 good weeks (5 days each)
+			// Best 8 of 12: all 8 good weeks → avg = 5.0 → valid
+			const holidayWeeks: WeekCompliance[] = [];
+			for (let i = 0; i < 4; i++) {
+				const ws = new Date(START);
+				ws.setDate(START.getDate() + i * 7);
+				holidayWeeks.push(makeHolidayWeek(ws, i + 1));
+			}
+			const goodStart = new Date(START);
+			goodStart.setDate(START.getDate() + 4 * 7);
+			const goodWeeks = makeWeeks(goodStart, 8, 5);
+			goodWeeks.forEach((w, i) => (w.weekNumber = 5 + i));
+			const weeks = [...holidayWeeks, ...goodWeeks];
+
+			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
+
+			// Holiday weeks are dropped as the 4 worst
+			expect(result.isValid).toBe(true);
+			expect(result.overallCompliance).toBe(100);
 		});
 	});
 });
