@@ -33,6 +33,7 @@
 		"@astrojs/check": "^0.9.6",
 		"astro": "^5.16.8",
 		"bulma": "^1.0.4",
+		"date-fns": "^4.1.0",
 		"datepainter": "workspace:*",
 		"nager_date_api_reference": "workspace:*",
 		"open-props": "^1.7.23",

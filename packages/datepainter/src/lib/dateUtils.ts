@@ -1,6 +1,16 @@
 /**
  * Date utility functions for calendar operations
+ *
+ * Uses date-fns internally but re-exports with stable signatures
+ * for backward compatibility with existing consumers.
  */
+import {
+	addDays as dfAddDays,
+	format,
+	getDaysInMonth as dfGetDaysInMonth,
+	getWeek,
+	parse,
+} from "date-fns";
 import type { DateString } from "../types";
 
 /**
@@ -15,10 +25,7 @@ import type { DateString } from "../types";
  * ```
  */
 export function formatDate(date: Date): DateString {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}` as DateString;
+	return format(date, "yyyy-MM-dd") as DateString;
 }
 
 /**
@@ -33,11 +40,7 @@ export function formatDate(date: Date): DateString {
  * ```
  */
 export function parseDate(dateStr: string): Date {
-  const parts = dateStr.split("-").map(Number);
-  const year = parts[0] ?? new Date().getFullYear();
-  const month = parts[1] ?? new Date().getMonth() + 1;
-  const day = parts[2] ?? 1;
-  return new Date(year, month - 1, day);
+	return parse(dateStr, "yyyy-MM-dd", new Date());
 }
 
 /**
@@ -53,7 +56,7 @@ export function parseDate(dateStr: string): Date {
  * ```
  */
 export function getDaysInMonth(year: number, month: number): number {
-  return new Date(year, month + 1, 0).getDate();
+	return dfGetDaysInMonth(new Date(year, month));
 }
 
 /**
@@ -72,7 +75,7 @@ export function getDaysInMonth(year: number, month: number): number {
  * ```
  */
 export function getFirstDayOfMonth(date: Date): number {
-  return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+	return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
 }
 
 /**
@@ -85,11 +88,7 @@ export function getFirstDayOfMonth(date: Date): number {
  * @returns The week number (1-53)
  */
 export function getWeekNumber(date: Date): number {
-  const startOfYear = new Date(date.getFullYear(), 0, 1);
-  const daysSinceStart = Math.floor(
-    (date.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000)
-  );
-  return Math.ceil((daysSinceStart + startOfYear.getDay() + 1) / 7);
+	return getWeek(date, { weekStartsOn: 0 });
 }
 
 /**
@@ -103,7 +102,5 @@ export function getWeekNumber(date: Date): number {
  * @returns A new Date object representing the calculated date
  */
 export function addDays(date: Date, days: number): Date {
-  const result = new Date(date);
-  result.setDate(result.getDate() + days);
-  return result;
+	return dfAddDays(date, days);
 }
