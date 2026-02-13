@@ -42,11 +42,13 @@ import {
   isLocalStorageAvailable,
 } from "../storage";
 
+import { DragSelectionManager } from "../dragSelection";
+
 // State management
 let selectedDates = new Set<string>();
 let weekStart: WeekStart = DEFAULT_WEEK_START;
 let weekDataMap = new Map<string, any>();
-let dragSelectionManager: any = null;
+let dragSelectionManager: DragSelectionManager | null = null;
 const today = new Date();
 today.setHours(0, 0, 0, 0);
 
@@ -354,7 +356,7 @@ export function validateAndUpdateCalendar(
     );
   });
 
-  // Update the visual state of each cell
+  // Update visual state of each cell
   dayCells.forEach((dayCell) => {
     const dateStr = (dayCell as HTMLElement).getAttribute("data-date");
     if (!dateStr) return;
@@ -363,6 +365,13 @@ export function validateAndUpdateCalendar(
     const weekStartLocal = getStartOfWeek(date);
     const weekKey = formatDateISO(weekStartLocal);
     const weekData = weeksMap.get(weekKey);
+
+    // Update selected state
+    if (selectedDates.has(dateStr)) {
+      (dayCell as HTMLElement).classList.add("selected");
+    } else {
+      (dayCell as HTMLElement).classList.remove("selected");
+    }
 
     // Update cell styles based on week data
     if (weekData && !isWeekend(date) && !isPastDate(date)) {
@@ -408,11 +417,18 @@ export function handleDayClick(event: Event): void {
     selectedDates.add(dateStr);
   }
 
+  // Save selections
+  saveSelectedDates(selectedDates);
+
+  // Update drag selection manager
+  if (dragSelectionManager) {
+    dragSelectionManager.updateSelectedDates(selectedDates);
+  }
+
   // Update UI
   updateDayCell(target, dateStr);
   validateAndUpdateCalendar(weekStart);
   updateComplianceIndicator();
-  saveSelectedDates(selectedDates);
 }
 
 /**
@@ -420,14 +436,24 @@ export function handleDayClick(event: Event): void {
  * @param event - The mouse down event
  */
 export function handleDayMouseDown(event: Event): void {
+  // Prevent default drag behavior (text selection, native drag)
+  event.preventDefault();
+  event.stopPropagation();
+
+  console.log("handleDayMouseDown triggered");
   const target = event.target as HTMLElement;
+  console.log("Target class:", target.className);
   if (!target.classList.contains("day-cell")) return;
 
   const dateStr = target.getAttribute("data-date");
   if (!dateStr) return;
 
+  console.log("Starting drag on date:", dateStr);
   if (dragSelectionManager) {
     dragSelectionManager.startDrag(dateStr);
+    console.log("Drag started successfully");
+  } else {
+    console.log("ERROR: dragSelectionManager is null!");
   }
 }
 
@@ -443,12 +469,15 @@ export function handleDayMouseOver(event: Event): void {
   if (!dateStr) return;
 
   if (dragSelectionManager) {
-    dragSelectionManager.updateDrag(dateStr);
-    dragSelectionManager.updateSelection();
+    if (dragSelectionManager.isDragging()) {
+      console.log("Dragging over date:", dateStr);
+      dragSelectionManager.updateDrag(dateStr);
+      dragSelectionManager.updateSelection();
 
-    // Update UI for all affected cells
-    validateAndUpdateCalendar(weekStart);
-    updateComplianceIndicator();
+      // Update UI for all affected cells
+      validateAndUpdateCalendar(weekStart);
+      updateComplianceIndicator();
+    }
   }
 }
 
@@ -456,8 +485,10 @@ export function handleDayMouseOver(event: Event): void {
  * Handle day mouse up event to end drag selection
  */
 export function handleDayMouseUp(): void {
+  console.log("handleDayMouseUp triggered");
   if (dragSelectionManager) {
     dragSelectionManager.endDrag();
+    console.log("Drag ended");
   }
 }
 
@@ -556,6 +587,12 @@ export function hideValidationMessage(): void {
 export function clearAllSelections(): void {
   selectedDates.clear();
   saveSelectedDates(selectedDates);
+
+  // Update drag selection manager
+  if (dragSelectionManager) {
+    dragSelectionManager.updateSelectedDates(selectedDates);
+  }
+
   const calendarContainer = document.getElementById("calendar-container");
   if (calendarContainer) {
     renderCalendar(calendarContainer, weekStart);
@@ -613,10 +650,16 @@ export function setupEventListeners(): void {
   if (exportButton) {
     exportButton.addEventListener("click", exportSelections);
   }
+
+  // Setup event listeners
+  setupEventListeners();
+
+  // Initial compliance check
+  updateComplianceIndicator();
 }
 
 /**
- * Initialize the application
+ * Initialize application
  */
 export function init(): void {
   // Set week start based on locale
@@ -625,15 +668,27 @@ export function init(): void {
   // Load saved selections
   selectedDates = loadSelectedDates();
 
-  // Render the calendar
+  // Render calendar
   const calendarContainer = document.getElementById("calendar-container");
   if (calendarContainer) {
     renderCalendar(calendarContainer, weekStart);
   }
 
+  // Initialize drag selection manager
+  dragSelectionManager = new DragSelectionManager(
+    selectedDates,
+    (newDates: Set<string>) => {
+      selectedDates = newDates;
+      saveSelectedDates(selectedDates);
+      validateAndUpdateCalendar(weekStart);
+      updateComplianceIndicator();
+    },
+    validateSelection,
+    DEFAULT_POLICY.minOfficeDaysPerWeek,
+  );
+
   // Setup event listeners
   setupEventListeners();
-
   // Initial compliance check
   updateComplianceIndicator();
 }

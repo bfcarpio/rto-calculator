@@ -56,7 +56,7 @@
 /* Month grid */
 .month-grid {
     display: grid;
-    grid-template-columns: repeat(7, var(--day-cell-size, 36px));
+    grid-template-columns: repeat(7, var(--day-cell-size, 30px));
     grid-template-rows: repeat(6, auto);
     gap: 0.03125rem;
     justify-content: center;
@@ -66,8 +66,8 @@
 .day-header {
     text-align: center;
     font-weight: 600;
-    font-size: 0.65rem;
-    height: var(--day-cell-size, 24px);
+    font-size: 0.75rem;
+    height: var(--day-cell-size, 30px);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -76,7 +76,7 @@
 
 /* Day cell */
 .day-cell {
-    --day-cell-size: 24px;
+    --day-cell-size: 30px;
     width: var(--day-cell-size);
     height: var(--day-cell-size);
     aspect-ratio: 1 / 1;
@@ -88,7 +88,7 @@
     border-radius: var(--border-radius);
     cursor: pointer;
     transition: all var(--transition-speed);
-    font-size: 0.75rem;
+    font-size: 0.85rem;
     background-color: var(--color-bg);
     user-select: none;
     padding: 0;

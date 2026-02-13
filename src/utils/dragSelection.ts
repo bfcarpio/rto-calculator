@@ -123,16 +123,12 @@ export class DragSelectionManager {
     // Determine step direction
     const step = currentDate >= startDate ? 1 : -1;
 
-    // Generate all dates between start and current
+    // Generate all dates between start and current (include all days like travel websites)
     while (
       (step > 0 && currentDateCopy <= currentDate) ||
       (step < 0 && currentDateCopy >= currentDate)
     ) {
-      // Skip weekends and past dates
-      if (!isWeekend(currentDateCopy) && !isPastDate(currentDateCopy)) {
-        dates.push(formatDateISO(currentDateCopy));
-      }
-
+      dates.push(formatDateISO(currentDateCopy));
       currentDateCopy.setDate(currentDateCopy.getDate() + step);
     }
 
