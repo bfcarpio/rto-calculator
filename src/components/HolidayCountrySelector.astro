@@ -209,35 +209,44 @@
       }
       addButton.disabled = true;
 
-      // Get current year and next year to cover the date range
-      const currentYear = new Date().getFullYear();
-      const nextYear = currentYear + 1;
+      // Calculate years needed to cover date range
+      const dateRange = dateStore.getDateRange();
+      const startYear = dateRange.startDate.getFullYear();
+      const endYear = dateRange.endDate.getFullYear();
+      
+      // Create array of all years in the range
+      const years: number[] = [];
+      for (let year = startYear; year <= endYear; year++) {
+        years.push(year);
+      }
 
       // Use HolidayManager (strategy pattern) to fetch holidays
       const manager = await getHolidayManager();
       const result = await manager.fetchHolidays({
         countryCode,
-        years: [currentYear, nextYear],
+        years,
       });
 
       // Mark holidays in the store
       let addedCount = 0;
       
       for (const holiday of result.holidays) {
-        // Check if date is in valid range (already filtered by API, but double-check)
         const holidayDate = holiday.date;
         
-        // Only add if not already marked as holiday
-        const existingState = dateStore.getDateState(holidayDate);
-        if (!existingState || existingState !== 'holiday') {
-          dateStore.markDate(holidayDate, 'holiday', true); // Force override
-          addedCount++;
+        // Check if date is in valid range
+        if (holidayDate >= dateRange.startDate && holidayDate <= dateRange.endDate) {
+          // Only add if not already marked as holiday
+          const existingState = dateStore.getDateState(holidayDate);
+          if (!existingState || existingState !== 'holiday') {
+            dateStore.markDate(holidayDate, 'holiday', true); // Force override
+            addedCount++;
+          }
         }
       }
 
       if (statusDiv) {
         statusDiv.className = 'holiday-status success';
-        statusDiv.textContent = `Added ${addedCount} holidays!`;
+        statusDiv.textContent = `Added ${addedCount} holidays for ${years.join(', ')}!`;
       }
 
       // Clear status after 3 seconds
