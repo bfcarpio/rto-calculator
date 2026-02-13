@@ -48,8 +48,17 @@ export interface CalendarConfig {
 		firstDayOfWeek?: 0 | 1;
 	};
 	painting?: {
+		/** Enable date painting interactions */
 		enabled?: boolean;
+		/** Allow painting while dragging across cells */
 		paintOnDrag?: boolean;
+		/**
+		 * Default state for painting operations.
+		 * Controls both click and drag behavior:
+		 * - Click: toggles between this state and cleared
+		 * - Drag: paints cells with this state
+		 * @default "oof"
+		 */
 		defaultState?: DateState;
 	};
 }

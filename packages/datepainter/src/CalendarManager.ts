@@ -550,12 +550,12 @@ export class CalendarManager implements CalendarInstance {
 
 					const currentState = this.getState(date);
 					const defaultState = this.config.painting.defaultState || "oof";
-					const newState = currentState === defaultState ? null : defaultState;
 
-					if (newState) {
-						this.toggleDate(date, newState);
-					} else {
+					// Simple toggle: if current state matches default state, clear it
+					if (currentState === defaultState) {
 						this.clearDates([date]);
+					} else {
+						this.toggleDate(date, defaultState);
 					}
 				}
 			}
@@ -591,20 +591,16 @@ export class CalendarManager implements CalendarInstance {
 				const date = dayCell.getAttribute("data-date") as DateString | null;
 				if (date && (!dragDate || hasDragged)) {
 					const currentState = this.getState(date);
-					const stateOrder: (DateState | null)[] = [
-						"oof",
-						"holiday",
-						"sick",
-						null,
-					];
-					const currentIndex = stateOrder.indexOf(currentState);
-					const nextIndex = (currentIndex + 1) % stateOrder.length;
-					const newState = stateOrder[nextIndex];
 
-					if (newState) {
-						this.toggleDate(date, newState);
-					} else {
+					// Get the default state from config, fallback to "oof"
+					const defaultState = this.config.painting?.defaultState || "oof";
+
+					// Simple toggle: if current state matches default state, clear it
+					// Otherwise, set it to the default state
+					if (currentState === defaultState) {
 						this.clearDates([date]);
+					} else {
+						this.toggleDate(date, defaultState);
 					}
 					// Clear drag state after click handler runs
 					dragDate = null;

@@ -42,4 +42,13 @@ export function validateConfig(config: CalendarConfig): void {
   ) {
     throw new Error("firstDayOfWeek must be 0 (Sunday) or 1 (Monday)");
   }
+
+  // Validate that defaultState exists in states if provided
+  if (config.painting?.defaultState) {
+    if (!config.states[config.painting.defaultState]) {
+      throw new Error(
+        `config.painting.defaultState '${config.painting.defaultState}' does not exist in config.states`
+      );
+    }
+  }
 }
