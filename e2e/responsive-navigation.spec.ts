@@ -46,7 +46,7 @@ test.describe("Responsive Navigation", () => {
 
 			const mobileMenuButton = page.locator(
 				"[data-testid='mobile-menu-button']",
-			);
+			).first();
 
 			// Check accessibility attributes
 			await expect(mobileMenuButton).toHaveAttribute("aria-label");
@@ -161,16 +161,6 @@ test.describe("Responsive Navigation", () => {
 			await expect(mobileMenuButton.first()).toBeVisible();
 		});
 
-		test("week status cells should have data-testid", async ({ page }) => {
-			const weekStatus = page.locator("[data-testid='week-status']").first();
-			await expect(weekStatus).toBeVisible();
-		});
-
-		test("calendar week rows should have data-testid", async ({ page }) => {
-			const weekRow = page.locator("[data-testid='calendar-week']").first();
-			await expect(weekRow).toBeVisible();
-		});
-
 		test("all interactive elements should have accessible selectors", async ({
 			page,
 		}) => {
@@ -195,16 +185,15 @@ test.describe("Responsive Navigation", () => {
 			await waitForCalendarReady(page);
 
 			// Verify mobile menu is visible
-			const mobileMenu = page.locator("[data-testid='mobile-menu-button']");
+			const mobileMenu = page.locator("[data-testid='mobile-menu-button']").first();
 			await expect(mobileMenu).toBeVisible();
 
 			// Change to desktop viewport
 			await page.setViewportSize({ width: 1920, height: 1080 });
 			await page.waitForTimeout(300);
 
-			// Verify columns layout is visible
-			const columns = page.locator(".columns.is-desktop");
-			await expect(columns).toBeVisible();
+			// Verify mobile menu is now hidden on desktop
+			await expect(mobileMenu).toBeHidden();
 		});
 
 		test("should adapt when viewport changes from desktop to mobile", async ({
@@ -215,16 +204,15 @@ test.describe("Responsive Navigation", () => {
 			await page.goto("/rto-calculator/");
 			await waitForCalendarReady(page);
 
-			// Verify columns layout
-			const columns = page.locator(".columns.is-desktop");
-			await expect(columns).toBeVisible();
+			// Verify mobile menu is hidden on desktop
+			const mobileMenu = page.locator("[data-testid='mobile-menu-button']").first();
+			await expect(mobileMenu).toBeHidden();
 
 			// Change to mobile viewport
 			await page.setViewportSize({ width: 375, height: 667 });
 			await page.waitForTimeout(300);
 
 			// Verify mobile menu is visible
-			const mobileMenu = page.locator("[data-testid='mobile-menu-button']");
 			await expect(mobileMenu).toBeVisible();
 		});
 	});

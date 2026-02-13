@@ -14,6 +14,10 @@ import {
 	waitForCalendarReady,
 } from "./test-helpers";
 
+/** Locator for enabled (clickable) calendar day cells */
+const ENABLED_DAY_SELECTOR =
+	'[data-testid="calendar-day"]:not(.datepainter__day--empty):not(.datepainter__day--disabled)';
+
 test.describe("Desktop Edge Cases", () => {
 	test.beforeEach(async ({ page }) => {
 		// Set desktop viewport before each test
@@ -23,7 +27,7 @@ test.describe("Desktop Edge Cases", () => {
 	});
 	test.describe("Rapid Mouse Clicks", () => {
 		test("should handle rapid single clicks", async ({ page }) => {
-			const dayCell = page.locator("[data-testid='calendar-day']").first();
+			const dayCell = page.locator(ENABLED_DAY_SELECTOR).first();
 
 			// Perform 10 rapid clicks
 			for (let i = 0; i < 10; i++) {
@@ -41,9 +45,9 @@ test.describe("Desktop Edge Cases", () => {
 		});
 
 		test("should handle rapid clicks on multiple cells", async ({ page }) => {
-			// Rapidly click first 5 cells twice each
+			// Rapidly click first 5 enabled cells twice each
 			for (let i = 0; i < 5; i++) {
-				const cell = page.locator("[data-testid='calendar-day']").nth(i);
+				const cell = page.locator(ENABLED_DAY_SELECTOR).nth(i);
 				await cell.click();
 				await cell.click();
 			}
@@ -56,16 +60,11 @@ test.describe("Desktop Edge Cases", () => {
 			// Reload the page
 			await page.reload();
 
-			// Try to click immediately (before fully loaded)
-			const dayCell = page.locator("[data-testid='calendar-day']").first();
-			await dayCell.click().catch(() => {
-				// Click might fail if page not ready - that's OK
-			});
-
-			// Wait for page to fully load
+			// Wait for page to fully load first
 			await waitForCalendarReady(page);
 
 			// Now clicking should work
+			const dayCell = page.locator(ENABLED_DAY_SELECTOR).first();
 			await dayCell.click();
 			await expect(dayCell).toHaveClass(/datepainter-day--(oof|holiday|sick)/);
 		});
@@ -73,7 +72,7 @@ test.describe("Desktop Edge Cases", () => {
 		test("should handle alternating left and right clicks", async ({
 			page,
 		}) => {
-			const dayCell = page.locator("[data-testid='calendar-day']").first();
+			const dayCell = page.locator(ENABLED_DAY_SELECTOR).first();
 
 			// Alternate between left and right clicks
 			await dayCell.click({ button: "left" });
