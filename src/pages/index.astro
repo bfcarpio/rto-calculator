@@ -1,12 +1,24 @@
 ---
-import "../styles/global.css";
-import "../styles/pages/index.css";
-import "../styles/components/dynamic-calendar.css";
+import Month from "../components/month.astro";
 
 // Page metadata
 const title = "RTO Calculator - Plan Your Time Off";
 const description =
     "Plan your vacation for the next 365 days while ensuring compliance with RTO policies";
+
+// Get current date to determine starting month
+const now = new Date();
+const startMonth = now.getMonth(); // 0-11
+const startYear = now.getFullYear();
+
+// Generate 12 months starting from current month
+const months = Array.from({ length: 12 }, (_, index) => {
+    const monthOffset = index;
+    let month = (startMonth + monthOffset) % 12;
+    let year = startYear + Math.floor((startMonth + monthOffset) / 12);
+
+    return { month, year };
+});
 ---
 
 <!doctype html>
@@ -17,6 +29,8 @@ const description =
         <meta name="description" content={description} />
         <title>{title}</title>
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <link rel="stylesheet" href="/src/styles/global.css" />
+        <link rel="stylesheet" href="/src/styles/pages/index.css" />
     </head>
     <body>
         <a href="#calendar" class="skip-link">Skip to calendar</a>
@@ -61,31 +75,31 @@ const description =
                     <span>Violation</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color selected" aria-hidden="true"></div>
-                    <span>Selected (Non-Office)</span>
+                    <div class="legend-color work-from-home" aria-hidden="true">
+                    </div>
+                    <span>Work from Home</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color weekend" aria-hidden="true"></div>
-                    <span>Weekend</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color past" aria-hidden="true"></div>
-                    <span>Past Date</span>
+                    <div class="legend-color office" aria-hidden="true"></div>
+                    <span>Office Day</span>
                 </div>
             </div>
 
             <div
-                id="calendar-container"
-                class="calendar-container"
-                role="grid"
-                aria-label="365-day calendar"
+                class="months-grid"
+                role="region"
+                aria-label="12-month calendar"
             >
-                <div class="loading">Loading calendar...</div>
+                {
+                    months.map(({ month, year }) => (
+                        <Month month={month} year={year} />
+                    ))
+                }
             </div>
 
             <div class="action-buttons">
                 <button
-                    id="clear-button"
+                    id="clear-all-button"
                     class="button button-danger"
                     type="button"
                     aria-label="Clear all selections"
@@ -106,21 +120,150 @@ const description =
         <footer>
             <p>
                 <small>
-                    RTO Calculator - 3/5 office days per week • 12-week rolling
-                    period evaluation
+                    RTO Calculator - Left-click for work from home, right-click
+                    for office day
                 </small>
             </p>
         </footer>
 
         <script>
-            import { init } from "../utils/astro/calendarFunctions";
+            /**
+             * Initialize clear all button functionality
+             */
+            function initClearAllButton() {
+                const clearAllButton =
+                    document.getElementById("clear-all-button");
+                if (!clearAllButton) return;
+
+                clearAllButton.addEventListener("click", (e) => {
+                    e.preventDefault();
+
+                    // Find all selected cells across all months
+                    const selectedCells = document.querySelectorAll(
+                        ".calendar-day.selected[data-year][data-month]",
+                    );
+
+                    if (selectedCells.length === 0) {
+                        announceToScreenReader("No selections to clear");
+                        return;
+                    }
+
+                    // Clear all selections
+                    const clearedCount = selectedCells.length;
+                    selectedCells.forEach((cell) => {
+                        cell.dataset.selected = "false";
+                        cell.dataset.selectionType = "";
+                        cell.classList.remove(
+                            "selected",
+                            "work-from-home",
+                            "office",
+                        );
+                        cell.ariaSelected = "false";
+
+                        // Update aria-label to reflect unselected state
+                        const currentLabel = cell.ariaLabel;
+                        cell.ariaLabel = currentLabel.replace(
+                            /\. .*$/,
+                            ". Unselected",
+                        );
+                    });
+
+                    // Announce to screen readers
+                    announceToScreenReader(
+                        `Cleared ${clearedCount} selection${clearedCount !== 1 ? "s" : ""} from all months`,
+                    );
+
+                    // Focus back on button
+                    clearAllButton.focus();
+                });
+
+                // Add keyboard support
+                clearAllButton.addEventListener("keydown", (e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        clearAllButton.click();
+                    }
+                });
+            }
+
+            /**
+             * Announce a message to screen readers
+             * @param {string} message - The message to announce
+             */
+            function announceToScreenReader(message) {
+                const announcement = document.createElement("div");
+                announcement.setAttribute("role", "status");
+                announcement.setAttribute("aria-live", "polite");
+                announcement.setAttribute("aria-atomic", "true");
+                announcement.className = "sr-only calendar-announcement";
+
+                announcement.textContent = message;
+                document.body.appendChild(announcement);
+
+                // Remove announcement after it's been read
+                setTimeout(() => {
+                    document.body.removeChild(announcement);
+                }, 1000);
+            }
 
             // Initialize when DOM is ready
             if (document.readyState === "loading") {
-                document.addEventListener("DOMContentLoaded", init);
+                document.addEventListener(
+                    "DOMContentLoaded",
+                    initClearAllButton,
+                );
             } else {
-                init();
+                initClearAllButton();
             }
         </script>
+
+        <style>
+            .months-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                gap: 1.5rem;
+                padding: 1rem 0;
+                justify-items: center;
+            }
+
+            /* Responsive layout for smaller screens */
+            @media (max-width: 768px) {
+                .months-grid {
+                    grid-template-columns: repeat(
+                        auto-fill,
+                        minmax(150px, 1fr)
+                    );
+                    gap: 1rem;
+                }
+            }
+
+            @media (max-width: 480px) {
+                .months-grid {
+                    grid-template-columns: 1fr;
+                }
+            }
+
+            /* Screen reader only content */
+            .sr-only {
+                position: absolute;
+                width: 1px;
+                height: 1px;
+                padding: 0;
+                margin: -1px;
+                overflow: hidden;
+                clip: rect(0, 0, 0, 0);
+                white-space: nowrap;
+                border-width: 0;
+            }
+
+            /* Legend color styles */
+            .legend-color.work-from-home {
+                background-color: #1890ff;
+            }
+
+            .legend-color.office {
+                background-color: #f5222d;
+            }
+        </style>
     </body>
 </html>
