@@ -1,0 +1,248 @@
+/**
+ * Astro-Specific Styles - RTO Calendar Package
+ * Scoped styles for Astro component usage with SSR support
+ *
+ * Usage: Import in Calendar.astro for scoped styling
+ */
+
+/* ============================================
+   Astro :scope Container
+   ============================================ */
+
+.datepainter :scope {
+	/* Inherit all base styles from base.css */
+	/* This ensures styles are scoped to the Astro component */
+}
+
+/* ============================================
+   SSR-Specific Styles
+   ============================================ */
+
+/* Pre-hydration state (before client-side JS loads) */
+.datepainter[data-hydration="pending"] {
+	/* Show loading state */
+	opacity: 1;
+}
+
+/* Post-hydration state (after client-side JS loads) */
+.datepainter[data-hydration="complete"] {
+	/* Fully interactive */
+}
+
+/* ============================================
+   Hydration Transitions
+   ============================================ */
+
+/* Smooth fade-in when hydration completes */
+.datepainter[data-hydration="complete"] .datepainter__day {
+	animation: datepainter-fade-in 150ms ease-out;
+}
+
+@keyframes datepainter-fade-in {
+	from {
+		opacity: 0;
+		transform: translateY(4px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* ============================================
+   Scoped Component Styles
+   ============================================ */
+
+/* Week number column (optional feature) */
+.datepainter :scope .datepainter__week-number {
+	grid-column: 1;
+	font-size: var(--datepainter-font-size-xs);
+	font-weight: var(--datepainter-font-weight-medium);
+	color: var(--datepainter-text-muted);
+	text-align: center;
+	padding: var(--datepainter-spacing-sm);
+}
+
+/* Adjust grid when week numbers are shown */
+.datepainter--with-week-numbers .datepainter__weekdays {
+	grid-template-columns: var(--datepainter-week-number-width, 30px) repeat(7, 1fr);
+}
+
+.datepainter--with-week-numbers .datepainter__days {
+	grid-template-columns: var(--datepainter-week-number-width, 30px) repeat(7, 1fr);
+}
+
+/* ============================================
+   Month Grid for Multiple Months
+   ============================================ */
+
+/* When displaying multiple months in a grid */
+.datepainter--grid .datepainter__month {
+	display: grid;
+	grid-template-columns: repeat(var(--datepainter-grid-columns, 3), 1fr);
+	gap: var(--datepainter-month-gap);
+}
+
+/* Responsive month grid */
+@media (max-width: 1200px) {
+	.datepainter--grid .datepainter__month {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+@media (max-width: 768px) {
+	.datepainter--grid .datepainter__month {
+		grid-template-columns: 1fr;
+	}
+}
+
+/* ============================================
+   Interactive State Transitions (Astro)
+   ============================================ */
+
+/* Hover transition for interactive days */
+.datepainter[data-interactive="true"] .datepainter__day:not(.datepainter__day--empty) {
+	transition: all var(--datepainter-transition-base);
+}
+
+/* Selected state animation */
+.datepainter-day--selected {
+	animation: datepainter-select 200ms ease-out;
+}
+
+@keyframes datepainter-select {
+	0% {
+		transform: scale(0.9);
+	}
+	50% {
+		transform: scale(1.1);
+	}
+	100% {
+		transform: scale(1);
+	}
+}
+
+/* ============================================
+   Day State Classes (Astro-scoped)
+   ============================================ */
+
+/* Working state (enhanced for Astro) */
+.datepainter :scope .datepainter-day--working {
+	background-color: var(--datepainter-primary-light);
+	border-color: var(--datepainter-primary);
+	color: var(--datepainter-primary);
+}
+
+/* OOF state (enhanced for Astro) */
+.datepainter :scope .datepainter-day--oof {
+	background-color: var(--datepainter-secondary-light);
+	border-color: var(--datepainter-secondary);
+	color: var(--datepainter-secondary);
+}
+
+/* Holiday state (enhanced for Astro) */
+.datepainter :scope .datepainter-day--holiday {
+	background-color: var(--datepainter-holiday-bg);
+	border-color: var(--datepainter-holiday-border);
+	color: var(--datepainter-holiday-text);
+	font-weight: var(--datepainter-font-weight-semibold);
+}
+
+/* Today indicator */
+.datepainter :scope .datepainter-day--today::after {
+	content: "";
+	position: absolute;
+	bottom: 2px;
+	left: 50%;
+	transform: translateX(-50%);
+	width: 4px;
+	height: 4px;
+	background-color: var(--datepainter-primary);
+	border-radius: 50%;
+}
+
+/* ============================================
+   Drag Selection Styles (Astro)
+   ============================================ */
+
+/* Visual feedback during drag selection */
+.datepainter[data-dragging="true"] .datepainter__day:hover {
+	background-color: var(--datepainter-primary-light);
+	border-color: var(--datepainter-primary);
+}
+
+/* Selected days in drag range */
+.datepainter__day--drag-selected {
+	background-color: var(--datepainter-primary-light) !important;
+	border-color: var(--datepainter-primary) !important;
+}
+
+/* ============================================
+   Status Indicators (if used) week-status classes
+   ============================================ */
+
+.datepainter :scope .week-status {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--datepainter-spacing-sm);
+	padding: var(--datepainter-spacing-sm) var(--datepainter-spacing-md);
+	border-radius: var(--datepainter-radius-md);
+	font-size: var(--datepainter-font-size-xs);
+	font-weight: var(--datepainter-font-weight-medium);
+}
+
+.datepainter :scope .week-status.compliant {
+	background-color: var(--datepainter-primary-light);
+	color: var(--datepainter-primary);
+}
+
+.datepainter :scope .week-status.invalid {
+	background-color: var(--datepainter-error-bg);
+	color: var(--datepainter-error);
+}
+
+.datepainter :scope .week-status.pending {
+	background-color: var(--datepainter-secondary-light);
+	color: var(--datepainter-secondary);
+}
+
+.datepainter :scope .week-status.ignored {
+	background-color: var(--datepainter-bg-alt);
+	color: var(--datepainter-text-muted);
+}
+
+/* ============================================
+   Print Styles (Astro)
+   ============================================ */
+
+@media print {
+	.datepainter {
+		break-inside: avoid;
+	}
+
+	.datepainter__day {
+		border: 1px solid #ccc;
+		transition: none;
+	}
+
+	.datepainter__day:hover {
+		transform: none;
+		box-shadow: none;
+	}
+}
+
+/* ============================================
+   High Contrast Mode (Astro)
+   ============================================ */
+
+@media (prefers-contrast: high) {
+	.datepainter__day {
+		border-width: 2px;
+	}
+
+	.datepainter-day--working,
+	.datepainter-day--oof,
+	.datepainter-day--holiday {
+		border-width: 3px;
+	}
+}
