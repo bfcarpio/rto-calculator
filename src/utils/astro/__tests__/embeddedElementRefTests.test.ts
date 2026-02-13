@@ -33,14 +33,14 @@ describe("Embedded Element References - DayInfo", () => {
 
   describe("Element Reference Storage", () => {
     it("should store HTMLElement reference in DayInfo", () => {
-      const mockElement = createMockDayElement(2025, 0, 6, "work-from-home");
+      const mockElement = createMockDayElement(2025, 0, 6, "out-of-office");
 
       const dayInfo: DayInfo = {
         date: new Date(2025, 0, 6),
         element: mockElement,
         isWeekday: true,
         isSelected: true,
-        selectionType: "work-from-home",
+        selectionType: "out-of-office",
       };
 
       expect(dayInfo.element).toBeInstanceOf(HTMLElement);
@@ -85,7 +85,7 @@ describe("Embedded Element References - DayInfo", () => {
       const year = 2025;
       const month = 0;
       const day = 6;
-      const selectionType = "work-from-home";
+      const selectionType = "out-of-office";
 
       const dayInfo = createMockDayInfo(
         new Date(year, month, day),
@@ -103,12 +103,12 @@ describe("Embedded Element References - DayInfo", () => {
     });
 
     it("should update element when selection type changes", () => {
-      const dayInfo = createMockDayInfo(new Date(2025, 0, 6), "work-from-home");
+      const dayInfo = createMockDayInfo(new Date(2025, 0, 6), "out-of-office");
 
       // Simulate selection change
       dayInfo.selectionType = "office";
       dayInfo.element.dataset.selectionType = "office";
-      dayInfo.element.classList.remove("work-from-home");
+      dayInfo.element.classList.remove("out-of-office");
       dayInfo.element.classList.add("office");
 
       expect(dayInfo.selectionType).toBe("office");
@@ -117,13 +117,13 @@ describe("Embedded Element References - DayInfo", () => {
     });
 
     it("should handle clearing selection", () => {
-      const dayInfo = createMockDayInfo(new Date(2025, 0, 6), "work-from-home");
+      const dayInfo = createMockDayInfo(new Date(2025, 0, 6), "out-of-office");
 
       // Clear selection
       dayInfo.selectionType = null;
       dayInfo.element.dataset.selectionType = "";
       dayInfo.element.dataset.selected = "false";
-      dayInfo.element.classList.remove("selected", "work-from-home");
+      dayInfo.element.classList.remove("selected", "out-of-office");
 
       expect(dayInfo.selectionType).toBe(null);
       expect(dayInfo.element.dataset.selectionType).toBe("");
@@ -149,6 +149,7 @@ describe("Embedded Element References - WeekInfo", () => {
         officeDays: 5,
         isCompliant: true,
         isUnderEvaluation: false,
+        status: "compliant",
         statusCellElement: mockStatusCell,
       };
 
@@ -277,7 +278,7 @@ describe("Embedded Element References - Verification", () => {
       for (let i = 0; i < 5; i++) {
         const dayInfo = createMockDayInfo(
           new Date(2025, 0, 6 + i),
-          i < 2 ? "work-from-home" : null,
+          i < 2 ? "out-of-office" : null,
         );
         originalElements.push(dayInfo.element);
         days.push(dayInfo);
@@ -296,7 +297,7 @@ describe("Embedded Element References - Verification", () => {
 
     it("should verify all embedded references are present", () => {
       const weekInfo = createMockWeekInfo(new Date(2025, 0, 6), [
-        createMockDayInfo(new Date(2025, 0, 6), "work-from-home"),
+        createMockDayInfo(new Date(2025, 0, 6), "out-of-office"),
         createMockDayInfo(new Date(2025, 0, 7), null),
         createMockDayInfo(new Date(2025, 0, 8), null),
         createMockDayInfo(new Date(2025, 0, 9), null),
@@ -323,6 +324,7 @@ describe("Embedded Element References - Verification", () => {
         officeDays: 5,
         isCompliant: true,
         isUnderEvaluation: false,
+        status: "compliant",
         statusCellElement: createMockStatusCell(),
       };
 
@@ -332,14 +334,14 @@ describe("Embedded Element References - Verification", () => {
 
   describe("Element Data Consistency", () => {
     it("should maintain consistency between data object and element", () => {
-      const dayInfo = createMockDayInfo(new Date(2025, 0, 6), "work-from-home");
+      const dayInfo = createMockDayInfo(new Date(2025, 0, 6), "out-of-office");
 
       // Update data object
       dayInfo.selectionType = "office";
 
       // Update element to match
       dayInfo.element.dataset.selectionType = "office";
-      dayInfo.element.classList.remove("work-from-home");
+      dayInfo.element.classList.remove("out-of-office");
       dayInfo.element.classList.add("office");
 
       // Verify consistency
@@ -347,7 +349,7 @@ describe("Embedded Element References - Verification", () => {
     });
 
     it("should detect inconsistency between data and element", () => {
-      const dayInfo = createMockDayInfo(new Date(2025, 0, 6), "work-from-home");
+      const dayInfo = createMockDayInfo(new Date(2025, 0, 6), "out-of-office");
 
       // Introduce inconsistency (data object changed, element not)
       dayInfo.selectionType = "office";
@@ -509,6 +511,7 @@ describe("Embedded Element References - Edge Cases", () => {
         officeDays: 5,
         isCompliant: true,
         isUnderEvaluation: false,
+        status: "compliant",
         statusCellElement: null, // Missing
       };
 
@@ -713,6 +716,7 @@ describe("Embedded Element References - Best Practices", () => {
         officeDays: 5,
         isCompliant: true,
         isUnderEvaluation: false,
+        status: "compliant",
         statusCellElement: null,
       };
 
