@@ -10,6 +10,19 @@ const { title = "RTO Calculator", description = "" } = Astro.props;
 		<meta name="generator" content={Astro.generator} />
 		<meta name="description" content={description} />
 		<title>{title}</title>
+		
+		<!-- OpenGraph Meta Tags -->
+		<meta property="og:type" content="website" />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		<meta property="og:site_name" content="RTO Calculator" />
+		<meta property="og:url" content="https://bfcarpio.github.io/rto-calculator" />
+		
+		<!-- Twitter Card Meta Tags -->
+		<meta name="twitter:card" content="summary" />
+		<meta name="twitter:title" content={title} />
+		<meta name="twitter:description" content={description} />
+		<meta name="twitter:url" content="https://bfcarpio.github.io/rto-calculator" />
 	</head>
 	<body>
 		<slot />
