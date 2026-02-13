@@ -3,6 +3,8 @@ import Month from "../components/month.astro";
 import ActionButtons from "../components/ActionButtons.astro";
 import SettingsButton from "../components/SettingsButton.astro";
 import SettingsModal from "../components/SettingsModal.astro";
+import "../styles/global.css";
+import "../styles/pages/index.css"
 
 // Page metadata
 const title = "RTO Calculator - Plan Your Time Off";
@@ -32,8 +34,6 @@ const months = Array.from({ length: 12 }, (_, index) => {
         <meta name="description" content={description} />
         <title>{title}</title>
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-        <link rel="stylesheet" href="/src/styles/global.css" />
-        <link rel="stylesheet" href="/src/styles/pages/index.css" />
     </head>
     <body>
         <a href="#calendar" class="skip-link">Skip to calendar</a>
