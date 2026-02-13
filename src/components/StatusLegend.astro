@@ -88,6 +88,7 @@
 
 <script>
   import type { DateState } from 'datepainter';
+  import type { CalendarInstance } from 'datepainter';
 
   /**
    * Set the marking mode for date painting
@@ -111,19 +112,25 @@
       }
     });
 
-    // The actual painting mode is managed by datepainter's defaultState config
-    // We only update the UI to show which mode is active
+    // Update datepainter's painting config to change default state
+    try {
+      calendarManager.updateConfig({
+        painting: { defaultState: mode }
+      });
+    } catch (error) {
+      console.error('Failed to update calendar config:', error);
+    }
   }
 
   /**
    * Get calendar manager instance from window
    * @returns The calendar manager instance or null if not initialized
    */
-  const getCalendarManager = (): unknown | null => {
+  const getCalendarManager = (): CalendarInstance | null => {
     return (window as any).__datepainterInstance || null;
   };
 
-  let calendarManager: unknown | null = null;
+  let calendarManager: CalendarInstance | null = null;
 
   /**
    * Initialize calendar manager with polling fallback

@@ -48,7 +48,7 @@
 	"scripts": {
 		"build": "tsup && npm run copy:styles && npm run copy:stores",
 		"copy:styles": "mkdir -p dist/styles && cp -r styles/* dist/styles/",
-		"copy:stores": "mkdir -p dist/stores && cp -r src/stores/* dist/stores/",
+		"copy:stores": "mkdir -p dist/stores && cp -r src/stores/* dist/stores/ && sed -i 's|from \"../types\"|from \"datepainter\"|g' dist/stores/*.ts",
 		"test": "vitest",
 		"test:ui": "vitest --ui",
 		"test:run": "vitest run",

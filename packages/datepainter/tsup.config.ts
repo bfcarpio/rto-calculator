@@ -12,6 +12,6 @@ export default defineConfig({
 	treeshake: true,
 	// Copy styles directory to dist
 	banner: {
-		js: '// CSS styles are available in the styles/ directory',
+		js: "// CSS styles are available in the styles/ directory",
 	},
 });

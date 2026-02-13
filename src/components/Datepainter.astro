@@ -223,6 +223,9 @@
     // Initialize the calendar
     calendarManager.init();
 
+    // Expose calendar manager globally for StatusLegend component
+    (window as any).__datepainterInstance = calendarManager;
+
     // Add data-testid attributes to day cells after initialization
     addTestIdsToDayCells(container);
 
