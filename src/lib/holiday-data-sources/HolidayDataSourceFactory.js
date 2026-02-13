@@ -7,11 +7,12 @@
 class HolidayDataSourceFactory {
 	/**
 	 * Get the singleton instance of the factory
-	 * @returns {HolidayDataSourceFactory} Factory instance
+	 * @returns {Promise<HolidayDataSourceFactory>} Factory instance
 	 */
-	static getInstance() {
+	static async getInstance() {
 		if (!HolidayDataSourceFactory._instance) {
 			HolidayDataSourceFactory._instance = new HolidayDataSourceFactory();
+			await HolidayDataSourceFactory._instance.initialize();
 		}
 		return HolidayDataSourceFactory._instance;
 	}
@@ -23,18 +24,24 @@ class HolidayDataSourceFactory {
 	constructor() {
 		this.dataSources = new Map();
 		this.defaultDataSourceName = "nager-date";
-		this._initializeDefaultDataSources();
+		this.initialized = false;
 	}
 
 	/**
-	 * Initialize default data sources
-	 * @private
+	 * Initialize default data sources - must be called before using the factory
+	 * @returns {Promise<void>}
 	 */
-	_initializeDefaultDataSources() {
+	async initialize() {
+		if (this.initialized) {
+			return;
+		}
+
 		try {
 			// Dynamically import and register NagerDateHolidayDataSource
-			const NagerDateHolidayDataSource = require("./NagerDateHolidayDataSource.js");
-			const nagerDataSource = new NagerDateHolidayDataSource.default();
+			const { default: NagerDateHolidayDataSource } = await import(
+				"./NagerDateHolidayDataSource.js"
+			);
+			const nagerDataSource = new NagerDateHolidayDataSource();
 			this.registerDataSource(nagerDataSource);
 			this.defaultDataSourceName = "nager-date";
 		} catch (error) {
@@ -42,14 +49,22 @@ class HolidayDataSourceFactory {
 				`[HolidayDataSourceFactory] Failed to initialize default data sources: ${error.message}`,
 			);
 		}
+
+		this.initialized = true;
 	}
 
 	/**
 	 * Get a data source by name
 	 * @param {string} name - Data source name
 	 * @returns {HolidayDataSource|undefined} Data source instance or undefined
+	 * @throws {Error} If factory is not initialized
 	 */
 	getDataSource(name) {
+		if (!this.initialized) {
+			throw new Error(
+				"HolidayDataSourceFactory not initialized. Call initialize() first.",
+			);
+		}
 		return this.dataSources.get(name);
 	}
 
@@ -253,8 +268,10 @@ class HolidayDataSourceFactory {
 			let newDataSource;
 
 			if (name === "nager-date") {
-				const NagerDateHolidayDataSource = require("./NagerDateHolidayDataSource.js");
-				newDataSource = new NagerDateHolidayDataSource.default(config);
+				const { default: NagerDateHolidayDataSource } = await import(
+					"./NagerDateHolidayDataSource.js"
+				);
+				newDataSource = new NagerDateHolidayDataSource(config);
 			} else {
 				throw new Error(
 					`Cannot reload data source type '${name}' - not supported`,
