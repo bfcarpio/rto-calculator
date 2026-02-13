@@ -12,6 +12,13 @@ const { position } = Astro.props;
 // Button configurations
 const _buttons: ButtonConfig[] = [
 	{
+		id: `clear-month-button-${position}`,
+		text: "Clear Month",
+		icon: "🧹",
+		variant: "secondary",
+		ariaLabel: "Clear selections in current month",
+	},
+	{
 		id: `clear-all-button-${position}`,
 		text: "Clear All",
 		icon: "🗑️",
@@ -29,7 +36,9 @@ const _buttons: ButtonConfig[] = [
             type="button"
             aria-label={button.ariaLabel}
             data-button-type={button.variant}
-            data-testid={button.id.includes("clear-all")
+            data-testid={button.id.includes("clear-month")
+                ? "clear-month-button"
+                : button.id.includes("clear-all")
                 ? "clear-all-button"
                 : undefined}
         >
@@ -201,10 +210,35 @@ const _buttons: ButtonConfig[] = [
 </style>
 
 <script>
-  import type { CalendarInstance } from 'datepainter';
+  import type { CalendarInstance, DateString } from 'datepainter';
 
   function getCalendarManager(): CalendarInstance | null {
     return (window as any).__datepainterInstance || null;
+  }
+
+  /** Clear date selections in the current month only */
+  function handleClearMonth(): void {
+    const calendarManager = getCalendarManager();
+    if (!calendarManager) return;
+
+    const current = calendarManager.getCurrentMonth();
+    const after = new Date(current.getFullYear(), current.getMonth(), 0); // last day of prev month
+    const before = new Date(current.getFullYear(), current.getMonth() + 1, 1); // first day of next month
+
+    const ranges = calendarManager.getDateRanges({ after, before });
+    const datesToClear = ranges.flatMap(({ start, end }) => {
+      const dates: DateString[] = [];
+      const d = new Date(start);
+      while (d <= end) {
+        dates.push(d.toISOString().slice(0, 10) as DateString);
+        d.setDate(d.getDate() + 1);
+      }
+      return dates;
+    });
+
+    if (datesToClear.length > 0) {
+      calendarManager.clearDates(datesToClear);
+    }
   }
 
   /** Clear all date selections */
@@ -218,6 +252,9 @@ const _buttons: ButtonConfig[] = [
   }
 
   // Wire up buttons
+  document.querySelectorAll('[data-testid="clear-month-button"]').forEach((btn) => {
+    btn.addEventListener('click', handleClearMonth);
+  });
   document.querySelectorAll('[data-testid="clear-all-button"]').forEach((btn) => {
     btn.addEventListener('click', handleClearAll);
   });
