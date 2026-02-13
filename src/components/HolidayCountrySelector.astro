@@ -152,7 +152,6 @@
 </style>
 
 <script>
-  import { ApiClient, CountryApi, PublicHolidayApi } from 'nager_date_api_reference';
   import { getDateStore } from '../lib/dateStore';
 
   const countrySelect = document.getElementById('country-select') as HTMLSelectElement;
@@ -169,11 +168,14 @@
         statusDiv.textContent = 'Loading countries...';
       }
 
+      // Dynamic import like NagerDateHolidayDataSource uses
+      const { ApiClient, CountryApi } = await import('nager_date_api_reference');
+      
       const apiClient = new ApiClient(BASE_URL);
       const countryApi = new CountryApi(apiClient);
 
       const countries = await new Promise<Array<{ countryCode: string; name: string }>>((resolve, reject) => {
-        countryApi.apiV3AvailableCountriesGet((error: Error | null, data: Array<{ countryCode: string; name: string }> | null | undefined) => {
+        countryApi.apiV3AvailableCountriesGet((error: Error | null, data: Array<{ countryCode: string; name: string }> | null) => {
           if (error) reject(error);
           else resolve(data || []);
         });
@@ -220,13 +222,17 @@
       addButton.disabled = true;
 
       const currentYear = new Date().getFullYear();
+      
+      // Dynamic import
+      const { ApiClient, PublicHolidayApi } = await import('nager_date_api_reference');
+      
       const apiClient = new ApiClient(BASE_URL);
       const holidayApi = new PublicHolidayApi(apiClient);
 
-      const holidays = await new Promise<Array<{ date: string; name: string; localName: string }>>((resolve, reject) => {
-        holidayApi.apiV3PublicHolidaysYearCountryCodeGet(currentYear, countryCode, (error: Error | null, data: Array<{ date: string; name: string; localName: string }> | null | undefined) => {
+      const holidays = await new Promise<Array<{ date: string; name: string }>>((resolve, reject) => {
+        holidayApi.apiV3PublicHolidaysYearCountryCodeGet(currentYear, countryCode, (error: Error | null, data: Array<{ date: string; name: string }> | null) => {
           if (error) reject(error);
-          else resolve((data || []).map((h: { date: string; name: string; localName: string }) => ({ date: h.date, name: h.name, localName: h.localName })));
+          else resolve((data || []).map((h: { date: string; name: string }) => ({ date: h.date, name: h.name })));
         });
       });
 
