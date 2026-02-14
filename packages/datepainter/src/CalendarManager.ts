@@ -1,5 +1,5 @@
 import { validateConfig } from "./config/validate";
-import { formatDate, parseDate } from "./lib/dateUtils";
+import { formatDate, isWeekday, parseDate } from "./lib/dateUtils";
 import {
 	getDayCellClasses,
 	getIconHTML,
@@ -208,14 +208,23 @@ export class CalendarManager implements CalendarInstance {
 	 * manager.getDatesByState('working'); // ['2026-02-06', '2026-02-07']
 	 * ```
 	 */
-	getDatesByState(state: DateState): DateString[] {
+	getDatesByState(state: DateState, options?: DateFilterOptions): DateString[] {
 		if (!this.isInitialized) {
 			throw new Error("Calendar not initialized");
 		}
 		const allDates = getAllDates();
-		return Array.from(allDates.entries())
-			.filter(([_, s]) => s === state)
-			.map(([date]) => date);
+		const afterStr = options?.after ? formatDate(options.after) : null;
+		const beforeStr = options?.before ? formatDate(options.before) : null;
+
+		const result: DateString[] = [];
+		for (const [dateStr, s] of allDates) {
+			if (s !== state) continue;
+			if (afterStr && dateStr <= afterStr) continue;
+			if (beforeStr && dateStr >= beforeStr) continue;
+			if (options?.onlyWeekdays && !isWeekday(parseDate(dateStr))) continue;
+			result.push(dateStr);
+		}
+		return result;
 	}
 
 	/**
