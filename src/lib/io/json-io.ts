@@ -4,7 +4,11 @@
  */
 
 import type { CalendarInstance, DateState } from "datepainter";
-import { type AppSettings, readSettings, writeSettings } from "../settings-reader";
+import {
+	type AppSettings,
+	readSettings,
+	writeSettings,
+} from "../settings-reader";
 import { STATE_DEFAULTS } from "../state-defaults";
 import { downloadFile } from "./download";
 import { type ExportData, validateExportData } from "./schema";
@@ -13,7 +17,11 @@ import { type ExportData, validateExportData } from "./schema";
 export function exportJSON(calendar: CalendarInstance): void {
 	const json = buildExportJSON(calendar);
 	const timestamp = new Date().toISOString().slice(0, 10);
-	downloadFile(json, `rto-export-${timestamp}.json`, "application/json");
+	downloadFile(
+		json,
+		`${timestamp}_rto-calculator-data.json`,
+		"application/json",
+	);
 }
 
 /** Build the export JSON string (also useful for testing) */
@@ -25,7 +33,11 @@ export function buildExportJSON(calendar: CalendarInstance): string {
 function buildExportData(calendar: CalendarInstance): ExportData {
 	const settings = readSettings();
 	// Omit internal-only fields
-	const { debug: _debug, saveData: _saveData, ...exportableSettings } = settings;
+	const {
+		debug: _debug,
+		saveData: _saveData,
+		...exportableSettings
+	} = settings;
 
 	const categories: ExportData["categories"] = {
 		oof: buildCategory("oof", calendar),

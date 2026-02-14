@@ -3,11 +3,11 @@
  * Uses ts-ics for generation and @ts-ics/schema-zod for validated parsing.
  */
 
-import type { CalendarInstance, DateState, DateString } from "datepainter";
+import { parseIcsCalendar } from "@ts-ics/schema-zod";
 import { addDays, format } from "date-fns";
+import type { CalendarInstance, DateState, DateString } from "datepainter";
 import type { IcsCalendar, IcsEvent } from "ts-ics";
 import { generateIcsCalendar } from "ts-ics";
-import { parseIcsCalendar } from "@ts-ics/schema-zod";
 import { STATE_DEFAULTS } from "../state-defaults";
 import { downloadFile } from "./download";
 
@@ -15,7 +15,7 @@ import { downloadFile } from "./download";
 export function exportICS(calendar: CalendarInstance): void {
 	const ics = buildExportICS(calendar);
 	const timestamp = new Date().toISOString().slice(0, 10);
-	downloadFile(ics, `rto-export-${timestamp}.ics`, "text/calendar");
+	downloadFile(ics, `${timestamp}_rto-calculator-data.ics`, "text/calendar");
 }
 
 /** Build the ICS string (also useful for testing) */
@@ -75,9 +75,7 @@ function formatUTCDate(d: Date): string {
 function expandEventDates(event: IcsEvent): string[] {
 	const startMs = event.start.date.getTime();
 	// DTEND is exclusive in ICS spec; subtract 1 day for the inclusive end
-	const endMs = event.end
-		? event.end.date.getTime() - 86_400_000
-		: startMs;
+	const endMs = event.end ? event.end.date.getTime() - 86_400_000 : startMs;
 
 	if (endMs < startMs) return [formatUTCDate(event.start.date)];
 

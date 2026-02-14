@@ -156,6 +156,11 @@
                         <button id="export-ics-button" class="action-button secondary" type="button">ICS</button>
                     </div>
                 </div>
+                <div class="schema-link-row">
+                    <a href="/rto-calculator/schema/rto-calculator-data-v1.json"
+                       target="_blank" rel="noopener"
+                       class="schema-link">View JSON Schema</a>
+                </div>
                 <div class="setting-row">
                     <div class="setting-info">
                         <span class="setting-label">Import calendar data</span>
@@ -436,6 +441,20 @@
         border-color: #475569;
     }
 
+    .schema-link-row {
+        padding: 0.25rem 0 0.5rem;
+    }
+
+    .schema-link {
+        font-size: 0.8rem;
+        color: #64748b;
+        text-decoration: underline;
+    }
+
+    .schema-link:hover {
+        color: #334155;
+    }
+
     .action-button.danger {
         background: white;
         border: 2px solid #fca5a5;
@@ -526,6 +545,14 @@
     :global(body.dark-mode) .starting-week-select {
         background: #1e293b;
         border-color: #334155;
+        color: #e2e8f0;
+    }
+
+    :global(body.dark-mode) .schema-link {
+        color: #94a3b8;
+    }
+
+    :global(body.dark-mode) .schema-link:hover {
         color: #e2e8f0;
     }
 
