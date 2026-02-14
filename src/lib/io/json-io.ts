@@ -41,17 +41,29 @@ function buildExportData(calendar: CalendarInstance): ExportData {
 	};
 }
 
+function formatDate(d: Date): string {
+	const y = d.getFullYear();
+	const m = String(d.getMonth() + 1).padStart(2, "0");
+	const day = String(d.getDate()).padStart(2, "0");
+	return `${y}-${m}-${day}`;
+}
+
 function buildCategory(
 	state: DateState,
 	calendar: CalendarInstance,
 ): ExportData["categories"]["oof"] {
 	const meta = STATE_DEFAULTS[state]!;
 	const dates = calendar.getDatesByState(state).slice().sort();
+	const ranges = calendar.getDateRanges({ state }).map((r) => ({
+		start: formatDate(r.start),
+		end: formatDate(r.end),
+	}));
 	return {
 		label: meta.label,
 		color: meta.bgColor,
 		emoji: meta.emoji,
 		dates,
+		ranges,
 	};
 }
 

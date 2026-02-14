@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { CalendarInstance, DateState, DateString } from "datepainter";
+import type { CalendarInstance, DateRangeOptions, DateState, DateString, MarkedDateRange } from "datepainter";
 import { validateExportData } from "../schema";
 
 // Mock settings-reader so tests don't depend on actual localStorage reads through it
@@ -31,13 +31,36 @@ import { buildExportJSON, importJSON } from "../json-io";
 
 function mockCalendar(dates: Record<string, string[]>): CalendarInstance {
 	const dateMap = new Map<DateString, DateState>();
+	const rangesByState = new Map<DateState, MarkedDateRange[]>();
+
 	for (const [state, ds] of Object.entries(dates)) {
 		for (const d of ds) dateMap.set(d as DateString, state as DateState);
+
+		const sorted = [...ds].sort();
+		const stateRanges: MarkedDateRange[] = [];
+		let i = 0;
+		while (i < sorted.length) {
+			const start = new Date(`${sorted[i]}T12:00:00`);
+			let end = start;
+			while (
+				i + 1 < sorted.length &&
+				new Date(`${sorted[i + 1]}T12:00:00`).getTime() - end.getTime() === 86400000
+			) {
+				i++;
+				end = new Date(`${sorted[i]}T12:00:00`);
+			}
+			stateRanges.push({ start, end, state: state as DateState });
+			i++;
+		}
+		rangesByState.set(state as DateState, stateRanges);
 	}
+
 	return {
 		getAllDates: vi.fn(() => dateMap),
 		getDatesByState: vi.fn((s: DateState) => (dates[s] ?? []) as DateString[]),
-		getDateRanges: vi.fn(() => []),
+		getDateRanges: vi.fn((opts?: DateRangeOptions) =>
+			opts?.state ? (rangesByState.get(opts.state) ?? []) : [...rangesByState.values()].flat(),
+		),
 		clearAll: vi.fn(),
 		setDates: vi.fn(),
 		clearDates: vi.fn(),
@@ -112,6 +135,20 @@ describe("exportJSON", () => {
 		const cal = mockCalendar({ oof: [], holiday: [], sick: [] });
 		const parsed = JSON.parse(buildExportJSON(cal));
 		expect(parsed.settings.rollingWindowWeeks).toBe(16);
+	});
+
+	it("includes ranges computed from dates", () => {
+		const cal = mockCalendar({
+			oof: ["2026-01-05", "2026-01-06", "2026-01-07", "2026-01-20"],
+			holiday: [],
+			sick: [],
+		});
+
+		const parsed = JSON.parse(buildExportJSON(cal));
+		expect(parsed.categories.oof.ranges).toEqual([
+			{ start: "2026-01-05", end: "2026-01-07" },
+			{ start: "2026-01-20", end: "2026-01-20" },
+		]);
 	});
 
 	it("omits debug and saveData from settings", () => {
