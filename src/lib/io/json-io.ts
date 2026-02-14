@@ -67,6 +67,17 @@ function buildCategory(
 	};
 }
 
+function expandRange(start: string, end: string): string[] {
+	const dates: string[] = [];
+	const current = new Date(`${start}T12:00:00`);
+	const last = new Date(`${end}T12:00:00`);
+	while (current <= last) {
+		dates.push(formatDate(current));
+		current.setDate(current.getDate() + 1);
+	}
+	return dates;
+}
+
 /** Import JSON string into calendar. Returns result with optional error. */
 export function importJSON(
 	data: string,
@@ -86,12 +97,21 @@ export function importJSON(
 
 	const exportData = validation.data;
 
-	// Apply dates
+	// Apply dates (merge dates + expanded ranges, deduplicate)
 	calendar.clearAll();
 	for (const [state, category] of Object.entries(exportData.categories)) {
-		if (category.dates.length > 0) {
+		const dateSet = new Set(category.dates);
+		if (category.ranges) {
+			for (const range of category.ranges) {
+				for (const d of expandRange(range.start, range.end)) {
+					dateSet.add(d);
+				}
+			}
+		}
+		const allDates = [...dateSet].sort();
+		if (allDates.length > 0) {
 			calendar.setDates(
-				category.dates as `${number}-${number}-${number}`[],
+				allDates as `${number}-${number}-${number}`[],
 				state as DateState,
 			);
 		}

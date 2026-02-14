@@ -1,5 +1,11 @@
+import type {
+	CalendarInstance,
+	DateRangeOptions,
+	DateState,
+	DateString,
+	MarkedDateRange,
+} from "datepainter";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { CalendarInstance, DateRangeOptions, DateState, DateString, MarkedDateRange } from "datepainter";
 import { validateExportData } from "../schema";
 
 // Mock settings-reader so tests don't depend on actual localStorage reads through it
@@ -44,7 +50,8 @@ function mockCalendar(dates: Record<string, string[]>): CalendarInstance {
 			let end = start;
 			while (
 				i + 1 < sorted.length &&
-				new Date(`${sorted[i + 1]}T12:00:00`).getTime() - end.getTime() === 86400000
+				new Date(`${sorted[i + 1]}T12:00:00`).getTime() - end.getTime() ===
+					86400000
 			) {
 				i++;
 				end = new Date(`${sorted[i]}T12:00:00`);
@@ -59,7 +66,9 @@ function mockCalendar(dates: Record<string, string[]>): CalendarInstance {
 		getAllDates: vi.fn(() => dateMap),
 		getDatesByState: vi.fn((s: DateState) => (dates[s] ?? []) as DateString[]),
 		getDateRanges: vi.fn((opts?: DateRangeOptions) =>
-			opts?.state ? (rangesByState.get(opts.state) ?? []) : [...rangesByState.values()].flat(),
+			opts?.state
+				? (rangesByState.get(opts.state) ?? [])
+				: [...rangesByState.values()].flat(),
 		),
 		clearAll: vi.fn(),
 		setDates: vi.fn(),
@@ -249,6 +258,36 @@ describe("importJSON", () => {
 		const result = importJSON(JSON.stringify(data), cal);
 		expect(result.success).toBe(true);
 		expect(cal.setDates).not.toHaveBeenCalled();
+	});
+
+	it("imports ranges-only (empty dates)", () => {
+		const cal = mockCalendar({ oof: [], holiday: [], sick: [] });
+		const data = JSON.parse(validExportJSON());
+		data.categories.oof.dates = [];
+		data.categories.oof.ranges = [{ start: "2026-01-05", end: "2026-01-08" }];
+		data.categories.holiday.dates = [];
+		data.categories.sick.dates = [];
+		const result = importJSON(JSON.stringify(data), cal);
+		expect(result.success).toBe(true);
+		expect(cal.setDates).toHaveBeenCalledWith(
+			["2026-01-05", "2026-01-06", "2026-01-07", "2026-01-08"],
+			"oof",
+		);
+	});
+
+	it("imports dates + ranges with overlap (deduplication)", () => {
+		const cal = mockCalendar({ oof: [], holiday: [], sick: [] });
+		const data = JSON.parse(validExportJSON());
+		data.categories.oof.dates = ["2026-01-05", "2026-01-06", "2026-01-10"];
+		data.categories.oof.ranges = [{ start: "2026-01-05", end: "2026-01-08" }];
+		data.categories.holiday.dates = [];
+		data.categories.sick.dates = [];
+		const result = importJSON(JSON.stringify(data), cal);
+		expect(result.success).toBe(true);
+		expect(cal.setDates).toHaveBeenCalledWith(
+			["2026-01-05", "2026-01-06", "2026-01-07", "2026-01-08", "2026-01-10"],
+			"oof",
+		);
 	});
 
 	it("round-trip: export then import restores state", () => {
