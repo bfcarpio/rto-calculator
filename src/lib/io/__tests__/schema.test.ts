@@ -44,6 +44,28 @@ describe("validateExportData", () => {
 		expect(validateExportData(data).success).toBe(true);
 	});
 
+	it("accepts valid ranges", () => {
+		const data = validPayload();
+		(data.categories.oof as Record<string, unknown>).ranges = [
+			{ start: "2026-01-05", end: "2026-01-08" },
+		];
+		expect(validateExportData(data).success).toBe(true);
+	});
+
+	it("rejects invalid date format in ranges", () => {
+		const data = validPayload();
+		(data.categories.oof as Record<string, unknown>).ranges = [
+			{ start: "01/05/2026", end: "2026-01-08" },
+		];
+		expect(validateExportData(data).success).toBe(false);
+	});
+
+	it("accepts missing ranges (backward compat)", () => {
+		const data = validPayload();
+		expect(data.categories.oof).not.toHaveProperty("ranges");
+		expect(validateExportData(data).success).toBe(true);
+	});
+
 	it("settings field is optional", () => {
 		const data = validPayload();
 		delete (data as Record<string, unknown>).settings;

@@ -7,11 +7,19 @@ import { z } from "zod";
 
 const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
 
+const dateStringSchema = z.string().regex(dateRegex, "Expected YYYY-MM-DD date format");
+
+const dateRangeSchema = z.object({
+	start: dateStringSchema,
+	end: dateStringSchema,
+});
+
 const categorySchema = z.object({
 	label: z.string(),
 	color: z.string(),
 	emoji: z.string(),
-	dates: z.array(z.string().regex(dateRegex, "Expected YYYY-MM-DD date format")),
+	dates: z.array(dateStringSchema),
+	ranges: z.array(dateRangeSchema).optional(),
 });
 
 export const exportDataSchema = z.object({
