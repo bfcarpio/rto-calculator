@@ -151,6 +151,42 @@ describe("getDateRanges", () => {
 		expect(ranges[2]!.start).toEqual(ranges[2]!.end);
 	});
 
+	it("excludes weekend dates when onlyWeekdays is true", () => {
+		// 2026-02-13 Fri, 2026-02-14 Sat, 2026-02-15 Sun, 2026-02-16 Mon
+		setDateState("2026-02-13" as DateString, "oof" as DateState);
+		setDateState("2026-02-14" as DateString, "oof" as DateState);
+		setDateState("2026-02-15" as DateString, "oof" as DateState);
+		setDateState("2026-02-16" as DateString, "oof" as DateState);
+
+		const ranges = manager.getDateRanges({ onlyWeekdays: true });
+		expect(ranges).toHaveLength(2);
+		// Fri stands alone (Sat/Sun removed breaks adjacency with Mon)
+		expect(ranges[0]!.start).toEqual(new Date(2026, 1, 13));
+		expect(ranges[0]!.end).toEqual(new Date(2026, 1, 13));
+		// Mon stands alone
+		expect(ranges[1]!.start).toEqual(new Date(2026, 1, 16));
+		expect(ranges[1]!.end).toEqual(new Date(2026, 1, 16));
+	});
+
+	it("weekday-only filtering splits ranges that span weekends", () => {
+		// Mon–Fri full week + next Mon
+		setDateState("2026-03-09" as DateString, "oof" as DateState); // Mon
+		setDateState("2026-03-10" as DateString, "oof" as DateState); // Tue
+		setDateState("2026-03-11" as DateString, "oof" as DateState); // Wed
+		setDateState("2026-03-12" as DateString, "oof" as DateState); // Thu
+		setDateState("2026-03-13" as DateString, "oof" as DateState); // Fri
+		setDateState("2026-03-14" as DateString, "oof" as DateState); // Sat
+		setDateState("2026-03-15" as DateString, "oof" as DateState); // Sun
+		setDateState("2026-03-16" as DateString, "oof" as DateState); // Mon
+
+		const ranges = manager.getDateRanges({ onlyWeekdays: true });
+		expect(ranges).toHaveLength(2);
+		expect(ranges[0]!.start).toEqual(new Date(2026, 2, 9));
+		expect(ranges[0]!.end).toEqual(new Date(2026, 2, 13));
+		expect(ranges[1]!.start).toEqual(new Date(2026, 2, 16));
+		expect(ranges[1]!.end).toEqual(new Date(2026, 2, 16));
+	});
+
 	it("returns ranges sorted chronologically", () => {
 		// Set dates in non-chronological order
 		setDateState("2026-09-15" as DateString, "oof" as DateState);

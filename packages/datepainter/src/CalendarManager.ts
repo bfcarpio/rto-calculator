@@ -262,6 +262,7 @@ export class CalendarManager implements CalendarInstance {
 			if (options?.state && state !== options.state) continue;
 			if (afterStr && dateStr <= afterStr) continue;
 			if (beforeStr && dateStr >= beforeStr) continue;
+			if (options?.onlyWeekdays && !isWeekday(parseDate(dateStr))) continue;
 			entries.push([dateStr, state]);
 		}
 
