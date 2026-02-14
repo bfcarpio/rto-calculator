@@ -12,6 +12,20 @@ const { position } = Astro.props;
 // Button configurations
 const _buttons: ButtonConfig[] = [
 	{
+		id: `undo-button-${position}`,
+		text: "Undo",
+		icon: "↩",
+		variant: "secondary",
+		ariaLabel: "Undo last action",
+	},
+	{
+		id: `redo-button-${position}`,
+		text: "Redo",
+		icon: "↪",
+		variant: "secondary",
+		ariaLabel: "Redo last undone action",
+	},
+	{
 		id: `clear-month-button-${position}`,
 		text: "Clear Month",
 		icon: "🧹",
@@ -36,7 +50,12 @@ const _buttons: ButtonConfig[] = [
             type="button"
             aria-label={button.ariaLabel}
             data-button-type={button.variant}
-            data-testid={button.id.includes("clear-month")
+            disabled={button.id.includes("undo-button") || button.id.includes("redo-button") || undefined}
+            data-testid={button.id.includes("undo-button")
+                ? "undo-button"
+                : button.id.includes("redo-button")
+                ? "redo-button"
+                : button.id.includes("clear-month")
                 ? "clear-month-button"
                 : button.id.includes("clear-all")
                 ? "clear-all-button"
@@ -251,11 +270,42 @@ const _buttons: ButtonConfig[] = [
     calendarManager.clearAll();
   }
 
+  import type { KeyboardShortcuts } from '../scripts/keyboard-shortcuts';
+
+  function getKeyboardShortcuts(): KeyboardShortcuts | null {
+    return (window as any).__keyboardShortcutsInstance ?? null;
+  }
+
+  function handleUndo(): void {
+    getKeyboardShortcuts()?.handleUndo();
+  }
+
+  function handleRedo(): void {
+    getKeyboardShortcuts()?.handleRedo();
+  }
+
   // Wire up buttons
+  document.querySelectorAll('[data-testid="undo-button"]').forEach((btn) => {
+    btn.addEventListener('click', handleUndo);
+  });
+  document.querySelectorAll('[data-testid="redo-button"]').forEach((btn) => {
+    btn.addEventListener('click', handleRedo);
+  });
   document.querySelectorAll('[data-testid="clear-month-button"]').forEach((btn) => {
     btn.addEventListener('click', handleClearMonth);
   });
   document.querySelectorAll('[data-testid="clear-all-button"]').forEach((btn) => {
     btn.addEventListener('click', handleClearAll);
   });
+
+  // Listen for history-changed to toggle undo/redo disabled state
+  window.addEventListener('history-changed', ((e: CustomEvent<{ canUndo: boolean; canRedo: boolean }>) => {
+    const { canUndo, canRedo } = e.detail;
+    document.querySelectorAll('[data-testid="undo-button"]').forEach((btn) => {
+      (btn as HTMLButtonElement).disabled = !canUndo;
+    });
+    document.querySelectorAll('[data-testid="redo-button"]').forEach((btn) => {
+      (btn as HTMLButtonElement).disabled = !canRedo;
+    });
+  }) as EventListener);
 </script>

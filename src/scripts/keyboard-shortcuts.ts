@@ -70,6 +70,9 @@ export class KeyboardShortcuts {
 	/** Flag to track if shortcuts are initialized */
 	private isInitialized = false;
 
+	/** Flag to suppress snapshot push during undo/redo restoration */
+	private restoringState = false;
+
 	/**
 	 * Creates a new KeyboardShortcuts instance
 	 *
@@ -170,6 +173,13 @@ export class KeyboardShortcuts {
 				this.handleUndo();
 				return;
 			}
+
+			// Ctrl+Y / Cmd+Y or Ctrl+Shift+Z / Cmd+Shift+Z - Redo
+			if (e.key === "y" || (e.key === "z" && e.shiftKey)) {
+				e.preventDefault();
+				this.handleRedo();
+				return;
+			}
 		};
 
 		// Store listener for cleanup
@@ -248,7 +258,9 @@ export class KeyboardShortcuts {
 
 		this.stateChangeUnsubscribe = calendarManagerWithCallback.onStateChange(
 			() => {
-				this.pushStateToHistory();
+				if (!this.restoringState) {
+					this.pushStateToHistory();
+				}
 			},
 		);
 	}
@@ -271,8 +283,8 @@ export class KeyboardShortcuts {
 				const snapshot = this.createStateSnapshot();
 				this.historyManager.push(snapshot);
 				this.debounceTimeout = null;
+				this.dispatchHistoryChanged();
 			} catch (error) {
-				// Log error but don't throw to avoid disrupting user interaction
 				console.error("Failed to push state to history:", error);
 			}
 		}, this.DEBOUNCE_DELAY);
@@ -327,36 +339,55 @@ export class KeyboardShortcuts {
 	 *
 	 * @private
 	 */
-	private handleUndo(): void {
+	handleUndo(): void {
 		const snapshot = this.historyManager.undo();
-		if (!snapshot) {
-			return;
-		}
+		if (!snapshot) return;
+		this.restoreSnapshot(snapshot);
+	}
 
-		// Restore calendar state
-		const calendarManagerWithMethods = this.calendarManager as {
-			clearDates?: (dates: (DateString | Date)[]) => void;
-			setDates?: (dates: (DateString | Date)[], state: DateState) => void;
-		};
+	handleRedo(): void {
+		const snapshot = this.historyManager.redo();
+		if (!snapshot) return;
+		this.restoreSnapshot(snapshot);
+	}
 
-		// Clear all dates first
-		if (typeof calendarManagerWithMethods.clearDates === "function") {
-			const allDates = Array.from(snapshot.calendarState.keys());
-			calendarManagerWithMethods.clearDates(allDates);
-		}
+	private restoreSnapshot(snapshot: UndoSnapshot): void {
+		this.restoringState = true;
+		try {
+			const calendarManagerWithMethods = this.calendarManager as {
+				clearDates?: (dates: (DateString | Date)[]) => void;
+				setDates?: (dates: (DateString | Date)[], state: DateState) => void;
+			};
 
-		// Set all dates from snapshot
-		if (typeof calendarManagerWithMethods.setDates === "function") {
-			const entries = Array.from(snapshot.calendarState.entries());
-			for (const [date, state] of entries) {
-				if (state) {
-					calendarManagerWithMethods.setDates([date], state);
+			if (typeof calendarManagerWithMethods.clearDates === "function") {
+				const allDates = Array.from(snapshot.calendarState.keys());
+				calendarManagerWithMethods.clearDates(allDates);
+			}
+
+			if (typeof calendarManagerWithMethods.setDates === "function") {
+				for (const [date, state] of snapshot.calendarState.entries()) {
+					if (state) {
+						calendarManagerWithMethods.setDates([date], state);
+					}
 				}
 			}
-		}
 
-		// Restore validation config
-		this.validationManager.updateConfig(snapshot.validationConfig);
+			this.validationManager.updateConfig(snapshot.validationConfig);
+		} finally {
+			this.restoringState = false;
+			this.dispatchHistoryChanged();
+		}
+	}
+
+	private dispatchHistoryChanged(): void {
+		window.dispatchEvent(
+			new CustomEvent("history-changed", {
+				detail: {
+					canUndo: this.historyManager.canUndo(),
+					canRedo: this.historyManager.canRedo(),
+				},
+			}),
+		);
 	}
 }
 

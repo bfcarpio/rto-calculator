@@ -1,7 +1,7 @@
 /**
  * HistoryManager
  *
- * Manages a stack of state snapshots for undo functionality in the RTO Calculator.
+ * Manages undo/redo stacks of state snapshots for the RTO Calculator.
  * Implements proper deep copying to ensure snapshot immutability.
  *
  * @module HistoryManager
@@ -40,8 +40,11 @@ export interface StateSnapshot {
  * @implements {IntentionalNaming} - Clear, self-documenting method names
  */
 export class HistoryManager {
-	/** Stack of state snapshots */
+	/** Undo stack of state snapshots */
 	private stack: StateSnapshot[] = [];
+
+	/** Redo stack of state snapshots */
+	private redoStack: StateSnapshot[] = [];
 
 	/** Maximum number of snapshots to retain */
 	private maxSize: number;
@@ -107,6 +110,7 @@ export class HistoryManager {
 		};
 
 		this.stack.push(deepCopy);
+		this.redoStack = [];
 
 		// Remove oldest snapshot if stack exceeds maxSize
 		if (this.stack.length > this.maxSize) {
@@ -115,7 +119,7 @@ export class HistoryManager {
 	}
 
 	/**
-	 * Remove and return the most recent snapshot from the stack
+	 * Pop the most recent snapshot from the undo stack and push it to redo stack
 	 *
 	 * @returns The most recent snapshot, or undefined if stack is empty
 	 */
@@ -124,25 +128,42 @@ export class HistoryManager {
 			return undefined;
 		}
 
-		return this.stack.pop();
+		const snapshot = this.stack.pop();
+		if (!snapshot) return undefined;
+		this.redoStack.push(snapshot);
+		return snapshot;
 	}
 
 	/**
-	 * Check if undo operation is available
+	 * Pop the most recent snapshot from the redo stack and push it to undo stack
 	 *
-	 * @returns True if there are snapshots to undo to
+	 * @returns The most recent redo snapshot, or undefined if redo stack is empty
 	 */
+	redo(): StateSnapshot | undefined {
+		if (this.redoStack.length === 0) {
+			return undefined;
+		}
+
+		const snapshot = this.redoStack.pop();
+		if (!snapshot) return undefined;
+		this.stack.push(snapshot);
+		return snapshot;
+	}
+
 	canUndo(): boolean {
 		return this.stack.length > 0;
 	}
 
+	canRedo(): boolean {
+		return this.redoStack.length > 0;
+	}
+
 	/**
-	 * Remove all snapshots from the stack
-	 *
-	 * Resets the history to its initial empty state.
+	 * Remove all snapshots from both stacks
 	 */
 	clear(): void {
 		this.stack = [];
+		this.redoStack = [];
 	}
 
 	/**
