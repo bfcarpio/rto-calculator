@@ -1,7 +1,7 @@
 import { initializeHolidayIntegration } from "../lib/holiday/CalendarHolidayIntegration";
 import { initializeLocalStorage } from "../scripts/localStorage";
 import { setupEventListeners } from "../utils/astro/calendarFunctions";
-import { debugLog, getDebugEnabled } from "./debug";
+import { isDebugEnabled, logger } from "../utils/logger";
 
 declare global {
 	interface Window {
@@ -26,7 +26,7 @@ function dispatchCalendarLoadedEvent() {
 		},
 	});
 	document.dispatchEvent(event);
-	debugLog("[Index] Dispatched calendar-loaded event");
+	logger.debug("[Index] Dispatched calendar-loaded event");
 }
 
 /**
@@ -45,10 +45,10 @@ export function initializeIndex() {
 
 	initializeHolidayIntegration();
 
-	const isDebugEnabled =
-		window.validationManager?.getDebugMode() ?? getDebugEnabled();
-	if (isDebugEnabled) {
-		debugLog("[Index] Calendar initialized.");
+	const debugEnabled =
+		window.validationManager?.getDebugMode() ?? isDebugEnabled();
+	if (debugEnabled) {
+		logger.debug("[Index] Calendar initialized.");
 	}
 
 	if (document.readyState === "loading") {
@@ -57,8 +57,8 @@ export function initializeIndex() {
 		dispatchCalendarLoadedEvent();
 	}
 
-	if (isDebugEnabled) {
-		debugLog("[Index] Calendar initialized.");
+	if (debugEnabled) {
+		logger.debug("[Index] Calendar initialized.");
 	}
 }
 
@@ -69,5 +69,5 @@ export function initializeIndex() {
  */
 export function cleanupIndex(): void {
 	// Datepainter handles its own cleanup
-	debugLog("[Index] Cleaned up calendar resources");
+	logger.debug("[Index] Cleaned up calendar resources");
 }

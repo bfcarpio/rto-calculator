@@ -8,7 +8,6 @@ import {
 import { getStartOfWeek } from "../lib/validation/rto-core";
 import { logger } from "../utils/logger";
 import { clearAllData } from "../utils/storage";
-import { debugLog } from "./debug";
 import { initializeIndex } from "./index-init";
 
 declare global {
@@ -180,7 +179,7 @@ class SettingsModal {
 		this.debugToggle.setAttribute("aria-checked", newState.toString());
 
 		window.validationManager?.setDebugMode(newState);
-		debugLog(`[Settings] Debug mode ${newState ? "enabled" : "disabled"}`);
+		logger.debug(`[Settings] Debug mode ${newState ? "enabled" : "disabled"}`);
 	}
 
 	private toggleSaveData(): void {
@@ -191,7 +190,7 @@ class SettingsModal {
 		this.saveDataToggle.setAttribute("aria-checked", newState.toString());
 
 		window.storageManager?.setDataSavingEnabled(newState);
-		debugLog(`[Settings] Data saving ${newState ? "enabled" : "disabled"}`);
+		logger.debug(`[Settings] Data saving ${newState ? "enabled" : "disabled"}`);
 	}
 
 	private toggleHolidayOofMode(): void {
@@ -201,7 +200,7 @@ class SettingsModal {
 		const newState = !currentState;
 		this.holidayOofToggle.setAttribute("aria-checked", newState.toString());
 
-		debugLog(
+		logger.debug(
 			`[Settings] Holiday OOF mode ${newState ? "enabled" : "disabled"}`,
 		);
 		document.dispatchEvent(
@@ -221,7 +220,7 @@ class SettingsModal {
 
 		this.saveSettingsToLocalStorage();
 		this.dispatchSettingsChanged();
-		debugLog(
+		logger.debug(
 			`[Settings] Sick days penalize ${newState ? "enabled" : "disabled"}`,
 		);
 	}
@@ -238,7 +237,7 @@ class SettingsModal {
 
 		this.saveSettingsToLocalStorage();
 		this.dispatchSettingsChanged();
-		debugLog(
+		logger.debug(
 			`[Settings] Holiday penalize ${newState ? "enabled" : "disabled"}`,
 		);
 	}
@@ -246,7 +245,7 @@ class SettingsModal {
 	private onMinOfficeDaysChange(e: Event): void {
 		const value = parseInt((e.target as HTMLInputElement).value, 10);
 		if (value >= 0 && value <= 5) {
-			debugLog(`[Settings] Min office days changed to: ${value}`);
+			logger.debug(`[Settings] Min office days changed to: ${value}`);
 			window.validationManager?.updateConfig({ minOfficeDaysPerWeek: value });
 		}
 	}
@@ -267,7 +266,7 @@ class SettingsModal {
 
 		this.saveSettingsToLocalStorage();
 		this.dispatchSettingsChanged();
-		debugLog(`[Settings] Rolling window changed to: ${value}`);
+		logger.debug(`[Settings] Rolling window changed to: ${value}`);
 	}
 
 	private onBestWeeksChange(): void {
@@ -281,13 +280,13 @@ class SettingsModal {
 
 		this.saveSettingsToLocalStorage();
 		this.dispatchSettingsChanged();
-		debugLog(`[Settings] Best weeks changed to: ${value}`);
+		logger.debug(`[Settings] Best weeks changed to: ${value}`);
 	}
 
 	private onStartingWeekChange(): void {
 		this.saveSettingsToLocalStorage();
 		this.dispatchSettingsChanged();
-		debugLog(
+		logger.debug(
 			`[Settings] Starting week changed to: ${this.startingWeekSelect?.value || "default"}`,
 		);
 	}
@@ -354,7 +353,7 @@ class SettingsModal {
 		const countryCode = (e.target as HTMLSelectElement).value;
 		const holidaysAsOOF =
 			this.holidayOofToggle?.getAttribute("aria-checked") === "true";
-		debugLog(`[Settings] Country changed to: ${countryCode}`);
+		logger.debug(`[Settings] Country changed to: ${countryCode}`);
 
 		document.dispatchEvent(
 			new CustomEvent("settings-changed", {
@@ -397,7 +396,7 @@ class SettingsModal {
 		if (this.selectedPattern.length > 0) {
 			const appliedCount = this.applyPatternToCalendar();
 			if (appliedCount > 0) {
-				debugLog(`[Settings] Pattern applied to ${appliedCount} day(s)`);
+				logger.debug(`[Settings] Pattern applied to ${appliedCount} day(s)`);
 				this.announceToScreenReader(
 					`Pattern applied to ${appliedCount} day(s). Settings saved`,
 				);
@@ -450,7 +449,7 @@ class SettingsModal {
 
 		localStorage.removeItem(SETTINGS_KEY);
 		this.dispatchSettingsChanged();
-		debugLog("[Settings] Settings reset to defaults");
+		logger.debug("[Settings] Settings reset to defaults");
 
 		this.modal?.close();
 		this.announceToScreenReader("Settings reset to defaults");
@@ -604,7 +603,7 @@ class SettingsModal {
 			holidayPenalize:
 				this.holidayPenalizeToggle?.getAttribute("aria-checked") !== "false",
 		});
-		debugLog("[Settings] Settings saved to localStorage");
+		logger.debug("[Settings] Settings saved to localStorage");
 	}
 
 	private loadSettingsFromLocalStorage(): void {
@@ -612,7 +611,7 @@ class SettingsModal {
 			const settings = readSettings();
 
 			if (settings.saveData !== true) {
-				debugLog("[Settings] Data saving disabled, using default settings");
+				logger.debug("[Settings] Data saving disabled, using default settings");
 				return;
 			}
 
@@ -696,7 +695,7 @@ class SettingsModal {
 				);
 			}
 
-			debugLog("[Settings] Settings loaded from localStorage");
+			logger.debug("[Settings] Settings loaded from localStorage");
 		} catch (error) {
 			logger.error("[Settings] Error loading settings:", error);
 		}

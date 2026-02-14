@@ -590,8 +590,6 @@
 <script>
     import { settingsManager } from '../scripts/settings-modal';
     import { cycleTheme, getCurrentTheme, getThemeManager } from '../lib/themeManager';
-    import { exportJSON, importJSON } from '../lib/io/json-io';
-    import { exportICS, importICS } from '../lib/io/ics-io';
     import type { CalendarInstance } from 'datepainter';
 
     const dialog = document.getElementById('settings-dialog') as HTMLDialogElement;
@@ -680,12 +678,14 @@
     }
 
     // Export buttons
-    document.getElementById('export-json-button')?.addEventListener('click', () => {
+    document.getElementById('export-json-button')?.addEventListener('click', async () => {
+        const { exportJSON } = await import('../lib/io/json-io');
         const calendar = getCalendar();
         if (calendar) exportJSON(calendar);
     });
 
-    document.getElementById('export-ics-button')?.addEventListener('click', () => {
+    document.getElementById('export-ics-button')?.addEventListener('click', async () => {
+        const { exportICS } = await import('../lib/io/ics-io');
         const calendar = getCalendar();
         if (calendar) exportICS(calendar);
     });
@@ -702,13 +702,15 @@
         icsInput?.click();
     });
 
-    jsonInput?.addEventListener('change', () => {
+    jsonInput?.addEventListener('change', async () => {
+        const { importJSON } = await import('../lib/io/json-io');
         const file = jsonInput.files?.[0];
         if (file) handleFileImport(file, importJSON);
         jsonInput.value = '';
     });
 
-    icsInput?.addEventListener('change', () => {
+    icsInput?.addEventListener('change', async () => {
+        const { importICS } = await import('../lib/io/ics-io');
         const file = icsInput.files?.[0];
         if (file) handleFileImport(file, importICS);
         icsInput.value = '';

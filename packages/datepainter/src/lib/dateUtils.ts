@@ -1,13 +1,14 @@
 /**
  * Date utility functions for calendar operations
  *
+ * Internal to datepainter package - do not import externally.
  * Uses date-fns internally but re-exports with stable signatures
  * for backward compatibility with existing consumers.
  */
 import {
 	addDays as dfAddDays,
-	format,
 	getDaysInMonth as dfGetDaysInMonth,
+	format,
 	getWeek,
 	parse,
 } from "date-fns";

@@ -107,20 +107,6 @@ export interface RollingPeriodData {
 }
 
 /**
- * RTO Policy configuration
- */
-export interface RTOPolicy {
-	minOfficeDaysPerWeek: number;
-	evaluationMethod: "rolling" | "per-unit";
-	rollingPeriodLength: number;
-	blackoutPeriods: Date[];
-	advanceNoticeRequired: boolean;
-	advanceNoticeDays: number;
-	customValidationRules: ValidationRule[];
-	timezone: string;
-}
-
-/**
  * RTO-specific holiday data structure (for calendar display and validation)
  * This is different from DataSourceHoliday which is used for API data
  */
@@ -132,18 +118,6 @@ export interface RTOHoliday {
 	countryCode?: string; // ISO 3166-1 alpha-2 country code
 	localName?: string; // Local name of the holiday
 	source?: "nager-date" | "manual" | "company"; // Where this holiday data came from
-}
-
-/**
- * Validation rule definition
- */
-export interface ValidationRule {
-	id: string;
-	name: string;
-	description: string;
-	validator: (data: DayData[]) => boolean;
-	message: string;
-	severity: "error" | "warning";
 }
 
 /**

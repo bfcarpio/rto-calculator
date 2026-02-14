@@ -1,5 +1,8 @@
 /**
  * Date Utilities - Range calculations and date operations
+ *
+ * Calendar-agnostic date/date-fns wrappers for general use across the app.
+ * For work-week specific utilities (Monday-based), see src/utils/dateUtils.ts
  */
 
 import {

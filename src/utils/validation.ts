@@ -1,4 +1,8 @@
 /**
+ * Legacy validation utilities for UI tests.
+ * Production validation is in /src/lib/validation/
+ * TODO: Migrate tests to use production validators and remove this file
+ *
  * Validation utility functions for RTO Calculator
  * Implements 3/5 office days per week and 8/12 weeks rolling period evaluation
  */

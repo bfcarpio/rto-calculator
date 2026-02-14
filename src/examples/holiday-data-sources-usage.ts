@@ -503,20 +503,4 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 	void runAllExamples();
 }
 
-export {
-	example1_getDefaultDataSource,
-	example2_checkAvailability,
-	example3_getHolidaysForYear,
-	example4_checkIfHoliday,
-	example5_checkTodayHoliday,
-	example6_getUpcomingHolidays,
-	example7_getHolidaysForDateRange,
-	example8_queryWithOptions,
-	example9_useFactory,
-	example10_caching,
-	example11_checkAllDataSources,
-	example12_errorHandling,
-	example13_multipleCountries,
-	example14_resetAndReconfigure,
-	runAllExamples,
-};
+export { runAllExamples };
