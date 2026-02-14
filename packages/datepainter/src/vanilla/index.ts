@@ -13,6 +13,7 @@ export {
 export type {
 	CalendarConfig,
 	CalendarInstance,
+	DateFilterOptions,
 	DateRangeOptions,
 	DateState,
 	DateString,

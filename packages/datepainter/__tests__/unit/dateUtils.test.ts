@@ -6,6 +6,7 @@ import {
 	getFirstDayOfMonth,
 	getWeekNumber,
 	addDays,
+	isWeekday,
 } from "../../src/lib/dateUtils";
 
 describe("dateUtils", () => {
@@ -164,6 +165,23 @@ describe("dateUtils", () => {
 			const date = new Date(2026, 1, 6);
 			addDays(date, 5);
 			expect(date.getDate()).toBe(6);
+		});
+	});
+
+	describe("isWeekday", () => {
+		it("returns true for Monday through Friday", () => {
+			// 2026-02-09 is Monday, 2026-02-13 is Friday
+			expect(isWeekday(new Date(2026, 1, 9))).toBe(true);  // Mon
+			expect(isWeekday(new Date(2026, 1, 10))).toBe(true); // Tue
+			expect(isWeekday(new Date(2026, 1, 11))).toBe(true); // Wed
+			expect(isWeekday(new Date(2026, 1, 12))).toBe(true); // Thu
+			expect(isWeekday(new Date(2026, 1, 13))).toBe(true); // Fri
+		});
+
+		it("returns false for Saturday and Sunday", () => {
+			// 2026-02-14 is Saturday, 2026-02-15 is Sunday
+			expect(isWeekday(new Date(2026, 1, 14))).toBe(false); // Sat
+			expect(isWeekday(new Date(2026, 1, 15))).toBe(false); // Sun
 		});
 	});
 

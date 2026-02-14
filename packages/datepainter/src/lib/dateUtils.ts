@@ -106,3 +106,14 @@ export function getWeekNumber(date: Date): number {
 export function addDays(date: Date, days: number): Date {
 	return dfAddDays(date, days);
 }
+
+/**
+ * Checks whether a date falls on a weekday (Monday–Friday)
+ *
+ * @param date - The Date object to check
+ * @returns True if the day is Mon–Fri, false for Sat/Sun
+ */
+export function isWeekday(date: Date): boolean {
+	const day = date.getDay();
+	return day >= 1 && day <= 5;
+}

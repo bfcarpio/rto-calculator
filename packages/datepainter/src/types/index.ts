@@ -67,9 +67,9 @@ export interface CalendarConfig {
 export interface CalendarInstance {
 	getSelectedDates(): DateString[];
 	getState(date: DateString): DateState | null;
-	getDatesByState(state: DateState): DateString[];
+	getDatesByState(state: DateState, options?: DateFilterOptions): DateString[];
 	getAllDates(): Map<DateString, DateState>;
-	getDateRanges(options?: DateRangeOptions): MarkedDateRange[];
+	getDateRanges(options?: DateFilterOptions): MarkedDateRange[];
 	getCurrentMonth(): Date;
 	setDates(dates: DateString[], state: DateState): void;
 	clearDates(dates: DateString[]): void;
@@ -93,15 +93,20 @@ export interface MarkedDateRange {
 	state: DateState;
 }
 
-// Options for filtering date ranges
-export interface DateRangeOptions {
-	/** Only include ranges with this state */
+// Options for filtering dates and date ranges
+export interface DateFilterOptions {
+	/** Only include dates/ranges with this state */
 	state?: DateState;
 	/** Exclude dates on or before this date */
 	after?: Date;
 	/** Exclude dates on or after this date */
 	before?: Date;
+	/** Only include weekdays (Mon–Fri) */
+	onlyWeekdays?: boolean;
 }
+
+// Backward-compatible alias
+export type DateRangeOptions = DateFilterOptions;
 
 // Validation result type
 export interface ValidationResult {

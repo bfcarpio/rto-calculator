@@ -16,7 +16,7 @@ import {
 import type {
 	CalendarConfig,
 	CalendarInstance,
-	DateRangeOptions,
+	DateFilterOptions,
 	DateState,
 	DateString,
 	MarkedDateRange,
@@ -238,7 +238,7 @@ export class CalendarManager implements CalendarInstance {
 	 * manager.getDateRanges({ state: 'oof', after: new Date(2026, 0, 15) });
 	 * ```
 	 */
-	getDateRanges(options?: DateRangeOptions): MarkedDateRange[] {
+	getDateRanges(options?: DateFilterOptions): MarkedDateRange[] {
 		if (!this.isInitialized) {
 			throw new Error("Calendar not initialized");
 		}
