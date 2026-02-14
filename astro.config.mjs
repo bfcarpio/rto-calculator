@@ -13,6 +13,14 @@ export default defineConfig({
 	compressHTML: true,
 	scopedStyleStrategy: "where",
 	vite: {
+		css: {
+			preprocessorOptions: {
+				scss: {
+					// Suppress Bulma's internal deprecation warnings
+					silenceDeprecations: ["if-function"],
+				},
+			},
+		},
 		plugins: [
 			// Generate gzip versions
 			viteCompression({
