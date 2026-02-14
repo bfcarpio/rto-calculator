@@ -149,20 +149,22 @@
                 <div class="setting-row">
                     <div class="setting-info">
                         <span class="setting-label">Export calendar data</span>
-                        <span class="setting-description">Download your data as JSON</span>
+                        <span class="setting-description">Download your dates and settings</span>
                     </div>
-                    <button id="export-button" class="action-button secondary" type="button">
-                        Export
-                    </button>
+                    <div class="button-group">
+                        <button id="export-json-button" class="action-button secondary" type="button">JSON</button>
+                        <button id="export-ics-button" class="action-button secondary" type="button">ICS</button>
+                    </div>
                 </div>
                 <div class="setting-row">
                     <div class="setting-info">
                         <span class="setting-label">Import calendar data</span>
                         <span class="setting-description">Restore from a previous export</span>
                     </div>
-                    <button id="import-button" class="action-button secondary" type="button">
-                        Import
-                    </button>
+                    <div class="button-group">
+                        <button id="import-json-button" class="action-button secondary" type="button">JSON</button>
+                        <button id="import-ics-button" class="action-button secondary" type="button">ICS</button>
+                    </div>
                 </div>
                 <div class="setting-row">
                     <div class="setting-info">
@@ -178,7 +180,8 @@
     </div>
 </dialog>
 
-<input type="file" id="import-file-input" accept=".json" style="display: none;" />
+<input type="file" id="import-json-input" accept=".json" style="display: none;" />
+<input type="file" id="import-ics-input" accept=".ics,.ical" style="display: none;" />
 
 
 <style>
@@ -407,6 +410,11 @@
         transform: translateX(22px);
     }
 
+    .button-group {
+        display: flex;
+        gap: 0.5rem;
+    }
+
     .action-button {
         padding: 0.5rem 1rem;
         border-radius: 8px;
@@ -555,6 +563,9 @@
 <script>
     import { settingsManager } from '../scripts/settings-modal';
     import { cycleTheme, getCurrentTheme, getThemeManager } from '../lib/themeManager';
+    import { exportJSON, importJSON } from '../lib/io/json-io';
+    import { exportICS, importICS } from '../lib/io/ics-io';
+    import type { CalendarInstance } from 'datepainter';
 
     const dialog = document.getElementById('settings-dialog') as HTMLDialogElement;
     const closeButton = dialog?.querySelector('.close-button');
@@ -612,4 +623,67 @@
     if (settingsManager) {
         settingsManager.initialize();
     }
+
+    // --- Import/Export wiring ---
+
+    function getCalendar(): CalendarInstance | null {
+        // biome-ignore lint/suspicious/noExplicitAny: matches Datepainter.astro pattern
+        return (window as any).__datepainterInstance ?? null;
+    }
+
+    function handleFileImport(
+        file: File,
+        importFn: (data: string, cal: CalendarInstance) => { success: boolean; error?: string },
+    ): void {
+        const calendar = getCalendar();
+        if (!calendar) return;
+
+        if (!window.confirm('Import will replace all current calendar data. Continue?')) return;
+
+        const reader = new FileReader();
+        reader.onload = () => {
+            const result = importFn(reader.result as string, calendar);
+            if (result.success) {
+                window.location.reload();
+            } else {
+                window.alert(`Import failed: ${result.error ?? 'Unknown error'}`);
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    // Export buttons
+    document.getElementById('export-json-button')?.addEventListener('click', () => {
+        const calendar = getCalendar();
+        if (calendar) exportJSON(calendar);
+    });
+
+    document.getElementById('export-ics-button')?.addEventListener('click', () => {
+        const calendar = getCalendar();
+        if (calendar) exportICS(calendar);
+    });
+
+    // Import buttons → trigger hidden file inputs
+    const jsonInput = document.getElementById('import-json-input') as HTMLInputElement;
+    const icsInput = document.getElementById('import-ics-input') as HTMLInputElement;
+
+    document.getElementById('import-json-button')?.addEventListener('click', () => {
+        jsonInput?.click();
+    });
+
+    document.getElementById('import-ics-button')?.addEventListener('click', () => {
+        icsInput?.click();
+    });
+
+    jsonInput?.addEventListener('change', () => {
+        const file = jsonInput.files?.[0];
+        if (file) handleFileImport(file, importJSON);
+        jsonInput.value = '';
+    });
+
+    icsInput?.addEventListener('change', () => {
+        const file = icsInput.files?.[0];
+        if (file) handleFileImport(file, importICS);
+        icsInput.value = '';
+    });
 </script>
