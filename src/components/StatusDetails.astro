@@ -188,22 +188,104 @@ const BEST_WEEKS_REQUIRED = 8;
 		padding: 0.4rem 0.6rem;
 	}
 
-	.status-details :global(.breakdown-week) {
-		padding: 0.6rem 0.75rem;
-		border-radius: 6px;
-		background: #f9fafb;
-		border: 1px solid #e5e7eb;
-		margin-bottom: 0.4rem;
+	/* Window Breakdown dot row */
+	.status-details :global(.wb-row) {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: 0.75rem;
 	}
 
-	.status-details :global(.breakdown-week--dropped) {
-		opacity: 0.6;
-		background: #f3f4f6;
-		border-left: 3px solid #9ca3af;
+	.status-details :global(.wb-row-label) {
+		min-width: 110px;
+		white-space: nowrap;
+		color: #334155;
 	}
 
-	.status-details :global(.breakdown-week--warn) {
-		border-left: 3px solid #f59e0b;
+	.status-details :global(.wb-row-tag) {
+		display: inline-block;
+		padding: 0.1rem 0.4rem;
+		border-radius: 4px;
+		font-size: 0.65rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		min-width: 32px;
+		text-align: center;
+	}
+
+	.status-details :global(.wb-row-tag--pass) {
+		background: #dcfce7;
+		color: #166534;
+	}
+
+	.status-details :global(.wb-row-tag--fail) {
+		background: #fee2e2;
+		color: #991b1b;
+	}
+
+	.status-details :global(.wb-row-dots) {
+		display: flex;
+		align-items: center;
+		gap: 3px;
+		flex: 1;
+	}
+
+	.status-details :global(.wb-row-avg) {
+		min-width: 28px;
+		text-align: right;
+		color: #6b7280;
+		font-size: 0.7rem;
+	}
+
+	/* Dots */
+	.status-details :global(.we-dot) {
+		display: inline-block;
+		width: 10px;
+		height: 10px;
+		border-radius: 50%;
+		flex-shrink: 0;
+	}
+
+	.status-details :global(.we-dot--best-ok) { background: #22c55e; }
+	.status-details :global(.we-dot--best-bad) { background: #f59e0b; }
+
+	.status-details :global(.we-dot--drop-ok) {
+		background: transparent;
+		border: 2px solid #22c55e;
+		box-sizing: border-box;
+	}
+
+	.status-details :global(.we-dot--drop-bad) {
+		background: transparent;
+		border: 2px solid #f59e0b;
+		box-sizing: border-box;
+	}
+
+	/* Dot tooltips */
+	.status-details :global(.we-dot-wrap) {
+		position: relative;
+		cursor: default;
+	}
+
+	.status-details :global(.we-dot-wrap:hover .we-dot-tip) {
+		display: block;
+	}
+
+	.status-details :global(.we-dot-tip) {
+		display: none;
+		position: absolute;
+		bottom: 100%;
+		left: 50%;
+		transform: translateX(-50%);
+		background: #1e293b;
+		color: #f1f5f9;
+		padding: 0.2rem 0.4rem;
+		border-radius: 4px;
+		font-size: 0.65rem;
+		white-space: nowrap;
+		z-index: 10;
+		pointer-events: none;
+		margin-bottom: 4px;
 	}
 
 	.public-holidays {
@@ -268,19 +350,27 @@ const BEST_WEEKS_REQUIRED = 8;
 		color: #fde68a;
 	}
 
-	:global(body.dark-mode) .status-details :global(.breakdown-week) {
-		background: #1e293b;
-		border-color: #334155;
+	:global(body.dark-mode) .status-details :global(.wb-row-label) {
 		color: #e2e8f0;
 	}
 
-	:global(body.dark-mode) .status-details :global(.breakdown-week--dropped) {
-		background: #0f172a;
-		border-left-color: #475569;
+	:global(body.dark-mode) .status-details :global(.wb-row-tag--pass) {
+		background: #052e16;
+		color: #86efac;
 	}
 
-	:global(body.dark-mode) .status-details :global(.breakdown-week--warn) {
-		border-left-color: #f59e0b;
+	:global(body.dark-mode) .status-details :global(.wb-row-tag--fail) {
+		background: #450a0a;
+		color: #fca5a5;
+	}
+
+	:global(body.dark-mode) .status-details :global(.wb-row-avg) {
+		color: #94a3b8;
+	}
+
+	:global(body.dark-mode) .status-details :global(.we-dot-tip) {
+		background: #334155;
+		color: #e2e8f0;
 	}
 
 	:global(body.dark-mode) .public-holidays {
@@ -316,8 +406,8 @@ const BEST_WEEKS_REQUIRED = 8;
 </style>
 
 <script>
-	import { onComplianceUpdated, getLatestCompliance, type ComplianceEventData, type AnnotatedWeek } from '../lib/auto-compliance';
-	import { fmtDate } from '../lib/dateUtils';
+	import { onComplianceUpdated, getLatestCompliance, type ComplianceEventData } from '../lib/auto-compliance';
+	import { fmtDate, fmtShort } from '../lib/dateUtils';
 	import { REQUIRED_OFFICE_DAYS } from '../lib/validation/constants';
 
 	const MAX_DAYS = 5;
@@ -339,55 +429,52 @@ const BEST_WEEKS_REQUIRED = 8;
 			return;
 		}
 
-		// Window selection label
+		// Window date range
+		const ws = data.slidingWindowResult.windowStart;
+		let rangeLabel = '';
+		if (ws !== null) {
+			const windowStart = new Date(ws);
+			const lastWeek = data.windowWeeks[data.windowWeeks.length - 1]!;
+			const windowEnd = new Date(lastWeek.weekStart);
+			windowEnd.setDate(windowEnd.getDate() + 4);
+			rangeLabel = `${fmtShort(windowStart)} – ${fmtShort(windowEnd)}`;
+		}
+
 		if (elLabel) {
-			const ws = data.slidingWindowResult.windowStart;
-			if (ws !== null) {
-				const windowStart = new Date(ws);
-				const windowWeeks = data.windowWeeks;
-				const lastWeek = windowWeeks[windowWeeks.length - 1]!;
-				const windowEnd = new Date(lastWeek.weekStart);
-				windowEnd.setDate(windowEnd.getDate() + 4);
-				const rangeStr = `${fmtDate(windowStart)} – ${fmtDate(windowEnd)}`;
-				elLabel.textContent = data.isCompliant
-					? `Showing most recent window (${rangeStr})`
-					: `Showing first failing window (${rangeStr})`;
+			elLabel.textContent = data.isCompliant
+				? `Showing most recent window (${rangeLabel})`
+				: `Showing first failing window (${rangeLabel})`;
+		}
+
+		// Build dot row
+		const tagClass = data.isCompliant ? 'wb-row-tag--pass' : 'wb-row-tag--fail';
+		const tagText = data.isCompliant ? 'PASS' : 'FAIL';
+
+		let dots = '';
+		for (const w of data.windowWeeks) {
+			const tipDate = fmtShort(w.weekStart);
+			const stateDesc = w.isBest ? 'evaluated' : 'dropped';
+			const complianceDesc = w.isCompliant ? 'compliant' : 'non-compliant';
+			const ariaLabel = `${tipDate}: ${w.officeDays} office days, ${stateDesc}, ${complianceDesc}`;
+			const tipText = w.isBest
+				? `${tipDate}: ${w.officeDays} days`
+				: `${tipDate}: ${w.officeDays} days (dropped)`;
+
+			let dotClass: string;
+			if (w.isBest) {
+				dotClass = w.isCompliant ? 'we-dot we-dot--best-ok' : 'we-dot we-dot--best-bad';
+			} else {
+				dotClass = w.isCompliant ? 'we-dot we-dot--drop-ok' : 'we-dot we-dot--drop-bad';
 			}
+
+			dots += `<span class="we-dot-wrap"><span class="${dotClass}" role="img" aria-label="${ariaLabel}"></span><span class="we-dot-tip" aria-hidden="true">${tipText}</span></span>`;
 		}
 
-		// Chronological flat list (windowWeeks already in order)
-		const html = data.windowWeeks.map((w) => renderBreakdownWeek(w, w.isIgnored)).join('');
-		elContent.innerHTML = html;
-	}
-
-	function renderBreakdownWeek(w: AnnotatedWeek, isDropped: boolean): string {
-		const weekEnd = new Date(w.weekStart);
-		weekEnd.setDate(weekEnd.getDate() + 4);
-		const range = `${fmtDate(w.weekStart)} – ${fmtDate(weekEnd)}`;
-		const needed = REQUIRED_OFFICE_DAYS - w.officeDays;
-
-		const warnClass = !isDropped && !w.isCompliant ? ' breakdown-week--warn' : '';
-		const droppedClass = isDropped ? ' breakdown-week--dropped' : '';
-
-		let tag: string;
-		if (isDropped) {
-			tag = w.isCompliant
-				? '<span class="tag is-light has-text-grey">Compliant</span>'
-				: '<span class="tag is-light has-text-grey">Non-compliant</span>';
-		} else if (w.isCompliant) {
-			tag = `<span class="tag is-success is-light">${w.officeDays} days</span>`;
-		} else {
-			tag = `<span class="tag is-warning">Needs ${needed} more</span>`;
-		}
-
-		return `<div class="breakdown-week${droppedClass}${warnClass}">
-			<div class="is-flex is-justify-content-space-between is-align-items-center">
-				<div>
-					<p class="has-text-weight-semibold is-size-7">${range}</p>
-					<p class="is-size-7 has-text-grey">${w.officeDays} office days</p>
-				</div>
-				${tag}
-			</div>
+		elContent.innerHTML = `<div class="wb-row">
+			<span class="wb-row-label">${rangeLabel}</span>
+			<span class="wb-row-tag ${tagClass}">${tagText}</span>
+			<span class="wb-row-dots">${dots}</span>
+			<span class="wb-row-avg">${data.averageOfficeDays.toFixed(1)}</span>
 		</div>`;
 	}
 
