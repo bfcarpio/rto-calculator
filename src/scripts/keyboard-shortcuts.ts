@@ -291,6 +291,21 @@ export class KeyboardShortcuts {
 	}
 
 	/**
+	 * Captures and pushes current state immediately without debouncing
+	 *
+	 * Used for initialization to establish base state for undo stack.
+	 */
+	captureStateImmediate(): void {
+		try {
+			const snapshot = this.createStateSnapshot();
+			this.historyManager.push(snapshot);
+			this.dispatchHistoryChanged();
+		} catch (error) {
+			console.error("Failed to capture initial state:", error);
+		}
+	}
+
+	/**
 	 * Creates a state snapshot from current application state
 	 *
 	 * @returns Complete snapshot of calendar, month, and validation state
@@ -340,9 +355,19 @@ export class KeyboardShortcuts {
 	 * @private
 	 */
 	handleUndo(): void {
-		const snapshot = this.historyManager.undo();
-		if (!snapshot) return;
-		this.restoreSnapshot(snapshot);
+		// Pop current state to redo stack
+		this.historyManager.undo();
+
+		// Peek at the previous state (now on top of stack)
+		const previousSnapshot = this.historyManager.peek();
+
+		if (!previousSnapshot) {
+			// Stack empty - should not happen if initialized properly
+			console.warn("Undo stack empty, cannot undo further");
+			return;
+		}
+
+		this.restoreSnapshot(previousSnapshot);
 	}
 
 	handleRedo(): void {
@@ -357,13 +382,22 @@ export class KeyboardShortcuts {
 			const calendarManagerWithMethods = this.calendarManager as {
 				clearDates?: (dates: (DateString | Date)[]) => void;
 				setDates?: (dates: (DateString | Date)[], state: DateState) => void;
+				getAllDates?: () => Map<DateString, DateState>;
 			};
 
-			if (typeof calendarManagerWithMethods.clearDates === "function") {
-				const allDates = Array.from(snapshot.calendarState.keys());
-				calendarManagerWithMethods.clearDates(allDates);
+			// Clear ALL currently marked dates first
+			if (
+				typeof calendarManagerWithMethods.clearDates === "function" &&
+				typeof calendarManagerWithMethods.getAllDates === "function"
+			) {
+				const currentDates = calendarManagerWithMethods.getAllDates();
+				const allCurrentDates = Array.from(currentDates.keys());
+				if (allCurrentDates.length > 0) {
+					calendarManagerWithMethods.clearDates(allCurrentDates);
+				}
 			}
 
+			// Then restore dates from snapshot
 			if (typeof calendarManagerWithMethods.setDates === "function") {
 				for (const [date, state] of snapshot.calendarState.entries()) {
 					if (state) {
