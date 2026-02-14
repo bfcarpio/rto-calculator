@@ -49,8 +49,8 @@ export function buildExportICS(calendar: CalendarInstance): string {
 function resolveState(event: IcsEvent): DateState {
 	// Try CATEGORIES first (machine-readable)
 	if (event.categories && event.categories.length > 0) {
-		const cat = event.categories[0]!.toLowerCase();
-		if (cat in STATE_DEFAULTS) return cat as DateState;
+		const cat = event.categories[0]?.toLowerCase();
+		if (cat && cat in STATE_DEFAULTS) return cat as DateState;
 	}
 
 	// Fallback: match SUMMARY to known labels

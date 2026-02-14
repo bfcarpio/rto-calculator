@@ -52,7 +52,8 @@ function buildCategory(
 	state: DateState,
 	calendar: CalendarInstance,
 ): ExportData["categories"]["oof"] {
-	const meta = STATE_DEFAULTS[state]!;
+	const meta = STATE_DEFAULTS[state];
+	if (!meta) throw new Error(`Unknown state: ${state}`);
 	const dates = calendar.getDatesByState(state).slice().sort();
 	const ranges = calendar.getDateRanges({ state }).map((r) => ({
 		start: formatDate(r.start),
