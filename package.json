@@ -27,7 +27,8 @@
 		"dev:nager": "npm run dev --workspace=nager-date",
 		"build:all": "npm run build --workspaces --if-present",
 		"clean:all": "npm run clean --workspaces --if-present && rm -rf node_modules",
-		"install:all": "npm install --workspaces"
+		"install:all": "npm install --workspaces",
+		"prepare": "husky"
 	},
 	"dependencies": {
 		"@astrojs/check": "^0.9.6",
@@ -42,13 +43,20 @@
 		"typescript": "^5.9.3",
 		"zod": "^4.3.6"
 	},
+	"lint-staged": {
+		"*.{ts,tsx,js,astro}": [
+			"biome check --write --no-errors-on-unmatched"
+		]
+	},
 	"devDependencies": {
 		"@axe-core/playwright": "^4.11.1",
 		"@biomejs/biome": "2.3.13",
 		"@playwright/test": "^1.57.0",
 		"@types/node": "^25.0.9",
 		"@vitest/ui": "^4.0.17",
+		"husky": "^9.1.7",
 		"jsdom": "^27.4.0",
+		"lint-staged": "^16.2.7",
 		"vitest": "^4.0.17"
 	}
 }
