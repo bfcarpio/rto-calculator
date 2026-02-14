@@ -6,7 +6,12 @@ function validPayload(overrides?: Record<string, unknown>) {
 		version: 1,
 		exportDate: "2026-02-13T00:00:00.000Z",
 		categories: {
-			oof: { label: "Work From Home", color: "#ef4444", emoji: "🏠", dates: ["2026-01-05"] },
+			oof: {
+				label: "Work From Home",
+				color: "#ef4444",
+				emoji: "🏠",
+				dates: ["2026-01-05"],
+			},
 			holiday: { label: "Holiday", color: "#f59e0b", emoji: "☀️", dates: [] },
 			sick: { label: "Sick Day", color: "#1890ff", emoji: "💊", dates: [] },
 		},
@@ -20,14 +25,21 @@ describe("validateExportData", () => {
 	});
 
 	it("rejects version !== 1", () => {
-		expect(validateExportData(validPayload({ version: 2 })).success).toBe(false);
-		expect(validateExportData(validPayload({ version: 0 })).success).toBe(false);
+		expect(validateExportData(validPayload({ version: 2 })).success).toBe(
+			false,
+		);
+		expect(validateExportData(validPayload({ version: 0 })).success).toBe(
+			false,
+		);
 	});
 
 	it("rejects unknown category keys", () => {
 		const data = validPayload();
 		(data.categories as Record<string, unknown>).unknown = {
-			label: "X", color: "#000", emoji: "?", dates: [],
+			label: "X",
+			color: "#000",
+			emoji: "?",
+			dates: [],
 		};
 		expect(validateExportData(data).success).toBe(false);
 	});

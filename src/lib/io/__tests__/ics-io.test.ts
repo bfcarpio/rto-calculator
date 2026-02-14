@@ -1,5 +1,10 @@
+import type {
+	CalendarInstance,
+	DateState,
+	DateString,
+	MarkedDateRange,
+} from "datepainter";
 import { describe, expect, it, vi } from "vitest";
-import type { CalendarInstance, DateState, DateString, MarkedDateRange } from "datepainter";
 import { buildExportICS, importICS } from "../ics-io";
 
 function mockCalendar(
@@ -22,7 +27,8 @@ function mockCalendar(
 				let end = start;
 				while (
 					i + 1 < sorted.length &&
-					new Date(`${sorted[i + 1]}T12:00:00`).getTime() - end.getTime() === 86400000
+					new Date(`${sorted[i + 1]}T12:00:00`).getTime() - end.getTime() ===
+						86400000
 				) {
 					i++;
 					end = new Date(`${sorted[i]}T12:00:00`);
@@ -190,28 +196,19 @@ describe("importICS", () => {
 	it("resolves state from CATEGORIES", () => {
 		const cal = mockCalendar({ oof: [], holiday: [], sick: [] });
 		importICS(HOLIDAY_ICS, cal);
-		expect(cal.setDates).toHaveBeenCalledWith(
-			["2026-04-01"],
-			"holiday",
-		);
+		expect(cal.setDates).toHaveBeenCalledWith(["2026-04-01"], "holiday");
 	});
 
 	it("falls back to SUMMARY matching", () => {
 		const cal = mockCalendar({ oof: [], holiday: [], sick: [] });
 		importICS(SUMMARY_ONLY_SICK_ICS, cal);
-		expect(cal.setDates).toHaveBeenCalledWith(
-			["2026-05-01"],
-			"sick",
-		);
+		expect(cal.setDates).toHaveBeenCalledWith(["2026-05-01"], "sick");
 	});
 
 	it("defaults to oof for unknown events", () => {
 		const cal = mockCalendar({ oof: [], holiday: [], sick: [] });
 		importICS(UNKNOWN_SUMMARY_ICS, cal);
-		expect(cal.setDates).toHaveBeenCalledWith(
-			["2026-06-01"],
-			"oof",
-		);
+		expect(cal.setDates).toHaveBeenCalledWith(["2026-06-01"], "oof");
 	});
 
 	it("expands multi-day range to individual dates", () => {
@@ -227,10 +224,7 @@ describe("importICS", () => {
 	it("handles single-day events", () => {
 		const cal = mockCalendar({ oof: [], holiday: [], sick: [] });
 		importICS(VALID_ICS, cal);
-		expect(cal.setDates).toHaveBeenCalledWith(
-			["2026-01-05"],
-			"oof",
-		);
+		expect(cal.setDates).toHaveBeenCalledWith(["2026-01-05"], "oof");
 	});
 
 	it("rejects invalid ICS string", () => {
@@ -260,23 +254,23 @@ describe("importICS", () => {
 		expect(result.success).toBe(true);
 
 		// Verify oof dates were set
-		const oofCall = vi.mocked(dstCal.setDates).mock.calls.find(
-			(c) => c[1] === "oof",
-		);
+		const oofCall = vi
+			.mocked(dstCal.setDates)
+			.mock.calls.find((c) => c[1] === "oof");
 		expect(oofCall).toBeDefined();
 		expect(oofCall![0].sort()).toEqual(["2026-01-05", "2026-01-06"]);
 
 		// Verify holiday
-		const holidayCall = vi.mocked(dstCal.setDates).mock.calls.find(
-			(c) => c[1] === "holiday",
-		);
+		const holidayCall = vi
+			.mocked(dstCal.setDates)
+			.mock.calls.find((c) => c[1] === "holiday");
 		expect(holidayCall).toBeDefined();
 		expect(holidayCall![0]).toEqual(["2026-02-17"]);
 
 		// Verify sick
-		const sickCall = vi.mocked(dstCal.setDates).mock.calls.find(
-			(c) => c[1] === "sick",
-		);
+		const sickCall = vi
+			.mocked(dstCal.setDates)
+			.mock.calls.find((c) => c[1] === "sick");
 		expect(sickCall).toBeDefined();
 		expect(sickCall![0]).toEqual(["2026-03-01"]);
 	});

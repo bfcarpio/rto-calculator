@@ -39,18 +39,32 @@ export const STATE_KEYS = Object.keys(STATE_DEFAULTS) as Array<
 	keyof typeof STATE_DEFAULTS
 >;
 
-export function isValidDateState(value: string): value is keyof typeof STATE_DEFAULTS {
+export function isValidDateState(
+	value: string,
+): value is keyof typeof STATE_DEFAULTS {
 	return value in STATE_DEFAULTS;
 }
 
 /** Build datepainter-compatible state config records from STATE_DEFAULTS */
 export function getDefaultStates(): Record<
 	string,
-	{ label: string; color: string; bgColor: string; icon: string; position: "below" }
+	{
+		label: string;
+		color: string;
+		bgColor: string;
+		icon: string;
+		position: "below";
+	}
 > {
 	const states: Record<
 		string,
-		{ label: string; color: string; bgColor: string; icon: string; position: "below" }
+		{
+			label: string;
+			color: string;
+			bgColor: string;
+			icon: string;
+			position: "below";
+		}
 	> = {};
 	for (const [key, meta] of Object.entries(STATE_DEFAULTS)) {
 		states[key] = {

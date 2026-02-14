@@ -64,5 +64,8 @@ export function validateExportData(data: unknown): {
 	if (result.success) {
 		return { success: true, data: result.data };
 	}
-	return { success: false, error: result.error.issues[0]?.message ?? "Validation failed" };
+	return {
+		success: false,
+		error: result.error.issues[0]?.message ?? "Validation failed",
+	};
 }

@@ -183,9 +183,24 @@ describe("importJSON", () => {
 			version: 1,
 			exportDate: "2026-02-13T00:00:00.000Z",
 			categories: {
-				oof: { label: "Work From Home", color: "#ef4444", emoji: "🏠", dates: ["2026-01-05", "2026-01-06"] },
-				holiday: { label: "Holiday", color: "#f59e0b", emoji: "☀️", dates: ["2026-02-17"] },
-				sick: { label: "Sick Day", color: "#1890ff", emoji: "💊", dates: ["2026-03-01", "2026-03-02", "2026-03-03"] },
+				oof: {
+					label: "Work From Home",
+					color: "#ef4444",
+					emoji: "🏠",
+					dates: ["2026-01-05", "2026-01-06"],
+				},
+				holiday: {
+					label: "Holiday",
+					color: "#f59e0b",
+					emoji: "☀️",
+					dates: ["2026-02-17"],
+				},
+				sick: {
+					label: "Sick Day",
+					color: "#1890ff",
+					emoji: "💊",
+					dates: ["2026-03-01", "2026-03-02", "2026-03-03"],
+				},
 			},
 			...overrides,
 		});
@@ -209,10 +224,7 @@ describe("importJSON", () => {
 		const spy = vi.fn();
 		document.addEventListener("settings-changed", spy);
 
-		importJSON(
-			validExportJSON({ settings: { rollingWindowWeeks: 16 } }),
-			cal,
-		);
+		importJSON(validExportJSON({ settings: { rollingWindowWeeks: 16 } }), cal);
 
 		expect(writeSettings).toHaveBeenCalledWith({ rollingWindowWeeks: 16 });
 		expect(spy).toHaveBeenCalled();
@@ -228,16 +240,16 @@ describe("importJSON", () => {
 
 	it("rejects wrong version", () => {
 		const cal = mockCalendar({ oof: [], holiday: [], sick: [] });
-		const result = importJSON(
-			validExportJSON({ version: 2 }),
-			cal,
-		);
+		const result = importJSON(validExportJSON({ version: 2 }), cal);
 		expect(result.success).toBe(false);
 	});
 
 	it("rejects missing categories", () => {
 		const cal = mockCalendar({ oof: [], holiday: [], sick: [] });
-		const result = importJSON(JSON.stringify({ version: 1, exportDate: "x" }), cal);
+		const result = importJSON(
+			JSON.stringify({ version: 1, exportDate: "x" }),
+			cal,
+		);
 		expect(result.success).toBe(false);
 	});
 
@@ -307,13 +319,7 @@ describe("importJSON", () => {
 			["2026-01-05", "2026-01-06"],
 			"oof",
 		);
-		expect(dstCal.setDates).toHaveBeenCalledWith(
-			["2026-02-17"],
-			"holiday",
-		);
-		expect(dstCal.setDates).toHaveBeenCalledWith(
-			["2026-03-01"],
-			"sick",
-		);
+		expect(dstCal.setDates).toHaveBeenCalledWith(["2026-02-17"], "holiday");
+		expect(dstCal.setDates).toHaveBeenCalledWith(["2026-03-01"], "sick");
 	});
 });
