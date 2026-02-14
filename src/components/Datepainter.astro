@@ -215,8 +215,6 @@ const {
       validationManager,
     );
     keyboardShortcuts.initialize();
-    // Capture initial empty state as base for undo stack
-    keyboardShortcuts.captureStateImmediate();
     (window as any).__keyboardShortcutsInstance = keyboardShortcuts;
 
     // Subscribe to state changes to trigger undo tracking
