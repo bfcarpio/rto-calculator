@@ -1,6 +1,8 @@
-export const REQUIRED_OFFICE_DAYS = 3;
-export const MINIMUM_COMPLIANT_DAYS = 3;
-export const TOTAL_WEEK_DAYS = 5;
-export const ROLLING_WINDOW_WEEKS = 12;
-export const BEST_WEEKS_COUNT = 8;
-export const COMPLIANCE_THRESHOLD = 0.6;
+import { DEFAULT_POLICY, RTO_CONFIG } from "../rto-config";
+
+export const REQUIRED_OFFICE_DAYS = RTO_CONFIG.minOfficeDaysPerWeek;
+export const MINIMUM_COMPLIANT_DAYS = RTO_CONFIG.minOfficeDaysPerWeek;
+export const TOTAL_WEEK_DAYS = RTO_CONFIG.totalWeekdaysPerWeek;
+export const ROLLING_WINDOW_WEEKS = DEFAULT_POLICY.rollingPeriodWeeks;
+export const BEST_WEEKS_COUNT = DEFAULT_POLICY.topWeeksToCheck;
+export const COMPLIANCE_THRESHOLD = DEFAULT_POLICY.thresholdPercentage;
