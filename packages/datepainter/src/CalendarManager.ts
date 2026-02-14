@@ -791,11 +791,122 @@ export class CalendarManager implements CalendarInstance {
 			},
 		);
 
+		// Touch handlers for mobile drag-to-paint
+		const touchstartHandler = (e: TouchEvent) => {
+			const touch = e.touches[0];
+			if (!touch) return;
+			const target = document.elementFromPoint(
+				touch.clientX,
+				touch.clientY,
+			) as HTMLElement | null;
+			const dayCell = target?.closest(".datepainter__day");
+
+			if (
+				dayCell &&
+				!dayCell.classList.contains("datepainter__day--empty") &&
+				!dayCell.classList.contains("datepainter__day--disabled")
+			) {
+				const date = dayCell.getAttribute("data-date") as DateString | null;
+				if (date && this.config.painting?.enabled) {
+					e.preventDefault(); // suppress scroll + synthetic mouse events
+					isDragging = true;
+					dragDate = date;
+					hasDragged = false;
+
+					const defaultState = this.config.painting.defaultState || "oof";
+					const currentState = this.getState(date);
+					dragPaintState = currentState === defaultState ? null : defaultState;
+				}
+			}
+		};
+
+		const touchmoveHandler = (e: TouchEvent) => {
+			if (!isDragging) return;
+			e.preventDefault();
+
+			const touch = e.touches[0];
+			if (!touch) return;
+			const target = document.elementFromPoint(
+				touch.clientX,
+				touch.clientY,
+			) as HTMLElement | null;
+			const dayCell = target?.closest(".datepainter__day");
+
+			if (
+				dayCell &&
+				!dayCell.classList.contains("datepainter__day--empty") &&
+				!dayCell.classList.contains("datepainter__day--disabled")
+			) {
+				const date = dayCell.getAttribute("data-date") as DateString | null;
+				if (date && date !== dragDate) {
+					if (!hasDragged) {
+						hasDragged = true;
+						if (dragDate) {
+							if (dragPaintState) {
+								this.setDates([dragDate], dragPaintState);
+							} else {
+								this.clearDates([dragDate]);
+							}
+						}
+					}
+					if (dragPaintState) {
+						this.setDates([date], dragPaintState);
+					} else {
+						this.clearDates([date]);
+					}
+				}
+			}
+		};
+
+		const touchendHandler = () => {
+			if (!isDragging) return;
+			// Single-tap toggle (touchstart prevented synthetic click)
+			if (!hasDragged && dragDate) {
+				const defaultState = this.config.painting?.defaultState || "oof";
+				const currentState = this.getState(dragDate);
+				if (currentState === defaultState) {
+					this.clearDates([dragDate]);
+				} else {
+					this.setDates([dragDate], defaultState);
+				}
+			}
+			isDragging = false;
+			dragDate = null;
+			hasDragged = false;
+			dragPaintState = null;
+		};
+
 		// Attach listeners
 		this.container.addEventListener("mousedown", mousedownHandler);
 		this.container.addEventListener("mouseover", mouseoverHandler);
 		this.container.addEventListener("click", clickHandler);
 		document.addEventListener("mouseup", mouseupHandler);
+
+		this.container.addEventListener("touchstart", touchstartHandler, {
+			passive: false,
+		});
+		this.container.addEventListener("touchmove", touchmoveHandler, {
+			passive: false,
+		});
+		this.container.addEventListener("touchend", touchendHandler);
+
+		this.attachedListeners.push(
+			{
+				element: this.container,
+				type: "touchstart",
+				handler: touchstartHandler as EventListener,
+			},
+			{
+				element: this.container,
+				type: "touchmove",
+				handler: touchmoveHandler as EventListener,
+			},
+			{
+				element: this.container,
+				type: "touchend",
+				handler: touchendHandler as EventListener,
+			},
+		);
 
 		// Add navigation button click handler
 		this.attachedListeners.push({
