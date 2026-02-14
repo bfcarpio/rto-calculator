@@ -196,12 +196,6 @@ const BEST_WEEKS_REQUIRED = 8;
 		font-size: 0.75rem;
 	}
 
-	.status-details :global(.wb-row-label) {
-		min-width: 110px;
-		white-space: nowrap;
-		color: #334155;
-	}
-
 	.status-details :global(.wb-row-tag) {
 		display: inline-block;
 		padding: 0.1rem 0.4rem;
@@ -350,10 +344,6 @@ const BEST_WEEKS_REQUIRED = 8;
 		color: #fde68a;
 	}
 
-	:global(body.dark-mode) .status-details :global(.wb-row-label) {
-		color: #e2e8f0;
-	}
-
 	:global(body.dark-mode) .status-details :global(.wb-row-tag--pass) {
 		background: #052e16;
 		color: #86efac;
@@ -471,7 +461,6 @@ const BEST_WEEKS_REQUIRED = 8;
 		}
 
 		elContent.innerHTML = `<div class="wb-row">
-			<span class="wb-row-label">${rangeLabel}</span>
 			<span class="wb-row-tag ${tagClass}">${tagText}</span>
 			<span class="wb-row-dots">${dots}</span>
 			<span class="wb-row-avg">${data.averageOfficeDays.toFixed(1)}</span>
