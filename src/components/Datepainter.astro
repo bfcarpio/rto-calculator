@@ -87,6 +87,9 @@ const {
     isDateInRange,
   } from '../lib/dateUtils';
 
+  // Import shared state defaults
+  import { getDefaultStates } from '../lib/state-defaults';
+
   // Import history and keyboard shortcuts
   import { HistoryManager } from '../lib/history/HistoryManager';
   import { KeyboardShortcuts } from '../scripts/keyboard-shortcuts';
@@ -96,34 +99,6 @@ const {
   if (!validationManager) {
     console.error('ValidationManager not available');
   }
-
-  /**
-   * Get the default configuration for date states
-   * Matches the styling from AirDatepicker using defaultConfig from datepainter
-   */
-  const getDefaultStates = () => ({
-    oof: {
-      label: 'Work From Home',
-      color: '#ffffff',
-      bgColor: '#ef4444', // Red for violations
-      icon: '🏠',
-      position: 'below' as const,
-    },
-    holiday: {
-      label: 'Holiday',
-      color: '#ffffff',
-      bgColor: '#f59e0b', // Amber for holidays (matches defaultConfig)
-      icon: '☀️',
-      position: 'below' as const,
-    },
-    sick: {
-      label: 'Sick Day',
-      color: '#ffffff',
-      bgColor: '#1890ff', // Blue for sick days
-      icon: '💊',
-      position: 'below' as const,
-    },
-  });
 
   /**
    * Disable dates outside the allowed range
