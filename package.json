@@ -1,63 +1,67 @@
 {
-	"name": "rto-calculator",
-	"type": "module",
-	"version": "0.0.1",
-	"workspaces": [
-		"packages/*"
-	],
-	"scripts": {
-		"predev": "node scripts/check-workspaces.js",
-		"dev": "astro dev",
-		"prebuild": "npm run build --workspaces --if-present",
-		"build": "astro check && astro build",
-		"preview": "astro preview",
-		"astro": "astro",
-		"test": "vitest",
-		"test:ui": "vitest --ui",
-		"test:run": "vitest run",
-		"test:e2e": "playwright test",
-		"test:e2e:ui": "playwright test --ui",
-		"test:e2e:debug": "playwright test --debug",
-		"test:e2e:report": "playwright show-report",
-		"lint": "biome check src/",
-		"lint:fix": "biome check --write src/",
-		"format": "biome format --write src/",
-		"check": "biome check src/ && astro check",
-		"dev:datepainter": "npm run dev --workspace=datepainter",
-		"dev:nager": "npm run dev --workspace=nager-date",
-		"build:all": "npm run build --workspaces --if-present",
-		"clean:all": "npm run clean --workspaces --if-present && rm -rf node_modules",
-		"install:all": "npm install --workspaces",
-		"prepare": "husky"
-	},
-	"dependencies": {
-		"@astrojs/check": "^0.9.6",
-		"@ts-ics/schema-zod": "^2.4.1",
-		"astro": "^5.16.8",
-		"bulma": "^1.0.4",
-		"date-fns": "^4.1.0",
-		"datepainter": "workspace:*",
-		"nager_date_api_reference": "workspace:*",
-		"ts-ics": "^2.4.0",
-		"typescript": "^5.9.3",
-		"zod": "^4.3.6"
-	},
-	"lint-staged": {
-		"*.{ts,tsx,js,astro}": [
-			"biome check --write --no-errors-on-unmatched"
-		]
-	},
-	"devDependencies": {
-		"@axe-core/playwright": "^4.11.1",
-		"@biomejs/biome": "2.3.13",
-		"@playwright/test": "^1.57.0",
-		"@types/node": "^25.0.9",
-		"@vitest/ui": "^4.0.17",
-		"husky": "^9.1.7",
-		"jsdom": "^27.4.0",
-		"lint-staged": "^16.2.7",
-		"sass": "^1.97.3",
-		"vite-plugin-compression": "^0.5.1",
-		"vitest": "^4.0.17"
-	}
+  "name": "rto-calculator",
+  "type": "module",
+  "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bfcarpio/rto-calculator"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "predev": "node scripts/check-workspaces.js",
+    "dev": "astro dev",
+    "prebuild": "npm run build --workspaces --if-present",
+    "build": "astro check && astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:report": "playwright show-report",
+    "lint": "biome check src/",
+    "lint:fix": "biome check --write src/",
+    "format": "biome format --write src/",
+    "check": "biome check src/ && astro check",
+    "dev:datepainter": "npm run dev --workspace=datepainter",
+    "dev:nager": "npm run dev --workspace=nager-date",
+    "build:all": "npm run build --workspaces --if-present",
+    "clean:all": "npm run clean --workspaces --if-present && rm -rf node_modules",
+    "install:all": "npm install --workspaces",
+    "prepare": "husky"
+  },
+  "dependencies": {
+    "@astrojs/check": "^0.9.6",
+    "@ts-ics/schema-zod": "^2.4.1",
+    "astro": "^5.16.8",
+    "bulma": "^1.0.4",
+    "date-fns": "^4.1.0",
+    "datepainter": "workspace:*",
+    "nager_date_api_reference": "workspace:*",
+    "ts-ics": "^2.4.0",
+    "typescript": "^5.9.3",
+    "zod": "^4.3.6"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,astro}": [
+      "biome check --write --no-errors-on-unmatched"
+    ]
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.11.1",
+    "@biomejs/biome": "2.3.13",
+    "@playwright/test": "^1.57.0",
+    "@types/node": "^25.0.9",
+    "@vitest/ui": "^4.0.17",
+    "husky": "^9.1.7",
+    "jsdom": "^27.4.0",
+    "lint-staged": "^16.2.7",
+    "sass": "^1.97.3",
+    "vite-plugin-compression": "^0.5.1",
+    "vitest": "^4.0.17"
+  }
 }

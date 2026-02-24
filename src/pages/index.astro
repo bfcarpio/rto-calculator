@@ -133,9 +133,13 @@ const description =
 	<footer class="footer mt-6">
 		<div class="content has-text-centered">
 			<p>RTO Calculator - Plan your time off while staying compliant</p>
-			<p class="is-size-7">
-				<small>Select a mode from the palette below, then click dates to mark them</small>
-			</p>
+		<p class="is-size-7">
+			<small>
+				<a href="https://bfcarp.io" target="_blank" rel="noopener noreferrer">Made with desperation by bfcarp.io</a>
+				{' | '}
+				<a href={`https://github.com/bfcarpio/rto-calculator/commit/${import.meta.env.COMMIT_SHA}`} target="_blank" rel="noopener noreferrer">{import.meta.env.COMMIT_SHA}</a>
+			</small>
+		</p>
 		</div>
 	</footer>
 

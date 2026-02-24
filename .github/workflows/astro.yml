@@ -93,6 +93,8 @@ jobs:
         run: npm run build:all
         working-directory: ${{ env.BUILD_PATH }}
       - name: Build with Astro
+        env:
+          COMMIT_SHA: ${{ github.sha }}
         run: |
           ${{ steps.detect-package-manager.outputs.runner }} astro build \
             --site "${{ steps.pages.outputs.origin }}" \
