@@ -183,6 +183,15 @@
     flex: 1;
   }
 
+  /* Mobile: horizontal scroll for dots */
+  @media (max-width: 768px) {
+    .window-explorer :global(.window-explorer__row-dots) {
+      overflow-x: auto;
+      scrollbar-width: thin;
+      padding-bottom: 2px;
+    }
+  }
+
   .window-explorer :global(.window-explorer__row-avg) {
     min-width: 28px;
     text-align: right;

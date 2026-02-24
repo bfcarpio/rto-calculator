@@ -67,6 +67,13 @@ body {
 	padding: 0 1rem;
 }
 
+/* Mobile-specific: reduce horizontal padding for wider content */
+@media (max-width: 768px) {
+	body {
+		padding: 0 0.5rem;
+	}
+}
+
 /* Accessibility: Reduced motion */
 @media (prefers-reduced-motion: reduce) {
 	*,
