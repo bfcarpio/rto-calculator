@@ -1,0 +1,88 @@
+---
+import { validationManager } from "../scripts/ValidationManager";
+import type { ValidationConfig } from "../types/validation-strategy";
+
+export type SettingKey = keyof ValidationConfig;
+
+interface Props {
+	settingKey: SettingKey;
+	label?: string;
+}
+
+const { settingKey, label } = Astro.props as unknown as Props;
+
+const initialConfig = validationManager?.getConfig?.() ?? {};
+const initialValue = (initialConfig as ValidationConfig)[settingKey];
+
+const uid = Math.random().toString(36).slice(2, 8);
+const valueElId = `setting-indicator-value-${settingKey}-${uid}`;
+const wrapperId = `setting-indicator-wrapper-${settingKey}-${uid}`;
+const tooltipId = `setting-indicator-tooltip-${settingKey}-${uid}`;
+---
+
+<div
+	id={wrapperId}
+	class="field is-grouped setting-indicator"
+	aria-describedby={tooltipId}
+	title={initialValue !== undefined ? `Setting: ${settingKey} = ${initialValue}` : `Setting: ${settingKey} value`}
+>
+	{label ? (
+		<div class="control">
+			<span class="tag is-light" aria-label={label}>{label}</span>
+		</div>
+	) : null}
+	<div class="control">
+		<span
+			id={valueElId}
+			class="has-text-weight-semibold setting-value"
+			data-setting-key={settingKey}
+		>
+			{initialValue}
+		</span>
+	</div>
+	<span id={tooltipId} class="sr-only">{`Setting: ${settingKey} = ${initialValue}`}</span>
+</div>
+
+<script>
+	(function(){
+		const wrapper = document.querySelector(".setting-indicator[data-setting-key]");
+		if (!wrapper) return;
+
+		const settingKey = wrapper.getAttribute("data-setting-key");
+		const valueEl = wrapper.querySelector(".setting-value");
+		const tooltipEl = wrapper.querySelector(".sr-only");
+
+		if (!settingKey || !valueEl) return;
+
+		window.addEventListener("rto:config-changed", function(ev) {
+			const detail = (ev as CustomEvent).detail;
+			if (!detail) return;
+
+			if (detail.settingKey === settingKey) {
+				const newValue = detail.newValue;
+				valueEl.textContent = String(newValue);
+				wrapper.setAttribute("title", `Setting: ${settingKey} = ${newValue}`);
+				if (tooltipEl) tooltipEl.textContent = `Setting: ${settingKey} = ${newValue}`;
+			}
+		});
+	})();
+</script>
+
+<style>
+	.setting-value {
+		text-decoration: underline dotted;
+		text-underline-offset: 2px;
+	}
+
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
+	}
+</style>

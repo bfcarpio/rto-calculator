@@ -21,11 +21,35 @@ const DEFAULT_CONFIG: ValidationConfig = {
 	debug: false,
 };
 
+// Event name for config changes - emitted on window for real-time UI updates
+export const RTO_CONFIG_CHANGED_EVENT = "rto:config-changed" as const;
+
 export class ValidationManager {
 	private config: ValidationConfig = { ...DEFAULT_CONFIG };
 
 	updateConfig(newConfig: Partial<ValidationConfig>): void {
+		const oldConfig = { ...this.config };
 		this.config = { ...this.config, ...newConfig };
+		this.emitConfigChange(oldConfig, this.config);
+	}
+
+	private emitConfigChange(
+		oldConfig: ValidationConfig,
+		newConfig: ValidationConfig,
+	): void {
+		// Dispatch event for each changed key
+		for (const key of Object.keys(newConfig) as Array<keyof ValidationConfig>) {
+			if (oldConfig[key] !== newConfig[key]) {
+				const event = new CustomEvent(RTO_CONFIG_CHANGED_EVENT, {
+					detail: {
+						settingKey: key,
+						oldValue: oldConfig[key],
+						newValue: newConfig[key],
+					},
+				});
+				window.dispatchEvent(event);
+			}
+		}
 	}
 
 	getConfig(): ValidationConfig {

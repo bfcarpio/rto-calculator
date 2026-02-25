@@ -1,6 +1,11 @@
 ---
 // SummaryBar.astro - Display compliance metrics
 // Reactive client-side component that reads from datepainter API
+
+import SettingIndicator from "./SettingIndicator.astro";
+---
+// SummaryBar.astro - Display compliance metrics
+// Reactive client-side component that reads from datepainter API
 ---
 
 <section class="hero is-light summary-bar" aria-labelledby="summary-heading">
@@ -8,7 +13,9 @@
 		<div class="columns is-mobile is-vcentered">
 			<!-- Left Column: Compliance Status -->
 			<div class="column">
-				<h2 id="summary-heading" class="title is-5 mb-2">
+			<h2 id="summary-heading" class="title is-5 mb-2">
+				Average <span id="summary-average-label">In-Office</span>: <span id="summary-average" class="has-text-weight-bold has-text-primary">0</span>/<SettingIndicator settingKey="totalWeekdaysPerWeek" /> days
+			</h2>
 					Average <span id="summary-average-label">In-Office</span>: <span id="summary-average" class="has-text-weight-bold has-text-primary">0</span>/5 days
 				</h2>
 				<p class="subtitle is-7 mb-0">

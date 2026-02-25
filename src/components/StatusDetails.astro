@@ -2,6 +2,17 @@
 // StatusDetails.astro - Display compliance status, capacity, and non-compliant weeks
 // Dynamic client-side component that reads from datepainter API
 
+import SettingIndicator from "./SettingIndicator.astro";
+
+const TARGET_DAYS_PER_WEEK = 3;
+const MAX_DAYS_PER_WEEK = 5;
+const BEST_WEEKS_REQUIRED = 8;
+---
+
+<div class="status-details">
+// StatusDetails.astro - Display compliance status, capacity, and non-compliant weeks
+// Dynamic client-side component that reads from datepainter API
+
 const TARGET_DAYS_PER_WEEK = 3;
 const MAX_DAYS_PER_WEEK = 5;
 const BEST_WEEKS_REQUIRED = 8;
@@ -39,7 +50,14 @@ const BEST_WEEKS_REQUIRED = 8;
 				</div>
 			</div>
 
-			<div class="level is-mobile">
+				<p>Target:</p>
+				</div>
+				<div class="level-right">
+					<SettingIndicator settingKey="minOfficeDaysPerWeek" label="Target:" />
+					<span class="has-text-weight-bold has-text-primary">/</span>
+					<SettingIndicator settingKey="totalWeekdaysPerWeek" />
+					<span class="has-text-weight-bold has-text-primary"> days</span>
+				</div>
 				<div class="level-left">
 					<p>Target:</p>
 				</div>
