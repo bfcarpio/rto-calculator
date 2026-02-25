@@ -125,17 +125,31 @@ export interface RTOHoliday {
  */
 export interface UserPreferences {
 	theme: "light" | "dark" | "high-contrast";
+	/**
+	 * Color scheme option combining palette (tol-bright, tol-vibrant, tol-muted) with mode (light, dark)
+	 * Format: "tol-{palette}-{mode}"
+	 * - tol-bright-light / tol-bright-dark: High saturation, CVD-safe
+	 * - tol-vibrant-light / tol-vibrant-dark: Vibrant colors, CVD-safe
+	 * - tol-muted-light / tol-muted-dark: Softer, professional
+	 */
 	colorScheme:
-		| "default"
-		| "protanopia"
-		| "deuteranopia"
-		| "tritanopia"
-		| "achromatopsia";
+		| "tol-bright-light"
+		| "tol-bright-dark"
+		| "tol-vibrant-light"
+		| "tol-vibrant-dark"
+		| "tol-muted-light"
+		| "tol-muted-dark";
 	language: string;
 	timezone: string;
 	firstDayOfWeek: number;
 	defaultPattern: number[] | null; // Array of day indices [0-6] to always select
 }
+
+/**
+ * Default color scheme - Tol Muted Light
+ */
+export const DEFAULT_COLOR_SCHEME: UserPreferences["colorScheme"] =
+	"tol-muted-light";
 
 /**
  * Calendar state for localStorage

@@ -217,6 +217,11 @@ footer {
 	color: var(--color-muted);
 }
 
+body.dark-mode .footer {
+	background-color: #1e293b;
+	color: #f1f5f9;
+}
+
 /* Loading state */
 .loading {
 	display: flex;

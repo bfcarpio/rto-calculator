@@ -6,29 +6,24 @@ export const defaultConfig: CalendarConfig = {
 		end: new Date(),
 	},
 	states: {
-		working: {
-			label: "Working",
-			color: "#334155",
-			bgColor: "#ffffff",
-		},
 		oof: {
 			label: "Work From Home",
 			color: "#ffffff",
-			bgColor: "#ef4444",
+			bgColor: "#44AA99",
 			icon: "🏠",
 			position: "below",
 		},
 		holiday: {
 			label: "Holiday",
-			color: "#ffffff",
-			bgColor: "#10b981",
+			color: "#3a3520",
+			bgColor: "#DDCC77",
 			icon: "☀️",
 			position: "below",
 		},
 		sick: {
 			label: "Sick Day",
 			color: "#ffffff",
-			bgColor: "#1890ff",
+			bgColor: "#332288",
 			icon: "💊",
 			position: "below",
 		},

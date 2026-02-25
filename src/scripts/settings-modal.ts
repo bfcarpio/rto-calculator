@@ -5,6 +5,7 @@ import {
 	SETTINGS_KEY,
 	writeSettings,
 } from "../lib/settings-reader";
+import { getColorScheme, setColorScheme } from "../lib/themeManager";
 import { getStartOfWeek } from "../lib/validation/rto-core";
 import { logger } from "../utils/logger";
 import { clearAllData } from "../utils/storage";
@@ -45,6 +46,7 @@ class SettingsModal {
 	private bestWeeksInput: HTMLInputElement | null = null;
 	private startingWeekSelect: HTMLSelectElement | null = null;
 	private clearDataButton: HTMLButtonElement | null = null;
+	private colorSchemeSelect: HTMLSelectElement | null = null;
 
 	constructor() {
 		initializeIndex();
@@ -105,6 +107,9 @@ class SettingsModal {
 		this.clearDataButton = document.getElementById(
 			"clear-data-button",
 		) as HTMLButtonElement | null;
+		this.colorSchemeSelect = document.getElementById(
+			"color-scheme-select",
+		) as HTMLSelectElement | null;
 	}
 
 	private initializeEventListeners(): void {
@@ -168,6 +173,9 @@ class SettingsModal {
 		);
 		this.clearDataButton?.addEventListener("click", () =>
 			this.clearSavedData(),
+		);
+		this.colorSchemeSelect?.addEventListener("change", () =>
+			this.onColorSchemeChange(),
 		);
 	}
 
@@ -573,6 +581,11 @@ class SettingsModal {
 			this.minOfficeDaysInput.value = config.minOfficeDaysPerWeek.toString();
 		}
 
+		// Sync color scheme dropdown
+		if (this.colorSchemeSelect) {
+			this.colorSchemeSelect.value = getColorScheme();
+		}
+
 		this.populateStartingWeekOptions();
 		this.updatePatternSelectorUI();
 	}
@@ -710,6 +723,20 @@ class SettingsModal {
 		announcement.textContent = message;
 		document.body.appendChild(announcement);
 		setTimeout(() => document.body.removeChild(announcement), 1000);
+	}
+
+	private onColorSchemeChange(): void {
+		const colorScheme = this.colorSchemeSelect?.value as
+			| "tol-bright-light"
+			| "tol-bright-dark"
+			| "tol-vibrant-light"
+			| "tol-vibrant-dark"
+			| "tol-muted-light"
+			| "tol-muted-dark";
+
+		if (colorScheme) {
+			setColorScheme(colorScheme);
+		}
 	}
 }
 

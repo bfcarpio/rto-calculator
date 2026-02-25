@@ -8,7 +8,11 @@ import { expect, type Page } from "@playwright/test";
  * Open the settings modal
  */
 export async function openSettings(page: Page): Promise<void> {
-	await page.getByTestId("settings-button").click();
+	await page.waitForLoadState("networkidle");
+
+	const settingsButton = page.locator("#settings-button");
+	await settingsButton.waitFor({ state: "attached", timeout: 30000 });
+	await settingsButton.click();
 	await expect(page.getByRole("dialog")).toBeVisible();
 }
 

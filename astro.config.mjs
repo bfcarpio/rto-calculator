@@ -27,14 +27,14 @@ export default defineConfig({
       },
     },
     plugins: [
-      // Generate gzip versions
+      // @ts-ignore - viteCompression plugin type incompatibility
       viteCompression({
         algorithm: "gzip",
         ext: ".gz",
         threshold: 1024, // Only compress files > 1KB
         deleteOriginFile: false,
       }),
-      // Generate brotli versions (better compression)
+      // @ts-ignore - viteCompression plugin type incompatibility
       viteCompression({
         algorithm: "brotliCompress",
         ext: ".br",

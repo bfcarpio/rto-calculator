@@ -28,20 +28,20 @@
 	--datepainter-warning: #94a3b8; /* Slate-400 */
 
 	/* WFH (Work From Home) colors */
-	--datepainter-oof: #f5222d;
+	--datepainter-oof: #44AA99;  /* Tol Muted teal */
 	--datepainter-oof-text: #ffffff;
-	--datepainter-oof-border: #dc2626;
+	--datepainter-oof-border: #338877;
 
 	/* Holiday colors (distinct from slate) */
-	--datepainter-holiday: #d97706; /* Amber-600 */
-	--datepainter-holiday-bg: #fffbeb; /* Amber-50 */
-	--datepainter-holiday-border: #fcd34d; /* Amber-300 */
-	--datepainter-holiday-text: #92400e; /* Amber-800 */
+	--datepainter-holiday: #DDCC77; /* Tol Muted gold */
+	--datepainter-holiday-bg: #F5F0D8;
+	--datepainter-holiday-border: #CCBB66;
+	--datepainter-holiday-text: #3a3520;
 
 	/* Sick Day colors */
-	--datepainter-sick: #1890ff;
+	--datepainter-sick: #332288; /* Tol Muted indigo */
 	--datepainter-sick-text: #ffffff;
-	--datepainter-sick-border: #096dd9;
+	--datepainter-sick-border: #5544AA;
 
 	/* Text colors */
 	--datepainter-text: #1e293b; /* Slate-800 */
@@ -351,4 +351,98 @@ body.datepainter-dark-mode.datepainter-high-contrast {
 		--datepainter-bg: #ffffff;
 		--datepainter-border: #000000;
 	}
+}
+
+/* ============================================
+   Paul Tol Color Palettes
+   CVD-safe palettes for state colors
+   Applied via [data-palette] attribute
+   ============================================ */
+
+/* --- Tol Bright Light --- */
+[data-palette="tol-bright-light"] {
+	--datepainter-oof: #66CCEE;
+	--datepainter-oof-text: #1a3a4a;
+	--datepainter-oof-border: #55BBEE;
+	--datepainter-holiday: #CCBB44;
+	--datepainter-holiday-bg: #F5F0D8;
+	--datepainter-holiday-border: #BBBB33;
+	--datepainter-holiday-text: #3a3510;
+	--datepainter-sick: #4477AA;
+	--datepainter-sick-text: #FFFFFF;
+	--datepainter-sick-border: #336699;
+}
+
+/* --- Tol Bright Dark --- */
+[data-palette="tol-bright-dark"] {
+	--datepainter-oof: #88DDFF;
+	--datepainter-oof-text: #1a3a4a;
+	--datepainter-oof-border: #77CCEE;
+	--datepainter-holiday: #EEDD66;
+	--datepainter-holiday-bg: #3a3520;
+	--datepainter-holiday-border: #DDCC55;
+	--datepainter-holiday-text: #3a3510;
+	--datepainter-sick: #6699CC;
+	--datepainter-sick-text: #FFFFFF;
+	--datepainter-sick-border: #5588BB;
+}
+
+/* --- Tol Vibrant Light --- */
+[data-palette="tol-vibrant-light"] {
+	--datepainter-oof: #33BBEE;
+	--datepainter-oof-text: #0a2a35;
+	--datepainter-oof-border: #22AAEE;
+	--datepainter-holiday: #EE7733;
+	--datepainter-holiday-bg: #F5E8D8;
+	--datepainter-holiday-border: #DD6622;
+	--datepainter-holiday-text: #351a0a;
+	--datepainter-sick: #0077BB;
+	--datepainter-sick-text: #FFFFFF;
+	--datepainter-sick-border: #0066AA;
+}
+
+/* --- Tol Vibrant Dark --- */
+[data-palette="tol-vibrant-dark"] {
+	--datepainter-oof: #55CCFF;
+	--datepainter-oof-text: #0a2a35;
+	--datepainter-oof-border: #44BBEE;
+	--datepainter-holiday: #FF9955;
+	--datepainter-holiday-bg: #351a0a;
+	--datepainter-holiday-border: #EE8844;
+	--datepainter-holiday-text: #351a0a;
+	--datepainter-sick: #3399DD;
+	--datepainter-sick-text: #FFFFFF;
+	--datepainter-sick-border: #2288CC;
+}
+
+/* --- Tol Muted Light (Default) --- */
+[data-palette="tol-muted-light"] {
+	--datepainter-oof: #44AA99;
+	--datepainter-oof-text: #ffffff;
+	--datepainter-oof-border: #77BBDD;
+	--datepainter-holiday: #DDCC77;
+	--datepainter-holiday-bg: #F5F0D8;
+	--datepainter-holiday-border: #CCBB66;
+	--datepainter-holiday-text: #3a3520;
+	--datepainter-sick: #332288;
+	--datepainter-sick-text: #FFFFFF;
+	--datepainter-sick-border: #443399;
+}
+
+/* --- Tol Muted Dark --- */
+[data-palette="tol-muted-dark"] {
+	--datepainter-oof: #44AA99;
+	--datepainter-oof-text: #ffffff;
+	--datepainter-oof-border: #99CCEE;
+	--datepainter-holiday: #EEAA55;
+	--datepainter-holiday-bg: #3a3520;
+	--datepainter-holiday-border: #DD9944;
+	--datepainter-holiday-text: #3a3520;
+	--datepainter-sick: #8877CC;
+	--datepainter-sick-text: #FFFFFF;
+	--datepainter-sick-border: #7766BB;
+}
+
+/* Fallback: Default to tol-muted-light if no palette specified */
+:root {
 }

@@ -77,7 +77,7 @@ export function loadUserPreferences(): UserPreferences {
 	// Return default preferences
 	return {
 		theme: "light",
-		colorScheme: "default",
+		colorScheme: "tol-muted-light",
 		language: "en",
 		timezone: "UTC",
 		firstDayOfWeek: 1,

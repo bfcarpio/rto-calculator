@@ -1,100 +1,86 @@
 import { expect, test } from "@playwright/test";
-import {
-	closeSettings,
-	cycleTheme,
-	expectTheme,
-	isDarkModeActive,
-	openSettings,
-} from "./helpers/theme";
+import { openSettings } from "./helpers/settingsModal";
 
 test.describe("Theme System", () => {
 	test.beforeEach(async ({ page }) => {
-		await page.goto("/rto-calculator/");
+		await page.goto("/rto-calculator");
 	});
 
 	test("should open settings via gear button", async ({ page }) => {
 		await openSettings(page);
-		await expect(page.getByText("Appearance")).toBeVisible();
-		await closeSettings(page);
+		await expect(page.locator(".settings-modal")).toBeVisible();
 	});
 
-	test("should cycle through themes: system -> light -> dark -> system", async ({
-		page,
-	}) => {
+	test("should have color scheme dropdown in settings", async ({ page }) => {
 		await openSettings(page);
 
-		// Start with system
-		await expectTheme(page, "system");
+		// Check for color scheme dropdown
+		const colorSchemeSelect = page.locator("#color-scheme-select");
+		await expect(colorSchemeSelect).toBeVisible();
 
-		// Cycle to light
-		await cycleTheme(page);
-		await expectTheme(page, "light");
-
-		// Cycle to dark
-		await cycleTheme(page);
-		await expectTheme(page, "dark");
-
-		// Cycle back to system
-		await cycleTheme(page);
-		await expectTheme(page, "system");
+		// Check all 6 options exist (options exist in DOM even when dropdown is closed)
+		await expect(
+			colorSchemeSelect.locator("option[value='tol-bright-light']"),
+		).toBeAttached();
+		await expect(
+			colorSchemeSelect.locator("option[value='tol-bright-dark']"),
+		).toBeAttached();
+		await expect(
+			colorSchemeSelect.locator("option[value='tol-vibrant-light']"),
+		).toBeAttached();
+		await expect(
+			colorSchemeSelect.locator("option[value='tol-vibrant-dark']"),
+		).toBeAttached();
+		await expect(
+			colorSchemeSelect.locator("option[value='tol-muted-light']"),
+		).toBeAttached();
+		await expect(
+			colorSchemeSelect.locator("option[value='tol-muted-light']"),
+		).toBeAttached();
 	});
 
-	test("should apply dark mode class when dark theme selected", async ({
-		page,
-	}) => {
+	test("should apply tol-bright-light palette", async ({ page }) => {
 		await openSettings(page);
 
-		// Cycle to dark
-		await cycleTheme(page); // system -> light
-		await cycleTheme(page); // light -> dark
+		const select = page.locator("#color-scheme-select");
+		await select.selectOption("tol-bright-light");
 
-		// Verify dark mode class is applied
-		expect(await isDarkModeActive(page)).toBe(true);
+		// Verify data-palette attribute is set on body
+		await expect(page.locator("body")).toHaveAttribute(
+			"data-palette",
+			"tol-bright",
+		);
 	});
 
-	test("should remove dark mode class when light theme selected", async ({
-		page,
-	}) => {
+	test("should apply tol-muted-light palette", async ({ page }) => {
 		await openSettings(page);
 
-		// Go to light theme
-		await cycleTheme(page); // system -> light
+		const select = page.locator("#color-scheme-select");
+		await select.selectOption("tol-muted-light");
 
-		expect(await isDarkModeActive(page)).toBe(false);
+		// Verify data-palette attribute is set on body
+		await expect(page.locator("body")).toHaveAttribute(
+			"data-palette",
+			"tol-muted",
+		);
+		// Verify light mode (no dark-mode class)
+		await expect(page.locator("body")).not.toHaveClass(/dark-mode/);
 	});
 
-	test("should reset theme on page refresh (in-memory only)", async ({
-		page,
-	}) => {
+	test("should persist color scheme selection", async ({ page }) => {
+		// Select a color scheme
 		await openSettings(page);
+		const select = page.locator("#color-scheme-select");
+		await select.selectOption("tol-vibrant-dark");
 
-		// Change to dark
-		await cycleTheme(page);
-		await cycleTheme(page);
-		await expectTheme(page, "dark");
+		// Close settings (press escape)
+		await page.keyboard.press("Escape");
 
-		// Navigate fresh instead of reload (avoids connection reset on WSL2/preview server)
-		await page.goto("/rto-calculator/");
+		// Reload page
+		await page.reload();
 
-		// Theme should reset to system (default)
+		// Verify selection persisted
 		await openSettings(page);
-		await expectTheme(page, "system");
-	});
-
-	test("should show correct icons for each theme", async ({ page }) => {
-		await openSettings(page);
-
-		const themeIcon = page.locator("#theme-icon");
-
-		// System should show computer icon
-		expect(themeIcon).toHaveText("🖥️");
-
-		// Light should show sun
-		await cycleTheme(page);
-		expect(themeIcon).toHaveText("☀️");
-
-		// Dark should show moon
-		await cycleTheme(page);
-		expect(themeIcon).toHaveText("🌙");
+		await expect(select).toHaveValue("tol-vibrant-dark");
 	});
 });

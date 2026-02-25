@@ -14,18 +14,17 @@
                 <h3>Appearance</h3>
                 <div class="setting-row">
                     <div class="setting-info">
-                        <span class="setting-label">Theme</span>
-                        <span class="setting-description">Choose your preferred color scheme</span>
+                        <span class="setting-label">Color scheme</span>
+                        <span class="setting-description">CVD-safe palette with light/dark mode</span>
                     </div>
-                    <button
-                        id="theme-cycle-button"
-                        class="theme-cycle-button"
-                        aria-label="Cycle theme: System, Light, Dark"
-                        title="Click to cycle theme"
-                    >
-                        <span id="theme-icon" class="theme-icon">🖥️</span>
-                        <span id="theme-label" class="theme-label">System</span>
-                    </button>
+                    <select id="color-scheme-select" class="color-scheme-select" aria-label="Select color scheme">
+                        <option value="tol-bright-light">Tol Bright (Light)</option>
+                        <option value="tol-bright-dark">Tol Bright (Dark)</option>
+                        <option value="tol-vibrant-light">Tol Vibrant (Light)</option>
+                        <option value="tol-vibrant-dark">Tol Vibrant (Dark)</option>
+                        <option value="tol-muted-light">Tol Muted (Light)</option>
+                        <option value="tol-muted-dark" selected>Tol Muted (Dark)</option>
+                    </select>
                 </div>
             </section>
 
@@ -584,6 +583,22 @@
 
     :global(body.dark-mode) .toggle-button[aria-checked="true"] {
         background: #3b82f6;
+    }
+
+    .color-scheme-select {
+        padding: 0.5rem 1rem;
+        border: 1px solid var(--input-border, #ccc);
+        border-radius: 4px;
+        background: var(--input-bg, white);
+        color: var(--input-text, #333);
+        font-size: 0.875rem;
+        cursor: pointer;
+        min-width: 160px;
+    }
+    
+    .color-scheme-select:focus {
+        outline: 2px solid var(--focus-ring, #4477AA);
+        outline-offset: 2px;
     }
 </style>
 

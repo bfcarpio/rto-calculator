@@ -3,13 +3,17 @@
  * In-memory only - theme resets on page refresh (matches data behavior)
  */
 
+import { DEFAULT_COLOR_SCHEME, type UserPreferences } from "../types/index";
 import { logger } from "../utils/logger";
 
 export type ThemeMode = "system" | "light" | "dark";
 
+export type ColorScheme = UserPreferences["colorScheme"];
+
 interface ThemeManagerState {
 	currentTheme: ThemeMode;
 	isDarkMode: boolean;
+	colorScheme: ColorScheme;
 }
 
 const THEME_CYCLE: ThemeMode[] = ["system", "light", "dark"];
@@ -28,8 +32,10 @@ function calculateEffectiveTheme(mode: ThemeMode): boolean {
 function applyThemeToDocument(isDark: boolean): void {
 	if (isDark) {
 		document.body.classList.add("dark-mode");
+		document.body.classList.add("datepainter-dark-mode");
 	} else {
 		document.body.classList.remove("dark-mode");
+		document.body.classList.remove("datepainter-dark-mode");
 	}
 }
 
@@ -39,14 +45,26 @@ export class ThemeManager {
 	private mediaQuery: MediaQueryList | null = null;
 
 	constructor() {
+		// Try to get colorScheme from localStorage, default to tol-muted-light
+		const savedScheme =
+			typeof localStorage !== "undefined"
+				? (localStorage.getItem("colorScheme") as ColorScheme | null)
+				: null;
+		const colorScheme = savedScheme || DEFAULT_COLOR_SCHEME;
+
+		// Determine isDarkMode from colorScheme suffix
+		const isDark = colorScheme.endsWith("-dark");
+
 		this.state = {
-			currentTheme: "system",
-			isDarkMode: detectSystemDarkMode(),
+			currentTheme: "system", // Legacy theme mode
+			isDarkMode: isDark,
+			colorScheme: colorScheme,
 		};
 	}
 
 	initialize(): void {
 		applyThemeToDocument(this.state.isDarkMode);
+		this.applyPaletteAttribute(this.state.colorScheme);
 		this.setupSystemPreferenceListener();
 	}
 
@@ -56,6 +74,12 @@ export class ThemeManager {
 			"change",
 			this.handleSystemPreferenceChange,
 		);
+	}
+
+	private applyPaletteAttribute(colorScheme: ColorScheme): void {
+		// Extract palette name (e.g., "tol-muted" from "tol-muted-dark")
+		const palette = colorScheme.split("-").slice(0, 2).join("-");
+		document.body.setAttribute("data-palette", palette);
 	}
 
 	private handleSystemPreferenceChange = (event: MediaQueryListEvent): void => {
@@ -83,9 +107,16 @@ export class ThemeManager {
 		this.state = {
 			currentTheme: nextTheme,
 			isDarkMode: calculateEffectiveTheme(nextTheme),
+			colorScheme: this.state.colorScheme,
 		};
 
 		applyThemeToDocument(this.state.isDarkMode);
+
+		// Save colorScheme to localStorage
+		if (typeof localStorage !== "undefined") {
+			localStorage.setItem("colorScheme", this.state.colorScheme);
+		}
+
 		this.notifyListeners();
 	}
 
@@ -96,12 +127,28 @@ export class ThemeManager {
 			);
 		}
 
+		// Determine isDarkMode from theme mode, then update colorScheme suffix
+		const isDark = calculateEffectiveTheme(mode);
+
+		// Update colorScheme with new dark/light suffix based on theme mode
+		const basePalette = this.state.colorScheme.split("-").slice(0, 2).join("-");
+		const newColorScheme =
+			`${basePalette}-${isDark ? "dark" : "light"}` as ColorScheme;
+
 		this.state = {
 			currentTheme: mode,
-			isDarkMode: calculateEffectiveTheme(mode),
+			isDarkMode: isDark,
+			colorScheme: newColorScheme,
 		};
 
 		applyThemeToDocument(this.state.isDarkMode);
+		this.applyPaletteAttribute(this.state.colorScheme);
+
+		// Save to localStorage
+		if (typeof localStorage !== "undefined") {
+			localStorage.setItem("colorScheme", this.state.colorScheme);
+		}
+
 		this.notifyListeners();
 	}
 
@@ -111,6 +158,31 @@ export class ThemeManager {
 
 	isDarkMode(): boolean {
 		return this.state.isDarkMode;
+	}
+
+	getColorScheme(): ColorScheme {
+		return this.state.colorScheme;
+	}
+
+	setColorScheme(colorScheme: ColorScheme): void {
+		// Determine isDarkMode from the colorScheme suffix
+		const isDark = colorScheme.endsWith("-dark");
+
+		this.state = {
+			...this.state,
+			colorScheme: colorScheme,
+			isDarkMode: isDark,
+		};
+
+		applyThemeToDocument(isDark);
+		this.applyPaletteAttribute(colorScheme);
+
+		// Save to localStorage
+		if (typeof localStorage !== "undefined") {
+			localStorage.setItem("colorScheme", colorScheme);
+		}
+
+		this.notifyListeners();
 	}
 
 	getState(): ThemeManagerState {
@@ -180,4 +252,14 @@ export function getCurrentTheme(): ThemeMode {
 export function isDarkMode(): boolean {
 	const manager = getThemeManager();
 	return manager.isDarkMode();
+}
+
+export function setColorScheme(scheme: ColorScheme): void {
+	const manager = getThemeManager();
+	manager.setColorScheme(scheme);
+}
+
+export function getColorScheme(): ColorScheme {
+	const manager = getThemeManager();
+	return manager.getColorScheme();
 }
