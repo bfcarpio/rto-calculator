@@ -5,7 +5,15 @@ export default defineConfig({
 		globals: true,
 		environment: "jsdom",
 		include: ["**/*.{test,spec}.{js,ts}"],
-		exclude: ["node_modules", "dist", ".astro", ".opencode", "e2e/**", "**/e2e/**"],
+		exclude: [
+			"node_modules",
+			"dist",
+			".astro",
+			".opencode",
+			"e2e/**",
+			"**/e2e/**",
+			"packages/*/node_modules/**",
+		],
 		setupFiles: ["./src/utils/astro/__tests__/test.setup.ts"],
 		coverage: {
 			provider: "v8",
