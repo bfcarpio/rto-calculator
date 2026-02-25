@@ -30,7 +30,7 @@ const BEST_WEEKS_REQUIRED = 8;
 
 			<div class="level is-mobile mb-2">
 				<div class="level-left">
-					<p>Average:</p>
+					<p id="stat-average-label">Average:</p>
 				</div>
 				<div class="level-right">
 					<p class="has-text-weight-bold" id="stat-average-days">
@@ -482,8 +482,18 @@ const BEST_WEEKS_REQUIRED = 8;
 			elCompliant.className = `has-text-weight-bold ${data.averageOfficeDays >= REQUIRED_OFFICE_DAYS ? 'has-text-success' : 'has-text-warning'}`;
 		}
 		if (elAverage) {
-			elAverage.textContent = `${data.averageOfficeDays.toFixed(1)}/${MAX_DAYS} days`;
+			const shouldRound = data.roundPercentage !== false;
+			const displayValue = shouldRound
+				? `${Math.round(data.averageOfficeDays)}`
+				: `${data.averageOfficeDays.toFixed(1)}`;
+			elAverage.textContent = `${displayValue}/${MAX_DAYS} days`;
 			elAverage.className = `has-text-weight-bold ${getStatusColor(data.averageOfficeDays, REQUIRED_OFFICE_DAYS)}`;
+		}
+
+		// Update average label to show "(rounded)" when applicable
+		const elAvgLabel = document.getElementById('stat-average-label');
+		if (elAvgLabel) {
+			elAvgLabel.textContent = data.roundPercentage !== false ? 'Average (rounded):' : 'Average:';
 		}
 		if (elBuffer) elBuffer.textContent = `Good weeks = ${data.goodWeeks} of ${data.bestWeekCount} needed`;
 		if (elOof) elOof.textContent = `${data.bufferWeeks} full weeks WFH`;

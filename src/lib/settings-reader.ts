@@ -27,6 +27,7 @@ export interface AppSettings {
 	holidayPenalize: boolean;
 	startingWeek: string | null;
 	defaultPattern: number[] | null;
+	roundPercentage: boolean;
 	holidays: {
 		countryCode: string | null;
 		holidaysAsOOF: boolean;
@@ -44,6 +45,7 @@ export const DEFAULTS: AppSettings = {
 	holidayPenalize: true,
 	startingWeek: null,
 	defaultPattern: null,
+	roundPercentage: true,
 	holidays: { countryCode: null, holidaysAsOOF: true, companyName: null },
 };
 
@@ -77,6 +79,7 @@ export function buildPolicyFromSettings(): RTOPolicyConfig {
 		...DEFAULT_RTO_POLICY,
 		rollingPeriodWeeks: settings.rollingWindowWeeks,
 		topWeeksToCheck: settings.bestWeeksCount,
+		roundPercentage: settings.roundPercentage,
 	};
 }
 

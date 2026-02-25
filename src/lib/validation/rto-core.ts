@@ -22,6 +22,7 @@ export interface RTOPolicyConfig {
 	thresholdPercentage: number;
 	rollingPeriodWeeks: number;
 	topWeeksToCheck: number;
+	roundPercentage?: boolean;
 }
 
 export interface WeekCompliance {
@@ -54,6 +55,11 @@ export const DEFAULT_RTO_POLICY: RTOPolicyConfig = {
 	rollingPeriodWeeks: ROLLING_WINDOW_WEEKS,
 	topWeeksToCheck: BEST_WEEKS_COUNT,
 };
+
+/** Round to nearest 20% (represents whole days in a 5-day week) */
+export function roundToNearest20Percent(value: number): number {
+	return Math.round(value / 20) * 20;
+}
 
 // ==================== Date Utilities ====================
 
@@ -260,20 +266,35 @@ export function validateTop8Weeks(
 		0,
 	);
 	const averageOfficeDays = totalOfficeDays / policy.topWeeksToCheck;
-	const averageOfficePercentage =
+	const rawPercentage =
 		totalWeekdays > 0 ? (totalOfficeDays / totalWeekdays) * 100 : 100;
+	const averageOfficePercentage =
+		policy.roundPercentage !== false
+			? roundToNearest20Percent(rawPercentage)
+			: rawPercentage;
 	const requiredAverage = policy.minOfficeDaysPerWeek;
 	const requiredPercentage =
 		(policy.minOfficeDaysPerWeek / policy.totalWeekdaysPerWeek) * 100;
 	const requiredAveragePercentage = policy.thresholdPercentage * 100;
 
-	const isValid = averageOfficePercentage >= requiredAveragePercentage;
+	const isValid = rawPercentage >= requiredAveragePercentage;
+
+	const percentageStr =
+		policy.roundPercentage !== false
+			? `${averageOfficePercentage.toFixed(0)}%`
+			: `${rawPercentage.toFixed(1)}%`;
+
+	const avgDaysStr =
+		policy.roundPercentage !== false
+			? `${Math.round(averageOfficeDays)}`
+			: `${averageOfficeDays.toFixed(1)}`;
+	const indicator = policy.roundPercentage !== false ? " (rounded)" : "";
 
 	let message: string;
 	if (isValid) {
-		message = `Compliant: Top ${policy.topWeeksToCheck} weeks average ${averageOfficeDays.toFixed(1)} office days (${averageOfficePercentage.toFixed(0)}%) of ${totalWeekdays} weekdays. Required: ${requiredAverage} days (${requiredPercentage}%)`;
+		message = `Compliant: Top ${policy.topWeeksToCheck} weeks average${indicator} ${avgDaysStr} office days (${percentageStr}) of ${totalWeekdays} weekdays. Required: ${requiredAverage} days (${requiredPercentage}%)`;
 	} else {
-		message = `Not compliant: Top ${policy.topWeeksToCheck} weeks average ${averageOfficeDays.toFixed(1)} office days (${averageOfficePercentage.toFixed(0)}%) of ${totalWeekdays} weekdays. Required: ${requiredAverage} days (${requiredPercentage}%)`;
+		message = `Not compliant: Top ${policy.topWeeksToCheck} weeks average${indicator} ${avgDaysStr} office days (${percentageStr}) of ${totalWeekdays} weekdays. Required: ${requiredAverage} days (${requiredPercentage}%)`;
 	}
 
 	return {
@@ -352,8 +373,11 @@ export function evaluateSingleWindow(
 	);
 	const averageOfficeDays = evalCount > 0 ? totalOfficeDays / evalCount : 0;
 	const totalDays = bestWeeks.reduce((sum, week) => sum + week.totalDays, 0);
+	const rawPercentage = totalDays > 0 ? (totalOfficeDays / totalDays) * 100 : 0;
 	const averageOfficePercentage =
-		totalDays > 0 ? (totalOfficeDays / totalDays) * 100 : 0;
+		policy.roundPercentage !== false
+			? roundToNearest20Percent(rawPercentage)
+			: rawPercentage;
 
 	// Primary check: average office days must meet the minimum.
 	// This handles holiday weeks correctly — a week with 5 holidays
@@ -376,6 +400,7 @@ export function validateSlidingWindow(
 ): SlidingWindowResult {
 	const windowSize = policy.rollingPeriodWeeks;
 	const weeksToEvaluate = policy.topWeeksToCheck;
+	let message: string;
 
 	// If fewer weeks than a full window, evaluate as a single partial window
 	if (weeksData.length > 0 && weeksData.length < windowSize) {
@@ -385,10 +410,16 @@ export function validateSlidingWindow(
 		const windowWeekStarts = weeksData.map((w) => w.weekStart.getTime());
 		const windowStartTimestamp = weeksData[0]?.weekStart.getTime() ?? null;
 
+		const avgDaysStr =
+			policy.roundPercentage !== false
+				? `${Math.round(averageOfficeDays)}`
+				: `${averageOfficeDays.toFixed(1)}`;
+		const indicator = policy.roundPercentage !== false ? " (rounded)" : "";
 		const label = isValid ? "Compliant" : "Not compliant";
+		message = `${label}: Best ${bestWeeks.length} of ${weeksData.length} weeks average${indicator} ${avgDaysStr} office days. Required: ${policy.minOfficeDaysPerWeek}`;
 		return {
 			isValid,
-			message: `${label}: Best ${bestWeeks.length} of ${weeksData.length} weeks average ${averageOfficeDays.toFixed(1)} office days. Required: ${policy.minOfficeDaysPerWeek}`,
+			message,
 			overallCompliance: averageOfficePercentage,
 			evaluatedWeekStarts,
 			windowWeekStarts,
@@ -417,9 +448,15 @@ export function validateSlidingWindow(
 			const windowWeek = weeksData[windowStart];
 			const windowStartTimestamp = windowWeek?.weekStart.getTime() ?? null;
 
+			const avgDaysStr =
+				policy.roundPercentage !== false
+					? `${Math.round(averageOfficeDays)}`
+					: `${averageOfficeDays.toFixed(1)}`;
+			const indicator = policy.roundPercentage !== false ? " (rounded)" : "";
+			message = `Not compliant: Best ${weeksToEvaluate} of ${windowSize} weeks average${indicator} ${avgDaysStr} office days. Required: ${policy.minOfficeDaysPerWeek}`;
 			return {
 				isValid: false,
-				message: `Not compliant: Best ${weeksToEvaluate} of ${windowSize} weeks average ${averageOfficeDays.toFixed(1)} office days. Required: ${policy.minOfficeDaysPerWeek}`,
+				message,
 				overallCompliance: averageOfficePercentage,
 				evaluatedWeekStarts,
 				windowWeekStarts,
@@ -442,9 +479,15 @@ export function validateSlidingWindow(
 	const lastWindowWeek = weeksData[lastWindowStart];
 	const windowStartTimestamp = lastWindowWeek?.weekStart.getTime() ?? null;
 
+	const avgDaysStr =
+		policy.roundPercentage !== false
+			? `${Math.round(averageOfficeDays)}`
+			: `${averageOfficeDays.toFixed(1)}`;
+	const indicator = policy.roundPercentage !== false ? " (rounded)" : "";
+	message = `Compliant: Best ${weeksToEvaluate} of ${windowSize} weeks average${indicator} ${avgDaysStr} office days. Required: ${policy.minOfficeDaysPerWeek}`;
 	return {
 		isValid: true,
-		message: `Compliant: Best ${weeksToEvaluate} of ${windowSize} weeks average ${averageOfficeDays.toFixed(1)} office days. Required: ${policy.minOfficeDaysPerWeek}`,
+		message,
 		overallCompliance: averageOfficePercentage,
 		evaluatedWeekStarts,
 		windowWeekStarts,

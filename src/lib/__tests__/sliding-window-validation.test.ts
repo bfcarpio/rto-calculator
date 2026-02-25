@@ -205,7 +205,10 @@ describe("validateSlidingWindow", () => {
 		it("7 good + 5 bad → NOT valid (not enough good weeks to fill best 8)", () => {
 			// Best 8 of 12: 7 weeks of 3 + 1 week of 0 = 21/40 = 52.5%
 			const weeks = makeSchedule(START, [7, 3], [5, 0]);
-			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
+			const result = validateSlidingWindow(weeks, {
+				...DEFAULT_RTO_POLICY,
+				roundPercentage: false,
+			});
 
 			expect(result.isValid).toBe(false);
 			expect(result.overallCompliance).toBeCloseTo(52.5, 0);
@@ -316,7 +319,10 @@ describe("validateSlidingWindow", () => {
 		it("Thu+Fri WFH every week (3 days) + 5 weeks travel → NOT valid", () => {
 			// 7 weeks of 3 + 5 weeks of 0 = best 8 = 7×3+1×0 = 21/40 = 52.5%
 			const weeks = makeSchedule(START, [7, 3], [5, 0]);
-			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
+			const result = validateSlidingWindow(weeks, {
+				...DEFAULT_RTO_POLICY,
+				roundPercentage: false,
+			});
 
 			expect(result.isValid).toBe(false);
 			expect(result.overallCompliance).toBeLessThan(60);
@@ -528,7 +534,10 @@ describe("validateSlidingWindow", () => {
 			});
 			const weeks = [...holidayWeeks, ...normalWeeks];
 
-			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
+			const result = validateSlidingWindow(weeks, {
+				...DEFAULT_RTO_POLICY,
+				roundPercentage: false,
+			});
 
 			expect(result.isValid).toBe(false);
 			// avg office days = (4*3 + 4*0)/8 = 1.5 < 3 required

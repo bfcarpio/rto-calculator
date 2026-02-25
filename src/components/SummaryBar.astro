@@ -9,7 +9,7 @@
 			<!-- Left Column: Compliance Status -->
 			<div class="column">
 				<h2 id="summary-heading" class="title is-5 mb-2">
-					Average In-Office: <span id="summary-average" class="has-text-weight-bold has-text-primary">0</span>/5 days
+					Average <span id="summary-average-label">In-Office</span>: <span id="summary-average" class="has-text-weight-bold has-text-primary">0</span>/5 days
 				</h2>
 				<p class="subtitle is-7 mb-0">
 					Based on your tracked attendance
@@ -80,7 +80,16 @@
 		const elOof = document.getElementById('summary-oof');
 		const elHoliday = document.getElementById('summary-holiday');
 
-		if (elAvg) elAvg.textContent = data.averageOfficeDays.toFixed(1);
+		if (elAvg) {
+			const shouldRound = data.roundPercentage !== false;
+			elAvg.textContent = shouldRound 
+				? Math.round(data.averageOfficeDays).toString() 
+				: data.averageOfficeDays.toFixed(1);
+		}
+		const elAvgLabel = document.getElementById('summary-average-label');
+		if (elAvgLabel) {
+			elAvgLabel.textContent = data.roundPercentage !== false ? 'In-Office (rounded)' : 'In-Office';
+		}
 		if (elWorking) elWorking.textContent = String(data.totalWorkingDays);
 		if (elOof) elOof.textContent = String(data.totalWfhDays);
 		if (elHoliday) elHoliday.textContent = String(data.totalHolidayDays);

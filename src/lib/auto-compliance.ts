@@ -66,6 +66,9 @@ export interface ComplianceEventData {
 
 	/** Sliding-window validation result */
 	slidingWindowResult: SlidingWindowResult;
+
+	/** Whether percentage rounding is enabled */
+	roundPercentage: boolean;
 }
 
 // ─── Event Helpers ──────────────────────────────────────────────────
@@ -300,6 +303,7 @@ function computeComplianceData(allWeeks: WeekInfo[]): ComplianceEventData {
 		compliancePercentage,
 		message,
 		slidingWindowResult,
+		roundPercentage: policy.roundPercentage ?? true,
 	};
 }
 

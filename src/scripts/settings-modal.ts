@@ -45,6 +45,7 @@ class SettingsModal {
 	private rollingWindowInput: HTMLInputElement | null = null;
 	private bestWeeksInput: HTMLInputElement | null = null;
 	private startingWeekSelect: HTMLSelectElement | null = null;
+	private roundPercentageToggle: HTMLButtonElement | null = null;
 	private clearDataButton: HTMLButtonElement | null = null;
 	private colorSchemeSelect: HTMLSelectElement | null = null;
 
@@ -104,6 +105,9 @@ class SettingsModal {
 		this.startingWeekSelect = document.getElementById(
 			"starting-week-select",
 		) as HTMLSelectElement | null;
+		this.roundPercentageToggle = document.getElementById(
+			"round-percentage-toggle",
+		) as HTMLButtonElement | null;
 		this.clearDataButton = document.getElementById(
 			"clear-data-button",
 		) as HTMLButtonElement | null;
@@ -170,6 +174,9 @@ class SettingsModal {
 		);
 		this.startingWeekSelect?.addEventListener("change", () =>
 			this.onStartingWeekChange(),
+		);
+		this.roundPercentageToggle?.addEventListener("click", () =>
+			this.toggleRoundPercentage(),
 		);
 		this.clearDataButton?.addEventListener("click", () =>
 			this.clearSavedData(),
@@ -247,6 +254,22 @@ class SettingsModal {
 		this.dispatchSettingsChanged();
 		logger.debug(
 			`[Settings] Holiday penalize ${newState ? "enabled" : "disabled"}`,
+		);
+	}
+
+	private toggleRoundPercentage(): void {
+		if (!this.roundPercentageToggle) return;
+		const currentState =
+			this.roundPercentageToggle.getAttribute("aria-checked") === "true";
+		const newState = !currentState;
+		this.roundPercentageToggle.setAttribute(
+			"aria-checked",
+			newState.toString(),
+		);
+		this.saveSettingsToLocalStorage();
+		this.dispatchSettingsChanged();
+		logger.debug(
+			`[Settings] Round percentage ${newState ? "enabled" : "disabled"}`,
 		);
 	}
 
@@ -443,6 +466,7 @@ class SettingsModal {
 
 		this.sickPenalizeToggle?.setAttribute("aria-checked", "true");
 		this.holidayPenalizeToggle?.setAttribute("aria-checked", "true");
+		this.roundPercentageToggle?.setAttribute("aria-checked", "true");
 
 		if (this.rollingWindowInput) {
 			this.rollingWindowInput.value = DEFAULTS.rollingWindowWeeks.toString();
@@ -615,6 +639,8 @@ class SettingsModal {
 				this.sickPenalizeToggle?.getAttribute("aria-checked") !== "false",
 			holidayPenalize:
 				this.holidayPenalizeToggle?.getAttribute("aria-checked") !== "false",
+			roundPercentage:
+				this.roundPercentageToggle?.getAttribute("aria-checked") !== "false",
 		});
 		logger.debug("[Settings] Settings saved to localStorage");
 	}
@@ -705,6 +731,13 @@ class SettingsModal {
 				this.holidayPenalizeToggle.setAttribute(
 					"aria-checked",
 					settings.holidayPenalize.toString(),
+				);
+			}
+
+			if (this.roundPercentageToggle) {
+				this.roundPercentageToggle.setAttribute(
+					"aria-checked",
+					(settings.roundPercentage ?? true).toString(),
 				);
 			}
 

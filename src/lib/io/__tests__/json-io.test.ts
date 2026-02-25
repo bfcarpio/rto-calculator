@@ -138,6 +138,7 @@ describe("exportJSON", () => {
 			holidayPenalize: true,
 			startingWeek: null,
 			defaultPattern: null,
+			roundPercentage: true,
 			holidays: { countryCode: null, holidaysAsOOF: true, companyName: null },
 		});
 
