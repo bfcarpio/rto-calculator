@@ -6,6 +6,8 @@
  * - enumerateAllCombinations: test-only (recursive stars-and-bars enumeration)
  */
 
+import { DEFAULT_POLICY, RTO_CONFIG } from "../rto-config";
+
 export interface SolverConfig {
 	windowSize: number; // default 12
 	bestWeeksCount: number; // default 8
@@ -28,10 +30,10 @@ export interface TwoGroupCombo {
 }
 
 export const DEFAULT_SOLVER_CONFIG: SolverConfig = {
-	windowSize: 12,
-	bestWeeksCount: 8,
-	minOfficeDays: 3,
-	totalWeekdays: 5,
+	windowSize: DEFAULT_POLICY.rollingPeriodWeeks,
+	bestWeeksCount: DEFAULT_POLICY.topWeeksToCheck,
+	minOfficeDays: RTO_CONFIG.minOfficeDaysPerWeek,
+	totalWeekdays: RTO_CONFIG.totalWeekdaysPerWeek,
 };
 
 /**

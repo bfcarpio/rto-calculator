@@ -21,6 +21,8 @@ import {
 	type WeekCompliance,
 } from "../validation/rto-core";
 
+const policy = DEFAULT_RTO_POLICY;
+
 // ─── Helpers ──────────────────────────────────────────────────────
 
 /** Create a single WeekCompliance for a given Monday */
@@ -135,8 +137,8 @@ describe("validateSlidingWindow", () => {
 			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
 
 			expect(result.isValid).toBe(false);
-			expect(result.evaluatedWeekStarts).toHaveLength(8);
-			expect(result.windowWeekStarts).toHaveLength(8);
+			expect(result.evaluatedWeekStarts).toHaveLength(policy.topWeeksToCheck);
+			expect(result.windowWeekStarts).toHaveLength(policy.topWeeksToCheck);
 		});
 
 		it("returns valid for 6 good weeks", () => {
@@ -181,7 +183,7 @@ describe("validateSlidingWindow", () => {
 			expect(result.isValid).toBe(true);
 			expect(result.overallCompliance).toBe(100);
 			expect(result.windowWeekStarts).toHaveLength(12);
-			expect(result.evaluatedWeekStarts).toHaveLength(8);
+			expect(result.evaluatedWeekStarts).toHaveLength(policy.topWeeksToCheck);
 		});
 
 		it("all 0-day weeks → NOT valid", () => {
@@ -220,7 +222,7 @@ describe("validateSlidingWindow", () => {
 
 			expect(result.isValid).toBe(true);
 			// evaluatedWeekStarts should have 8 entries (the best 8)
-			expect(result.evaluatedWeekStarts).toHaveLength(8);
+			expect(result.evaluatedWeekStarts).toHaveLength(policy.topWeeksToCheck);
 			// windowWeekStarts should have all 12
 			expect(result.windowWeekStarts).toHaveLength(12);
 			// The 4 bad weeks should NOT be in evaluatedWeekStarts
@@ -377,7 +379,7 @@ describe("validateSlidingWindow", () => {
 			const weeks = makeWeeks(START, 12, 5);
 			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
 
-			expect(result.evaluatedWeekStarts).toHaveLength(8);
+			expect(result.evaluatedWeekStarts).toHaveLength(policy.topWeeksToCheck);
 		});
 
 		it("evaluatedWeekStarts is a subset of windowWeekStarts", () => {
@@ -438,7 +440,7 @@ describe("validateSlidingWindow", () => {
 			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
 
 			expect(result.isValid).toBe(true);
-			expect(result.evaluatedWeekStarts).toHaveLength(8);
+			expect(result.evaluatedWeekStarts).toHaveLength(policy.topWeeksToCheck);
 
 			// The first 4 weeks should NOT be in evaluatedWeekStarts (dropped)
 			const droppedTimestamps = weeks
@@ -463,7 +465,7 @@ describe("validateSlidingWindow", () => {
 			const result = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
 
 			expect(result.isValid).toBe(true);
-			expect(result.evaluatedWeekStarts).toHaveLength(8);
+			expect(result.evaluatedWeekStarts).toHaveLength(policy.topWeeksToCheck);
 
 			// All 5-day weeks (first 4) should be kept
 			const highWeeks = weeks.slice(0, 4).map((w) => w.weekStart.getTime());
@@ -566,6 +568,58 @@ describe("validateSlidingWindow", () => {
 			// Holiday weeks are dropped as the 4 worst
 			expect(result.isValid).toBe(true);
 			expect(result.overallCompliance).toBe(100);
+		});
+	});
+});
+
+// ─── Parameterized Tests: 3-day vs 4-day Thresholds ───────────────────
+
+/**
+ * These tests verify the validation works correctly with different minimum
+ * office days per week thresholds (3 days = 60%, 4 days = 80%).
+ * The 8/12 policy (Microsoft style) uses best 8 of 12 weeks.
+ */
+describe.each([3, 4])("8/12 policy with %i-day threshold", (minDays) => {
+	const policy = {
+		...DEFAULT_RTO_POLICY,
+		minOfficeDaysPerWeek: minDays,
+		rollingPeriodWeeks: 12,
+		topWeeksToCheck: 8,
+	};
+
+	describe(`${minDays}-day threshold compliance`, () => {
+		it("all weeks at threshold → compliant", () => {
+			const weeks = makeWeeks(START, 12, minDays);
+			const result = validateSlidingWindow(weeks, policy);
+			expect(result.isValid).toBe(true);
+		});
+
+		it("all weeks below threshold → NOT compliant", () => {
+			const weeks = makeWeeks(START, 12, minDays - 1);
+			const result = validateSlidingWindow(weeks, policy);
+			expect(result.isValid).toBe(false);
+		});
+
+		it("8 weeks at threshold, 4 below → compliant", () => {
+			// Top 8 weeks meet threshold, remaining 4 are dropped
+			const goodWeeks = makeWeeks(START, 8, minDays);
+			const badWeeksStart = new Date(START);
+			badWeeksStart.setDate(START.getDate() + 8 * 7);
+			const badWeeks = makeWeeks(badWeeksStart, 4, minDays - 1);
+			const weeks = [...goodWeeks, ...badWeeks];
+			const result = validateSlidingWindow(weeks, policy);
+			expect(result.isValid).toBe(true);
+		});
+
+		it("7 weeks at threshold, 5 below → NOT compliant", () => {
+			// Only 7 weeks meet threshold, need 8
+			const goodWeeks = makeWeeks(START, 7, minDays);
+			const badWeeksStart = new Date(START);
+			badWeeksStart.setDate(START.getDate() + 7 * 7);
+			const badWeeks = makeWeeks(badWeeksStart, 5, minDays - 1);
+			const weeks = [...goodWeeks, ...badWeeks];
+			const result = validateSlidingWindow(weeks, policy);
+			expect(result.isValid).toBe(false);
 		});
 	});
 });

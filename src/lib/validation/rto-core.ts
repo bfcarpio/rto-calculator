@@ -227,7 +227,7 @@ export function calculateWeekCompliance(
 	};
 }
 
-export function validateTop8Weeks(
+export function validateTopKWeeks(
 	selections: DaySelection[],
 	calendarStartDate: Date,
 	policy: RTOPolicyConfig = DEFAULT_RTO_POLICY,
@@ -256,12 +256,12 @@ export function validateTop8Weeks(
 		weeksData.push(weekData);
 	}
 
-	const top8Weeks = weeksData.slice(0, policy.topWeeksToCheck);
-	const totalOfficeDays = top8Weeks.reduce(
+	const topKWeeks = weeksData.slice(0, policy.topWeeksToCheck);
+	const totalOfficeDays = topKWeeks.reduce(
 		(sum, week) => sum + week.officeDays,
 		0,
 	);
-	const totalWeekdays = top8Weeks.reduce(
+	const totalWeekdays = topKWeeks.reduce(
 		(sum, week) => sum + week.totalDays,
 		0,
 	);
@@ -304,7 +304,7 @@ export function validateTop8Weeks(
 		averageOfficePercentage,
 		requiredAverage: policy.thresholdPercentage,
 		requiredPercentage,
-		weeksData: top8Weeks,
+		weeksData: topKWeeks,
 		totalOfficeDays,
 		totalWeekdays,
 	};

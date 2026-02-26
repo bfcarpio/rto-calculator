@@ -2,6 +2,8 @@
 
 Welcome to the RTO Calculator! This guide will help you track your Return-to-Office (RTO) compliance with ease.
 
+> **Default Policy**: This app uses a "Best 8 of 12 weeks" policy by default (the Microsoft style), meaning your compliance is based on the average of your best 8 weeks out of a rolling 12-week period. You can customize the minimum days per week and other settings in **Settings** → **Target days per week**.
+
 ---
 
 ## Getting Started
@@ -15,6 +17,7 @@ Welcome to the RTO Calculator! This guide will help you track your Return-to-Off
 ### First-Time Setup
 
 **Enable Data Saving** (Optional):
+
 1. Click the **Settings** button
 2. Find "Enable data saving" toggle
 3. Turn it **ON** to save your selections between sessions
@@ -29,15 +32,18 @@ Welcome to the RTO Calculator! This guide will help you track your Return-to-Off
 ### Selecting Work-From-Home Days
 
 **Click to Toggle:**
+
 - Click any weekday to mark it as **work from home (WFH)**
 - Click again to unmark it
 - Unselected days count as office days
 
 **Drag to Select:**
+
 - Click and drag across multiple days to apply the same selection
 - Faster than clicking individual days
 
 **Weekday Quick-Select:**
+
 - Located in a collapsible drawer below the calendar (closed by default)
 - Click **"Quick-Select Weekdays"** to expand it
 - Use the **Mon–Fri buttons** to toggle all instances of a weekday
@@ -45,6 +51,7 @@ Welcome to the RTO Calculator! This guide will help you track your Return-to-Off
 - Buttons show as active only when ALL instances of that weekday are marked WFH
 
 **Keyboard Navigation:**
+
 - Use **Arrow keys** to move between days
 - Press **Space** or **Enter** to toggle the focused day
 - Press **Esc** to cancel an in-progress drag selection
@@ -52,6 +59,7 @@ Welcome to the RTO Calculator! This guide will help you track your Return-to-Off
 - Press **?** to open keyboard shortcuts help
 
 **Visual Indicators:**
+
 - **Red background with 🏠** = Work from home
 - **No highlight** = Office day
 - **Amber background with ☀️** = Holiday (see Holiday Features below)
@@ -68,6 +76,7 @@ Welcome to the RTO Calculator! This guide will help you track your Return-to-Off
 4. Click **Save**
 
 **Result:**
+
 - Holidays appear with amber background and ☀️ emoji
 - Hover over holiday to see the holiday name
 - Holidays are automatically treated as non-office days in validation
@@ -75,11 +84,13 @@ Welcome to the RTO Calculator! This guide will help you track your Return-to-Off
 ### How Holidays Affect Validation
 
 **Holidays reduce the required office days:**
+
 - Normal week: 5 weekdays, need 3 office days (60%)
 - Week with 1 holiday: 4 effective weekdays, need 2.4 office days (60%)
 - Week with 2 holidays: 3 effective weekdays, need 1.8 office days (60%)
 
 **Example:**
+
 ```
 Week with President's Day (Monday holiday):
 - Weekdays: 5 total
@@ -92,6 +103,7 @@ Week with President's Day (Monday holiday):
 ### Company Holiday Filters
 
 Some countries have company-specific holiday settings:
+
 - Select your company to filter which holidays apply
 - Choose "All Holidays" to include all national holidays
 - Not all countries have company filters (will show empty dropdown)
@@ -114,12 +126,14 @@ The RTO Calculator enforces a single validation policy: **Best 8 of 12 weeks mus
 The system evaluates ALL possible 12-week windows across your calendar — if any window fails, you are not compliant.
 
 **How it works:**
+
 - Every possible 12-week window in your calendar is checked
 - Within each window, the 4 worst weeks are **dropped** (excluded)
 - The remaining best 8 weeks must average at least 60% office attendance
 - This gives you flexibility for vacation, sick days, or occasional low weeks
 
 **Example — Passing:**
+
 ```
 Best 8 weeks in a 12-week window:
 Weeks 1-4: 3 office days each (60%)
@@ -133,6 +147,7 @@ Result: ✓ COMPLIANT (meets 60% threshold)
 ```
 
 **Example — Failing:**
+
 ```
 Best 8 weeks in a 12-week window:
 Weeks 1-4: 2 office days each (40%)
@@ -169,17 +184,21 @@ Each week row shows a status icon:
 ### Validation Messages
 
 **Compliant:**
+
 ```
 ✓ RTO Compliant: Top 8 weeks average 3.6 office days (72%) of 5 weekdays.
 Required: 3 days (60%)
 ```
+
 **No action needed** — you are meeting the requirement.
 
 **Violation:**
+
 ```
 ✗ RTO Violation: Top 8 weeks average 2.8 office days (56%) of 5 weekdays.
 Required: 3 days (60%)
 ```
+
 **Action**: Add more office days across multiple weeks to improve the average. Focus on weeks marked with ✗ or ⏳.
 
 ### No Selections Message
@@ -187,6 +206,7 @@ Required: 3 days (60%)
 ```
 ℹ️ No selections to validate
 ```
+
 **Action**: Mark at least one day as out-of-office, then run validation.
 
 ### Capacity Card
@@ -199,7 +219,7 @@ The **Capacity** card on the right panel shows:
 
 **How "Next available" works:**
 
-The calculator checks every sliding window across your calendar — not just the one currently displayed. A future week is only recommended if zeroing it out would not cause a violation in *any* window.
+The calculator checks every sliding window across your calendar — not just the one currently displayed. A future week is only recommended if zeroing it out would not cause a violation in _any_ window.
 
 Specifically, the algorithm identifies which weeks are actively contributing to compliance (appearing in the "best K" of at least one 12-week window). Any future compliant week that is NOT contributing to any window is safe to take off. The earliest such week is shown as "Next available."
 
@@ -214,11 +234,13 @@ If no safe week exists or you are currently non-compliant, the field shows a das
 **Location**: Top and bottom of the page
 
 **What it does:**
+
 - Removes **all** work-from-home selections
 - Clears all weeks at once
 - Does not remove holidays (use Settings to disable holidays)
 
 **When to use:**
+
 - Starting fresh
 - Testing different scenarios
 - Resetting after trying a pattern
@@ -228,16 +250,19 @@ If no safe week exists or you are currently non-compliant, the field shows a das
 **Location**: Top and bottom of the page (same bar as Clear All)
 
 **What it does:**
+
 - Clears selections in the currently visible month only
 - Other months remain unchanged
 
 **When to use:**
+
 - Fixing mistakes in the current month
 - Changing plans for one month without affecting others
 
 ### Clear All + Refresh = Clean Slate
 
 If data saving is enabled and you want a completely clean start:
+
 1. Click **Clear All**
 2. Refresh the browser
 3. localStorage will be empty
@@ -248,26 +273,28 @@ If data saving is enabled and you want a completely clean start:
 
 Press **?** or click the **?** button in the header to see all shortcuts.
 
-| Key | Action |
-|-----|--------|
-| `1` | WFH painting mode |
-| `2` | Holiday painting mode |
-| `3` | Sick painting mode |
-| `Ctrl+Z` / `Cmd+Z` | Undo |
-| `Arrow Keys` | Navigate calendar months |
-| `Space` / `Enter` | Toggle focused day |
-| `Escape` | Cancel drag / close modal |
-| `?` | Open shortcuts help |
+| Key                | Action                    |
+| ------------------ | ------------------------- |
+| `1`                | WFH painting mode         |
+| `2`                | Holiday painting mode     |
+| `3`                | Sick painting mode        |
+| `Ctrl+Z` / `Cmd+Z` | Undo                      |
+| `Arrow Keys`       | Navigate calendar months  |
+| `Space` / `Enter`  | Toggle focused day        |
+| `Escape`           | Cancel drag / close modal |
+| `?`                | Open shortcuts help       |
 
 ### Undo/Redo
 
 The RTO Calculator includes undo/redo functionality:
 
 **Shortcuts:**
+
 - **Ctrl+Z** (Windows/Linux) or **Cmd+Z** (Mac) - Undo last action
 - **Ctrl+Y** or **Ctrl+Shift+Z** - Redo undone action
 
 **What can be undone:**
+
 - Day selections
 - Pattern applications
 - Clear operations
@@ -289,6 +316,7 @@ The RTO Calculator includes undo/redo functionality:
 ### Common Scenarios
 
 **Scenario 1: Week with a holiday**
+
 ```
 Monday is a holiday
 You're working from home Thursday
@@ -299,6 +327,7 @@ Office days: 5 - 1 - 1 = 3 days ✓ Compliant
 ```
 
 **Scenario 2: Vacation week**
+
 ```
 Taking Monday-Friday off
 Total weekdays: 5
@@ -309,6 +338,7 @@ As long as your best 8 weeks still average ≥ 60%: ✓ Compliant
 ```
 
 **Scenario 3: Flexible schedule**
+
 ```
 Some weeks: 2 office days
 Some weeks: 5 office days
@@ -353,6 +383,7 @@ As long as best 8 weeks average ≥ 3 days: ✓ Compliant
 **Cause:** Country doesn't have holidays in the calendar years shown
 
 **Solution:**
+
 - Try a different country to test the feature
 - Check if the API is accessible (network issues)
 - Refresh the page and try again
@@ -364,6 +395,7 @@ As long as best 8 weeks average ≥ 3 days: ✓ Compliant
 **Cause:** Data saving is disabled
 
 **Solution:**
+
 1. Go to Settings
 2. Enable "Data saving" toggle
 3. Save settings
@@ -376,6 +408,7 @@ As long as best 8 weeks average ≥ 3 days: ✓ Compliant
 **Cause:** Too many low-attendance weeks are dragging down the best-8 average below 60%
 
 **Solution:**
+
 - Add more office days to weeks marked ✗ or ⏳
 - Remember that your 4 worst weeks are already being dropped — if you still fail, the remaining 8 weeks need improvement
 
@@ -386,6 +419,7 @@ As long as best 8 weeks average ≥ 3 days: ✓ Compliant
 ### What Data is Stored?
 
 When data saving is **enabled**:
+
 - Selected work-from-home days
 - Country/company selection for holidays
 - Settings preferences
@@ -393,6 +427,7 @@ When data saving is **enabled**:
 ### Where is Data Stored?
 
 All data is stored **locally in your browser's localStorage**:
+
 - No data sent to servers
 - No account required
 - Data stays on your device
@@ -406,6 +441,7 @@ All data is stored **locally in your browser's localStorage**:
 4. Future selections won't be saved
 
 **Note**: Disabling data saving doesn't delete existing saved data. To fully clear:
+
 1. Disable data saving
 2. Click **Clear All**
 3. Refresh the page
@@ -430,6 +466,7 @@ All data is stored **locally in your browser's localStorage**:
 ### Keyboard-Only Navigation
 
 Complete functionality available via keyboard:
+
 - Navigate calendar with arrow keys
 - Toggle selections with Space/Enter
 - Move between sections with Tab
@@ -440,12 +477,14 @@ Complete functionality available via keyboard:
 ## Getting Help
 
 **For technical issues:**
+
 - Check browser console for errors (F12)
 - Try refreshing the page
 - Clear browser cache
 - Try a different browser
 
 **For policy questions:**
+
 - Consult your company's RTO policy documentation
 - Ask your manager or HR for clarification
 - This calculator is a tool - your policy is the authority
@@ -455,12 +494,14 @@ Complete functionality available via keyboard:
 ## Summary
 
 **Quick Steps:**
+
 1. Enable holidays (Settings → Country)
 2. Mark work-from-home days
 3. Click **Validate**
 4. Adjust schedule based on results
 
 **Key Features:**
+
 - ✓ Best-8-of-12 validation (4 worst weeks dropped automatically)
 - ✓ 200+ countries for holidays
 - ✓ Weekday quick-select for bulk WFH marking
@@ -470,9 +511,10 @@ Complete functionality available via keyboard:
 - ✓ Company-specific holiday filtering
 
 **Need More Info?**
+
 - **Developers**: See [DEVELOPER_GUIDE.md](./DEVELOPER_GUIDE.md)
 - **Architecture**: See [ARCHITECTURE.md](./ARCHITECTURE.md)
 
 ---
 
-*Last Updated: February 2026*
+_Last Updated: February 2026_

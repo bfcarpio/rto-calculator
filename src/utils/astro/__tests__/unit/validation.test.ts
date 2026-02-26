@@ -28,9 +28,11 @@ import {
 	type RTOPolicyConfig,
 	// Main validation function
 	roundToNearest20Percent,
-	// Validation logic
-	validateTop8Weeks,
+	validateTopKWeeks,
 } from "../../../../lib/validation/rto-core";
+
+const policy = DEFAULT_RTO_POLICY;
+
 // import { getISOWeekNumber } from "../../../utils/dateUtils";
 
 // Import fixtures for scenario testing
@@ -566,7 +568,7 @@ describe("elementToDaySelection", () => {
 // Validation Tests Using Fixtures
 // ============================================================================
 
-describe("validateTop8Weeks - Fixture-Based Scenarios", () => {
+describe("validateTopKWeeks - Fixture-Based Scenarios", () => {
 	it("should validate scenario with all 8 weeks compliant", () => {
 		const { selections, expected } = SCENARIO_8_WEEKS_COMPLIANT;
 		const calendarStart = new Date(
@@ -575,7 +577,7 @@ describe("validateTop8Weeks - Fixture-Based Scenarios", () => {
 			BASE_CALENDAR.startDay,
 		);
 
-		const result = validateTop8Weeks(selections, calendarStart);
+		const result = validateTopKWeeks(selections, calendarStart);
 
 		expect(result.isValid).toBe(expected.isValid);
 		expect(result.averageOfficeDays).toBeCloseTo(expected.averageOfficeDays, 1);
@@ -583,7 +585,7 @@ describe("validateTop8Weeks - Fixture-Based Scenarios", () => {
 			expected.averageOfficePercentage,
 			1,
 		);
-		expect(result.weeksData).toHaveLength(8);
+		expect(result.weeksData).toHaveLength(policy.topWeeksToCheck);
 	});
 
 	it("should validate scenario with all 8 weeks in violation", () => {
@@ -594,7 +596,7 @@ describe("validateTop8Weeks - Fixture-Based Scenarios", () => {
 			BASE_CALENDAR.startDay,
 		);
 
-		const result = validateTop8Weeks(selections, calendarStart);
+		const result = validateTopKWeeks(selections, calendarStart);
 
 		expect(result.isValid).toBe(expected.isValid);
 		expect(result.averageOfficeDays).toBeCloseTo(expected.averageOfficeDays, 1);
@@ -612,7 +614,7 @@ describe("validateTop8Weeks - Fixture-Based Scenarios", () => {
 			BASE_CALENDAR.startDay,
 		);
 
-		const result = validateTop8Weeks(selections, calendarStart);
+		const result = validateTopKWeeks(selections, calendarStart);
 
 		expect(result.isValid).toBe(expected.isValid);
 		expect(result.averageOfficeDays).toBeCloseTo(expected.averageOfficeDays, 1);
@@ -630,7 +632,7 @@ describe("validateTop8Weeks - Fixture-Based Scenarios", () => {
 			BASE_CALENDAR.startDay,
 		);
 
-		const result = validateTop8Weeks(selections, calendarStart, {
+		const result = validateTopKWeeks(selections, calendarStart, {
 			...DEFAULT_RTO_POLICY,
 			roundPercentage: false,
 		});
@@ -651,7 +653,7 @@ describe("validateTop8Weeks - Fixture-Based Scenarios", () => {
 			BASE_CALENDAR.startDay,
 		);
 
-		const result = validateTop8Weeks(selections, calendarStart);
+		const result = validateTopKWeeks(selections, calendarStart);
 
 		expect(result.isValid).toBe(expected.isValid);
 		expect(result.averageOfficeDays).toBeCloseTo(expected.averageOfficeDays, 1);
@@ -669,7 +671,7 @@ describe("validateTop8Weeks - Fixture-Based Scenarios", () => {
 			BASE_CALENDAR.startDay,
 		);
 
-		const result = validateTop8Weeks(selections, calendarStart, {
+		const result = validateTopKWeeks(selections, calendarStart, {
 			...DEFAULT_RTO_POLICY,
 			roundPercentage: false,
 		});
@@ -690,7 +692,7 @@ describe("validateTop8Weeks - Fixture-Based Scenarios", () => {
 			BASE_CALENDAR.startDay,
 		);
 
-		const result = validateTop8Weeks(selections, calendarStart);
+		const result = validateTopKWeeks(selections, calendarStart);
 
 		expect(result.isValid).toBe(expected.isValid);
 		expect(result.averageOfficeDays).toBeCloseTo(expected.averageOfficeDays, 1);
@@ -701,7 +703,7 @@ describe("validateTop8Weeks - Fixture-Based Scenarios", () => {
 	});
 });
 
-describe("validateTop8Weeks - Pattern Builders", () => {
+describe("validateTopKWeeks - Pattern Builders", () => {
 	it("should create and validate 8 weeks using pattern helper", () => {
 		const calendarStart = new Date(
 			BASE_CALENDAR.startYear,
@@ -716,7 +718,7 @@ describe("validateTop8Weeks - Pattern Builders", () => {
 			Array(8).fill("GOOD" as const), // 8 weeks with 2 WFH days each
 		);
 
-		const result = validateTop8Weeks(selections, calendarStart);
+		const result = validateTopKWeeks(selections, calendarStart);
 
 		expect(result.isValid).toBe(true);
 		expect(result.averageOfficeDays).toBeCloseTo(3, 1);
@@ -737,7 +739,7 @@ describe("validateTop8Weeks - Pattern Builders", () => {
 			Array(8).fill("GOOD" as const),
 		);
 
-		const result = validateTop8Weeks(selections, calendarStart);
+		const result = validateTopKWeeks(selections, calendarStart);
 
 		expect(result.isValid).toBe(true);
 		expect(result.averageOfficeDays).toBeCloseTo(3, 1);
@@ -780,7 +782,7 @@ describe("validateTop8Weeks - Pattern Builders", () => {
 				Array(8).fill(pattern), // Create 8 weeks with this pattern
 			);
 
-			const result = validateTop8Weeks(selections, calendarStart);
+			const result = validateTopKWeeks(selections, calendarStart);
 
 			expect(result.isValid).toBe(expectedValid);
 			expect(result.averageOfficeDays).toBeCloseTo(expectedOfficeDays, 1);
@@ -788,7 +790,7 @@ describe("validateTop8Weeks - Pattern Builders", () => {
 	});
 });
 
-describe("validateTop8Weeks - Custom Policy", () => {
+describe("validateTopKWeeks - Custom Policy", () => {
 	it("should use custom policy configuration", () => {
 		const customPolicy: RTOPolicyConfig = {
 			minOfficeDaysPerWeek: 4,
@@ -823,7 +825,7 @@ describe("validateTop8Weeks - Custom Policy", () => {
 			);
 		}
 
-		const result = validateTop8Weeks(
+		const result = validateTopKWeeks(
 			selections,
 			new Date(2025, 0, 1),
 			customPolicy,
@@ -844,16 +846,16 @@ describe("validateTop8Weeks - Custom Policy", () => {
 			// Week 3: 0 WFH (5 none)
 		];
 
-		const result = validateTop8Weeks(selections, new Date(2025, 0, 1));
+		const result = validateTopKWeeks(selections, new Date(2025, 0, 1));
 
 		expect(result.totalOfficeDays).toBe(37); // Sum of first 8 weeks (3 weeks with selections + 5 weeks with no WFH = 5*5 + 3+4+2 = 37)
 		expect(result.totalWeekdays).toBe(40); // 8 weeks * 5 weekdays
 	});
 });
 
-describe("validateTop8Weeks - Message Generation", () => {
+describe("validateTopKWeeks - Message Generation", () => {
 	it("should generate appropriate compliant message", () => {
-		const result = validateTop8Weeks([], new Date(2025, 0, 1));
+		const result = validateTopKWeeks([], new Date(2025, 0, 1));
 
 		expect(result.message).toContain("Compliant");
 		expect(result.message).toContain("100%");
@@ -879,14 +881,14 @@ describe("validateTop8Weeks - Message Generation", () => {
 			}
 		}
 
-		const result = validateTop8Weeks(selections, new Date(2025, 0, 1));
+		const result = validateTopKWeeks(selections, new Date(2025, 0, 1));
 
 		expect(result.message).toContain("Not compliant");
 		expect(result.averageOfficePercentage).toBeCloseTo(20, 1);
 	});
 });
 
-describe("validateTop8Weeks - Integration Tests", () => {
+describe("validateTopKWeeks - Integration Tests", () => {
 	it("should handle realistic multi-week scenario", () => {
 		const selections: DaySelection[] = [
 			// Week 1: 2 WFH (3 none)
@@ -912,7 +914,7 @@ describe("validateTop8Weeks - Integration Tests", () => {
 			createDaySelection(2025, 1, 18, "out-of-office"),
 		];
 
-		const result = validateTop8Weeks(selections, new Date(2025, 0, 1));
+		const result = validateTopKWeeks(selections, new Date(2025, 0, 1));
 
 		// Best 8 weeks: Weeks 1-8 sorted by none days
 		// Week 1: 2 WFH = 3 none
@@ -935,17 +937,17 @@ describe("validateTop8Weeks - Integration Tests", () => {
 			createDaySelection(2025, 1, 4, "out-of-office"),
 		];
 
-		const result = validateTop8Weeks(selections, new Date(2025, 0, 1));
+		const result = validateTopKWeeks(selections, new Date(2025, 0, 1));
 
-		// validateTop8Weeks always returns top 8 weeks (the rolling period)
-		expect(result.weeksData).toHaveLength(8);
+		// validateTopKWeeks always returns top 8 weeks (the rolling period)
+		expect(result.weeksData).toHaveLength(policy.topWeeksToCheck);
 		// First 2 weeks should have selections and be compliant
 		expect(result.weeksData[0]?.isCompliant).toBe(true);
 		expect(result.weeksData[1]?.isCompliant).toBe(true);
 	});
 });
 
-describe("validateTop8Weeks - Sliding Window Optimization", () => {
+describe("validateTopKWeeks - Sliding Window Optimization", () => {
 	it("should calculate compliance for first 8 weeks (expanding window)", () => {
 		const selections: DaySelection[] = [];
 		// Create 8 weeks with 3 WFH days (2 none days = 40%)
@@ -966,7 +968,7 @@ describe("validateTop8Weeks - Sliding Window Optimization", () => {
 			}
 		}
 
-		const result = validateTop8Weeks(selections, new Date(2025, 0, 1));
+		const result = validateTopKWeeks(selections, new Date(2025, 0, 1));
 
 		// Should detect violation (2 none days vs required 3)
 		expect(result.isValid).toBe(false);
@@ -978,7 +980,7 @@ describe("validateTop8Weeks - Sliding Window Optimization", () => {
 describe("Partial Weeks Filtering - Edge Cases", () => {
 	it("should handle partial week data at start of calendar (January 2025)", () => {
 		// January 1, 2025 is a Wednesday - first week has only 3 weekdays in calendar
-		// NOTE: validateTop8Weeks is a library function that processes selections abstractly.
+		// NOTE: validateTopKWeeks is a library function that processes selections abstractly.
 		// It assumes all weeks have 5 weekdays and doesn't know about partial weeks.
 		// Partial week filtering happens in UI layer (readCalendarData) which reads DOM.
 		// This test documents the library behavior with incomplete selection data.
@@ -993,9 +995,9 @@ describe("Partial Weeks Filtering - Edge Cases", () => {
 			createDaySelection(2025, 0, 8, "out-of-office"),
 		];
 
-		const result = validateTop8Weeks(selections, new Date(2025, 0, 1));
+		const result = validateTopKWeeks(selections, new Date(2025, 0, 1));
 
-		// validateTop8Weeks processes selections assuming 5 weekdays per week
+		// validateTopKWeeks processes selections assuming 5 weekdays per week
 		expect(result.weeksData.length).toBeGreaterThan(0);
 		// First week (starting Dec 30, 2024) has 3 WFH days
 		// With new behavior, oofDays = wfhDays + holidays = 3 + 0 = 3
@@ -1039,9 +1041,9 @@ describe("Partial Weeks Filtering - Edge Cases", () => {
 			);
 		}
 
-		const result = validateTop8Weeks(selections, new Date(2025, 0, 1));
+		const result = validateTopKWeeks(selections, new Date(2025, 0, 1));
 
-		// validateTop8Weeks processes all weeks with selections
+		// validateTopKWeeks processes all weeks with selections
 		expect(result.weeksData.length).toBeGreaterThanOrEqual(8);
 	});
 
@@ -1061,7 +1063,7 @@ describe("Partial Weeks Filtering - Edge Cases", () => {
 			);
 		}
 
-		const result = validateTop8Weeks(selections, new Date(2025, 0, 1));
+		const result = validateTopKWeeks(selections, new Date(2025, 0, 1));
 
 		// Week with exactly 5 weekdays should be included
 		expect(result.weeksData.length).toBeGreaterThan(0);
@@ -1070,7 +1072,7 @@ describe("Partial Weeks Filtering - Edge Cases", () => {
 
 	it("should handle weeks with varying WFH counts", () => {
 		// Create a week with 3 WFH selections
-		// NOTE: validateTop8Weeks processes selections assuming 5 weekdays per week
+		// NOTE: validateTopKWeeks processes selections assuming 5 weekdays per week
 		const selections: DaySelection[] = [];
 		const weekStart = new Date(2025, 0, 6); // Monday, Jan 6
 
@@ -1086,7 +1088,7 @@ describe("Partial Weeks Filtering - Edge Cases", () => {
 			);
 		}
 
-		const result = validateTop8Weeks(selections, new Date(2025, 0, 6));
+		const result = validateTopKWeeks(selections, new Date(2025, 0, 6));
 
 		// First week has 3 WFH days out of 5
 		// With new behavior: oofDays = 3 (wfhDays), officeDays = 2, not compliant (<3)
@@ -1121,9 +1123,9 @@ describe("Partial Weeks Filtering - Edge Cases", () => {
 			}
 		}
 
-		const result = validateTop8Weeks(selections, new Date(2025, 0, 1));
+		const result = validateTopKWeeks(selections, new Date(2025, 0, 1));
 
-		// validateTop8Weeks processes all weeks with selections
+		// validateTopKWeeks processes all weeks with selections
 		expect(result.weeksData.length).toBeGreaterThanOrEqual(1);
 
 		// First week: 3 WFH out of 5 weekdays
@@ -1326,7 +1328,7 @@ describe("roundToNearest20Percent", () => {
 	});
 });
 
-describe("validateTop8Weeks - Rounding Behavior", () => {
+describe("validateTopKWeeks - Rounding Behavior", () => {
 	it("returns rounded percentage when roundPercentage is true", () => {
 		// The function selects TOP 8 weeks with LOWEST office days (worst compliance first)
 		// To get ~57.5% raw, we need weeks with high office days (few WFH) selected
@@ -1431,7 +1433,7 @@ describe("validateTop8Weeks - Rounding Behavior", () => {
 			roundPercentage: true,
 		};
 
-		const result = validateTop8Weeks(
+		const result = validateTopKWeeks(
 			simpleSelections,
 			calendarStartDate,
 			policy,
@@ -1499,7 +1501,7 @@ describe("validateTop8Weeks - Rounding Behavior", () => {
 			roundPercentage: false,
 		};
 
-		const result = validateTop8Weeks(
+		const result = validateTopKWeeks(
 			simpleSelections,
 			calendarStartDate,
 			policy,
@@ -1563,7 +1565,7 @@ describe("validateTop8Weeks - Rounding Behavior", () => {
 			...DEFAULT_RTO_POLICY,
 		};
 
-		const result = validateTop8Weeks(
+		const result = validateTopKWeeks(
 			simpleSelections,
 			calendarStartDate,
 			policy,

@@ -12,7 +12,7 @@ export default defineConfig({
 			".opencode",
 			"e2e/**",
 			"**/e2e/**",
-			"packages/*/node_modules/**",
+			"packages/**/node_modules/**",
 		],
 		setupFiles: ["./src/utils/astro/__tests__/test.setup.ts"],
 		coverage: {

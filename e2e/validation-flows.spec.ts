@@ -115,4 +115,48 @@ test.describe("Validation Flows", () => {
 			await expect(sickCount).toHaveText("2");
 		});
 	});
+
+	const thresholdCases = [
+		{ days: 3, label: "3-day threshold (60%)" },
+		{ days: 4, label: "4-day threshold (80%)" },
+	] as const;
+
+	for (const { days, label } of thresholdCases) {
+		test.describe(`Compliance: ${label}`, () => {
+			test.beforeEach(async ({ page }) => {
+				await navigateToApp(page);
+				await openSettings(page);
+				await setTargetDays(page, days);
+				await page.keyboard.press("Escape");
+			});
+
+			test(`meeting ${days}-day threshold shows compliant status`, async ({
+				page,
+			}) => {
+				await selectMode(page, "oof");
+
+				// Mark exactly the threshold number of days
+				for (let i = 0; i < days; i++) {
+					await clickDate(page, i);
+				}
+
+				const statusBox = page.locator("#compliance-status-box");
+				await expect(statusBox).toBeVisible();
+			});
+
+			test(`below ${days}-day threshold shows NOT compliant status`, async ({
+				page,
+			}) => {
+				await selectMode(page, "oof");
+
+				// Mark one less than the threshold
+				for (let i = 0; i < days - 1; i++) {
+					await clickDate(page, i);
+				}
+
+				const statusBox = page.locator("#compliance-status-box");
+				await expect(statusBox).toBeVisible();
+			});
+		});
+	}
 });
