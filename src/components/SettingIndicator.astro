@@ -45,31 +45,30 @@ const tooltipId = `setting-indicator-tooltip-${settingKey}-${uid}`;
 
 <script>
 	(function(){
-		const wrapper = document.querySelector(".setting-indicator[data-setting-key]");
-		if (!wrapper) return;
+		const wrappers = document.querySelectorAll(".setting-indicator[data-setting-key]");
+		wrappers.forEach(wrapper => {
+			const settingKey = wrapper.getAttribute("data-setting-key");
+			const valueEl = wrapper.querySelector(".setting-value");
+			const tooltipEl = wrapper.querySelector(".sr-only");
 
-		const settingKey = wrapper.getAttribute("data-setting-key");
-		const valueEl = wrapper.querySelector(".setting-value");
-		const tooltipEl = wrapper.querySelector(".sr-only");
+			if (!settingKey || !valueEl) return;
 
-		if (!settingKey || !valueEl) return;
+			window.addEventListener("rto:config-changed", function(ev) {
+				const detail = (ev as CustomEvent).detail;
+				if (!detail) return;
 
-		window.addEventListener("rto:config-changed", function(ev) {
-			const detail = (ev as CustomEvent).detail;
-			if (!detail) return;
-
-			if (detail.settingKey === settingKey) {
-				const newValue = detail.newValue;
-				valueEl.textContent = String(newValue);
-				wrapper.setAttribute("title", `Setting: ${settingKey} = ${newValue}`);
-				if (tooltipEl) tooltipEl.textContent = `Setting: ${settingKey} = ${newValue}`;
-			}
+				if (detail.settingKey === settingKey) {
+					const newValue = detail.newValue;
+					valueEl.textContent = String(newValue);
+					wrapper.setAttribute("title", `Setting: ${settingKey} = ${newValue}`);
+					if (tooltipEl) tooltipEl.textContent = `Setting: ${settingKey} = ${newValue}`;
+				}
+			});
 		});
 	})();
 </script>
 
 <style>
-	.sr-only {
 	.setting-value {
 		text-decoration: underline dotted;
 		text-underline-offset: 2px;
