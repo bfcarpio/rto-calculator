@@ -5,7 +5,6 @@
 import SettingIndicator from "./SettingIndicator.astro";
 
 const TARGET_DAYS_PER_WEEK = 3;
-const MAX_DAYS_PER_WEEK = 5;
 const BEST_WEEKS_REQUIRED = 8;
 ---
 
@@ -36,21 +35,14 @@ const BEST_WEEKS_REQUIRED = 8;
 				</div>
 				<div class="level-right">
 					<p class="has-text-weight-bold" id="stat-average-days">
-						0.0/{MAX_DAYS_PER_WEEK} days
+						<span class="average-value" id="average-numeric-value">0.0</span>
+						<span class="has-text-weight-bold has-text-primary">/</span>
+						<SettingIndicator settingKey="totalWeekdaysPerWeek" label="" />
+						<span class="has-text-weight-bold has-text-primary"> days</span>
 					</p>
 				</div>
 			</div>
-
-				<p>Target:</p>
-				</div>
-				<div class="level-right">
-					<SettingIndicator settingKey="minOfficeDaysPerWeek" label="Target:" />
-					<span class="has-text-weight-bold has-text-primary">/</span>
-					<SettingIndicator settingKey="totalWeekdaysPerWeek" />
-					<span class="has-text-weight-bold has-text-primary"> days</span>
-
-		</div>
-	</div>
+</div>
 
 	<!-- Capacity Box -->
 	<div class="box capacity">
@@ -400,8 +392,6 @@ const BEST_WEEKS_REQUIRED = 8;
 	import { fmtDate, fmtShort } from '../lib/dateUtils';
 	import { REQUIRED_OFFICE_DAYS } from '../lib/validation/constants';
 
-	const MAX_DAYS = 5;
-
 	function getStatusColor(current: number, target: number): string {
 		if (current >= target) return 'has-text-success';
 		if (current >= target - 0.5) return 'has-text-warning';
@@ -482,11 +472,14 @@ const BEST_WEEKS_REQUIRED = 8;
 			elCompliant.className = `has-text-weight-bold ${data.averageOfficeDays >= REQUIRED_OFFICE_DAYS ? 'has-text-success' : 'has-text-warning'}`;
 		}
 		if (elAverage) {
+			const elNumericValue = elAverage.querySelector('#average-numeric-value');
 			const shouldRound = data.roundPercentage !== false;
 			const displayValue = shouldRound
 				? `${Math.round(data.averageOfficeDays)}`
 				: `${data.averageOfficeDays.toFixed(1)}`;
-			elAverage.textContent = `${displayValue}/${MAX_DAYS} days`;
+			if (elNumericValue) {
+				elNumericValue.textContent = displayValue;
+			}
 			elAverage.className = `has-text-weight-bold ${getStatusColor(data.averageOfficeDays, REQUIRED_OFFICE_DAYS)}`;
 		}
 
