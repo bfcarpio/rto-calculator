@@ -20,18 +20,19 @@ const wrapperId = `setting-indicator-wrapper-${settingKey}-${uid}`;
 const tooltipId = `setting-indicator-tooltip-${settingKey}-${uid}`;
 ---
 
-<div
+<span
 	id={wrapperId}
-	class="field is-grouped setting-indicator"
+	class="setting-indicator"
+	data-setting-key={settingKey}
 	aria-describedby={tooltipId}
 	title={initialValue !== undefined ? `Setting: ${settingKey} = ${initialValue}` : `Setting: ${settingKey} value`}
 >
 	{label ? (
-		<div class="control">
+		<span class="control">
 			<span class="tag is-light" aria-label={label}>{label}</span>
-		</div>
+		</span>
 	) : null}
-	<div class="control">
+	<span class="control">
 		<span
 			id={valueElId}
 			class="has-text-weight-semibold setting-value"
@@ -39,9 +40,9 @@ const tooltipId = `setting-indicator-tooltip-${settingKey}-${uid}`;
 		>
 			{initialValue}
 		</span>
-	</div>
+	</span>
 	<span id={tooltipId} class="sr-only">{`Setting: ${settingKey} = ${initialValue}`}</span>
-</div>
+</span>
 
 <script>
 	(function(){
@@ -69,6 +70,12 @@ const tooltipId = `setting-indicator-tooltip-${settingKey}-${uid}`;
 </script>
 
 <style>
+	.setting-indicator {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+	}
+
 	.setting-value {
 		text-decoration: underline dotted;
 		text-underline-offset: 2px;
