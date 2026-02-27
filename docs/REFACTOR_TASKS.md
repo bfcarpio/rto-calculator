@@ -119,9 +119,9 @@ Ensure all UI components properly communicate data, respond to settings changes,
 
 ### Task 4.6: Update all components to use unified event
 
-- [ ] StatusDetails listens to rto:state-changed
-- [ ] WindowBreakdown listens to rto:state-changed
-- [ ] WeekSummary listens to rto:state-changed
+- [x] StatusDetails listens to rto:state-changed
+- [x] WindowBreakdown listens to rto:state-changed
+- [x] WeekSummary listens to rto:state-changed
 - **Files:** `src/components/*.astro`
 - **Tests:** Full E2E suite
 - **Commit:** `refactor: all components use unified event`

@@ -9,7 +9,7 @@
  */
 
 import type { CalendarInstance } from "../../packages/datepainter/src/types";
-import { dispatchRTOStateEvent } from "../types/events";
+import { dispatchRTOStateEvent, RTO_STATE_CHANGED } from "../types/events";
 import {
 	convertWeeksToCompliance,
 	readCalendarData,
@@ -84,10 +84,27 @@ export const COMPLIANCE_EVENT = "compliance-updated";
 export function onComplianceUpdated(
 	cb: (data: ComplianceEventData) => void,
 ): () => void {
-	const handler = (e: Event) =>
+	// Handler for legacy event
+	const legacyHandler = (e: Event): void =>
 		cb((e as CustomEvent<ComplianceEventData>).detail);
-	window.addEventListener(COMPLIANCE_EVENT, handler);
-	return () => window.removeEventListener(COMPLIANCE_EVENT, handler);
+
+	// Handler for unified event
+	const unifiedHandler = (e: Event): void => {
+		const event = e as CustomEvent;
+		if (event.detail?.type === "compliance" && event.detail.compliance) {
+			cb(event.detail.compliance);
+		}
+	};
+
+	// Listen to both events (backward compatibility)
+	window.addEventListener(COMPLIANCE_EVENT, legacyHandler);
+	window.addEventListener(RTO_STATE_CHANGED, unifiedHandler);
+
+	// Return cleanup function that removes both listeners
+	return () => {
+		window.removeEventListener(COMPLIANCE_EVENT, legacyHandler);
+		window.removeEventListener(RTO_STATE_CHANGED, unifiedHandler);
+	};
 }
 
 /** Latest cached result for late-loading components */
