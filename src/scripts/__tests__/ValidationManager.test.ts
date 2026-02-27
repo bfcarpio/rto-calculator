@@ -5,8 +5,12 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { RTO_STATE_CHANGED } from "../../types/events";
 import type { ValidationConfig } from "../../types/validation-strategy";
-import { ValidationManager } from "../ValidationManager";
+import {
+	RTO_CONFIG_CHANGED_EVENT,
+	ValidationManager,
+} from "../ValidationManager";
 
 describe("ValidationManager", () => {
 	let manager: ValidationManager;
@@ -138,6 +142,60 @@ describe("ValidationManager", () => {
 				expect(receivedConfig).toHaveProperty("thresholdPercentage");
 				expect(receivedConfig).toHaveProperty("debug");
 				expect(receivedConfig.debug).toBe(true);
+			});
+		});
+	});
+
+	describe("Task 4.2: Unified Event Dispatch", () => {
+		describe("rto:state-changed event", () => {
+			it("should dispatch unified event with type 'config' on config change", () => {
+				const handler = vi.fn();
+				window.addEventListener(RTO_STATE_CHANGED, handler);
+
+				manager.updateConfig({ minOfficeDaysPerWeek: 4 });
+
+				expect(handler).toHaveBeenCalledTimes(1);
+				const event = handler.mock.calls[0]?.[0] as CustomEvent;
+				expect(event.detail.type).toBe("config");
+				expect(event.detail.settingKey).toBe("minOfficeDaysPerWeek");
+				expect(event.detail.oldValue).toBe(3);
+				expect(event.detail.newValue).toBe(4);
+
+				window.removeEventListener(RTO_STATE_CHANGED, handler);
+			});
+
+			it("should dispatch unified event for each changed config key", () => {
+				const handler = vi.fn();
+				window.addEventListener(RTO_STATE_CHANGED, handler);
+
+				manager.updateConfig({ minOfficeDaysPerWeek: 4, debug: true });
+
+				expect(handler).toHaveBeenCalledTimes(2);
+				const events = handler.mock.calls.map(
+					(call) => (call[0] as CustomEvent).detail,
+				);
+				const keys = events.map((e) => e.settingKey);
+				expect(keys).toContain("minOfficeDaysPerWeek");
+				expect(keys).toContain("debug");
+
+				window.removeEventListener(RTO_STATE_CHANGED, handler);
+			});
+		});
+
+		describe("backward compatibility: rto:config-changed event", () => {
+			it("should still dispatch legacy rto:config-changed event", () => {
+				const handler = vi.fn();
+				window.addEventListener(RTO_CONFIG_CHANGED_EVENT, handler);
+
+				manager.updateConfig({ minOfficeDaysPerWeek: 4 });
+
+				expect(handler).toHaveBeenCalledTimes(1);
+				const event = handler.mock.calls[0]?.[0] as CustomEvent;
+				expect(event.detail.settingKey).toBe("minOfficeDaysPerWeek");
+				expect(event.detail.oldValue).toBe(3);
+				expect(event.detail.newValue).toBe(4);
+
+				window.removeEventListener(RTO_CONFIG_CHANGED_EVENT, handler);
 			});
 		});
 	});

@@ -87,8 +87,8 @@ Ensure all UI components properly communicate data, respond to settings changes,
 
 ### Task 4.2: Update ValidationManager to dispatch unified event
 
-- [ ] Replace rto:config-changed with rto:state-changed
-- [ ] Include event type in payload
+- [x] Replace rto:config-changed with rto:state-changed
+- [x] Include event type in payload
 - **Files:** `src/scripts/ValidationManager.ts`
 - **Tests:** Unit tests for event dispatch
 - **Commit:** `refactor: dispatch unified state event from ValidationManager`
