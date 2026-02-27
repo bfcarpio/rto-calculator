@@ -44,9 +44,9 @@ Ensure all UI components properly communicate data, respond to settings changes,
 
 ### Task 2.2: Integrate WindowBreakdown in StatusDetails
 
-- [ ] Import WindowBreakdown
-- [ ] Pass windows data as prop
-- [ ] Remove inline rendering
+- [x] Import WindowBreakdown
+- [x] Pass windows data as prop
+- [x] Remove inline rendering
 - **Files:** `src/components/StatusDetails.astro`
 - **Tests:** E2E tests for window breakdown
 - **Commit:** `refactor: use WindowBreakdown in StatusDetails`

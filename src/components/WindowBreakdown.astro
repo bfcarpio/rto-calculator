@@ -11,17 +11,21 @@ import { fmtShort } from "../lib/dateUtils";
 
 export interface WindowBreakdownProps {
 	/** All weeks in the evaluation window, annotated */
-	windowWeeks: AnnotatedWeek[];
+	windowWeeks?: AnnotatedWeek[];
 	/** Whether the overall compliance check passed */
-	isCompliant: boolean;
+	isCompliant?: boolean;
 	/** Average office days across best weeks */
-	averageOfficeDays: number;
+	averageOfficeDays?: number;
 	/** Start timestamp of the displayed window (null if no data) */
-	windowStart: number | null;
+	windowStart?: number | null;
 }
 
-const { windowWeeks, isCompliant, averageOfficeDays, windowStart } =
-	Astro.props as unknown as WindowBreakdownProps;
+const {
+	windowWeeks = [],
+	isCompliant = false,
+	averageOfficeDays = 0,
+	windowStart = null,
+} = Astro.props as unknown as WindowBreakdownProps;
 
 // Early exit: no data to display
 const hasData = windowWeeks.length > 0;

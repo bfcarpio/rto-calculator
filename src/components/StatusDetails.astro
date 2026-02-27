@@ -4,6 +4,7 @@
 
 import { validationManager } from "../scripts/ValidationManager";
 import SettingIndicator from "./SettingIndicator.astro";
+import WindowBreakdown from "./WindowBreakdown.astro";
 
 const config = validationManager?.getConfig?.() ?? {};
 ---
@@ -109,14 +110,7 @@ const config = validationManager?.getConfig?.() ?? {};
 	<!-- Window Breakdown Box -->
 	<div class="box window-breakdown">
 		<h2 class="title is-6 mb-3">Window Breakdown</h2>
-		<p class="is-size-7 has-text-grey mb-3" id="window-breakdown-label">
-			Mark dates to see window breakdown
-		</p>
-		<div class="content" id="window-breakdown-content">
-			<p class="has-text-centered has-text-grey-light is-size-7">
-				Mark dates to see window breakdown
-			</p>
-		</div>
+		<WindowBreakdown />
 	</div>
 </div>
 
