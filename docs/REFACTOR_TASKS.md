@@ -35,9 +35,9 @@ Ensure all UI components properly communicate data, respond to settings changes,
 
 ### Task 2.1: Create WindowBreakdown.astro
 
-- [ ] Create new component file
-- [ ] Accept windows prop
-- [ ] Render window dots
+- [x] Create new component file
+- [x] Accept windows prop
+- [x] Render window dots
 - **Files:** `src/components/WindowBreakdown.astro` (NEW)
 - **Tests:** Visual verification
 - **Commit:** `refactor: extract WindowBreakdown component`

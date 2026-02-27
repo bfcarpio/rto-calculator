@@ -1,0 +1,217 @@
+---
+/**
+ * WindowBreakdown.astro - Displays visual breakdown of compliance window weeks
+ *
+ * Renders a row of colored dots representing each week in the compliance window,
+ * with tooltips showing week details and an overall status indicator.
+ */
+
+import type { AnnotatedWeek } from "../lib/auto-compliance";
+import { fmtShort } from "../lib/dateUtils";
+
+export interface WindowBreakdownProps {
+	/** All weeks in the evaluation window, annotated */
+	windowWeeks: AnnotatedWeek[];
+	/** Whether the overall compliance check passed */
+	isCompliant: boolean;
+	/** Average office days across best weeks */
+	averageOfficeDays: number;
+	/** Start timestamp of the displayed window (null if no data) */
+	windowStart: number | null;
+}
+
+const { windowWeeks, isCompliant, averageOfficeDays, windowStart } =
+	Astro.props as unknown as WindowBreakdownProps;
+
+// Early exit: no data to display
+const hasData = windowWeeks.length > 0;
+
+// Compute window date range label
+let rangeLabel = "";
+if (hasData && windowStart !== null && windowWeeks.length > 0) {
+	const windowStartDate = new Date(windowStart);
+	const lastWeek = windowWeeks[windowWeeks.length - 1];
+	if (lastWeek) {
+		const windowEndDate = new Date(lastWeek.weekStart);
+		windowEndDate.setDate(windowEndDate.getDate() + 4);
+		rangeLabel = `${fmtShort(windowStartDate)} – ${fmtShort(windowEndDate)}`;
+	}
+}
+
+// Determine status tag styling
+const tagClass = isCompliant ? "wb-row-tag--pass" : "wb-row-tag--fail";
+const tagText = isCompliant ? "PASS" : "FAIL";
+const labelText = hasData
+	? isCompliant
+		? `Showing most recent window (${rangeLabel})`
+		: `Showing first failing window (${rangeLabel})`
+	: "Mark dates to see window breakdown";
+---
+
+<div class="window-breakdown-wrapper">
+	<p class="is-size-7 has-text-grey mb-3" id="window-breakdown-label">
+		{labelText}
+	</p>
+	<div class="content" id="window-breakdown-content">
+		{hasData ? (
+			<div class="wb-row">
+				<span class={`wb-row-tag ${tagClass}`}>{tagText}</span>
+				<span class="wb-row-dots">
+					{windowWeeks.map((week) => {
+						const tipDate = fmtShort(week.weekStart);
+						const stateDesc = week.isBest ? "evaluated" : "dropped";
+						const complianceDesc = week.isCompliant ? "compliant" : "non-compliant";
+						const ariaLabel = `${tipDate}: ${week.officeDays} office days, ${stateDesc}, ${complianceDesc}`;
+						const tipText = week.isBest
+							? `${tipDate}: ${week.officeDays} days`
+							: `${tipDate}: ${week.officeDays} days (dropped)`;
+
+						let dotClass: string;
+						if (week.isBest) {
+							dotClass = week.isCompliant ? "we-dot we-dot--best-ok" : "we-dot we-dot--best-bad";
+						} else {
+							dotClass = week.isCompliant ? "we-dot we-dot--drop-ok" : "we-dot we-dot--drop-bad";
+						}
+
+						return (
+							<span class="we-dot-wrap">
+								<span class={dotClass} role="img" aria-label={ariaLabel}></span>
+								<span class="we-dot-tip" aria-hidden="true">{tipText}</span>
+							</span>
+						);
+					})}
+				</span>
+				<span class="wb-row-avg">{averageOfficeDays.toFixed(1)}</span>
+			</div>
+		) : (
+			<p class="has-text-centered has-text-grey-light is-size-7">
+				Mark dates to see window breakdown
+			</p>
+		)}
+	</div>
+</div>
+
+<style>
+	.window-breakdown-wrapper {
+		width: 100%;
+	}
+
+	/* Window Breakdown dot row */
+	.wb-row {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: 0.75rem;
+	}
+
+	.wb-row-tag {
+		display: inline-block;
+		padding: 0.1rem 0.4rem;
+		border-radius: 4px;
+		font-size: 0.65rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		min-width: 32px;
+		text-align: center;
+	}
+
+	.wb-row-tag--pass {
+		background: #dcfce7;
+		color: #166534;
+	}
+
+	.wb-row-tag--fail {
+		background: #fee2e2;
+		color: #991b1b;
+	}
+
+	.wb-row-dots {
+		display: flex;
+		align-items: center;
+		gap: 3px;
+		flex: 1;
+	}
+
+	.wb-row-avg {
+		min-width: 28px;
+		text-align: right;
+		color: #6b7280;
+		font-size: 0.7rem;
+	}
+
+	/* Dots */
+	.we-dot {
+		display: inline-block;
+		width: 10px;
+		height: 10px;
+		border-radius: 50%;
+		flex-shrink: 0;
+	}
+
+	.we-dot--best-ok {
+		background: #22c55e;
+	}
+
+	.we-dot--best-bad {
+		background: #f59e0b;
+	}
+
+	.we-dot--drop-ok {
+		background: transparent;
+		border: 2px solid #22c55e;
+		box-sizing: border-box;
+	}
+
+	.we-dot--drop-bad {
+		background: transparent;
+		border: 2px solid #f59e0b;
+		box-sizing: border-box;
+	}
+
+	/* Dot tooltips */
+	.we-dot-wrap {
+		position: relative;
+		cursor: default;
+	}
+
+	.we-dot-wrap:hover .we-dot-tip {
+		display: block;
+	}
+
+	.we-dot-tip {
+		display: none;
+		position: absolute;
+		bottom: 100%;
+		left: 50%;
+		transform: translateX(-50%);
+		background: #1e293b;
+		color: #f1f5f9;
+		padding: 0.2rem 0.4rem;
+		border-radius: 4px;
+		font-size: 0.65rem;
+		white-space: nowrap;
+		z-index: 10;
+		pointer-events: none;
+		margin-bottom: 4px;
+	}
+
+	/* Dark mode */
+	:global(body.dark-mode) .wb-row-tag--pass {
+		background: #052e16;
+		color: #86efac;
+	}
+
+	:global(body.dark-mode) .wb-row-tag--fail {
+		background: #450a0a;
+		color: #fca5a5;
+	}
+
+	:global(body.dark-mode) .wb-row-avg {
+		color: #94a3b8;
+	}
+
+	:global(body.dark-mode) .we-dot-tip {
+		background: #334155;
+		color: #e2e8f0;
+	}
+</style>
