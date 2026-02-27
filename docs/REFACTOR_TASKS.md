@@ -57,9 +57,9 @@ Ensure all UI components properly communicate data, respond to settings changes,
 
 ### Task 3.1: Create WeekSummary.astro
 
-- [ ] Create new component file
-- [ ] Accept week data prop
-- [ ] Render week summary UI
+- [x] Create new component file
+- [x] Accept week data prop
+- [x] Render week summary UI
 - **Files:** `src/components/WeekSummary.astro` (NEW)
 - **Tests:** Visual verification
 - **Commit:** `refactor: extract WeekSummary component`
