@@ -15,7 +15,6 @@ import {
 	type WeekInfo,
 } from "./calendar-data-reader";
 import { buildPolicyFromSettings, readSettings } from "./settings-reader";
-import { REQUIRED_OFFICE_DAYS } from "./validation/constants";
 import {
 	evaluateSingleWindow,
 	type RTOPolicyConfig,
@@ -69,6 +68,12 @@ export interface ComplianceEventData {
 
 	/** Whether percentage rounding is enabled */
 	roundPercentage: boolean;
+
+	/** Policy settings used for compliance calculation */
+	/** Total weeks in the rolling window (from settings: rollingPeriodWeeks) */
+	totalWeeks: number;
+	/** Required office days per week (from settings: minOfficeDays) */
+	requiredDays: number;
 }
 
 // ─── Event Helpers ──────────────────────────────────────────────────
@@ -154,7 +159,7 @@ function findNextSafeWfhWeek(
 		.filter(
 			(w) =>
 				w.weekStart > today &&
-				w.officeDays >= REQUIRED_OFFICE_DAYS &&
+				w.officeDays >= policy.minOfficeDaysPerWeek &&
 				!evaluated.has(w.weekStart.getTime()),
 		)
 		.sort((a, b) => a.weekStart.getTime() - b.weekStart.getTime());
@@ -217,7 +222,7 @@ function computeComplianceData(allWeeks: WeekInfo[]): ComplianceEventData {
 			sickCount: w.sickCount,
 			isBest,
 			isIgnored: !isBest,
-			isCompliant: w.officeDays >= REQUIRED_OFFICE_DAYS,
+			isCompliant: w.officeDays >= policy.minOfficeDaysPerWeek,
 		};
 	});
 
@@ -304,6 +309,8 @@ function computeComplianceData(allWeeks: WeekInfo[]): ComplianceEventData {
 		message,
 		slidingWindowResult,
 		roundPercentage: policy.roundPercentage ?? true,
+		totalWeeks: policy.rollingPeriodWeeks,
+		requiredDays: policy.minOfficeDaysPerWeek,
 	};
 }
 

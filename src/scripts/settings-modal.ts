@@ -194,6 +194,8 @@ class SettingsModal {
 		this.debugToggle.setAttribute("aria-checked", newState.toString());
 
 		window.validationManager?.setDebugMode(newState);
+		this.saveSettingsToLocalStorage();
+		this.dispatchSettingsChanged();
 		logger.debug(`[Settings] Debug mode ${newState ? "enabled" : "disabled"}`);
 	}
 
@@ -205,6 +207,8 @@ class SettingsModal {
 		this.saveDataToggle.setAttribute("aria-checked", newState.toString());
 
 		window.storageManager?.setDataSavingEnabled(newState);
+		this.saveSettingsToLocalStorage();
+		this.dispatchSettingsChanged();
 		logger.debug(`[Settings] Data saving ${newState ? "enabled" : "disabled"}`);
 	}
 
@@ -215,6 +219,7 @@ class SettingsModal {
 		const newState = !currentState;
 		this.holidayOofToggle.setAttribute("aria-checked", newState.toString());
 
+		this.saveSettingsToLocalStorage();
 		logger.debug(
 			`[Settings] Holiday OOF mode ${newState ? "enabled" : "disabled"}`,
 		);
@@ -278,6 +283,8 @@ class SettingsModal {
 		if (value >= 0 && value <= 5) {
 			logger.debug(`[Settings] Min office days changed to: ${value}`);
 			window.validationManager?.updateConfig({ minOfficeDaysPerWeek: value });
+			this.saveSettingsToLocalStorage();
+			this.dispatchSettingsChanged();
 		}
 	}
 
@@ -384,6 +391,8 @@ class SettingsModal {
 		const countryCode = (e.target as HTMLSelectElement).value;
 		const holidaysAsOOF =
 			this.holidayOofToggle?.getAttribute("aria-checked") === "true";
+
+		this.saveSettingsToLocalStorage();
 		logger.debug(`[Settings] Country changed to: ${countryCode}`);
 
 		document.dispatchEvent(
@@ -769,6 +778,8 @@ class SettingsModal {
 
 		if (colorScheme) {
 			setColorScheme(colorScheme);
+			this.saveSettingsToLocalStorage();
+			this.dispatchSettingsChanged();
 		}
 	}
 }

@@ -12,7 +12,7 @@ const config = validationManager?.getConfig?.() ?? {};
 	<!-- Compliance Status Box -->
 	<div class="box compliance-status" id="compliance-status-box">
 		<p class="has-text-centered has-text-weight-semibold" id="compliance-status-message">
-			Mark dates to see compliance status
+			<span id="compliance-label">Mark dates to see compliance status</span>
 		</p>
 	</div>
 
@@ -391,7 +391,6 @@ const config = validationManager?.getConfig?.() ?? {};
 <script>
 	import { onComplianceUpdated, getLatestCompliance, type ComplianceEventData } from '../lib/auto-compliance';
 	import { fmtDate, fmtShort } from '../lib/dateUtils';
-	import { REQUIRED_OFFICE_DAYS } from '../lib/validation/constants';
 
 	function getStatusColor(current: number, target: number): string {
 		if (current >= target) return 'has-text-success';
@@ -470,7 +469,7 @@ const config = validationManager?.getConfig?.() ?? {};
 		if (elTotalLabel) elTotalLabel.textContent = `In best ${data.bestWeekCount} weeks:`;
 		if (elCompliant) {
 			elCompliant.textContent = `${data.goodWeeks}/${data.bestWeekCount}`;
-			elCompliant.className = `has-text-weight-bold ${data.averageOfficeDays >= REQUIRED_OFFICE_DAYS ? 'has-text-success' : 'has-text-warning'}`;
+			elCompliant.className = `has-text-weight-bold ${data.averageOfficeDays >= data.requiredDays ? 'has-text-success' : 'has-text-warning'}`;
 		}
 		if (elAverage) {
 			const elNumericValue = elAverage.querySelector('#average-numeric-value');
@@ -481,7 +480,7 @@ const config = validationManager?.getConfig?.() ?? {};
 			if (elNumericValue) {
 				elNumericValue.textContent = displayValue;
 			}
-			elAverage.className = `has-text-weight-bold ${getStatusColor(data.averageOfficeDays, REQUIRED_OFFICE_DAYS)}`;
+			elAverage.className = `has-text-weight-bold ${getStatusColor(data.averageOfficeDays, data.requiredDays)}`;
 		}
 
 		// Update average label to show "(rounded)" when applicable
@@ -513,17 +512,40 @@ const config = validationManager?.getConfig?.() ?? {};
 			elCurrentWeekOffice.textContent = `${data.currentWeek.officeDays}`;
 		}
 		if (elWeekDays) {
-			elWeekDays.className = `has-text-weight-bold ${getStatusColor(data.currentWeek.officeDays, REQUIRED_OFFICE_DAYS)}`;
+			elWeekDays.className = `has-text-weight-bold ${getStatusColor(data.currentWeek.officeDays, data.requiredDays)}`;
 		}
 
 		renderWindowBreakdown(data);
 
 		// Update compliance status box
-		const elStatus = document.getElementById('compliance-status-message');
+		const elStatusLabel = document.getElementById('compliance-label');
 		const elStatusBox = document.getElementById('compliance-status-box');
-		if (elStatus && elStatusBox) {
-			elStatus.textContent = data.message;
+		if (elStatusLabel && elStatusBox) {
 			elStatusBox.className = `box compliance-status ${data.isCompliant ? 'is-success' : 'is-warning'}`;
+			
+			// Build message with SettingIndicator structure
+			const statusLabel = data.isCompliant ? 'Compliant' : 'Not compliant';
+			const avgDaysStr = data.roundPercentage ? `${Math.round(data.averageOfficeDays)}` : data.averageOfficeDays.toFixed(1);
+			const indicator = data.roundPercentage ? ' (rounded)' : '';
+			
+			elStatusLabel.innerHTML = `
+				<strong>${statusLabel}:</strong>
+				Best
+				<span class="setting-indicator" data-setting-key="topWeeksToCheck">
+					<span class="setting-value" data-setting-key="topWeeksToCheck">${data.bestWeekCount}</span>
+				</span>
+				of
+				<span class="setting-indicator" data-setting-key="rollingPeriodWeeks">
+					<span class="setting-value" data-setting-key="rollingPeriodWeeks">${data.totalWeeks}</span>
+				</span>
+				weeks average${indicator}
+				${avgDaysStr}
+				office days.
+				Required:
+				<span class="setting-indicator" data-setting-key="minOfficeDaysPerWeek">
+					<span class="setting-value" data-setting-key="minOfficeDaysPerWeek">${data.requiredDays}</span>
+				</span>
+			`;
 		}
 	}
 

@@ -31,6 +31,8 @@ export async function closeSettings(page: Page): Promise<void> {
 export async function setTargetDays(page: Page, days: number): Promise<void> {
 	const input = page.locator("#target-days-input");
 	await input.fill(String(days));
+	// Trigger change event to ensure settings are saved and compliance updates
+	await input.dispatchEvent("change");
 	await input.blur();
 }
 

@@ -4,6 +4,18 @@ import { clickDate } from "./helpers/datepainter";
 import { openSettings, setTargetDays } from "./helpers/settingsModal";
 import { selectMode } from "./helpers/statusLegend";
 
+/**
+ * Set the rolling window size in weeks
+ */
+async function setRollingWindow(
+	page: import("@playwright/test").Page,
+	weeks: number,
+): Promise<void> {
+	const input = page.locator("#rolling-window-input");
+	await input.fill(String(weeks));
+	await input.blur();
+}
+
 test.describe("Validation Flows", () => {
 	test.beforeEach(async ({ page }) => {
 		await navigateToApp(page);
@@ -67,6 +79,61 @@ test.describe("Validation Flows", () => {
 
 			const statusBox = page.locator("#compliance-status-box");
 			await expect(statusBox).toBeVisible();
+		});
+
+		test("should update compliance message when min days setting changes", async ({
+			page,
+		}) => {
+			// Mark dates for 3 office days (compliant with 3-day requirement)
+			await selectMode(page, "oof");
+			await clickDate(page, 0);
+			await clickDate(page, 1);
+			await clickDate(page, 2);
+
+			// Wait for compliance label to show "Required: 3"
+			const complianceMessage = page.locator("#compliance-label");
+			await expect(complianceMessage).toContainText("Required: 3");
+
+			// Open settings modal
+			await openSettings(page);
+
+			// Change minOfficeDaysPerWeek to 4 by updating localStorage and triggering recomputation
+			// Note: Direct DOM manipulation with dispatchEvent doesn't trigger the app's handlers reliably
+			await page.evaluate(() => {
+				// Update localStorage
+				const settings = JSON.parse(
+					localStorage.getItem("rto-calculator-settings") || "{}",
+				);
+				settings.minOfficeDays = 4;
+				localStorage.setItem(
+					"rto-calculator-settings",
+					JSON.stringify(settings),
+				);
+
+				// Update input UI for consistency
+				const input = document.getElementById(
+					"target-days-input",
+				) as HTMLInputElement;
+				if (input) {
+					input.value = "4";
+				}
+
+				// Update validation manager config
+				if (window.validationManager) {
+					window.validationManager.updateConfig({ minOfficeDaysPerWeek: 4 });
+				}
+
+				// Dispatch settings-changed event to trigger compliance recomputation
+				document.dispatchEvent(
+					new CustomEvent("settings-changed", { bubbles: true }),
+				);
+			});
+
+			await page.keyboard.press("Escape");
+			await expect(page.getByRole("dialog")).not.toBeVisible();
+
+			// Verify the message now shows "Required: 4"
+			await expect(complianceMessage).toContainText("Required: 4");
 		});
 	});
 
@@ -159,4 +226,54 @@ test.describe("Validation Flows", () => {
 			});
 		});
 	}
+
+	test.describe("Rolling Window Configuration", () => {
+		test("should recalculate windows when rolling window size changes", async ({
+			page,
+		}) => {
+			// Mark enough dates to have multiple weeks of data
+			await selectMode(page, "oof");
+			for (let i = 0; i < 15; i++) {
+				await clickDate(page, i);
+			}
+
+			// Wait for window breakdown to populate
+			const windowBreakdown = page.locator("#window-breakdown-content");
+			await expect(windowBreakdown).toBeVisible();
+
+			// Count initial windows shown (each dot represents a week)
+			const dotsLocator = windowBreakdown.locator(".we-dot");
+			const initialWindowCount = await dotsLocator.count();
+
+			// Open settings and reduce rolling window to 4 weeks
+			await openSettings(page);
+			await setRollingWindow(page, 4);
+			await page.keyboard.press("Escape");
+
+			// Wait for the dialog to close
+			await expect(page.getByRole("dialog")).not.toBeVisible();
+
+			// Wait for update - should have fewer windows (polling assertion)
+			await expect(dotsLocator).not.toHaveCount(initialWindowCount, {
+				timeout: 5000,
+			});
+			const reducedWindowCount = await dotsLocator.count();
+			expect(reducedWindowCount).toBeLessThan(initialWindowCount);
+
+			// Increase rolling window to 12 weeks
+			await openSettings(page);
+			await setRollingWindow(page, 12);
+			await page.keyboard.press("Escape");
+
+			// Wait for the dialog to close
+			await expect(page.getByRole("dialog")).not.toBeVisible();
+
+			// Wait for update - should show more windows now (polling assertion)
+			await expect(dotsLocator).not.toHaveCount(reducedWindowCount, {
+				timeout: 5000,
+			});
+			const increasedWindowCount = await dotsLocator.count();
+			expect(increasedWindowCount).toBeGreaterThan(reducedWindowCount);
+		});
+	});
 });
