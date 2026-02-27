@@ -78,7 +78,7 @@ test.describe("SettingIndicator", () => {
 		expect(title).toContain("totalWeekdaysPerWeek");
 	});
 
-	test("should update value when rto:config-changed event fires", async ({
+	test("should update value when rto:state-changed event fires", async ({
 		page,
 	}) => {
 		// Get the SettingIndicator value in StatusDetails
@@ -88,10 +88,15 @@ test.describe("SettingIndicator", () => {
 		const initialValue = await settingValue.textContent();
 		expect(initialValue).toBeTruthy();
 
-		// Dispatch rto:config-changed event to update the setting
+		// Dispatch unified rto:state-changed event to update the setting
 		await page.evaluate(() => {
-			const event = new CustomEvent("rto:config-changed", {
-				detail: { settingKey: "totalWeekdaysPerWeek", newValue: 4 },
+			const event = new CustomEvent("rto:state-changed", {
+				detail: {
+					type: "config",
+					settingKey: "totalWeekdaysPerWeek",
+					newValue: 4,
+					oldValue: 5,
+				},
 			});
 			window.dispatchEvent(event);
 		});
@@ -102,7 +107,7 @@ test.describe("SettingIndicator", () => {
 		expect(newValue).not.toBe(initialValue);
 	});
 
-	test("should update title when rto:config-changed event fires", async ({
+	test("should update title when rto:state-changed event fires", async ({
 		page,
 	}) => {
 		// Find SettingIndicator in StatusDetails
@@ -112,10 +117,15 @@ test.describe("SettingIndicator", () => {
 		const initialTitle = await settingIndicator.getAttribute("title");
 		expect(initialTitle).toContain("totalWeekdaysPerWeek");
 
-		// Dispatch rto:config-changed event
+		// Dispatch unified rto:state-changed event
 		await page.evaluate(() => {
-			const event = new CustomEvent("rto:config-changed", {
-				detail: { settingKey: "totalWeekdaysPerWeek", newValue: 3 },
+			const event = new CustomEvent("rto:state-changed", {
+				detail: {
+					type: "config",
+					settingKey: "totalWeekdaysPerWeek",
+					newValue: 3,
+					oldValue: 5,
+				},
 			});
 			window.dispatchEvent(event);
 		});
@@ -126,7 +136,7 @@ test.describe("SettingIndicator", () => {
 		expect(newTitle).toContain("3");
 	});
 
-	test("should update via dispatching rto:config-changed event", async ({
+	test("should update via dispatching rto:state-changed event", async ({
 		page,
 	}) => {
 		// Get initial value
@@ -135,10 +145,15 @@ test.describe("SettingIndicator", () => {
 		);
 		const initialValue = await settingValue.textContent();
 
-		// Dispatch rto:config-changed event directly
+		// Dispatch unified rto:state-changed event directly
 		await page.evaluate(() => {
-			const event = new CustomEvent("rto:config-changed", {
-				detail: { settingKey: "totalWeekdaysPerWeek", newValue: 2 },
+			const event = new CustomEvent("rto:state-changed", {
+				detail: {
+					type: "config",
+					settingKey: "totalWeekdaysPerWeek",
+					newValue: 2,
+					oldValue: 5,
+				},
 			});
 			window.dispatchEvent(event);
 		});
@@ -157,10 +172,15 @@ test.describe("SettingIndicator", () => {
 		const initialDaysBox = await daysText.boundingBox();
 		expect(initialDaysBox).toBeTruthy();
 
-		// Update the setting via rto:config-changed event
+		// Update the setting via unified rto:state-changed event
 		await page.evaluate(() => {
-			const event = new CustomEvent("rto:config-changed", {
-				detail: { settingKey: "totalWeekdaysPerWeek", newValue: 4 },
+			const event = new CustomEvent("rto:state-changed", {
+				detail: {
+					type: "config",
+					settingKey: "totalWeekdaysPerWeek",
+					newValue: 4,
+					oldValue: 5,
+				},
 			});
 			window.dispatchEvent(event);
 		});

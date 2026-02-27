@@ -87,9 +87,9 @@ describe("SettingIndicator - Event Listener", () => {
 
 			if (!settingKey || !valueEl) return;
 
-			window.addEventListener("rto:config-changed", (ev) => {
+			window.addEventListener("rto:state-changed", (ev) => {
 				const detail = (ev as CustomEvent).detail;
-				if (!detail) return;
+				if (!detail || detail.type !== "config" || !detail.settingKey) return;
 
 				if (detail.settingKey === settingKey) {
 					const newValue = detail.newValue;
@@ -129,30 +129,40 @@ describe("SettingIndicator - Event Listener", () => {
 		attachEventListeners();
 	});
 
-	it("should update value when rto:config-changed event fires", () => {
+	it("should update value when rto:state-changed event fires with type 'config'", () => {
 		const valueEl = document.querySelector(".setting-value");
 		expect(valueEl).toBeTruthy();
 		expect(valueEl!.textContent).toBe("5");
 
-		// Dispatch config change event
-		const event = new CustomEvent("rto:config-changed", {
-			detail: { settingKey: "totalWeekdaysPerWeek", newValue: 4 },
+		// Dispatch unified state change event
+		const event = new CustomEvent("rto:state-changed", {
+			detail: {
+				type: "config",
+				settingKey: "totalWeekdaysPerWeek",
+				newValue: 4,
+				oldValue: 5,
+			},
 		});
 		window.dispatchEvent(event);
 
 		expect(valueEl!.textContent).toBe("4");
 	});
 
-	it("should update tooltip title when rto:config-changed event fires", () => {
+	it("should update tooltip title when rto:state-changed event fires with type 'config'", () => {
 		const wrapper = document.querySelector(".setting-indicator");
 		expect(wrapper).toBeTruthy();
 		expect(wrapper!.getAttribute("title")).toBe(
 			"Setting: totalWeekdaysPerWeek = 5",
 		);
 
-		// Dispatch config change event
-		const event = new CustomEvent("rto:config-changed", {
-			detail: { settingKey: "totalWeekdaysPerWeek", newValue: 3 },
+		// Dispatch unified state change event
+		const event = new CustomEvent("rto:state-changed", {
+			detail: {
+				type: "config",
+				settingKey: "totalWeekdaysPerWeek",
+				newValue: 3,
+				oldValue: 5,
+			},
 		});
 		window.dispatchEvent(event);
 
@@ -161,14 +171,19 @@ describe("SettingIndicator - Event Listener", () => {
 		);
 	});
 
-	it("should update sr-only tooltip text when rto:config-changed event fires", () => {
+	it("should update sr-only tooltip text when rto:state-changed event fires with type 'config'", () => {
 		const tooltipEl = document.querySelector(".sr-only");
 		expect(tooltipEl).toBeTruthy();
 		expect(tooltipEl!.textContent).toBe("Setting: totalWeekdaysPerWeek = 5");
 
-		// Dispatch config change event
-		const event = new CustomEvent("rto:config-changed", {
-			detail: { settingKey: "totalWeekdaysPerWeek", newValue: 2 },
+		// Dispatch unified state change event
+		const event = new CustomEvent("rto:state-changed", {
+			detail: {
+				type: "config",
+				settingKey: "totalWeekdaysPerWeek",
+				newValue: 2,
+				oldValue: 5,
+			},
 		});
 		window.dispatchEvent(event);
 
@@ -180,8 +195,27 @@ describe("SettingIndicator - Event Listener", () => {
 		expect(valueEl!.textContent).toBe("5");
 
 		// Dispatch event for different setting key
-		const event = new CustomEvent("rto:config-changed", {
-			detail: { settingKey: "otherSetting", newValue: 99 },
+		const event = new CustomEvent("rto:state-changed", {
+			detail: {
+				type: "config",
+				settingKey: "otherSetting",
+				newValue: 99,
+				oldValue: 0,
+			},
+		});
+		window.dispatchEvent(event);
+
+		// Value should not change
+		expect(valueEl!.textContent).toBe("5");
+	});
+
+	it("should ignore non-config events", () => {
+		const valueEl = document.querySelector(".setting-value");
+		expect(valueEl!.textContent).toBe("5");
+
+		// Dispatch event with different type
+		const event = new CustomEvent("rto:state-changed", {
+			detail: { type: "settings" },
 		});
 		window.dispatchEvent(event);
 
@@ -193,9 +227,14 @@ describe("SettingIndicator - Event Listener", () => {
 		const valueEl = document.querySelector(".setting-value");
 		expect(valueEl!.textContent).toBe("5");
 
-		// Dispatch config change event with string value
-		const event = new CustomEvent("rto:config-changed", {
-			detail: { settingKey: "totalWeekdaysPerWeek", newValue: "4" },
+		// Dispatch unified state change event with string value
+		const event = new CustomEvent("rto:state-changed", {
+			detail: {
+				type: "config",
+				settingKey: "totalWeekdaysPerWeek",
+				newValue: "4",
+				oldValue: 5,
+			},
 		});
 		window.dispatchEvent(event);
 

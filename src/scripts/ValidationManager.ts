@@ -22,9 +22,6 @@ const DEFAULT_CONFIG: ValidationConfig = {
 	debug: false,
 };
 
-// Event name for config changes - emitted on window for real-time UI updates
-export const RTO_CONFIG_CHANGED_EVENT = "rto:config-changed" as const;
-
 /** Callback type for state subscription */
 export type StateSubscriber = (config: ValidationConfig) => void;
 
@@ -53,23 +50,12 @@ export class ValidationManager {
 		// Dispatch event for each changed key
 		for (const key of Object.keys(newConfig) as Array<keyof ValidationConfig>) {
 			if (oldConfig[key] !== newConfig[key]) {
-				// Dispatch unified event (new system)
 				dispatchRTOStateEvent({
 					type: "config",
 					settingKey: key,
 					oldValue: oldConfig[key],
 					newValue: newConfig[key],
 				});
-
-				// Dispatch legacy event (backward compatibility)
-				const event = new CustomEvent(RTO_CONFIG_CHANGED_EVENT, {
-					detail: {
-						settingKey: key,
-						oldValue: oldConfig[key],
-						newValue: newConfig[key],
-					},
-				});
-				window.dispatchEvent(event);
 			}
 		}
 	}

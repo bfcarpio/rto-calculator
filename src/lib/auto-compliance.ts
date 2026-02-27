@@ -79,31 +79,21 @@ export interface ComplianceEventData {
 
 // ─── Event Helpers ──────────────────────────────────────────────────
 
-export const COMPLIANCE_EVENT = "compliance-updated";
-
 export function onComplianceUpdated(
 	cb: (data: ComplianceEventData) => void,
 ): () => void {
-	// Handler for legacy event
-	const legacyHandler = (e: Event): void =>
-		cb((e as CustomEvent<ComplianceEventData>).detail);
-
 	// Handler for unified event
-	const unifiedHandler = (e: Event): void => {
+	const handler = (e: Event): void => {
 		const event = e as CustomEvent;
 		if (event.detail?.type === "compliance" && event.detail.compliance) {
 			cb(event.detail.compliance);
 		}
 	};
 
-	// Listen to both events (backward compatibility)
-	window.addEventListener(COMPLIANCE_EVENT, legacyHandler);
-	window.addEventListener(RTO_STATE_CHANGED, unifiedHandler);
+	window.addEventListener(RTO_STATE_CHANGED, handler);
 
-	// Return cleanup function that removes both listeners
 	return () => {
-		window.removeEventListener(COMPLIANCE_EVENT, legacyHandler);
-		window.removeEventListener(RTO_STATE_CHANGED, unifiedHandler);
+		window.removeEventListener(RTO_STATE_CHANGED, handler);
 	};
 }
 
@@ -353,16 +343,10 @@ async function runComputation(
 
 	setComputingState(false);
 
-	// Dispatch unified event (new system)
 	dispatchRTOStateEvent({
 		type: "compliance",
 		compliance: data,
 	});
-
-	// Dispatch legacy event (backward compatibility)
-	window.dispatchEvent(
-		new CustomEvent<ComplianceEventData>(COMPLIANCE_EVENT, { detail: data }),
-	);
 }
 
 function initAutoCompliance(): void {
@@ -394,14 +378,15 @@ function initAutoCompliance(): void {
 	});
 
 	// Re-compute when settings change (shorter debounce for responsiveness)
-	document.addEventListener("settings-changed", () => {
+	window.addEventListener(RTO_STATE_CHANGED, ((e: CustomEvent) => {
+		if (e.detail?.type !== "settings") return;
 		setComputingState(true);
 
 		if (debounceTimer) clearTimeout(debounceTimer);
 		debounceTimer = setTimeout(() => {
 			runComputation(calendarManager);
 		}, 300);
-	});
+	}) as EventListener);
 }
 
 // Auto-initialize when module is imported

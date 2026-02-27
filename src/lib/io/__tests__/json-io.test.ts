@@ -223,13 +223,13 @@ describe("importJSON", () => {
 	it("applies settings and dispatches event", () => {
 		const cal = mockCalendar({ oof: [], holiday: [], sick: [] });
 		const spy = vi.fn();
-		document.addEventListener("settings-changed", spy);
+		window.addEventListener("rto:state-changed", spy);
 
 		importJSON(validExportJSON({ settings: { rollingWindowWeeks: 16 } }), cal);
 
 		expect(writeSettings).toHaveBeenCalledWith({ rollingWindowWeeks: 16 });
 		expect(spy).toHaveBeenCalled();
-		document.removeEventListener("settings-changed", spy);
+		window.removeEventListener("rto:state-changed", spy);
 	});
 
 	it("rejects invalid JSON string", () => {

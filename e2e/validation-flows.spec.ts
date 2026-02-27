@@ -123,9 +123,11 @@ test.describe("Validation Flows", () => {
 					window.validationManager.updateConfig({ minOfficeDaysPerWeek: 4 });
 				}
 
-				// Dispatch settings-changed event to trigger compliance recomputation
-				document.dispatchEvent(
-					new CustomEvent("settings-changed", { bubbles: true }),
+				// Dispatch unified settings event to trigger compliance recomputation
+				window.dispatchEvent(
+					new CustomEvent("rto:state-changed", {
+						detail: { type: "settings" },
+					}),
 				);
 			});
 

@@ -128,9 +128,9 @@ Ensure all UI components properly communicate data, respond to settings changes,
 
 ### Task 4.7: Remove old event types
 
-- [ ] Remove settings-changed constant
-- [ ] Remove compliance-updated constant
-- [ ] Remove rto:config-changed constant
+- [x] Remove settings-changed constant
+- [x] Remove compliance-updated constant
+- [x] Remove rto:config-changed constant
 - **Files:** Multiple
 - **Tests:** Full test suite
 - **Commit:** `refactor: remove deprecated event types`

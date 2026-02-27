@@ -470,8 +470,12 @@
     }
   }
 
-  document.addEventListener('settings-changed', invalidate);
-  window.addEventListener('compliance-updated', invalidate);
+  // Listen to unified state change event for both settings and compliance updates
+  window.addEventListener('rto:state-changed', ((e: CustomEvent) => {
+    if (e.detail?.type === 'settings' || e.detail?.type === 'compliance') {
+      invalidate();
+    }
+  }) as EventListener);
 
   function renderExplorer(summaries: WindowSummary[], policy: RTOPolicyConfig): void {
     if (summaries.length === 0) {

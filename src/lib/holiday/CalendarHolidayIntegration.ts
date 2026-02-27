@@ -8,6 +8,7 @@
  * @module calendar-holiday-integration
  */
 
+import { onRTOStateChanged } from "../../types/events";
 import {
 	isDebugEnabled as isLoggerDebugEnabled,
 	logger,
@@ -43,8 +44,12 @@ export function initializeHolidayIntegration(): void {
 		);
 	}
 
-	// Listen for settings changes
-	document.addEventListener("settings-changed", handleSettingsChanged);
+	// Listen for settings changes via unified event
+	onRTOStateChanged((detail) => {
+		if (detail.type === "settings" && detail.holidays) {
+			handleSettingsChanged(detail);
+		}
+	});
 
 	// Listen for calendar load events
 	document.addEventListener("calendar-loaded", handleCalendarLoaded);
@@ -228,9 +233,10 @@ export async function refreshCalendarHolidays(): Promise<void> {
 /**
  * Handle settings changed event
  */
-async function handleSettingsChanged(event: Event): Promise<void> {
-	const customEvent = event as CustomEvent;
-	const { holidays } = customEvent.detail;
+async function handleSettingsChanged(detail: {
+	holidays?: { countryCode?: string | null; companyName?: string | null };
+}): Promise<void> {
+	const holidays = detail.holidays;
 
 	if (!holidays) {
 		return;
@@ -250,7 +256,7 @@ async function handleSettingsChanged(event: Event): Promise<void> {
 		const calendarYears = getCalendarYears();
 		await applyHolidaysToCalendar({
 			countryCode: holidays.countryCode,
-			companyName: holidays.companyName,
+			companyName: holidays.companyName ?? null,
 			calendarYears,
 		});
 	}

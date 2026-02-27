@@ -46,7 +46,7 @@ const tooltipId = `setting-indicator-tooltip-${settingKey}-${uid}`;
 
 <script>
 	(function(){
-		// Handler for unified event (new system)
+		// Handler for unified event
 		function handleStateChange(ev: Event) {
 			const detail = (ev as CustomEvent).detail;
 			if (!detail || detail.type !== 'config' || !detail.settingKey) return;
@@ -67,31 +67,8 @@ const tooltipId = `setting-indicator-tooltip-${settingKey}-${uid}`;
 			});
 		}
 
-		// Handler for legacy event (backward compatibility)
-		function handleConfigChange(ev: Event) {
-			const detail = (ev as CustomEvent).detail;
-			if (!detail || !detail.settingKey) return;
-
-			// Query all matching elements each time (handles dynamically created elements)
-			const matchingWrappers = document.querySelectorAll(`.setting-indicator[data-setting-key="${detail.settingKey}"]`);
-			
-			matchingWrappers.forEach(wrapper => {
-				const valueEl = wrapper.querySelector(".setting-value");
-				const tooltipEl = wrapper.querySelector(".sr-only");
-
-				if (!valueEl) return;
-
-				const newValue = detail.newValue;
-				valueEl.textContent = String(newValue);
-				wrapper.setAttribute("title", `Setting: ${detail.settingKey} = ${newValue}`);
-				if (tooltipEl) tooltipEl.textContent = `Setting: ${detail.settingKey} = ${newValue}`;
-			});
-		}
-
-		// Listen to unified event (new system)
+		// Listen to unified event
 		window.addEventListener("rto:state-changed", handleStateChange);
-		// Listen to legacy event (backward compatibility)
-		window.addEventListener("rto:config-changed", handleConfigChange);
 	})();
 </script>
 

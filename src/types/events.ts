@@ -3,11 +3,6 @@
  *
  * Defines a single event type (rto:state-changed) with a discriminator
  * to distinguish between config, compliance, and settings changes.
- *
- * This consolidates the previous three event types:
- * - rto:config-changed (ValidationManager)
- * - compliance-updated (auto-compliance)
- * - settings-changed (settings-modal)
  */
 
 import type { ComplianceEventData } from "../lib/auto-compliance";

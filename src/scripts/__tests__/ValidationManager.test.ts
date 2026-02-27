@@ -7,10 +7,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { RTO_STATE_CHANGED } from "../../types/events";
 import type { ValidationConfig } from "../../types/validation-strategy";
-import {
-	RTO_CONFIG_CHANGED_EVENT,
-	ValidationManager,
-} from "../ValidationManager";
+import { ValidationManager } from "../ValidationManager";
 
 describe("ValidationManager", () => {
 	let manager: ValidationManager;
@@ -179,23 +176,6 @@ describe("ValidationManager", () => {
 				expect(keys).toContain("debug");
 
 				window.removeEventListener(RTO_STATE_CHANGED, handler);
-			});
-		});
-
-		describe("backward compatibility: rto:config-changed event", () => {
-			it("should still dispatch legacy rto:config-changed event", () => {
-				const handler = vi.fn();
-				window.addEventListener(RTO_CONFIG_CHANGED_EVENT, handler);
-
-				manager.updateConfig({ minOfficeDaysPerWeek: 4 });
-
-				expect(handler).toHaveBeenCalledTimes(1);
-				const event = handler.mock.calls[0]?.[0] as CustomEvent;
-				expect(event.detail.settingKey).toBe("minOfficeDaysPerWeek");
-				expect(event.detail.oldValue).toBe(3);
-				expect(event.detail.newValue).toBe(4);
-
-				window.removeEventListener(RTO_CONFIG_CHANGED_EVENT, handler);
 			});
 		});
 	});

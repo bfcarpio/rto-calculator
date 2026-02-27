@@ -4,6 +4,7 @@
  */
 
 import type { CalendarInstance, DateState } from "datepainter";
+import { dispatchRTOStateEvent } from "../../types/events";
 import {
 	type AppSettings,
 	readSettings,
@@ -133,9 +134,7 @@ export function importJSON(
 	// Apply settings if present
 	if (exportData.settings) {
 		writeSettings(exportData.settings as Partial<AppSettings>);
-		document.dispatchEvent(
-			new CustomEvent("settings-changed", { bubbles: true }),
-		);
+		dispatchRTOStateEvent({ type: "settings" });
 	}
 
 	return { success: true };
