@@ -103,8 +103,8 @@ Ensure all UI components properly communicate data, respond to settings changes,
 
 ### Task 4.4: Update auto-compliance to dispatch unified event
 
-- [ ] Replace compliance-updated with rto:state-changed
-- [ ] Include compliance data in payload
+- [x] Replace compliance-updated with rto:state-changed
+- [x] Include compliance data in payload
 - **Files:** `src/lib/auto-compliance.ts`
 - **Tests:** E2E tests for compliance updates
 - **Commit:** `refactor: auto-compliance dispatches unified event`

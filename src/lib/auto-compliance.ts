@@ -9,6 +9,7 @@
  */
 
 import type { CalendarInstance } from "../../packages/datepainter/src/types";
+import { dispatchRTOStateEvent } from "../types/events";
 import {
 	convertWeeksToCompliance,
 	readCalendarData,
@@ -335,6 +336,13 @@ async function runComputation(
 
 	setComputingState(false);
 
+	// Dispatch unified event (new system)
+	dispatchRTOStateEvent({
+		type: "compliance",
+		compliance: data,
+	});
+
+	// Dispatch legacy event (backward compatibility)
 	window.dispatchEvent(
 		new CustomEvent<ComplianceEventData>(COMPLIANCE_EVENT, { detail: data }),
 	);
