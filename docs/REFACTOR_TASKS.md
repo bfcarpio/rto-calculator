@@ -79,8 +79,8 @@ Ensure all UI components properly communicate data, respond to settings changes,
 
 ### Task 4.1: Define typed event interfaces
 
-- [ ] Create RTOStateEvent interface
-- [ ] Create payload types for each event type
+- [x] Create RTOStateEvent interface
+- [x] Create payload types for each event type
 - **Files:** `src/types/events.ts` (NEW)
 - **Tests:** Type checking
 - **Commit:** `refactor: add typed event interfaces`
