@@ -1,0 +1,144 @@
+/**
+ * ValidationManager Tests
+ *
+ * Tests for config getters and state subscription system.
+ */
+
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { ValidationConfig } from "../../types/validation-strategy";
+import { ValidationManager } from "../ValidationManager";
+
+describe("ValidationManager", () => {
+	let manager: ValidationManager;
+
+	beforeEach(() => {
+		manager = new ValidationManager();
+	});
+
+	describe("Task 1.1: Config Getters", () => {
+		describe("getMinOfficeDaysPerWeek", () => {
+			it("should return default min office days", () => {
+				const result = manager.getMinOfficeDaysPerWeek();
+				expect(result).toBe(3);
+			});
+
+			it("should return updated value after config change", () => {
+				manager.updateConfig({ minOfficeDaysPerWeek: 4 });
+				expect(manager.getMinOfficeDaysPerWeek()).toBe(4);
+			});
+		});
+
+		describe("getTotalWeekdaysPerWeek", () => {
+			it("should return default total weekdays", () => {
+				expect(manager.getTotalWeekdaysPerWeek()).toBe(5);
+			});
+
+			it("should return updated value after config change", () => {
+				manager.updateConfig({ totalWeekdaysPerWeek: 4 });
+				expect(manager.getTotalWeekdaysPerWeek()).toBe(4);
+			});
+		});
+
+		describe("getRollingPeriodWeeks", () => {
+			it("should return default rolling period weeks", () => {
+				expect(manager.getRollingPeriodWeeks()).toBe(12);
+			});
+
+			it("should return updated value after config change", () => {
+				manager.updateConfig({ rollingPeriodWeeks: 8 });
+				expect(manager.getRollingPeriodWeeks()).toBe(8);
+			});
+		});
+
+		describe("getThresholdPercentage", () => {
+			it("should return default threshold percentage", () => {
+				expect(manager.getThresholdPercentage()).toBe(0.6);
+			});
+
+			it("should return updated value after config change", () => {
+				manager.updateConfig({ thresholdPercentage: 0.75 });
+				expect(manager.getThresholdPercentage()).toBe(0.75);
+			});
+		});
+	});
+
+	describe("Task 1.2: State Subscription", () => {
+		describe("subscribe", () => {
+			it("should register a callback that receives config on updates", () => {
+				const callback = vi.fn();
+				manager.subscribe(callback);
+
+				manager.updateConfig({ minOfficeDaysPerWeek: 4 });
+
+				expect(callback).toHaveBeenCalledTimes(1);
+				expect(callback).toHaveBeenCalledWith(
+					expect.objectContaining({ minOfficeDaysPerWeek: 4 }),
+				);
+			});
+
+			it("should allow multiple subscribers", () => {
+				const callback1 = vi.fn();
+				const callback2 = vi.fn();
+
+				manager.subscribe(callback1);
+				manager.subscribe(callback2);
+
+				manager.updateConfig({ minOfficeDaysPerWeek: 4 });
+
+				expect(callback1).toHaveBeenCalledTimes(1);
+				expect(callback2).toHaveBeenCalledTimes(1);
+			});
+
+			it("should not notify subscriber after unsubscribe", () => {
+				const callback = vi.fn();
+				manager.subscribe(callback);
+				manager.unsubscribe(callback);
+
+				manager.updateConfig({ minOfficeDaysPerWeek: 4 });
+
+				expect(callback).not.toHaveBeenCalled();
+			});
+		});
+
+		describe("unsubscribe", () => {
+			it("should remove specific subscriber while keeping others", () => {
+				const callback1 = vi.fn();
+				const callback2 = vi.fn();
+
+				manager.subscribe(callback1);
+				manager.subscribe(callback2);
+				manager.unsubscribe(callback1);
+
+				manager.updateConfig({ minOfficeDaysPerWeek: 4 });
+
+				expect(callback1).not.toHaveBeenCalled();
+				expect(callback2).toHaveBeenCalledTimes(1);
+			});
+
+			it("should handle unsubscribe of non-existent callback gracefully", () => {
+				const callback = vi.fn();
+
+				// Should not throw when unsubscribing a callback that was never subscribed
+				expect(() => manager.unsubscribe(callback)).not.toThrow();
+			});
+		});
+
+		describe("subscriber receives full config", () => {
+			it("should receive complete config object on subscription", () => {
+				const callback = vi.fn();
+				manager.subscribe(callback);
+
+				manager.updateConfig({ debug: true });
+
+				const receivedConfig = callback.mock.calls[0]?.[0] as ValidationConfig;
+				expect(receivedConfig).toBeDefined();
+				expect(receivedConfig).toHaveProperty("minOfficeDaysPerWeek");
+				expect(receivedConfig).toHaveProperty("totalWeekdaysPerWeek");
+				expect(receivedConfig).toHaveProperty("rollingPeriodWeeks");
+				expect(receivedConfig).toHaveProperty("thresholdPercentage");
+				expect(receivedConfig).toHaveProperty("debug");
+				expect(receivedConfig.debug).toBe(true);
+			});
+		});
+	});
+});

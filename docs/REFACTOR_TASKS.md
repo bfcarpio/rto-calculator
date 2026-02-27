@@ -16,15 +16,15 @@ Ensure all UI components properly communicate data, respond to settings changes,
 
 ### Task 1.1: Add config getters to ValidationManager
 
-- [ ] Add getter methods for all config values
+- [x] Add getter methods for all config values
 - **Files:** `src/scripts/ValidationManager.ts`
 - **Tests:** Unit tests for getters
 - **Commit:** `refactor: add config getters to ValidationManager`
 
 ### Task 1.2: Add state subscription to ValidationManager
 
-- [ ] Add subscribe/unsubscribe methods
-- [ ] Track subscribers in array
+- [x] Add subscribe/unsubscribe methods
+- [x] Track subscribers in array
 - **Files:** `src/scripts/ValidationManager.ts`
 - **Tests:** Unit tests for subscription
 - **Commit:** `refactor: add state subscription to ValidationManager`

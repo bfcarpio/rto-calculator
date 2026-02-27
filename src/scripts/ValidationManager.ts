@@ -24,13 +24,25 @@ const DEFAULT_CONFIG: ValidationConfig = {
 // Event name for config changes - emitted on window for real-time UI updates
 export const RTO_CONFIG_CHANGED_EVENT = "rto:config-changed" as const;
 
+/** Callback type for state subscription */
+export type StateSubscriber = (config: ValidationConfig) => void;
+
 export class ValidationManager {
 	private config: ValidationConfig = { ...DEFAULT_CONFIG };
+	private subscribers: StateSubscriber[] = [];
 
 	updateConfig(newConfig: Partial<ValidationConfig>): void {
 		const oldConfig = { ...this.config };
 		this.config = { ...this.config, ...newConfig };
 		this.emitConfigChange(oldConfig, this.config);
+		this.notifySubscribers();
+	}
+
+	private notifySubscribers(): void {
+		const config = this.getConfig();
+		for (const subscriber of this.subscribers) {
+			subscriber(config);
+		}
 	}
 
 	private emitConfigChange(
@@ -62,6 +74,35 @@ export class ValidationManager {
 
 	getDebugMode(): boolean {
 		return this.config.debug;
+	}
+
+	// Individual config getters for convenient access
+	getMinOfficeDaysPerWeek(): number {
+		return this.config.minOfficeDaysPerWeek;
+	}
+
+	getTotalWeekdaysPerWeek(): number {
+		return this.config.totalWeekdaysPerWeek;
+	}
+
+	getRollingPeriodWeeks(): number {
+		return this.config.rollingPeriodWeeks;
+	}
+
+	getThresholdPercentage(): number {
+		return this.config.thresholdPercentage;
+	}
+
+	// State subscription system
+	subscribe(callback: StateSubscriber): void {
+		this.subscribers.push(callback);
+	}
+
+	unsubscribe(callback: StateSubscriber): void {
+		const index = this.subscribers.indexOf(callback);
+		if (index !== -1) {
+			this.subscribers.splice(index, 1);
+		}
 	}
 }
 
