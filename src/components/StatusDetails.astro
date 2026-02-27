@@ -2,10 +2,10 @@
 // StatusDetails.astro - Display compliance status, capacity, and non-compliant weeks
 // Dynamic client-side component that reads from datepainter API
 
+import { validationManager } from "../scripts/ValidationManager";
 import SettingIndicator from "./SettingIndicator.astro";
 
-const TARGET_DAYS_PER_WEEK = 3;
-const BEST_WEEKS_REQUIRED = 8;
+const config = validationManager?.getConfig?.() ?? {};
 ---
 
 <div class="status-details">
@@ -54,7 +54,7 @@ const BEST_WEEKS_REQUIRED = 8;
 				</div>
 				<div class="level-right">
 					<p class="has-text-weight-bold has-text-info" id="stat-buffer">
-						Good weeks = 0 of {BEST_WEEKS_REQUIRED} needed
+						Good weeks = 0 of {config.rollingPeriodWeeks ?? 8} needed
 					</p>
 				</div>
 			</div>
@@ -98,7 +98,7 @@ const BEST_WEEKS_REQUIRED = 8;
 				</div>
 				<div class="level-right">
 					<p class="has-text-weight-bold" id="stat-current-week-days">
-						0/{TARGET_DAYS_PER_WEEK}
+						<span id="current-week-office">0</span>/<SettingIndicator settingKey="minOfficeDaysPerWeek" label="" />
 					</p>
 				</div>
 			</div>
@@ -506,8 +506,12 @@ const BEST_WEEKS_REQUIRED = 8;
 				: '\u2014';
 		}
 		if (elWeekRange) elWeekRange.textContent = `${fmtDate(data.currentWeek.weekStart)} - ${fmtDate(data.currentWeek.weekEnd)}`;
+		
+		const elCurrentWeekOffice = document.getElementById('current-week-office');
+		if (elCurrentWeekOffice) {
+			elCurrentWeekOffice.textContent = `${data.currentWeek.officeDays}`;
+		}
 		if (elWeekDays) {
-			elWeekDays.textContent = `${data.currentWeek.officeDays}/${REQUIRED_OFFICE_DAYS}`;
 			elWeekDays.className = `has-text-weight-bold ${getStatusColor(data.currentWeek.officeDays, REQUIRED_OFFICE_DAYS)}`;
 		}
 
