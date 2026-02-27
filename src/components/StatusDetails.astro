@@ -4,6 +4,7 @@
 
 import { validationManager } from "../scripts/ValidationManager";
 import SettingIndicator from "./SettingIndicator.astro";
+import WeekSummary from "./WeekSummary.astro";
 import WindowBreakdown from "./WindowBreakdown.astro";
 
 const config = validationManager?.getConfig?.() ?? {};
@@ -18,33 +19,7 @@ const config = validationManager?.getConfig?.() ?? {};
 	</div>
 
 	<!-- Week Summary Box -->
-	<div class="box week-summary">
-		<h2 class="title is-6 mb-3">Week Summary</h2>
-		<div class="content">
-			<div class="level is-mobile mb-2">
-				<div class="level-left">
-					<p id="stat-total-weeks-label">In best 0 weeks:</p>
-				</div>
-				<div class="level-right">
-					<p class="has-text-weight-bold" id="stat-compliant-weeks">0/0</p>
-				</div>
-			</div>
-
-			<div class="level is-mobile mb-2">
-				<div class="level-left">
-					<p id="stat-average-label">Average:</p>
-				</div>
-				<div class="level-right">
-					<p class="has-text-weight-bold" id="stat-average-days">
-						<span class="average-value" id="average-numeric-value">0.0</span>
-						<span class="has-text-weight-bold has-text-primary">/</span>
-						<SettingIndicator settingKey="totalWeekdaysPerWeek" label="" />
-						<span class="has-text-weight-bold has-text-primary"> days</span>
-					</p>
-				</div>
-			</div>
-		</div>
-	</div>
+	<WeekSummary />
 
 	<!-- Capacity Box -->
 	<div class="box capacity">
@@ -452,36 +427,11 @@ const config = validationManager?.getConfig?.() ?? {};
 	}
 
 	function updateStats(data: ComplianceEventData): void {
-		const elTotalLabel = document.getElementById('stat-total-weeks-label');
-		const elCompliant = document.getElementById('stat-compliant-weeks');
-		const elAverage = document.getElementById('stat-average-days');
 		const elBuffer = document.getElementById('stat-buffer');
 		const elOof = document.getElementById('stat-oof-available');
 		const elWeekRange = document.getElementById('stat-current-week-range');
 		const elWeekDays = document.getElementById('stat-current-week-days');
 
-		if (elTotalLabel) elTotalLabel.textContent = `In best ${data.bestWeekCount} weeks:`;
-		if (elCompliant) {
-			elCompliant.textContent = `${data.goodWeeks}/${data.bestWeekCount}`;
-			elCompliant.className = `has-text-weight-bold ${data.averageOfficeDays >= data.requiredDays ? 'has-text-success' : 'has-text-warning'}`;
-		}
-		if (elAverage) {
-			const elNumericValue = elAverage.querySelector('#average-numeric-value');
-			const shouldRound = data.roundPercentage !== false;
-			const displayValue = shouldRound
-				? `${Math.round(data.averageOfficeDays)}`
-				: `${data.averageOfficeDays.toFixed(1)}`;
-			if (elNumericValue) {
-				elNumericValue.textContent = displayValue;
-			}
-			elAverage.className = `has-text-weight-bold ${getStatusColor(data.averageOfficeDays, data.requiredDays)}`;
-		}
-
-		// Update average label to show "(rounded)" when applicable
-		const elAvgLabel = document.getElementById('stat-average-label');
-		if (elAvgLabel) {
-			elAvgLabel.textContent = data.roundPercentage !== false ? 'Average (rounded):' : 'Average:';
-		}
 		if (elBuffer) elBuffer.textContent = `Good weeks = ${data.goodWeeks} of ${data.bestWeekCount} needed`;
 		if (elOof) elOof.textContent = `${data.bufferWeeks} full weeks WFH`;
 

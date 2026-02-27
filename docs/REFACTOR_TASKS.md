@@ -66,9 +66,9 @@ Ensure all UI components properly communicate data, respond to settings changes,
 
 ### Task 3.2: Integrate WeekSummary in StatusDetails
 
-- [ ] Import WeekSummary
-- [ ] Pass week data as prop
-- [ ] Remove inline rendering
+- [x] Import WeekSummary
+- [x] Pass week data as prop
+- [x] Remove inline rendering
 - **Files:** `src/components/StatusDetails.astro`
 - **Tests:** E2E tests for week summary
 - **Commit:** `refactor: use WeekSummary in StatusDetails`
