@@ -7,6 +7,7 @@ import {
 } from "../lib/settings-reader";
 import { getColorScheme, setColorScheme } from "../lib/themeManager";
 import { getStartOfWeek } from "../lib/validation/rto-core";
+import { dispatchRTOStateEvent } from "../types/events";
 import { logger } from "../utils/logger";
 import { clearAllData } from "../utils/storage";
 import { initializeIndex } from "./index-init";
@@ -382,6 +383,12 @@ class SettingsModal {
 	}
 
 	private dispatchSettingsChanged(): void {
+		// Dispatch unified event (new system)
+		dispatchRTOStateEvent({
+			type: "settings",
+		});
+
+		// Dispatch legacy event (backward compatibility)
 		document.dispatchEvent(
 			new CustomEvent("settings-changed", { bubbles: true }),
 		);

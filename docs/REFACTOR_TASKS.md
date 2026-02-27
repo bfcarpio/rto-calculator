@@ -111,8 +111,8 @@ Ensure all UI components properly communicate data, respond to settings changes,
 
 ### Task 4.5: Update settings-modal to dispatch unified event
 
-- [ ] Replace settings-changed with rto:state-changed
-- [ ] Include settings data in payload
+- [x] Replace settings-changed with rto:state-changed
+- [x] Include settings data in payload
 - **Files:** `src/scripts/settings-modal.ts`
 - **Tests:** E2E tests for settings changes
 - **Commit:** `refactor: settings-modal dispatches unified event`
