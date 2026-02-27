@@ -95,8 +95,8 @@ Ensure all UI components properly communicate data, respond to settings changes,
 
 ### Task 4.3: Update SettingIndicator to listen to unified event
 
-- [ ] Change event listener to rto:state-changed
-- [ ] Filter by event type if needed
+- [x] Change event listener to rto:state-changed
+- [x] Filter by event type if needed
 - **Files:** `src/components/SettingIndicator.astro`
 - **Tests:** E2E tests for settings changes
 - **Commit:** `refactor: SettingIndicator uses unified event`
