@@ -77,6 +77,7 @@ export function buildPolicyFromSettings(): RTOPolicyConfig {
 	const settings = readSettings();
 	return {
 		...DEFAULT_RTO_POLICY,
+		minOfficeDaysPerWeek: settings.minOfficeDays,
 		rollingPeriodWeeks: settings.rollingWindowWeeks,
 		topWeeksToCheck: settings.bestWeeksCount,
 		roundPercentage: settings.roundPercentage,
