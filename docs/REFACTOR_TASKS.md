@@ -159,9 +159,9 @@ Ensure all UI components properly communicate data, respond to settings changes,
 
 ### Task 5.3: Use controller in StatusDetails.astro
 
-- [ ] Import controller
-- [ ] Remove inline script
-- [ ] Call controller methods
+- [x] Import controller
+- [x] Remove inline script
+- [x] Call controller methods
 - **Files:** `src/components/StatusDetails.astro`
 - **Tests:** E2E tests for status details
 - **Commit:** `refactor: use StatusDetailsController in component`
