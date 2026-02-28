@@ -150,9 +150,9 @@ Ensure all UI components properly communicate data, respond to settings changes,
 
 ### Task 5.2: Create StatusDetailsController class
 
-- [ ] Create controller class
-- [ ] Initialize in module
-- [ ] Export for use in Astro
+- [x] Create controller class
+- [x] Initialize in module
+- [x] Export for use in Astro
 - **Files:** `src/scripts/status-details.ts`
 - **Tests:** Unit tests for controller
 - **Commit:** `refactor: add StatusDetailsController class`

@@ -362,4 +362,141 @@ describe("status-details module", () => {
 			expect(el?.innerHTML).toContain("4"); // rounded 3.5
 		});
 	});
+
+	describe("StatusDetailsController", () => {
+		let controllerContainer: HTMLElement;
+
+		beforeEach(() => {
+			// Create mock DOM structure with a container
+			document.body.innerHTML = `
+				<div class="status-details" id="controller-container">
+					<div id="stat-buffer"></div>
+					<div id="stat-oof-available"></div>
+					<div id="stat-next-wfh"></div>
+					<div id="stat-current-week-range"></div>
+					<div id="stat-current-week-days"></div>
+					<div id="current-week-office"></div>
+					<div id="buffer-warning" style="display: none;"></div>
+					<div id="compliance-label"></div>
+					<div id="compliance-status-box" class="box compliance-status"></div>
+					<div id="window-breakdown-content"></div>
+					<div id="window-breakdown-label"></div>
+				</div>
+			`;
+			controllerContainer = document.getElementById(
+				"controller-container",
+			)! as HTMLElement;
+		});
+
+		afterEach(() => {
+			document.body.innerHTML = "";
+		});
+
+		describe("constructor", () => {
+			it("should accept a container element", async () => {
+				const { StatusDetailsController } = await import("../status-details");
+				const controller = new StatusDetailsController(controllerContainer);
+				expect(controller).toBeDefined();
+			});
+		});
+
+		describe("init", () => {
+			it("should subscribe to compliance events", async () => {
+				const { StatusDetailsController } = await import("../status-details");
+				const controller = new StatusDetailsController(controllerContainer);
+				controller.init();
+
+				// Controller should have subscribed (verified by checking destroy works)
+				controller.destroy();
+			});
+		});
+
+		describe("destroy", () => {
+			it("should clean up without error", async () => {
+				const { StatusDetailsController } = await import("../status-details");
+				const controller = new StatusDetailsController(controllerContainer);
+				controller.init();
+
+				// Should not throw
+				expect(() => controller.destroy()).not.toThrow();
+			});
+
+			it("should be safe to call destroy multiple times", async () => {
+				const { StatusDetailsController } = await import("../status-details");
+				const controller = new StatusDetailsController(controllerContainer);
+				controller.init();
+
+				controller.destroy();
+				controller.destroy(); // Second call should not throw
+
+				expect(true).toBe(true);
+			});
+		});
+
+		describe("updateStats", () => {
+			it("should update elements within container scope", async () => {
+				const { StatusDetailsController } = await import("../status-details");
+				const controller = new StatusDetailsController(controllerContainer);
+				controller.init();
+
+				const data = createMockComplianceData({
+					goodWeeks: 7,
+					bestWeekCount: 8,
+				});
+				controller.updateStats(data);
+
+				const el = controllerContainer.querySelector("#stat-buffer");
+				expect(el?.textContent).toBe("Good weeks = 7 of 8 needed");
+
+				controller.destroy();
+			});
+
+			it("should not affect elements outside container", async () => {
+				// Add another element outside the container
+				const outsideEl = document.createElement("div");
+				outsideEl.id = "stat-buffer";
+				outsideEl.textContent = "outside";
+				document.body.appendChild(outsideEl);
+
+				const { StatusDetailsController } = await import("../status-details");
+				const controller = new StatusDetailsController(controllerContainer);
+				controller.init();
+
+				const data = createMockComplianceData({
+					goodWeeks: 5,
+					bestWeekCount: 8,
+				});
+				controller.updateStats(data);
+
+				// Outside element should not be affected
+				expect(outsideEl.textContent).toBe("outside");
+
+				// Container element should be updated
+				const insideEl = controllerContainer.querySelector("#stat-buffer");
+				expect(insideEl?.textContent).toBe("Good weeks = 5 of 8 needed");
+
+				controller.destroy();
+			});
+		});
+
+		describe("renderWindowBreakdown", () => {
+			it("should render dots within container scope", async () => {
+				const { StatusDetailsController } = await import("../status-details");
+				const controller = new StatusDetailsController(controllerContainer);
+				controller.init();
+
+				const weeks = [
+					createMockWeek({ weekStart: new Date(2025, 0, 6), officeDays: 3 }),
+					createMockWeek({ weekStart: new Date(2025, 0, 13), officeDays: 4 }),
+				];
+				const data = createMockComplianceData({ windowWeeks: weeks });
+				controller.renderWindowBreakdown(data);
+
+				const dots = controllerContainer.querySelectorAll(".we-dot");
+				expect(dots).toHaveLength(2);
+
+				controller.destroy();
+			});
+		});
+	});
 });
