@@ -141,9 +141,9 @@ Ensure all UI components properly communicate data, respond to settings changes,
 
 ### Task 5.1: Create status-details.ts module
 
-- [ ] Extract updateStats function
-- [ ] Extract renderWindowBreakdown function
-- [ ] Add TypeScript types
+- [x] Extract updateStats function
+- [x] Extract renderWindowBreakdown function
+- [x] Add TypeScript types
 - **Files:** `src/scripts/status-details.ts` (NEW)
 - **Tests:** Unit tests for extracted functions
 - **Commit:** `refactor: extract StatusDetails logic to module`
