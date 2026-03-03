@@ -14,7 +14,7 @@ const {
 } = Astro.props;
 ---
 
-<p class="has-text-centered has-text-weight-semibold" id="compliance-status-message">
+<p class="has-text-centered has-text-weight-semibold" id="compliance-status-message" role="status" aria-live="polite">
 	<span id="compliance-label">
 		<strong class="status-text">{isCompliant ? "Compliant:" : "Not compliant:"}</strong>
 		Best
