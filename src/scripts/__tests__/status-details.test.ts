@@ -330,37 +330,6 @@ describe("status-details module", () => {
 			const el = document.getElementById("compliance-status-box");
 			expect(el?.className).toContain("is-warning");
 		});
-
-		it("should render compliance label with correct values", () => {
-			const data = createMockComplianceData({
-				isCompliant: true,
-				bestWeekCount: 8,
-				totalWeeks: 12,
-				averageOfficeDays: 3.5,
-				requiredDays: 3,
-				roundPercentage: false,
-			});
-			updateStats(data);
-
-			const el = document.getElementById("compliance-label");
-			expect(el?.innerHTML).toContain("Compliant");
-			expect(el?.innerHTML).toContain("8");
-			expect(el?.innerHTML).toContain("12");
-			expect(el?.innerHTML).toContain("3.5");
-			expect(el?.innerHTML).toContain("3");
-		});
-
-		it("should include rounded indicator when roundPercentage is true", () => {
-			const data = createMockComplianceData({
-				roundPercentage: true,
-				averageOfficeDays: 3.5,
-			});
-			updateStats(data);
-
-			const el = document.getElementById("compliance-label");
-			expect(el?.innerHTML).toContain("(rounded)");
-			expect(el?.innerHTML).toContain("4"); // rounded 3.5
-		});
 	});
 
 	describe("StatusDetailsController", () => {

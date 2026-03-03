@@ -3,6 +3,7 @@
 // Dynamic client-side component that reads from datepainter API
 
 import { validationManager } from "../scripts/ValidationManager";
+import ComplianceLabel from "./ComplianceLabel.astro";
 import SettingIndicator from "./SettingIndicator.astro";
 import WeekSummary from "./WeekSummary.astro";
 import WindowBreakdown from "./WindowBreakdown.astro";
@@ -13,9 +14,7 @@ const config = validationManager?.getConfig?.() ?? {};
 <div class="status-details">
 	<!-- Compliance Status Box -->
 	<div class="box compliance-status" id="compliance-status-box">
-		<p class="has-text-centered has-text-weight-semibold" id="compliance-status-message">
-			<span id="compliance-label">Mark dates to see compliance status</span>
-		</p>
+		<ComplianceLabel />
 	</div>
 
 	<!-- Week Summary Box -->

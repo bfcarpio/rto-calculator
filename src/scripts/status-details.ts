@@ -168,39 +168,11 @@ export function updateStats(data: ComplianceEventData): void {
 	// Render window breakdown
 	renderWindowBreakdown(data);
 
-	// Update compliance status box
-	const elStatusLabel = document.getElementById("compliance-label");
+	// Update compliance status box styling
 	const elStatusBox = document.getElementById("compliance-status-box");
-
-	if (!elStatusLabel || !elStatusBox) return;
-
-	elStatusBox.className = `box compliance-status ${data.isCompliant ? "is-success" : "is-warning"}`;
-
-	// Build message with SettingIndicator structure
-	const statusLabel = data.isCompliant ? "Compliant" : "Not compliant";
-	const avgDaysStr = data.roundPercentage
-		? `${Math.round(data.averageOfficeDays)}`
-		: data.averageOfficeDays.toFixed(1);
-	const indicator = data.roundPercentage ? " (rounded)" : "";
-
-	elStatusLabel.innerHTML = `
-		<strong>${statusLabel}:</strong>
-		Best
-		<span class="setting-indicator" data-setting-key="topWeeksToCheck">
-			<span class="setting-value" data-setting-key="topWeeksToCheck">${data.bestWeekCount}</span>
-		</span>
-		of
-		<span class="setting-indicator" data-setting-key="rollingPeriodWeeks">
-			<span class="setting-value" data-setting-key="rollingPeriodWeeks">${data.totalWeeks}</span>
-		</span>
-		weeks average${indicator}
-		${avgDaysStr}
-		office days.
-		Required:
-		<span class="setting-indicator" data-setting-key="minOfficeDaysPerWeek">
-			<span class="setting-value" data-setting-key="minOfficeDaysPerWeek">${data.requiredDays}</span>
-		</span>
-	`;
+	if (elStatusBox) {
+		elStatusBox.className = `box compliance-status ${data.isCompliant ? "is-success" : "is-warning"}`;
+	}
 }
 
 // ─── Controller Class ─────────────────────────────────────────────────────
@@ -324,42 +296,13 @@ export class StatusDetailsController {
 		// Render window breakdown
 		this.renderWindowBreakdown(data);
 
-		// Update compliance status box
-		const elStatusLabel =
-			this.container.querySelector<HTMLSpanElement>("#compliance-label");
+		// Update compliance status box styling
 		const elStatusBox = this.container.querySelector<HTMLDivElement>(
 			"#compliance-status-box",
 		);
-
-		if (!elStatusLabel || !elStatusBox) return;
-
-		elStatusBox.className = `box compliance-status ${data.isCompliant ? "is-success" : "is-warning"}`;
-
-		// Build message with SettingIndicator structure
-		const statusLabel = data.isCompliant ? "Compliant" : "Not compliant";
-		const avgDaysStr = data.roundPercentage
-			? `${Math.round(data.averageOfficeDays)}`
-			: data.averageOfficeDays.toFixed(1);
-		const indicator = data.roundPercentage ? " (rounded)" : "";
-
-		elStatusLabel.innerHTML = `
-			<strong>${statusLabel}:</strong>
-			Best
-			<span class="setting-indicator" data-setting-key="topWeeksToCheck">
-				<span class="setting-value" data-setting-key="topWeeksToCheck">${data.bestWeekCount}</span>
-			</span>
-			of
-			<span class="setting-indicator" data-setting-key="rollingPeriodWeeks">
-				<span class="setting-value" data-setting-key="rollingPeriodWeeks">${data.totalWeeks}</span>
-			</span>
-			weeks average${indicator}
-			${avgDaysStr}
-			office days.
-			Required:
-			<span class="setting-indicator" data-setting-key="minOfficeDaysPerWeek">
-				<span class="setting-value" data-setting-key="minOfficeDaysPerWeek">${data.requiredDays}</span>
-			</span>
-		`;
+		if (elStatusBox) {
+			elStatusBox.className = `box compliance-status ${data.isCompliant ? "is-success" : "is-warning"}`;
+		}
 	}
 
 	/**

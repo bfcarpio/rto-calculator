@@ -1,0 +1,97 @@
+---
+import SettingIndicator from "./SettingIndicator.astro";
+
+export interface Props {
+	isCompliant?: boolean;
+	roundPercentage?: boolean;
+	bestWeekCount?: number;
+}
+
+const {
+	isCompliant = false,
+	roundPercentage = false,
+	bestWeekCount = 8,
+} = Astro.props;
+---
+
+<p class="has-text-centered has-text-weight-semibold" id="compliance-status-message">
+	<span id="compliance-label">
+		<strong class="status-text">{isCompliant ? "Compliant:" : "Not compliant:"}</strong>
+		Best
+		<span class="setting-indicator" data-setting-key="bestWeeksCount">
+			<span class="setting-value" data-setting-key="bestWeeksCount">{bestWeekCount}</span>
+		</span>
+		of
+		<SettingIndicator settingKey="rollingPeriodWeeks" />
+		weeks average<span class="rounded-indicator">{roundPercentage ? " (rounded)" : ""}</span>
+		<span class="avg-days"></span>
+		office days.
+		Required:
+		<SettingIndicator settingKey="minOfficeDaysPerWeek" />
+	</span>
+</p>
+
+<script>
+	import { getLatestCompliance, onComplianceUpdated } from "../lib/auto-compliance";
+
+	const labelEl = document.getElementById("compliance-label");
+
+	function updateLabel(data: {
+		isCompliant: boolean;
+		roundPercentage: boolean;
+		averageOfficeDays: number;
+		bestWeekCount: number;
+	}): void {
+		if (!labelEl) return;
+
+		// Update status text
+		const statusText = labelEl.querySelector(".status-text");
+		if (statusText) {
+			statusText.textContent = data.isCompliant ? "Compliant:" : "Not compliant:";
+		}
+
+		// Update rounded indicator
+		const roundedIndicator = labelEl.querySelector(".rounded-indicator");
+		if (roundedIndicator) {
+			roundedIndicator.textContent = data.roundPercentage ? " (rounded)" : "";
+		}
+
+		// Update average days
+		const avgDays = labelEl.querySelector(".avg-days");
+		if (avgDays) {
+			avgDays.textContent = data.roundPercentage
+				? ` ${Math.round(data.averageOfficeDays)}`
+				: ` ${data.averageOfficeDays.toFixed(1)}`;
+		}
+
+		// Update best weeks count (not in ValidationConfig, so manual update)
+		const bestWeeksValue = labelEl.querySelector(
+			'.setting-value[data-setting-key="bestWeeksCount"]',
+		);
+		if (bestWeeksValue) {
+			bestWeeksValue.textContent = String(data.bestWeekCount);
+		}
+	}
+
+	// Subscribe to compliance updates
+	onComplianceUpdated(updateLabel);
+
+	// Check for cached data
+	const cached = getLatestCompliance();
+	if (cached) {
+		updateLabel(cached);
+	}
+</script>
+
+<style>
+	.setting-indicator {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+	}
+
+	.setting-value {
+		text-decoration: underline dotted;
+		text-underline-offset: 2px;
+	}
+</style>
