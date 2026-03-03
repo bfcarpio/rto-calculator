@@ -49,7 +49,10 @@ const description =
 							data-testid="settings-button"
 							aria-label="Open settings"
 							title="Settings"
+							disabled
+							data-loading="true"
 						>
+							<span class="loading-indicator">Loading...</span>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
 								width="24"
@@ -256,6 +259,34 @@ const description =
 
 	.settings-button:active {
 		transform: scale(0.95);
+	}
+
+	.settings-button:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+	}
+
+	.settings-button .loading-indicator {
+		display: none;
+	}
+
+	.settings-button[data-loading="true"] .loading-indicator {
+		display: inline;
+		font-size: 0.75rem;
+		margin-right: 0.5rem;
+	}
+
+	.settings-button[data-loading="true"] .gear-icon {
+		display: none;
+	}
+
+	.settings-button[data-loading="true"] {
+		animation: pulse 1.5s ease-in-out infinite;
+	}
+
+	@keyframes pulse {
+		0%, 100% { opacity: 0.6; }
+		50% { opacity: 0.8; }
 	}
 
 	.gear-icon {

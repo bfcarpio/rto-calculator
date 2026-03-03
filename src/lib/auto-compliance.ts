@@ -104,6 +104,14 @@ export function getLatestCompliance(): ComplianceEventData | null {
 	return latestResult;
 }
 
+/**
+ * Check if auto-compliance has finished initializing.
+ * Used by external modules (e.g., settings modal) to know when it's safe to interact.
+ */
+export function isAutoComplianceReady(): boolean {
+	return initialized;
+}
+
 // ─── Computing State Helpers ────────────────────────────────────────
 
 function setComputingState(active: boolean): void {
@@ -483,6 +491,8 @@ export { EventQueue };
 
 let initialized = false;
 let eventQueue: EventQueue | null = null;
+// Buffer for events that arrive before EventQueue is ready
+let pendingEvents: AutoComplianceEvent[] = [];
 
 async function runComputation(
 	calendarManager: CalendarInstance,
@@ -508,11 +518,11 @@ async function runComputation(
  */
 function setupEventListeners(
 	calendarManager: CalendarInstance,
-	eventQueue: EventQueue,
+	_eventQueue: EventQueue,
 ): void {
 	// Subscribe to calendar state changes
 	calendarManager.onStateChange(() => {
-		eventQueue.enqueue({
+		enqueueEvent({
 			type: "state-change",
 			timestamp: Date.now(),
 			calendarManager,
@@ -522,11 +532,36 @@ function setupEventListeners(
 	// Subscribe to settings changes
 	window.addEventListener(RTO_STATE_CHANGED, ((e: CustomEvent) => {
 		if (e.detail?.type !== "settings") return;
-		eventQueue.enqueue({
+		enqueueEvent({
 			type: "settings-change",
 			timestamp: Date.now(),
 		});
 	}) as EventListener);
+}
+
+/**
+ * Enqueue an event, buffering if EventQueue not yet initialized.
+ * This prevents race conditions where events arrive during initialization.
+ */
+function enqueueEvent(event: AutoComplianceEvent): void {
+	if (eventQueue) {
+		eventQueue.enqueue(event);
+	} else {
+		pendingEvents.push(event);
+	}
+}
+
+/**
+ * Flush any pending events to the EventQueue.
+ * Called once after EventQueue is initialized.
+ */
+function flushPendingEvents(): void {
+	if (!eventQueue) return;
+
+	for (const event of pendingEvents) {
+		eventQueue.enqueue(event);
+	}
+	pendingEvents = [];
 }
 
 function initAutoCompliance(): void {
@@ -540,11 +575,12 @@ function initAutoCompliance(): void {
 		return;
 	}
 
-	initialized = true;
-
 	// Initialize event queue
 	eventQueue = new EventQueue();
 	eventQueue.setCalendarManager(calendarManager);
+
+	// Flush any events that arrived during initialization
+	flushPendingEvents();
 
 	// Initial computation (no debounce)
 	eventQueue.enqueue({
@@ -555,6 +591,10 @@ function initAutoCompliance(): void {
 
 	// Setup event listeners
 	setupEventListeners(calendarManager, eventQueue);
+
+	// Mark initialized AFTER event listeners are ready
+	// This ensures isAutoComplianceReady() only returns true when events won't be lost
+	initialized = true;
 }
 
 // Auto-initialize when module is imported (skip in test environments)
@@ -571,3 +611,26 @@ if (!isTestEnvironment) {
 		initAutoCompliance();
 	}
 }
+
+// ─── Test Exports ──────────────────────────────────────────────────────
+
+/**
+ * Test-only exports for testing internal state and pending buffer behavior.
+ * These are intentionally not part of the public API.
+ */
+export const _testExports = {
+	getPendingEvents: (): AutoComplianceEvent[] => pendingEvents,
+	getEventQueue: (): EventQueue | null => eventQueue,
+	isInitialized: (): boolean => initialized,
+	reset: (): void => {
+		pendingEvents = [];
+		eventQueue = null;
+		initialized = false;
+	},
+	setEventQueue: (queue: EventQueue | null): void => {
+		eventQueue = queue;
+	},
+	enqueueEvent,
+	flushPendingEvents,
+	initAutoCompliance,
+};

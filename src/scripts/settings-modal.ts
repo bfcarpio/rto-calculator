@@ -1,3 +1,4 @@
+import { isAutoComplianceReady } from "../lib/auto-compliance";
 import { getDateRange } from "../lib/dateUtils";
 import {
 	DEFAULTS,
@@ -224,12 +225,10 @@ class SettingsModal {
 		logger.debug(
 			`[Settings] Holiday OOF mode ${newState ? "enabled" : "disabled"}`,
 		);
-		document.dispatchEvent(
-			new CustomEvent("settings-changed", {
-				bubbles: true,
-				detail: { holidays: { holidaysAsOOF: newState } },
-			}),
-		);
+		dispatchRTOStateEvent({
+			type: "settings",
+			holidays: { holidaysAsOOF: newState },
+		});
 	}
 
 	private toggleSickPenalize(): void {
@@ -383,15 +382,10 @@ class SettingsModal {
 	}
 
 	private dispatchSettingsChanged(): void {
-		// Dispatch unified event (new system)
+		// Dispatch unified event
 		dispatchRTOStateEvent({
 			type: "settings",
 		});
-
-		// Dispatch legacy event (backward compatibility)
-		document.dispatchEvent(
-			new CustomEvent("settings-changed", { bubbles: true }),
-		);
 	}
 
 	private onCountryChange(e: Event): void {
@@ -402,14 +396,10 @@ class SettingsModal {
 		this.saveSettingsToLocalStorage();
 		logger.debug(`[Settings] Country changed to: ${countryCode}`);
 
-		document.dispatchEvent(
-			new CustomEvent("settings-changed", {
-				bubbles: true,
-				detail: {
-					holidays: { countryCode: countryCode || null, holidaysAsOOF },
-				},
-			}),
-		);
+		dispatchRTOStateEvent({
+			type: "settings",
+			holidays: { countryCode: countryCode || null, holidaysAsOOF },
+		});
 	}
 
 	private onPatternClick(e: Event): void {
@@ -473,12 +463,10 @@ class SettingsModal {
 		}
 
 		this.holidayOofToggle?.setAttribute("aria-checked", "true");
-		document.dispatchEvent(
-			new CustomEvent("settings-changed", {
-				bubbles: true,
-				detail: { holidays: { holidaysAsOOF: true } },
-			}),
-		);
+		dispatchRTOStateEvent({
+			type: "settings",
+			holidays: { holidaysAsOOF: true },
+		});
 
 		this.sickPenalizeToggle?.setAttribute("aria-checked", "true");
 		this.holidayPenalizeToggle?.setAttribute("aria-checked", "true");
@@ -724,16 +712,12 @@ class SettingsModal {
 					"aria-checked",
 					settings.holidays.holidaysAsOOF.toString(),
 				);
-				document.dispatchEvent(
-					new CustomEvent("settings-changed", {
-						bubbles: true,
-						detail: {
-							holidays: {
-								holidaysAsOOF: settings.holidays.holidaysAsOOF,
-							},
-						},
-					}),
-				);
+				dispatchRTOStateEvent({
+					type: "settings",
+					holidays: {
+						holidaysAsOOF: settings.holidays.holidaysAsOOF,
+					},
+				});
 			}
 
 			if (this.sickPenalizeToggle) {
@@ -791,9 +775,35 @@ class SettingsModal {
 	}
 }
 
+/**
+ * Enable the settings button once auto-compliance is initialized.
+ * Polls until ready, then removes disabled state and loading indicator.
+ */
+function enableSettingsWhenReady(): void {
+	const settingsButton = document.getElementById("settings-button");
+
+	if (!settingsButton) {
+		// Button not found, retry
+		setTimeout(enableSettingsWhenReady, 50);
+		return;
+	}
+
+	if (isAutoComplianceReady()) {
+		settingsButton.removeAttribute("disabled");
+		settingsButton.removeAttribute("data-loading");
+		logger.debug("[Settings] Settings button enabled - auto-compliance ready");
+		return;
+	}
+
+	// Not ready yet, poll again
+	setTimeout(enableSettingsWhenReady, 50);
+}
+
 const settingsManager = new SettingsModal();
 document.addEventListener("DOMContentLoaded", () => {
 	settingsManager.initialize();
+	// Wait a brief moment before starting to poll
+	setTimeout(enableSettingsWhenReady, 100);
 });
 
 export { settingsManager };

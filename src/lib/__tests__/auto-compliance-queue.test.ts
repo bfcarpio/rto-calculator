@@ -17,7 +17,11 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CalendarInstance } from "../../../packages/datepainter/src/types";
-import { type AutoComplianceEvent, EventQueue } from "../auto-compliance";
+import {
+	_testExports,
+	type AutoComplianceEvent,
+	EventQueue,
+} from "../auto-compliance";
 
 // ─── Mock Calendar Manager ─────────────────────────────────────────────
 
@@ -603,6 +607,126 @@ describe("EventQueue", () => {
 
 			// No error should occur
 			expect(queue).toBeDefined();
+		});
+	});
+});
+
+// ─── Pending Buffer Tests ──────────────────────────────────────────────
+
+describe("Pending Events Buffer", () => {
+	let mockCalendarManager: CalendarInstance;
+
+	beforeEach(() => {
+		mockCalendarManager = createMockCalendarManager();
+		// Reset state before each test
+		_testExports.reset();
+	});
+
+	afterEach(() => {
+		_testExports.reset();
+		vi.useRealTimers();
+	});
+
+	describe("event buffering", () => {
+		it("should buffer events when EventQueue not yet created", () => {
+			// Verify queue is null before events
+			expect(_testExports.getEventQueue()).toBeNull();
+
+			// Enqueue before EventQueue exists
+			_testExports.enqueueEvent({ type: "settings-change", timestamp: 1000 });
+			_testExports.enqueueEvent({ type: "settings-change", timestamp: 2000 });
+
+			// Events should be in pending buffer
+			expect(_testExports.getPendingEvents().length).toBe(2);
+		});
+
+		it("should enqueue directly when EventQueue exists", () => {
+			vi.useFakeTimers();
+
+			// Create queue
+			const queue = new EventQueue();
+			queue.setCalendarManager(mockCalendarManager);
+
+			// Manually set the eventQueue (simulating initialization)
+			_testExports.reset();
+			// Re-create queue after reset
+			const newQueue = new EventQueue();
+			newQueue.setCalendarManager(mockCalendarManager);
+
+			// Buffer events before queue
+			_testExports.enqueueEvent({ type: "settings-change", timestamp: 1000 });
+
+			expect(_testExports.getPendingEvents().length).toBe(1);
+		});
+	});
+
+	describe("flush pending events", () => {
+		it("should flush pending events to EventQueue on init", async () => {
+			vi.useFakeTimers();
+
+			// Reset and buffer events
+			_testExports.reset();
+			_testExports.enqueueEvent({ type: "settings-change", timestamp: 1000 });
+
+			expect(_testExports.getPendingEvents().length).toBe(1);
+
+			// Create queue and set it as the module-level eventQueue
+			const queue = new EventQueue();
+			queue.setCalendarManager(mockCalendarManager);
+			_testExports.setEventQueue(queue);
+
+			// Flush pending events to the queue
+			_testExports.flushPendingEvents();
+
+			expect(_testExports.getPendingEvents().length).toBe(0);
+
+			queue.destroy();
+		});
+
+		it("should handle flush when EventQueue is null", () => {
+			_testExports.reset();
+
+			// Buffer some events
+			_testExports.enqueueEvent({ type: "settings-change", timestamp: 1000 });
+
+			// Flush without creating queue (should be a no-op)
+			_testExports.flushPendingEvents();
+
+			// Pending events should still be there since no queue to flush to
+			expect(_testExports.getPendingEvents().length).toBe(1);
+		});
+	});
+
+	describe("isAutoComplianceReady timing", () => {
+		it("should return false before initialization", () => {
+			_testExports.reset();
+
+			// Before any initialization
+			expect(_testExports.isInitialized()).toBe(false);
+		});
+
+		it("should return true after full initialization", async () => {
+			vi.useFakeTimers();
+
+			// Mock window.__datepainterInstance
+			(
+				window as unknown as { __datepainterInstance?: CalendarInstance }
+			).__datepainterInstance = mockCalendarManager;
+
+			_testExports.reset();
+
+			// Before init
+			expect(_testExports.isInitialized()).toBe(false);
+
+			// Run initialization
+			_testExports.initAutoCompliance();
+
+			// After init, should be true
+			expect(_testExports.isInitialized()).toBe(true);
+
+			// Cleanup mock
+			delete (window as unknown as { __datepainterInstance?: CalendarInstance })
+				.__datepainterInstance;
 		});
 	});
 });

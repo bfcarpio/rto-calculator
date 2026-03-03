@@ -6,8 +6,6 @@
  * and the average office days across those weeks compared to the required target.
  */
 
-import SettingIndicator from "./SettingIndicator.astro";
-
 export interface WeekSummaryProps {
 	/** Number of best weeks evaluated (up to BEST_WEEKS_COUNT) */
 	bestWeekCount?: number;
@@ -68,7 +66,7 @@ const weeksColorClass =
 				<p class={`has-text-weight-bold ${averageColorClass}`} id="stat-average-days">
 					<span class="average-value" id="average-numeric-value">{displayValue}</span>
 					<span class="has-text-weight-bold has-text-primary">/</span>
-					<SettingIndicator settingKey="totalWeekdaysPerWeek" label="" />
+					<span class="has-text-weight-semibold">5</span>
 					<span class="has-text-weight-bold has-text-primary"> days</span>
 				</p>
 			</div>

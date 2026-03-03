@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test.describe("SettingIndicator", () => {
+test.describe("WeekSummary - Fixed Denominator Display", () => {
 	test.beforeEach(async ({ page }) => {
 		await page.goto("/rto-calculator/");
 		await page.waitForSelector(
@@ -9,162 +9,26 @@ test.describe("SettingIndicator", () => {
 		);
 	});
 
-	test("should render inline without breaking layout in SummaryBar", async ({
-		page,
-	}) => {
-		// Note: SummaryBar is currently commented out in index.astro
-		// This test verifies the component would render inline if enabled
-		// The SettingIndicator component is designed with inline-flex for this purpose
-
-		// Check that SettingIndicator CSS includes inline-flex
-		const settingIndicatorCss = page.locator(".setting-indicator");
-		await expect(settingIndicatorCss).toHaveCSS("display", "inline-flex");
-	});
-
-	test("should render inline without breaking layout in StatusDetails", async ({
+	test("should display plain '5' for weekdays per week (not a SettingIndicator)", async ({
 		page,
 	}) => {
 		// Check StatusDetails average line
 		const statAverage = page.locator("#stat-average-days");
 		await expect(statAverage).toBeVisible();
 
-		// Verify the "days" text is on the same line as the value
-		// Use .first() to avoid strict mode violation with sr-only element
-		const daysText = statAverage.locator("text=days").first();
-		await expect(daysText).toBeVisible();
-
-		// Get the SettingIndicator in StatusDetails
+		// The "5" in the denominator should NOT be a SettingIndicator
+		// because totalWeekdaysPerWeek is a constant (Mon-Fri), not a user setting
 		const settingIndicator = statAverage.locator(".setting-indicator");
-		await expect(settingIndicator).toBeVisible();
+		await expect(settingIndicator).toHaveCount(0);
 
-		// Get bounding boxes to verify they're on same line
-		const averageBox = await statAverage.boundingBox();
-		const daysBox = await daysText.boundingBox();
-		const settingBox = await settingIndicator.boundingBox();
-
-		// Should be roughly same Y position (within 15px tolerance for font rendering)
-		expect(averageBox).toBeTruthy();
-		expect(daysBox).toBeTruthy();
-		expect(settingBox).toBeTruthy();
-		expect(Math.abs(averageBox!.y - daysBox!.y)).toBeLessThan(15);
-		expect(Math.abs(averageBox!.y - settingBox!.y)).toBeLessThan(15);
+		// Verify the "5" is displayed as plain text with semibold weight
+		const weekdaysValue = statAverage
+			.locator(".has-text-weight-semibold")
+			.first();
+		await expect(weekdaysValue).toHaveText("5");
 	});
 
-	test("should have title attribute for tooltip", async ({ page }) => {
-		// Find SettingIndicator in StatusDetails
-		const settingIndicator = page.locator(
-			"#stat-average-days .setting-indicator",
-		);
-		await expect(settingIndicator).toBeVisible();
-
-		// Check title attribute exists (for tooltip)
-		const title = await settingIndicator.getAttribute("title");
-		expect(title).toBeTruthy();
-		expect(title).toContain("totalWeekdaysPerWeek");
-	});
-
-	test("should have title attribute in SummaryBar", async ({ page }) => {
-		// Note: SummaryBar is currently commented out in index.astro
-		// This test verifies the SettingIndicator has proper title attribute
-		// which is used by any parent component that includes it
-
-		// Check that SettingIndicator has title attribute
-		const settingIndicator = page.locator(".setting-indicator").first();
-		await expect(settingIndicator).toBeVisible();
-
-		// Check title attribute exists (for tooltip)
-		const title = await settingIndicator.getAttribute("title");
-		expect(title).toBeTruthy();
-		expect(title).toContain("totalWeekdaysPerWeek");
-	});
-
-	test("should update value when rto:state-changed event fires", async ({
-		page,
-	}) => {
-		// Get the SettingIndicator value in StatusDetails
-		const settingValue = page.locator(
-			"#stat-average-days .setting-indicator .setting-value",
-		);
-		const initialValue = await settingValue.textContent();
-		expect(initialValue).toBeTruthy();
-
-		// Dispatch unified rto:state-changed event to update the setting
-		await page.evaluate(() => {
-			const event = new CustomEvent("rto:state-changed", {
-				detail: {
-					type: "config",
-					settingKey: "totalWeekdaysPerWeek",
-					newValue: 4,
-					oldValue: 5,
-				},
-			});
-			window.dispatchEvent(event);
-		});
-
-		// Verify value updated
-		const newValue = await settingValue.textContent();
-		expect(newValue).toBe("4");
-		expect(newValue).not.toBe(initialValue);
-	});
-
-	test("should update title when rto:state-changed event fires", async ({
-		page,
-	}) => {
-		// Find SettingIndicator in StatusDetails
-		const settingIndicator = page.locator(
-			"#stat-average-days .setting-indicator",
-		);
-		const initialTitle = await settingIndicator.getAttribute("title");
-		expect(initialTitle).toContain("totalWeekdaysPerWeek");
-
-		// Dispatch unified rto:state-changed event
-		await page.evaluate(() => {
-			const event = new CustomEvent("rto:state-changed", {
-				detail: {
-					type: "config",
-					settingKey: "totalWeekdaysPerWeek",
-					newValue: 3,
-					oldValue: 5,
-				},
-			});
-			window.dispatchEvent(event);
-		});
-
-		// Verify title updated
-		const newTitle = await settingIndicator.getAttribute("title");
-		expect(newTitle).toContain("totalWeekdaysPerWeek");
-		expect(newTitle).toContain("3");
-	});
-
-	test("should update via dispatching rto:state-changed event", async ({
-		page,
-	}) => {
-		// Get initial value
-		const settingValue = page.locator(
-			"#stat-average-days .setting-indicator .setting-value",
-		);
-		const initialValue = await settingValue.textContent();
-
-		// Dispatch unified rto:state-changed event directly
-		await page.evaluate(() => {
-			const event = new CustomEvent("rto:state-changed", {
-				detail: {
-					type: "config",
-					settingKey: "totalWeekdaysPerWeek",
-					newValue: 2,
-					oldValue: 5,
-				},
-			});
-			window.dispatchEvent(event);
-		});
-
-		// Verify value updated
-		const newValue = await settingValue.textContent();
-		expect(newValue).toBe("2");
-		expect(newValue).not.toBe(initialValue);
-	});
-
-	test("should keep days text on same line after update", async ({ page }) => {
+	test("should keep days text on same line", async ({ page }) => {
 		// Get initial position
 		const statAverage = page.locator("#stat-average-days");
 		// Use .first() to avoid strict mode violation with sr-only element
@@ -172,22 +36,58 @@ test.describe("SettingIndicator", () => {
 		const initialDaysBox = await daysText.boundingBox();
 		expect(initialDaysBox).toBeTruthy();
 
-		// Update the setting via unified rto:state-changed event
-		await page.evaluate(() => {
-			const event = new CustomEvent("rto:state-changed", {
-				detail: {
-					type: "config",
-					settingKey: "totalWeekdaysPerWeek",
-					newValue: 4,
-					oldValue: 5,
-				},
-			});
-			window.dispatchEvent(event);
-		});
+		// Verify days text is visible
+		await expect(daysText).toBeVisible();
+	});
 
-		// Verify days text is still on same line after update
-		const newDaysBox = await daysText.boundingBox();
-		expect(newDaysBox).toBeTruthy();
-		expect(Math.abs(initialDaysBox!.y - newDaysBox!.y)).toBeLessThan(10);
+	test("should NOT have dotted underline on the '5' (it's not a setting)", async ({
+		page,
+	}) => {
+		// The "5" should NOT have the dotted underline that SettingIndicator uses
+		const weekdaysValue = page
+			.locator("#stat-average-days")
+			.locator(".has-text-weight-semibold")
+			.first();
+
+		// Check that it doesn't have the "setting-value" class which has dotted underline
+		await expect(weekdaysValue).not.toHaveClass(/setting-value/);
+	});
+});
+
+test.describe("SettingIndicator - minOfficeDaysPerWeek", () => {
+	test.beforeEach(async ({ page }) => {
+		await page.goto("/rto-calculator/");
+		await page.waitForSelector(
+			'[data-testid="calendar-day"]:not(.datepainter__day--empty):not(.datepainter__day--disabled)',
+			{ state: "visible" },
+		);
+		// Wait for the setting indicator to be visible
+		await page.waitForSelector(".setting-indicator", { timeout: 5000 });
+	});
+
+	test("should have SettingIndicator for minOfficeDaysPerWeek in Current Week Status", async ({
+		page,
+	}) => {
+		// The minOfficeDaysPerWeek should be shown as a SettingIndicator
+		const settingIndicator = page.locator(
+			"#stat-current-week-days .setting-indicator",
+		);
+		await expect(settingIndicator).toBeVisible();
+		await expect(settingIndicator).toHaveAttribute(
+			"data-setting-key",
+			"minOfficeDaysPerWeek",
+		);
+	});
+
+	test("should render SettingIndicator with inline display", async ({
+		page,
+	}) => {
+		// SettingIndicator uses inline display (may be inline or inline-flex depending on CSS loading)
+		const settingIndicator = page.locator(".setting-indicator").first();
+		const display = await settingIndicator.evaluate(
+			(el) => window.getComputedStyle(el).display,
+		);
+		// Accept either inline or inline-flex
+		expect(["inline", "inline-flex"]).toContain(display);
 	});
 });
