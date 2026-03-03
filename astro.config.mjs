@@ -49,8 +49,26 @@ export default defineConfig({
       sourcemap: false,
       rollupOptions: {
         output: {
-          manualChunks: {
-            vendor: ["astro"],
+          manualChunks(id) {
+            if (id.includes("date-fns")) {
+              return "date-fns";
+            }
+            if (id.includes("datepainter")) {
+              return "datepainter";
+            }
+            if (id.includes("node_modules/zod")) {
+              return "zod";
+            }
+            if (id.includes("node_modules/ts-ics") || id.includes("node_modules/@ts-ics")) {
+              return "ts-ics";
+            }
+            if (id.includes("node_modules/nanostores")) {
+              return "nanostores";
+            }
+            if (id.includes("node_modules")) {
+              return "vendor";
+            }
+            return undefined;
           },
         },
       },
