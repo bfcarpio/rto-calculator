@@ -8,8 +8,8 @@
  * @module holiday-manager
  */
 
+import type { Holiday } from "../../types/holiday-data-source";
 import { logger } from "../../utils/logger";
-import type { Holiday } from "../types/holiday-data-source";
 import companyFiltersJson from "./data/company-filters.json";
 import { HolidayDataSourceFactory } from "./sources";
 import type { HolidayDataSource } from "./sources/types";
