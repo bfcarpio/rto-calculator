@@ -94,43 +94,9 @@ test.describe("Validation Flows", () => {
 			const complianceMessage = page.locator("#compliance-label");
 			await expect(complianceMessage).toContainText("Required: 3");
 
-			// Open settings modal
+			// Open settings modal and change target days to 4
 			await openSettings(page);
-
-			// Change minOfficeDaysPerWeek to 4 by updating localStorage and triggering recomputation
-			// Note: Direct DOM manipulation with dispatchEvent doesn't trigger the app's handlers reliably
-			await page.evaluate(() => {
-				// Update localStorage
-				const settings = JSON.parse(
-					localStorage.getItem("rto-calculator-settings") || "{}",
-				);
-				settings.minOfficeDays = 4;
-				localStorage.setItem(
-					"rto-calculator-settings",
-					JSON.stringify(settings),
-				);
-
-				// Update input UI for consistency
-				const input = document.getElementById(
-					"target-days-input",
-				) as HTMLInputElement;
-				if (input) {
-					input.value = "4";
-				}
-
-				// Update validation manager config
-				if (window.validationManager) {
-					window.validationManager.updateConfig({ minOfficeDaysPerWeek: 4 });
-				}
-
-				// Dispatch unified settings event to trigger compliance recomputation
-				window.dispatchEvent(
-					new CustomEvent("rto:state-changed", {
-						detail: { type: "settings" },
-					}),
-				);
-			});
-
+			await setTargetDays(page, 4);
 			await page.keyboard.press("Escape");
 			await expect(page.getByRole("dialog")).not.toBeVisible();
 

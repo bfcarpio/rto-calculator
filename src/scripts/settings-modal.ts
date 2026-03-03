@@ -81,7 +81,7 @@ class SettingsModal {
 			"save-data-toggle",
 		) as HTMLButtonElement | null;
 		this.minOfficeDaysInput = document.getElementById(
-			"min-office-days",
+			"target-days-input",
 		) as HTMLInputElement | null;
 		this.countrySelect = document.getElementById(
 			"country-select",
