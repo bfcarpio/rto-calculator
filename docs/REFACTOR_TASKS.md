@@ -4,6 +4,27 @@
 
 Ensure all UI components properly communicate data, respond to settings changes, and maintain consistent data flow through a single source of truth and unified event system.
 
+## Bug Fixes
+
+### Bug 1: Auto-Compliance Race Condition ✅ FIXED (2026-03-03)
+
+**Issue:** The auto-compliance module had a race condition where multiple rapid state changes could cause stale computations, inconsistent state, and missed updates.
+
+**Solution:** Implemented Event Queue with replay mechanism in `src/lib/auto-compliance.ts`. See `eventQueueSolution.md` for full details.
+
+**Changes:**
+
+- Added `EventQueue` class for ordered event processing
+- Single worker ensures only one computation runs at a time
+- 1.5s debounce prevents burst abuse while maintaining responsiveness
+- Replay mechanism processes only the latest state during rapid changes
+
+**Files Modified:**
+
+- `src/lib/auto-compliance.ts` - Added event queue infrastructure
+
+---
+
 ## Prerequisites
 
 - [ ] All current tests pass (`npm run test:run`)
@@ -172,18 +193,18 @@ Ensure all UI components properly communicate data, respond to settings changes,
 
 ### Task 6.1: Run full test suite
 
-- [ ] Unit tests pass
-- [ ] E2E tests pass
-- [ ] Build succeeds
+- [x] Unit tests pass
+- [x] E2E tests pass
+- [x] Build succeeds
 - **Commit:** (verification only)
 
 ### Task 6.2: Manual verification
 
-- [ ] Settings changes update UI
-- [ ] Calendar changes update UI
-- [ ] All SettingIndicators work
-- [ ] Window breakdown updates
-- [ ] Compliance message updates
+- [x] Settings changes update UI
+- [x] Calendar changes update UI
+- [x] All SettingIndicators work
+- [x] Window breakdown updates
+- [x] Compliance message updates
 - **Commit:** (verification only)
 
 ---
