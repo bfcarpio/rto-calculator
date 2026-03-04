@@ -4,15 +4,29 @@
 
 The RTO Calculator is an Astro-based web application for tracking Return-to-Office (RTO) compliance. The architecture follows a **streamlined validation flow** with clear separation of concerns, enabling pure business logic that is testable, maintainable, and simple to reason about.
 
+## Static Site Architecture
+
+This is a **static website** - Astro builds to pure HTML and JavaScript files that can be hosted anywhere (Netlify, Vercel, GitHub Pages, S3, etc.).
+
+### Key Architecture Points
+
+1. **Client-side validation** - All compliance calculations run entirely in the browser. There is no server-side processing.
+
+2. **Single network call** - The only external server request is to the Nager.Date API for fetching public holidays. Everything else (calendar, validation, state) is local.
+
+3. **No database** - All state is stored in localStorage (user settings) or in-memory (calendar selections).
+
+4. **Static output** - The built application is a collection of HTML, CSS, and JS files with no server-side runtime dependencies.
+
 **Technology Stack:**
-- **Framework**: Astro v4+ (SSR + client-side hydration)
+- **Framework**: Astro (static site generator - outputs pure HTML/JS)
 - **Language**: TypeScript (strict mode)
-- **Calendar**: datepainter library (custom calendar widget)
-- **Date utilities**: date-fns (tree-shakeable date library)
-- **State Management**: DOM-based with datepainter API + localStorage persistence
-- **Styling**: Scoped CSS with custom properties
+- **Calendar**: datepainter library (workspace package)
+- **Holiday API**: nager-date client (workspace package)
+- **State**: Nano Stores + localStorage persistence
+- **Date utilities**: date-fns
+- **Validation**: Zod
 - **Testing**: Vitest (unit) + Playwright (E2E)
-- **Build**: Astro CLI / Vite
 
 ---
 
