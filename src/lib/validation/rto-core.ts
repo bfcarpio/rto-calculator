@@ -379,11 +379,14 @@ export function evaluateSingleWindow(
 			? roundToNearest20Percent(rawPercentage)
 			: rawPercentage;
 
-	// Primary check: average office days must meet the minimum.
-	// This handles holiday weeks correctly — a week with 5 holidays
-	// has 0 officeDays and 0 totalDays, so it correctly counts as
-	// 0 office days rather than getting a free pass via percentage.
-	const isValid = averageOfficeDays >= policy.minOfficeDaysPerWeek;
+	// Primary check: when rounding is enabled, use the rounded percentage for
+	// consistency with display. This handles edge cases like 55% raw rounding
+	// to 60% — the window should pass when rounded >= threshold.
+	// Without rounding, use raw days for accuracy (handles holiday weeks correctly).
+	const requiredAveragePercentage = policy.thresholdPercentage * 100;
+	const isValid = policy.roundPercentage
+		? averageOfficePercentage >= requiredAveragePercentage
+		: averageOfficeDays >= policy.minOfficeDaysPerWeek;
 
 	return { isValid, averageOfficeDays, averageOfficePercentage, bestWeeks };
 }

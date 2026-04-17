@@ -181,4 +181,13 @@ describe("evaluateAllWindows", () => {
 		expect(compliantCount).toBe(8);
 		expect(nonCompliantCount).toBe(4);
 	});
+
+	it("window passes when raw % < threshold but rounds to >= threshold", () => {
+		// 8 weeks × 2.75 days = 22/40 = 55% raw, rounds to 60%
+		// With rounding enabled, should PASS
+		const policyWithRounding = { ...DEFAULT_RTO_POLICY, roundPercentage: true };
+		const weeks = makeSchedule(START, [8, 2.75]);
+		const result = evaluateAllWindows(weeks, policyWithRounding);
+		expect(result[0]!.isValid).toBe(true);
+	});
 });

@@ -77,7 +77,9 @@ function buildSummary(
 			weekStart: w.weekStart,
 			officeDays: w.officeDays,
 			isBest: bestSet.has(w.weekStart.getTime()),
-			isCompliant: w.officeDays >= policy.minOfficeDaysPerWeek,
+			isCompliant:
+				(policy.roundPercentage ? Math.round(w.officeDays) : w.officeDays) >=
+				policy.minOfficeDaysPerWeek,
 		})),
 	};
 }
