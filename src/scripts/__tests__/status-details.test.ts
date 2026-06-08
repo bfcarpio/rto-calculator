@@ -332,6 +332,103 @@ describe("status-details module", () => {
 		});
 	});
 
+	describe("renderBreakdownInto via HTMLElement root", () => {
+		/** Creates a container element with the required breakdown children. */
+		function createTestContainer(): HTMLElement {
+			const container = document.createElement("div");
+			container.innerHTML = `
+				<div id="window-breakdown-label"></div>
+				<div id="window-breakdown-content"></div>
+			`;
+			return container;
+		}
+
+		it("should render empty message when no weeks data", async () => {
+			const { StatusDetailsController } = await import("../status-details");
+			const container = createTestContainer();
+			const controller = new StatusDetailsController(container);
+			const data = createMockComplianceData({ windowWeeks: [] });
+
+			controller.renderWindowBreakdown(data);
+
+			const content = container.querySelector("#window-breakdown-content")!;
+			const label = container.querySelector("#window-breakdown-label")!;
+			expect(content.innerHTML).toContain("Mark dates to see window breakdown");
+			expect(label.textContent).toBe("Mark dates to see window breakdown");
+		});
+
+		it("should render PASS tag when compliant via container root", async () => {
+			const { StatusDetailsController } = await import("../status-details");
+			const container = createTestContainer();
+			const controller = new StatusDetailsController(container);
+			const data = createMockComplianceData({ isCompliant: true });
+
+			controller.renderWindowBreakdown(data);
+
+			const content = container.querySelector("#window-breakdown-content")!;
+			expect(content.innerHTML).toContain("PASS");
+			expect(content.innerHTML).toContain("wb-row-tag--pass");
+		});
+
+		it("should render FAIL tag when not compliant via container root", async () => {
+			const { StatusDetailsController } = await import("../status-details");
+			const container = createTestContainer();
+			const controller = new StatusDetailsController(container);
+			const data = createMockComplianceData({ isCompliant: false });
+
+			controller.renderWindowBreakdown(data);
+
+			const content = container.querySelector("#window-breakdown-content")!;
+			expect(content.innerHTML).toContain("FAIL");
+			expect(content.innerHTML).toContain("wb-row-tag--fail");
+		});
+
+		it("should render dots for each week via container root", async () => {
+			const { StatusDetailsController } = await import("../status-details");
+			const container = createTestContainer();
+			const controller = new StatusDetailsController(container);
+
+			const weeks = [
+				createMockWeek({ weekStart: new Date(2025, 0, 6), officeDays: 3 }),
+				createMockWeek({ weekStart: new Date(2025, 0, 13), officeDays: 4 }),
+			];
+			const data = createMockComplianceData({ windowWeeks: weeks });
+			controller.renderWindowBreakdown(data);
+
+			const dots = container.querySelectorAll(".we-dot");
+			expect(dots).toHaveLength(2);
+		});
+
+		it("should not affect elements outside container", async () => {
+			const { StatusDetailsController } = await import("../status-details");
+			const container = createTestContainer();
+			const controller = new StatusDetailsController(container);
+
+			// Add a separate element with the same ID to document body
+			const outsideContent = document.createElement("div");
+			outsideContent.id = "window-breakdown-content";
+			outsideContent.innerHTML = "outside";
+			document.body.appendChild(outsideContent);
+
+			const data = createMockComplianceData({ isCompliant: true });
+			controller.renderWindowBreakdown(data);
+
+			// Outside element should not be touched
+			expect(outsideContent.innerHTML).toBe("outside");
+
+			document.body.removeChild(outsideContent);
+		});
+
+		it("should not throw if content element is missing in container", async () => {
+			const { StatusDetailsController } = await import("../status-details");
+			const emptyContainer = document.createElement("div");
+			const controller = new StatusDetailsController(emptyContainer);
+
+			const data = createMockComplianceData();
+			expect(() => controller.renderWindowBreakdown(data)).not.toThrow();
+		});
+	});
+
 	describe("StatusDetailsController", () => {
 		let controllerContainer: HTMLElement;
 
