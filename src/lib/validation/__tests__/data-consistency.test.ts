@@ -1,0 +1,254 @@
+/**
+ * Data Consistency Tests
+ *
+ * Verifies that the two evaluation paths — evaluateAllWindows (per-window
+ * summaries) and validateSlidingWindow (overall compliance) — produce
+ * consistent results for the same input data.
+ *
+ * These are NOT unit tests for individual functions (those already exist).
+ * They are consistency checks that catch divergence between the two paths,
+ * which both ultimately derive from evaluateSingleWindow but via different
+ * call sites and consumers.
+ */
+
+import { describe, expect, it } from "vitest";
+import { evaluateAllWindows } from "../all-windows";
+import {
+	DEFAULT_RTO_POLICY,
+	evaluateSingleWindow,
+	type RTOPolicyConfig,
+	validateSlidingWindow,
+	type WeekCompliance,
+} from "../rto-core";
+
+// ─── Helpers ──────────────────────────────────────────────────────
+
+const START = new Date(2025, 0, 6); // Monday Jan 6 2025
+
+function makeWeek(
+	weekStart: Date,
+	officeDays: number,
+	weekNumber = 1,
+): WeekCompliance {
+	return {
+		weekNumber,
+		weekStart,
+		officeDays,
+		totalDays: 5,
+		oofDays: 5 - officeDays,
+		wfhDays: 5 - officeDays,
+		isCompliant: officeDays >= DEFAULT_RTO_POLICY.minOfficeDaysPerWeek,
+		status:
+			officeDays >= DEFAULT_RTO_POLICY.minOfficeDaysPerWeek
+				? "compliant"
+				: "violation",
+	};
+}
+
+function makeWeeks(
+	startMonday: Date,
+	count: number,
+	officeDaysPerWeek: number,
+): WeekCompliance[] {
+	const weeks: WeekCompliance[] = [];
+	for (let i = 0; i < count; i++) {
+		const ws = new Date(startMonday);
+		ws.setDate(startMonday.getDate() + i * 7);
+		weeks.push(makeWeek(ws, officeDaysPerWeek, i + 1));
+	}
+	return weeks;
+}
+
+function makeSchedule(
+	startMonday: Date,
+	...segments: [count: number, officeDays: number][]
+): WeekCompliance[] {
+	const weeks: WeekCompliance[] = [];
+	let offset = 0;
+	for (const [count, officeDays] of segments) {
+		const segStart = new Date(startMonday);
+		segStart.setDate(startMonday.getDate() + offset * 7);
+		weeks.push(...makeWeeks(segStart, count, officeDays));
+		offset += count;
+	}
+	weeks.forEach((w, i) => {
+		w.weekNumber = i + 1;
+	});
+	return weeks;
+}
+
+// ─── Tests ────────────────────────────────────────────────────────
+
+describe("Data consistency: evaluateAllWindows vs validateSlidingWindow", () => {
+	it("every WindowSummary.isValid is a boolean", () => {
+		const weeks = makeSchedule(START, [8, 5], [4, 1]);
+		const result = evaluateAllWindows(weeks, DEFAULT_RTO_POLICY);
+
+		for (const summary of result) {
+			expect(typeof summary.isValid).toBe("boolean");
+		}
+	});
+
+	it("all windows valid implies validateSlidingWindow returns valid", () => {
+		// All weeks have 5 office days → every window is valid
+		const weeks = makeWeeks(START, 12, 5);
+		const summaries = evaluateAllWindows(weeks, DEFAULT_RTO_POLICY);
+
+		const allValid = summaries.every((s) => s.isValid);
+		expect(allValid).toBe(true);
+
+		const overall = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
+		expect(overall.isValid).toBe(true);
+	});
+
+	it("any window invalid implies validateSlidingWindow returns invalid", () => {
+		// 10 weeks at 0 office days, then 5 at 5.
+		// Early windows contain too many zeros for best-8 to compensate → fail.
+		const weeks = makeSchedule(START, [10, 0], [5, 5]);
+		const summaries = evaluateAllWindows(weeks, DEFAULT_RTO_POLICY);
+
+		const anyInvalid = summaries.some((s) => !s.isValid);
+		expect(anyInvalid).toBe(true);
+
+		const overall = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
+		expect(overall.isValid).toBe(false);
+	});
+
+	it("each WindowSummary.isValid matches evaluateSingleWindow on its slice", () => {
+		// Varied schedule so some windows pass and some fail
+		const weeks = makeSchedule(START, [5, 0], [7, 5], [3, 2]);
+		const summaries = evaluateAllWindows(weeks, DEFAULT_RTO_POLICY);
+		const W = DEFAULT_RTO_POLICY.rollingPeriodWeeks;
+
+		for (const summary of summaries) {
+			const slice = weeks.slice(summary.windowIndex, summary.windowIndex + W);
+			const { isValid } = evaluateSingleWindow(slice, DEFAULT_RTO_POLICY);
+			expect(summary.isValid).toBe(isValid);
+		}
+	});
+
+	it("per-week isCompliant matches officeDays >= minOfficeDaysPerWeek", () => {
+		const weeks = makeSchedule(START, [6, 5], [6, 2]);
+		const summaries = evaluateAllWindows(weeks, DEFAULT_RTO_POLICY);
+
+		for (const summary of summaries) {
+			for (const detail of summary.weekDetails) {
+				const expected =
+					detail.officeDays >= DEFAULT_RTO_POLICY.minOfficeDaysPerWeek;
+				expect(detail.isCompliant).toBe(expected);
+			}
+		}
+	});
+
+	it("per-week isCompliant with rounding uses Math.round(officeDays)", () => {
+		const policyWithRounding: RTOPolicyConfig = {
+			...DEFAULT_RTO_POLICY,
+			roundPercentage: true,
+		};
+
+		// Weeks with fractional office days (rare but possible with holidays)
+		const weeks: WeekCompliance[] = [];
+		const officeDaysValues = [2.4, 2.6, 3, 2.4, 2.6, 3, 3, 3, 3, 3, 3, 3];
+		for (let i = 0; i < officeDaysValues.length; i++) {
+			const ws = new Date(START);
+			ws.setDate(START.getDate() + i * 7);
+			const od = officeDaysValues[i]!;
+			weeks.push({
+				weekNumber: i + 1,
+				weekStart: ws,
+				officeDays: od,
+				totalDays: 5,
+				oofDays: 5 - od,
+				wfhDays: 5 - od,
+				isCompliant: Math.round(od) >= policyWithRounding.minOfficeDaysPerWeek,
+				status:
+					Math.round(od) >= policyWithRounding.minOfficeDaysPerWeek
+						? "compliant"
+						: "violation",
+			});
+		}
+
+		const summaries = evaluateAllWindows(weeks, policyWithRounding);
+
+		for (const summary of summaries) {
+			for (const detail of summary.weekDetails) {
+				const expected =
+					Math.round(detail.officeDays) >=
+					policyWithRounding.minOfficeDaysPerWeek;
+				expect(detail.isCompliant).toBe(expected);
+			}
+		}
+	});
+
+	it("validateSlidingWindow agrees with all-windows aggregate across varied schedules", () => {
+		// Test several schedules, each with a different compliance profile
+		const schedules: [string, [count: number, officeDays: number][]][] = [
+			["all compliant", [[12, 5]]],
+			["all non-compliant", [[12, 0]]],
+			[
+				"mixed",
+				[
+					[8, 5],
+					[4, 1],
+				],
+			],
+			[
+				"borderline",
+				[
+					[8, 3],
+					[4, 2],
+				],
+			],
+			[
+				"mostly compliant",
+				[
+					[10, 5],
+					[2, 0],
+				],
+			],
+		];
+
+		for (const [_label, segments] of schedules) {
+			const weeks = makeSchedule(START, ...segments);
+			const summaries = evaluateAllWindows(weeks, DEFAULT_RTO_POLICY);
+			const overall = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
+
+			const allValid = summaries.every((s) => s.isValid);
+			if (allValid) {
+				expect(overall.isValid).toBe(true);
+			} else {
+				// When evaluateAllWindows reports any invalid window,
+				// validateSlidingWindow must also find a violation
+				expect(overall.isValid).toBe(false);
+			}
+		}
+	});
+
+	it("partial window: evaluateAllWindows and validateSlidingWindow agree", () => {
+		// Fewer weeks than window size
+		const weeks = makeWeeks(START, 5, 4);
+		const summaries = evaluateAllWindows(weeks, DEFAULT_RTO_POLICY);
+		const overall = validateSlidingWindow(weeks, DEFAULT_RTO_POLICY);
+
+		expect(summaries).toHaveLength(1);
+		expect(summaries[0]!.isValid).toBe(overall.isValid);
+	});
+
+	it("non-default policy: consistency holds with different thresholds", () => {
+		const strictPolicy: RTOPolicyConfig = {
+			...DEFAULT_RTO_POLICY,
+			minOfficeDaysPerWeek: 4,
+		};
+
+		const weeks = makeSchedule(START, [8, 5], [4, 3]);
+		const summaries = evaluateAllWindows(weeks, strictPolicy);
+		const overall = validateSlidingWindow(weeks, strictPolicy);
+
+		const allValid = summaries.every((s) => s.isValid);
+		if (allValid) {
+			expect(overall.isValid).toBe(true);
+		} else {
+			expect(overall.isValid).toBe(false);
+		}
+	});
+});
