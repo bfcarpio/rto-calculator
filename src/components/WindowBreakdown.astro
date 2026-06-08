@@ -8,6 +8,7 @@
 
 import type { AnnotatedWeek } from "../lib/auto-compliance";
 import { fmtShort } from "../lib/dateUtils";
+import { buildDotHtml } from "../lib/ui/weekDot";
 
 export interface WindowBreakdownProps {
 	/** All weeks in the evaluation window, annotated */
@@ -61,29 +62,9 @@ const labelText = hasData
 			<div class="wb-row">
 				<span class={`wb-row-tag ${tagClass}`}>{tagText}</span>
 				<span class="wb-row-dots">
-					{windowWeeks.map((week) => {
-						const tipDate = fmtShort(week.weekStart);
-						const stateDesc = week.isBest ? "evaluated" : "dropped";
-						const complianceDesc = week.isCompliant ? "compliant" : "non-compliant";
-						const ariaLabel = `${tipDate}: ${week.officeDays} office days, ${stateDesc}, ${complianceDesc}`;
-						const tipText = week.isBest
-							? `${tipDate}: ${week.officeDays} days`
-							: `${tipDate}: ${week.officeDays} days (dropped)`;
-
-						let dotClass: string;
-						if (week.isBest) {
-							dotClass = week.isCompliant ? "we-dot we-dot--best-ok" : "we-dot we-dot--best-bad";
-						} else {
-							dotClass = week.isCompliant ? "we-dot we-dot--drop-ok" : "we-dot we-dot--drop-bad";
-						}
-
-						return (
-							<span class="we-dot-wrap">
-								<span class={dotClass} role="img" aria-label={ariaLabel}></span>
-								<span class="we-dot-tip" aria-hidden="true">{tipText}</span>
-							</span>
-						);
-					})}
+					{windowWeeks?.map((week) => (
+					<Fragment set:html={buildDotHtml(week)} />
+				))}
 				</span>
 				<span class="wb-row-avg">{averageOfficeDays.toFixed(1)}</span>
 			</div>

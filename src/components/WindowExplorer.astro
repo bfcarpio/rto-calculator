@@ -403,6 +403,7 @@
   import { getTwoGroupCombinations, type SolverConfig } from '../lib/validation/combination-solver';
 
   import { fmtShort } from '../lib/dateUtils';
+  import { buildDotHtml } from '../lib/ui/weekDot';
 
   function buildPolicy(): RTOPolicyConfig {
     return buildPolicyFromSettings();
@@ -509,22 +510,7 @@
 
       let dots = '';
       for (const w of s.weekDetails) {
-        const tipDate = fmtShort(w.weekStart);
-        const stateDesc = w.isBest ? 'evaluated' : 'dropped';
-        const complianceDesc = w.isCompliant ? 'compliant' : 'non-compliant';
-        const ariaLabel = `${tipDate}: ${w.officeDays} office days, ${stateDesc}, ${complianceDesc}`;
-        const tipText = w.isBest
-          ? `${tipDate}: ${w.officeDays} days`
-          : `${tipDate}: ${w.officeDays} days (dropped)`;
-
-        let dotClass: string;
-        if (w.isBest) {
-          dotClass = w.isCompliant ? 'we-dot we-dot--best-ok' : 'we-dot we-dot--best-bad';
-        } else {
-          dotClass = w.isCompliant ? 'we-dot we-dot--drop-ok' : 'we-dot we-dot--drop-bad';
-        }
-
-        dots += `<span class="we-dot-wrap"><span class="${dotClass}" role="img" aria-label="${ariaLabel}"></span><span class="we-dot-tip" aria-hidden="true">${tipText}</span></span>`;
+        dots += buildDotHtml(w);
       }
 
       html += `<div class="window-explorer__row" role="listitem">

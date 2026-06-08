@@ -7,15 +7,13 @@
  * Also provides StatusDetailsController for component lifecycle management.
  */
 
-import type {
-	AnnotatedWeek,
-	ComplianceEventData,
-} from "../lib/auto-compliance";
+import type { ComplianceEventData } from "../lib/auto-compliance";
 import {
 	getLatestCompliance,
 	onComplianceUpdated,
 } from "../lib/auto-compliance";
 import { fmtDate, fmtShort } from "../lib/dateUtils";
+import { buildDotHtml } from "../lib/ui/weekDot";
 
 // ─── Helper Functions ───────────────────────────────────────────────────
 
@@ -26,32 +24,6 @@ export function getStatusColor(current: number, target: number): string {
 	if (current >= target) return "has-text-success";
 	if (current >= target - 0.5) return "has-text-warning";
 	return "has-text-danger";
-}
-
-/**
- * Build HTML for a single week dot with tooltip
- */
-function buildWeekDot(w: AnnotatedWeek): string {
-	const tipDate = fmtShort(w.weekStart);
-	const stateDesc = w.isBest ? "evaluated" : "dropped";
-	const complianceDesc = w.isCompliant ? "compliant" : "non-compliant";
-	const ariaLabel = `${tipDate}: ${w.officeDays} office days, ${stateDesc}, ${complianceDesc}`;
-	const tipText = w.isBest
-		? `${tipDate}: ${w.officeDays} days`
-		: `${tipDate}: ${w.officeDays} days (dropped)`;
-
-	let dotClass: string;
-	if (w.isBest) {
-		dotClass = w.isCompliant
-			? "we-dot we-dot--best-ok"
-			: "we-dot we-dot--best-bad";
-	} else {
-		dotClass = w.isCompliant
-			? "we-dot we-dot--drop-ok"
-			: "we-dot we-dot--drop-bad";
-	}
-
-	return `<span class="we-dot-wrap"><span class="${dotClass}" role="img" aria-label="${ariaLabel}"></span><span class="we-dot-tip" aria-hidden="true">${tipText}</span></span>`;
 }
 
 /**
@@ -73,11 +45,17 @@ function buildWindowRangeLabel(data: ComplianceEventData): string {
 // ─── DOM Update Functions ────────────────────────────────────────────────
 
 /**
- * Render the window breakdown section with dots representing each week
+ * Render the window breakdown section into a given root element.
+ * Used by both the standalone export and the controller method.
  */
-export function renderWindowBreakdown(data: ComplianceEventData): void {
-	const elContent = document.getElementById("window-breakdown-content");
-	const elLabel = document.getElementById("window-breakdown-label");
+function renderBreakdownInto(
+	data: ComplianceEventData,
+	root: Document | HTMLElement,
+): void {
+	const elContent = root.querySelector<HTMLDivElement>(
+		"#window-breakdown-content",
+	);
+	const elLabel = root.querySelector<HTMLDivElement>("#window-breakdown-label");
 
 	// Early exit if container not found
 	if (!elContent) return;
@@ -105,13 +83,20 @@ export function renderWindowBreakdown(data: ComplianceEventData): void {
 	const tagClass = data.isCompliant ? "wb-row-tag--pass" : "wb-row-tag--fail";
 	const tagText = data.isCompliant ? "PASS" : "FAIL";
 
-	const dots = data.windowWeeks.map(buildWeekDot).join("");
+	const dots = data.windowWeeks.map(buildDotHtml).join("");
 
 	elContent.innerHTML = `<div class="wb-row">
 		<span class="wb-row-tag ${tagClass}">${tagText}</span>
 		<span class="wb-row-dots">${dots}</span>
 		<span class="wb-row-avg">${data.averageOfficeDays.toFixed(1)}</span>
 	</div>`;
+}
+
+/**
+ * Standalone export: render window breakdown into the global document.
+ */
+export function renderWindowBreakdown(data: ComplianceEventData): void {
+	renderBreakdownInto(data, document);
 }
 
 /**
@@ -307,48 +292,9 @@ export class StatusDetailsController {
 
 	/**
 	 * Render the window breakdown section with dots representing each week.
-	 * Uses the container element for scoped DOM queries.
+	 * Delegates to the shared renderBreakdownInto helper with scoped container.
 	 */
 	renderWindowBreakdown(data: ComplianceEventData): void {
-		const elContent = this.container.querySelector<HTMLDivElement>(
-			"#window-breakdown-content",
-		);
-		const elLabel = this.container.querySelector<HTMLDivElement>(
-			"#window-breakdown-label",
-		);
-
-		// Early exit if container not found
-		if (!elContent) return;
-
-		// Handle empty data
-		if (data.windowWeeks.length === 0) {
-			if (elLabel) {
-				elLabel.textContent = "Mark dates to see window breakdown";
-			}
-			elContent.innerHTML =
-				'<p class="has-text-centered has-text-grey-light is-size-7">Mark dates to see window breakdown</p>';
-			return;
-		}
-
-		// Build window date range label
-		const rangeLabel = buildWindowRangeLabel(data);
-
-		if (elLabel) {
-			elLabel.textContent = data.isCompliant
-				? `Showing most recent window (${rangeLabel})`
-				: `Showing first failing window (${rangeLabel})`;
-		}
-
-		// Build dot row
-		const tagClass = data.isCompliant ? "wb-row-tag--pass" : "wb-row-tag--fail";
-		const tagText = data.isCompliant ? "PASS" : "FAIL";
-
-		const dots = data.windowWeeks.map(buildWeekDot).join("");
-
-		elContent.innerHTML = `<div class="wb-row">
-			<span class="wb-row-tag ${tagClass}">${tagText}</span>
-			<span class="wb-row-dots">${dots}</span>
-			<span class="wb-row-avg">${data.averageOfficeDays.toFixed(1)}</span>
-		</div>`;
+		renderBreakdownInto(data, this.container);
 	}
 }
