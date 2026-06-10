@@ -18,7 +18,6 @@ import {
 	type DaySelection,
 	DEFAULT_RTO_POLICY,
 	elementToDaySelection,
-	getFirstWeekStart,
 	// Date utilities
 	getOutOfOfficeDates,
 	getStartOfWeek,
@@ -28,6 +27,7 @@ import {
 	type RTOPolicyConfig,
 	// Main validation function
 	roundToNearest20Percent,
+	snapToWeekStart,
 	validateTopKWeeks,
 } from "../../../../lib/validation/rto-core";
 
@@ -75,40 +75,40 @@ describe("getStartOfWeek", () => {
 	});
 });
 
-describe("getFirstWeekStart", () => {
+describe("snapToWeekStart", () => {
 	it("should return same Sunday for a Sunday date", () => {
 		const date = new Date(2025, 0, 5); // Sunday, Jan 5
-		const result = getFirstWeekStart(date);
+		const result = snapToWeekStart(date);
 		expect(result).toEqual(new Date(2025, 0, 5)); // Same Sunday, Jan 5
 	});
 
 	it("should return next Sunday for a Monday date", () => {
 		const date = new Date(2025, 0, 6); // Monday, Jan 6
-		const result = getFirstWeekStart(date);
+		const result = snapToWeekStart(date);
 		expect(result).toEqual(new Date(2025, 0, 12)); // Next Sunday, Jan 12
 	});
 
 	it("should return next Sunday for a Tuesday date", () => {
 		const date = new Date(2025, 0, 7); // Tuesday, Jan 7
-		const result = getFirstWeekStart(date);
+		const result = snapToWeekStart(date);
 		expect(result).toEqual(new Date(2025, 0, 12)); // Next Sunday, Jan 12
 	});
 
 	it("should return next Sunday for a Friday date", () => {
 		const date = new Date(2025, 0, 10); // Friday, Jan 10
-		const result = getFirstWeekStart(date);
+		const result = snapToWeekStart(date);
 		expect(result).toEqual(new Date(2025, 0, 12)); // Next Sunday, Jan 12
 	});
 
 	it("should return next Sunday for a Saturday date", () => {
 		const date = new Date(2025, 0, 11); // Saturday, Jan 11
-		const result = getFirstWeekStart(date);
+		const result = snapToWeekStart(date);
 		expect(result).toEqual(new Date(2025, 0, 12)); // Next Sunday, Jan 12
 	});
 
 	it("should set time to midnight", () => {
 		const date = new Date(2025, 0, 8, 14, 30, 45); // Wednesday at 2:30 PM
-		const result = getFirstWeekStart(date);
+		const result = snapToWeekStart(date);
 		expect(result.getHours()).toBe(0);
 		expect(result.getMinutes()).toBe(0);
 		expect(result.getSeconds()).toBe(0);

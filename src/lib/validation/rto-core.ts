@@ -72,7 +72,11 @@ export function getStartOfWeek(date: Date): Date {
 	return d;
 }
 
-export function getFirstWeekStart(date: Date): Date {
+/**
+ * Snap a date forward to the next Sunday (or return same Sunday if already Sunday).
+ * Use getStartOfWeek() for the current week's Sunday.
+ */
+export function snapToWeekStart(date: Date): Date {
 	const d = new Date(date.getTime());
 	const day = d.getDay();
 	const daysToAdd = day === 0 ? 0 : 7 - day; // Same Sunday or next Sunday
@@ -246,7 +250,7 @@ export function validateTopKWeeks(
 	const outOfOfficeDates = getOutOfOfficeDates(selections);
 	const weeksByOOF = groupDatesByWeek(outOfOfficeDates);
 
-	const firstWeekStartDate = getFirstWeekStart(calendarStartDate);
+	const firstWeekStartDate = snapToWeekStart(calendarStartDate);
 	const weeksData: WeekCompliance[] = [];
 
 	for (let week = 0; week < policy.rollingPeriodWeeks; week++) {
