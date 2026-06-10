@@ -9,7 +9,7 @@ import { fmtShort } from "../dateUtils";
 
 /** Minimal contract for rendering a week dot. */
 export interface DotInfo {
-	weekStart: Date | number;
+	weekStart: Date;
 	officeDays: number;
 	isBest: boolean;
 	isCompliant: boolean;
@@ -29,11 +29,7 @@ export function buildDotClass(info: DotInfo): string {
 
 /** Returns the full HTML string for a week dot (wrapper + class + aria label + tooltip). */
 export function buildDotHtml(info: DotInfo): string {
-	const tipDate = fmtShort(
-		typeof info.weekStart === "number"
-			? new Date(info.weekStart)
-			: info.weekStart,
-	);
+	const tipDate = fmtShort(info.weekStart);
 	const stateDesc = info.isBest ? "evaluated" : "dropped";
 	const complianceDesc = info.isCompliant ? "compliant" : "non-compliant";
 	const ariaLabel = `${tipDate}: ${info.officeDays} office days, ${stateDesc}, ${complianceDesc}`;
