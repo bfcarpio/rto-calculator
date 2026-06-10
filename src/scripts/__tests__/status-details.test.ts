@@ -7,6 +7,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { ComplianceEventData } from "../../lib/auto-compliance";
 import type { WindowWeekDetail } from "../../lib/validation/all-windows";
+import type { RTOPolicyConfig } from "../../lib/validation/rto-core";
 import {
 	getStatusColor,
 	renderWindowBreakdown,
@@ -14,6 +15,15 @@ import {
 } from "../status-details";
 
 // ─── Test Fixtures ───────────────────────────────────────────────────────
+
+const MOCK_POLICY: RTOPolicyConfig = {
+	minOfficeDaysPerWeek: 3,
+	totalWeekdaysPerWeek: 5,
+	thresholdPercentage: 60,
+	rollingPeriodWeeks: 12,
+	topWeeksToCheck: 8,
+	roundPercentage: true,
+};
 
 function createMockWeekDetail(
 	overrides: Partial<WindowWeekDetail> = {},
@@ -60,6 +70,8 @@ function createMockComplianceData(
 		roundPercentage: true,
 		totalWeeks: 12,
 		requiredDays: 3,
+		allSummaries: [],
+		policy: MOCK_POLICY,
 		...overrides,
 	};
 }

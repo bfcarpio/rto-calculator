@@ -1,4 +1,5 @@
 ---
+import "../styles/window-shared.css";
 ---
 
 <details class="window-explorer" id="window-explorer">
@@ -16,8 +17,6 @@
 </details>
 
 <style>
-  @import '../styles/window-shared.css';
-
   /* Static (server-rendered) elements — normal Astro scoping */
   .window-explorer {
     border: 1px solid #e2e8f0;
@@ -278,13 +277,75 @@
 
 <script>
   import type { CalendarInstance } from 'datepainter';
-  import { readSettings } from '../lib/settings-reader';
-  import { type RTOPolicyConfig } from '../lib/validation/rto-core';
-  import { type WindowSummary } from '../lib/validation/all-windows';
   import { computeWindowEvaluation } from '../lib/validation/window-evaluation';
+  import type { WindowSummary } from '../lib/validation/all-windows';
+  import type { RTOPolicyConfig } from '../lib/validation/rto-core';
   import { getTwoGroupCombinations, type SolverConfig } from '../lib/validation/combination-solver';
-
+  import { readSettings } from '../lib/settings-reader';
   import { buildWindowRowHtml } from '../lib/ui/windowRow';
+  import type { ComplianceEventData } from '../lib/auto-compliance';
+  import { RTO_STATE_CHANGED } from '../types/events';
+
+  const details = document.getElementById('window-explorer') as HTMLDetailsElement;
+  const contentEl = document.getElementById('window-explorer-content')!;
+
+  let cachedSummaries: WindowSummary[] | null = null;
+  let cachedPolicy: RTOPolicyConfig | null = null;
+
+  function invalidate(): void {
+    cachedSummaries = null;
+    cachedPolicy = null;
+    if (details.open) {
+      renderFromCacheOrCompute();
+    }
+  }
+
+  async function renderFromCacheOrCompute(): Promise<void> {
+    if (cachedSummaries && cachedPolicy) {
+      renderExplorer(cachedSummaries, cachedPolicy);
+      return;
+    }
+
+    // No cached data yet — compute from calendar
+    const calendarManager = (window as any).__datepainterInstance as CalendarInstance | null;
+    if (!calendarManager) {
+      contentEl.innerHTML = '<p class="window-explorer__loading">Calendar not ready.</p>';
+      return;
+    }
+
+    contentEl.innerHTML = '<p class="window-explorer__loading">Computing windows...</p>';
+
+    try {
+      const evaluation = await computeWindowEvaluation(calendarManager);
+      cachedSummaries = evaluation.summaries;
+      cachedPolicy = evaluation.policy;
+      renderExplorer(cachedSummaries, cachedPolicy);
+    } catch (err) {
+      console.error('[WindowExplorer] Failed:', err);
+      contentEl.innerHTML = '<p class="window-explorer__loading">Failed to compute windows.</p>';
+    }
+  }
+
+  // Listen for compliance events — use cached data from auto-compliance
+  window.addEventListener(RTO_STATE_CHANGED, ((e: CustomEvent) => {
+    const detail = e.detail;
+    if (detail?.type === 'compliance' && detail.compliance) {
+      const data = detail.compliance as ComplianceEventData;
+      cachedSummaries = data.allSummaries;
+      cachedPolicy = data.policy;
+      if (details.open) {
+        renderExplorer(cachedSummaries, cachedPolicy);
+      }
+    } else if (detail?.type === 'settings') {
+      invalidate();
+    }
+  }) as EventListener);
+
+  // On toggle, render from cache or compute
+  details.addEventListener('toggle', async () => {
+    if (!details.open) return;
+    await renderFromCacheOrCompute();
+  });
 
   function buildSolverConfig(): SolverConfig {
     const settings = readSettings();
@@ -295,49 +356,6 @@
       totalWeekdays: 5,
     };
   }
-
-  const details = document.getElementById('window-explorer') as HTMLDetailsElement;
-  const contentEl = document.getElementById('window-explorer-content')!;
-
-  let computed = false;
-
-  details.addEventListener('toggle', async () => {
-    if (!details.open || computed) return;
-    computed = true;
-
-    const calendarManager = (window as any).__datepainterInstance as CalendarInstance | null;
-    if (!calendarManager) {
-      contentEl.innerHTML = '<p class="window-explorer__loading">Calendar not ready.</p>';
-      computed = false;
-      return;
-    }
-
-    contentEl.innerHTML = '<p class="window-explorer__loading">Computing windows...</p>';
-
-    try {
-      const { summaries, policy } = await computeWindowEvaluation(calendarManager);
-      renderExplorer(summaries, policy);
-    } catch (err) {
-      console.error('[WindowExplorer] Failed:', err);
-      contentEl.innerHTML = '<p class="window-explorer__loading">Failed to compute windows.</p>';
-      computed = false;
-    }
-  });
-
-  // Re-compute on settings/state changes if open
-  function invalidate(): void {
-    computed = false;
-    if (details.open) {
-      details.dispatchEvent(new Event('toggle'));
-    }
-  }
-
-  // Listen to unified state change event for both settings and compliance updates
-  window.addEventListener('rto:state-changed', ((e: CustomEvent) => {
-    if (e.detail?.type === 'settings' || e.detail?.type === 'compliance') {
-      invalidate();
-    }
-  }) as EventListener);
 
   function renderExplorer(summaries: WindowSummary[], policy: RTOPolicyConfig): void {
     if (summaries.length === 0) {

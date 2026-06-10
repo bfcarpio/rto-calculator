@@ -68,6 +68,11 @@ export interface ComplianceEventData {
 	totalWeeks: number;
 	/** Required office days per week (from settings: minOfficeDays) */
 	requiredDays: number;
+
+	/** All window summaries from evaluateAllWindows - for Explorer rendering */
+	allSummaries: WindowSummary[];
+	/** Policy configuration used for evaluation */
+	policy: RTOPolicyConfig;
 }
 
 // ─── Event Helpers ──────────────────────────────────────────────────
@@ -238,6 +243,8 @@ function computeComplianceData(
 			roundPercentage: policy.roundPercentage ?? true,
 			totalWeeks: policy.rollingPeriodWeeks,
 			requiredDays: policy.minOfficeDaysPerWeek,
+			allSummaries: [],
+			policy,
 		};
 	}
 
@@ -344,6 +351,8 @@ function computeComplianceData(
 		roundPercentage: policy.roundPercentage ?? true,
 		totalWeeks: policy.rollingPeriodWeeks,
 		requiredDays: policy.minOfficeDaysPerWeek,
+		allSummaries: summaries,
+		policy,
 	};
 }
 
