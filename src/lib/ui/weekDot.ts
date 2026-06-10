@@ -1,7 +1,7 @@
 /**
  * Week dot rendering — shared between WindowExplorer, WindowBreakdown, and status-details.
  *
- * Pure functions with no DOM dependency. Both AnnotatedWeek and WindowWeekDetail
+ * Pure functions with no DOM dependency. Both WindowWeekDetail and DotInfo
  * satisfy the DotInfo interface structurally — no adapter code needed.
  */
 
