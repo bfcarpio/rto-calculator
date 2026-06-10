@@ -19,6 +19,7 @@ This is a **static website** - Astro builds to pure HTML and JavaScript files th
 4. **Static output** - The built application is a collection of HTML, CSS, and JS files with no server-side runtime dependencies.
 
 **Technology Stack:**
+
 - **Framework**: Astro (static site generator - outputs pure HTML/JS)
 - **Language**: TypeScript (strict mode)
 - **Calendar**: datepainter library (workspace package)
@@ -76,6 +77,8 @@ Validation runs automatically via the **auto-compliance module** — a singleton
 
 ### Data Flow
 
+Both consumers — the auto-compliance module (reactive sidebar) and WindowExplorer (manual query) — call the same shared `computeWindowEvaluation()` pipeline.
+
 ```
 User paints/clears a date
         │
@@ -86,19 +89,20 @@ User paints/clears a date
 └───────┬───────┘
         │
         ▼
-┌───────────────┐
-│  Data Reader  │  Step 2: Read calendar state via datepainter API
-│ (calendar-    │  - Enumerate ALL weeks in calendar range
-│ data-reader)  │  - Check each weekday against datepainter state
-│               │  - Fetch holidays from HolidayManager
-│               │  - Return WeekInfo[] (officeDays = 5 - deductions)
-└───────┬───────┘
+┌───────────────────────────────────┐
+│  computeWindowEvaluation()        │  Step 2: Shared pipeline
+│  (validation/window-evaluation.ts)│  - Reads calendar data via datepainter API
+│                                   │  - Applies startingWeek filter
+│                                   │  - Builds policy from settings
+│                                   │  - Evaluates all sliding windows
+│                                   │  - Returns WindowEvaluationResult
+│                                   │     { summaries, policy, allWeeks, filteredWeeks }
+└───────────────┬───────────────────┘
         │
         ▼
 ┌───────────────┐
-│  rto-core.ts  │  Step 3: Run sliding window validation
-│  (validate-   │  - validateSlidingWindow() pure function
-│  SlidingWindow│  - Best-8-of-12 week compliance check
+│  Auto-        │  Step 3: auto-compliance uses summaries to build evaluated set,
+│  Compliance   │  compute best-8-of-12 stats, dispatch compliance-updated event
 └───────┬───────┘
         │
         ▼
@@ -108,6 +112,8 @@ User paints/clears a date
 │              )│  - Week summary, capacity, non-compliant weeks
 └───────────────┘
 ```
+
+WindowExplorer.astro follows the same path (Step 2) but passes results directly to its own UI rendering instead of dispatching an event.
 
 ---
 
@@ -141,13 +147,14 @@ The validation system uses a single **sliding window** approach implemented as a
 
 ### Key Components
 
-| Component | Purpose | Location |
-|-----------|---------|----------|
-| **validateSlidingWindow()** | Pure function: best-8-of-12 rolling window compliance check | `src/lib/validation/rto-core.ts` |
-| **constants** | ROLLING_WINDOW_WEEKS, BEST_WEEKS_COUNT, COMPLIANCE_THRESHOLD, etc. | `src/lib/validation/constants.ts` |
-| **ValidationManager** | Simplified client-side config holder (exposed as `window.validationManager`) | `src/scripts/ValidationManager.ts` |
-| **buildEvaluatedSet()** | Identifies weeks contributing to compliance across all windows | `src/lib/auto-compliance.ts` |
-| **findNextSafeWfhWeek()** | Finds earliest future week safe for full WFH | `src/lib/auto-compliance.ts` |
+| Component                     | Purpose                                                                                             | Location                                  |
+| ----------------------------- | --------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| **validateSlidingWindow()**   | Pure function: best-8-of-12 rolling window compliance check                                         | `src/lib/validation/rto-core.ts`          |
+| **computeWindowEvaluation()** | Shared pipeline: reads calendar data, evaluates all windows, returns summaries + policy + week data | `src/lib/validation/window-evaluation.ts` |
+| **constants**                 | ROLLING_WINDOW_WEEKS, BEST_WEEKS_COUNT, COMPLIANCE_THRESHOLD, etc.                                  | `src/lib/validation/constants.ts`         |
+| **ValidationManager**         | Simplified client-side config holder (exposed as `window.validationManager`)                        | `src/scripts/ValidationManager.ts`        |
+| **buildEvaluatedSet()**       | Identifies weeks contributing to compliance across all windows                                      | `src/lib/auto-compliance.ts`              |
+| **findNextSafeWfhWeek()**     | Finds earliest future week safe for full WFH                                                        | `src/lib/auto-compliance.ts`              |
 
 ### Evaluated Set Algorithm (Next Safe WFH Week)
 
@@ -179,8 +186,10 @@ findNextSafeWfhWeek:
 ```
 
 **Sort contract**: The sort in `buildEvaluatedSet` must match `evaluateWindow` in `rto-core.ts`:
+
 ```typescript
-(a, b) => b.officeDays - a.officeDays || b.weekStart.getTime() - a.weekStart.getTime()
+(a, b) =>
+  b.officeDays - a.officeDays || b.weekStart.getTime() - a.weekStart.getTime();
 ```
 
 **Complexity**: O((N−W+1) × W log W) — same cost as validation itself. For a 12-month calendar (~52 weeks, W=12, K=8): ~41 windows × 12 × log(12) ≈ 1,700 comparisons. Completes in <1ms.
@@ -244,22 +253,26 @@ The application includes a sophisticated holiday management system with pluggabl
 ### Holiday Features
 
 **Data Sources:**
+
 - Pluggable architecture allows multiple holiday data sources
 - Current implementation: Nager.Date API (free public holiday service)
 - Supports 100+ countries
 
 **Company Filtering:**
+
 - Loads company-specific holiday rules from `company-filters.json`
 - Allows filtering by country + company combination
 - Supports county-level filtering
 
 **Calendar Integration:**
+
 - `applyHolidaysToCalendar()` - marks holidays as out-of-office
 - `removeHolidaysFromCalendar()` - cleanup
 - `refreshCalendarHolidays()` - re-apply with new settings
 - Automatic weekday-only filtering
 
 **Performance:**
+
 - Caching by (country, company, years, weekdayFilter)
 - TTL-based cache expiration
 - Optimized API endpoints (isTodayHoliday, getUpcomingHolidays)
@@ -273,6 +286,7 @@ The application includes a sophisticated holiday management system with pluggabl
 The application uses the **datepainter** library for calendar rendering and state management.
 
 **API Methods** (via `CalendarInstance`):
+
 - `getAllDates()` - Get all dates as `Map<DateString, DateState>`
 - `getState(date)` - Query state of a single date
 - `setDates(dates, state)` - Set state for multiple dates
@@ -280,6 +294,7 @@ The application uses the **datepainter** library for calendar rendering and stat
 - `getDateRanges(options?)` - Get contiguous date ranges grouped by state
 
 **State Types:**
+
 - `"oof"` - Work from home (internal key kept as "oof" for backwards compatibility)
 - `"holiday"` - Public holiday
 - `"sick"` - Sick leave
@@ -313,6 +328,7 @@ compliance-updated CustomEvent (application layer — aggregate stats)
 Manages state snapshots for undo functionality.
 
 **Features:**
+
 - Stack of `StateSnapshot` objects
 - Deep copy strategy for immutability
 - Configurable max stack size (default 10)
@@ -327,6 +343,7 @@ Manages state snapshots for undo functionality.
 ### 3. localStorage (Persistence)
 
 **Persisted Data:**
+
 - Selected country code
 - Selected company name
 - Holiday preferences
@@ -342,17 +359,17 @@ Manages state snapshots for undo functionality.
 
 ```typescript
 export const RTO_CONFIG = {
-  minOfficeDaysPerWeek: 3,      // 3 office days required
-  totalWeekdaysPerWeek: 5,      // 5 weekdays per week
+  minOfficeDaysPerWeek: 3, // 3 office days required
+  totalWeekdaysPerWeek: 5, // 5 weekdays per week
   DEBUG: false,
 };
 
 export const DEFAULT_POLICY = {
   minOfficeDaysPerWeek: 3,
   totalWeekdaysPerWeek: 5,
-  thresholdPercentage: 0.6,       // 60% = 3/5
-  rollingPeriodWeeks: 12,         // 12-week window
-  topWeeksToCheck: 8,             // Best 8 of 12 weeks
+  thresholdPercentage: 0.6, // 60% = 3/5
+  rollingPeriodWeeks: 12, // 12-week window
+  topWeeksToCheck: 8, // Best 8 of 12 weeks
 };
 ```
 
@@ -389,6 +406,8 @@ src/
 ├── lib/                  # Core business logic (framework-agnostic)
 │   ├── validation/       # Validation domain
 │   │   ├── rto-core.ts                  # Pure sliding window validation function
+│   │   ├── window-evaluation.ts         # Shared pipeline (computeWindowEvaluation)
+│   │   ├── all-windows.ts              # evaluateAllWindows helper
 │   │   ├── constants.ts                 # Validation constants
 │   │   └── index.ts                     # Module exports
 │   │
@@ -446,6 +465,7 @@ src/
 ### 1. Separation of Concerns
 
 - **Auto-Compliance Hub**: Reactive singleton that debounces, reads data, runs validation, and dispatches results
+- **Shared Pipeline**: `computeWindowEvaluation()` is the single entry point for computing sliding window summaries — used by both auto-compliance and WindowExplorer, eliminating duplicated data reading and evaluation logic
 - **Data Reader Layer**: Single DOM query, returns typed data
 - **Sliding Window Validation**: Pure function in `rto-core.ts`, no DOM dependencies
 - **Sidebar Components**: Consume `compliance-updated` events to render stats
@@ -453,6 +473,7 @@ src/
 ### 2. Pure Functions
 
 All validation logic in `src/lib/` uses pure functions:
+
 - Same input always produces same output
 - No side effects or DOM manipulation
 - Easy to test and reason about
@@ -464,6 +485,7 @@ Validation uses a single pure function (`validateSlidingWindow()` in `rto-core.t
 ### 4. Singleton Pattern
 
 Used for managers that need single instances:
+
 - `HolidayManager.getInstance()` - async initialization
 - `HolidayDataSourceFactory.getInstance()` - manages data sources
 - `HistoryManager.getInstance()` - state snapshots
@@ -476,18 +498,18 @@ Used for managers that need single instances:
 
 ```typescript
 interface WeekInfo {
-  weekStart: Date;                    // Monday at midnight
-  weekNumber: number;                 // Sequential (1, 2, 3...)
-  days: DayInfo[];                    // Days in this week
-  oofCount: number;                   // WFH (work-from-home) days
-  holidayCount: number;               // Holiday days in this week
-  sickCount: number;                  // Sick days in this week
-  officeDays: number;                 // Calculated: 5 - WFH (- holidays if penalizing) (- sick if penalizing)
-  totalDays: number;                  // Effective weekdays (excluding holidays/sick)
-  oofDays: number;                    // Alias for oofCount
-  isCompliant: boolean;               // Meets 3-day minimum?
-  isUnderEvaluation: boolean;         // In 12-week window?
-  status: WeekStatus;                 // "compliant" | "invalid" | "pending" | "excluded" | "ignored"
+  weekStart: Date; // Monday at midnight
+  weekNumber: number; // Sequential (1, 2, 3...)
+  days: DayInfo[]; // Days in this week
+  oofCount: number; // WFH (work-from-home) days
+  holidayCount: number; // Holiday days in this week
+  sickCount: number; // Sick days in this week
+  officeDays: number; // Calculated: 5 - WFH (- holidays if penalizing) (- sick if penalizing)
+  totalDays: number; // Effective weekdays (excluding holidays/sick)
+  oofDays: number; // Alias for oofCount
+  isCompliant: boolean; // Meets 3-day minimum?
+  isUnderEvaluation: boolean; // In 12-week window?
+  status: WeekStatus; // "compliant" | "invalid" | "pending" | "excluded" | "ignored"
 }
 ```
 
@@ -503,6 +525,19 @@ interface DayInfo {
   isHoliday: boolean;
 }
 ```
+
+### WindowEvaluationResult (Shared Pipeline Output)
+
+```typescript
+interface WindowEvaluationResult {
+  summaries: WindowSummary[]; // All sliding window summaries
+  policy: RTOPolicyConfig; // The policy config used for evaluation
+  allWeeks: WeekInfo[]; // Unfiltered weeks from calendar (before startingWeek)
+  filteredWeeks: WeekInfo[]; // Weeks after startingWeek filter applied
+}
+```
+
+Returned by `computeWindowEvaluation()` — the shared entry point used by both auto-compliance and WindowExplorer.
 
 ### SlidingWindowResult
 
@@ -540,22 +575,26 @@ interface Holiday {
 ### Core Components
 
 #### `pages/index.astro`
+
 - Main application entry point
 - Orchestrates component rendering
 - Generates 12-month calendar starting from current month
 - Initializes validation scripts and event handlers
 
 #### `components/Datepainter.astro`
+
 - Calendar widget integration
 - Wraps datepainter library
 - Handles date selection and state management
 
 #### `components/HolidayCountrySelector.astro`
+
 - Country and company selection dropdown
 - Triggers holiday fetching
 - Persists selection to localStorage
 
 #### `components/SettingsModal.astro`
+
 - Settings dialog for holidays, sick day policy, holiday policy, etc.
 - Pattern presets (Mon-Wed-Fri, Tue-Thu, All WFH)
 - Sick day policy toggle (`sickDaysPenalize`) — controls whether sick days reduce office count
@@ -563,11 +602,13 @@ interface Holiday {
 - Configuration management
 
 #### `components/ShortcutsModal.astro`
+
 - Keyboard shortcuts help dialog (native `<dialog>` element)
 - Opens via `?` button in header or `?` key shortcut
 - Lists all shortcuts grouped by category (painting modes, actions, calendar grid)
 
 #### `components/StatusDetails.astro`
+
 - Consumes `compliance-updated` events from auto-compliance module
 - Compliance status box (compliant/not compliant with color coding)
 - Week summary, capacity, current week status, non-compliant weeks
@@ -575,6 +616,7 @@ interface Holiday {
 - Updates after 1.5s debounce as dates are painted
 
 #### `components/WeekdaySelector.astro`
+
 - Wrapped in a collapsible `<details>`/`<summary>` drawer
 - Row of 5 weekday toggle buttons (Mon–Fri) for bulk WFH marking
 - Toggling a day ON marks every instance of that weekday across the full calendar range as WFH
@@ -582,7 +624,8 @@ interface Holiday {
 - Subscribes to `onStateChange` to sync button states (active only if ALL instances are marked `oof`)
 - Uses `getDateRange()`, `getDateRangeArray()`, `formatDate()` from `dateUtils.ts`
 
-#### `components/SummaryBar.astro` *(commented out)*
+#### `components/SummaryBar.astro` _(commented out)_
+
 - Previously showed average in-office days, working days, WFH/holiday counts
 - Functionality consolidated into StatusDetails
 
@@ -598,7 +641,10 @@ interface Holiday {
 class CustomHolidayDataSource extends HolidayDataSourceStrategy {
   name = "custom-api";
 
-  async getHolidaysByYear(year: number, countryCode: string): Promise<Holiday[]> {
+  async getHolidaysByYear(
+    year: number,
+    countryCode: string,
+  ): Promise<Holiday[]> {
     // Implementation
   }
 
@@ -646,6 +692,7 @@ e2e/
 ```
 
 **Test Commands:**
+
 - `npm test` - Run unit tests in watch mode
 - `npm run test:run` - Run unit tests once (CI)
 - `npm run test:e2e` - Run E2E tests with Playwright

@@ -62,13 +62,17 @@ npm run check           # All checks (lint + types)
 ### Validation Flow
 
 ```
-Auto-Compliance Hub (auto-compliance.ts)
-    ↓ subscribes to onStateChange, debounces 1.5s
-Data Reader (calendar-data-reader.ts)
-    ↓ enumerates ALL weeks in range, reads datepainter API
-Sliding Window Validation (rto-core.ts)
-    ↓ evaluates ALL 12-week windows, best 8 of 12
-Sidebar UI (StatusDetails)
+computeWindowEvaluation() — shared pipeline (validation/window-evaluation.ts)
+    ↓ reads calendar data, applies startingWeek filter, builds policy
+    ↓ evaluates all sliding windows, returns WindowEvaluationResult
+    │
+    ├── auto-compliance.ts (reactive path)
+    │     ↓ debounces 1.5s after onStateChange
+    │     ↓ builds evaluated set, computes best-8-of-12 stats
+    │     ↓ dispatches compliance-updated CustomEvent
+    │
+    └── WindowExplorer.astro (manual path)
+          ↓ passes summaries directly to UI rendering
 ```
 
 **Data Reader key behavior**: Iterates through every Monday-aligned week in the calendar range (not just painted dates). For each Mon-Fri, checks the datepainter state and holiday set. Calculates `officeDays = 5 - wfhCount` (minus `holidayCount` if `holidayPenalize` is enabled, minus `sickCount` if `sickDaysPenalize` is enabled). When a penalize toggle is OFF, those days reduce the effective total instead of office days (excused absence).
@@ -80,23 +84,28 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed explanation.
 **Validation System** - Single sliding-window model: evaluates all 12-week windows across the calendar using best-8-of-12 policy (`rto-core.ts`)
 
 **Holiday System** - Pluggable data source architecture:
+
 - `HolidayManager` - Singleton service for holiday operations
 - `NagerDateHolidayDataSource` - Nager.Date API integration
 - Company-specific filtering via `company-filters.json`
 
 **State Management**:
+
 - **datepainter** - Primary calendar state via `window.__datepainterInstance`
 - **HistoryManager** - Undo/redo functionality with state snapshots
 - **localStorage** - Persists user settings (including `sickDaysPenalize`, `holidayPenalize`)
 
 **Auto-Compliance Module** (`src/lib/auto-compliance.ts`):
+
 - Singleton that subscribes to `onStateChange` with 1.5s debounce
-- Computes best-8-of-12 sliding window stats excluding current incomplete week
+- Calls `computeWindowEvaluation()` (shared pipeline) to get summaries and week data
+- Builds evaluated set and computes best-8-of-12 sliding window stats
 - Dispatches `compliance-updated` CustomEvent consumed by StatusDetails
 - Loading bar at top of viewport shows progress during debounce
 - `buildEvaluatedSet()` — single-pass helper that collects timestamps of weeks appearing in the best-K of any sliding window into a `Set<number>`. Used by `findNextSafeWfhWeek()` to identify weeks safe to zero out without breaking compliance in any window. See ARCHITECTURE.md "Evaluated Set Algorithm" for full details.
 
 **Reactive Components** (consume `compliance-updated` events):
+
 - **StatusDetails** - Week summary, capacity, current week, non-compliant weeks (with ignored/dropped distinction)
 - **StatusLegend** - Count badges for WFH/holiday/sick (directly subscribes to `onStateChange`)
 - **WeekdaySelector** - Bulk weekday toggle buttons; subscribes to `onStateChange` for sync
@@ -111,25 +120,30 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed explanation.
 
 ```typescript
 // src/lib/holiday/sources/CustomHolidayDataSource.ts
-import { HolidayDataSourceStrategy } from '../HolidayDataSourceStrategy';
-import type { Holiday } from '../../types/holiday-data-source';
+import { HolidayDataSourceStrategy } from "../HolidayDataSourceStrategy";
+import type { Holiday } from "../../types/holiday-data-source";
 
 export class CustomHolidayDataSource extends HolidayDataSourceStrategy {
   name = "custom-api";
 
-  async getHolidaysByYear(year: number, countryCode: string): Promise<Holiday[]> {
+  async getHolidaysByYear(
+    year: number,
+    countryCode: string,
+  ): Promise<Holiday[]> {
     // Fetch from your API
-    const response = await fetch(`https://api.example.com/holidays/${year}/${countryCode}`);
+    const response = await fetch(
+      `https://api.example.com/holidays/${year}/${countryCode}`,
+    );
     const data = await response.json();
 
     // Transform to Holiday interface
-    return data.map(h => ({
+    return data.map((h) => ({
       date: new Date(h.date),
       name: h.name,
       countryCode: countryCode,
       localName: h.localName,
-      types: h.types || ['Public'],
-      global: h.global || true
+      types: h.types || ["Public"],
+      global: h.global || true,
     }));
   }
 
@@ -141,7 +155,7 @@ export class CustomHolidayDataSource extends HolidayDataSourceStrategy {
 
 ```typescript
 // src/lib/holiday/HolidayDataSourceFactory.ts
-import { CustomHolidayDataSource } from './sources/CustomHolidayDataSource';
+import { CustomHolidayDataSource } from "./sources/CustomHolidayDataSource";
 
 // In initialization code
 const factory = HolidayDataSourceFactory.getInstance();
@@ -186,7 +200,7 @@ Edit `src/lib/holiday/data/company-filters.json`:
 The calendar uses the **datepainter** library for state management. The calendar instance is exposed globally as `window.__datepainterInstance`:
 
 ```typescript
-import type { CalendarInstance, DateString } from 'datepainter';
+import type { CalendarInstance, DateString } from "datepainter";
 
 // Get calendar instance
 const calendar = (window as any).__datepainterInstance as CalendarInstance;
@@ -195,13 +209,13 @@ const calendar = (window as any).__datepainterInstance as CalendarInstance;
 const dates: Map<DateString, DateState> = calendar.getAllDates();
 
 // Set date state (takes an array of DateString values)
-calendar.setDates(['2025-01-15' as DateString], 'oof');
+calendar.setDates(["2025-01-15" as DateString], "oof");
 
 // Clear date state
-calendar.clearDates(['2025-01-15' as DateString]);
+calendar.clearDates(["2025-01-15" as DateString]);
 
 // Query date state
-const state = calendar.getState('2025-01-15' as DateString); // 'oof' | 'holiday' | 'sick' | null
+const state = calendar.getState("2025-01-15" as DateString); // 'oof' | 'holiday' | 'sick' | null
 
 // Get contiguous date ranges grouped by state
 const allRanges = calendar.getDateRanges();
@@ -209,9 +223,9 @@ const allRanges = calendar.getDateRanges();
 
 // Filter by state, before/after boundaries
 const oofRanges = calendar.getDateRanges({
-  state: 'oof',
-  after: '2025-02-01',   // exclude dates on or before Feb 1
-  before: '2025-03-01',  // exclude dates on or after Mar 1
+  state: "oof",
+  after: "2025-02-01", // exclude dates on or before Feb 1
+  before: "2025-03-01", // exclude dates on or after Mar 1
 });
 ```
 
@@ -221,16 +235,20 @@ const oofRanges = calendar.getDateRanges({
 
 ```typescript
 // src/lib/history/HistoryManager.ts
-import { HistoryManager } from '../lib/history/HistoryManager';
+import { HistoryManager } from "../lib/history/HistoryManager";
 
 const historyManager = HistoryManager.getInstance();
 
 // Save current state
 historyManager.pushState({
-  calendarState: { /* date selections */ },
+  calendarState: {
+    /* date selections */
+  },
   currentMonth: new Date(),
-  validationConfig: { /* config */ },
-  timestamp: Date.now()
+  validationConfig: {
+    /* config */
+  },
+  timestamp: Date.now(),
 });
 
 // Undo
@@ -254,16 +272,19 @@ const canRedo = historyManager.canRedo();
 
 ```typescript
 // src/scripts/localStorage.ts
-import { loadFromLocalStorage, saveToLocalStorage } from '../scripts/localStorage';
+import {
+  loadFromLocalStorage,
+  saveToLocalStorage,
+} from "../scripts/localStorage";
 
 // Save settings
-saveToLocalStorage('rto-settings', {
-  countryCode: 'US',
-  companyName: 'Acme Corp',
+saveToLocalStorage("rto-settings", {
+  countryCode: "US",
+  companyName: "Acme Corp",
 });
 
 // Load settings
-const settings = loadFromLocalStorage('rto-settings');
+const settings = loadFromLocalStorage("rto-settings");
 ```
 
 ---
@@ -283,7 +304,7 @@ export const RTO_CONFIG = {
 export const DEFAULT_POLICY = {
   minOfficeDaysPerWeek: 3,
   totalWeekdaysPerWeek: 5,
-  thresholdPercentage: 0.6,       // 60%
+  thresholdPercentage: 0.6, // 60%
   rollingPeriodWeeks: 12,
   topWeeksToCheck: 8,
 };
@@ -295,9 +316,9 @@ export const DEFAULT_POLICY = {
 // src/lib/validation/constants.ts (defaults, overridable via Settings)
 export const MINIMUM_COMPLIANT_DAYS = 3;
 export const TOTAL_WEEK_DAYS = 5;
-export const ROLLING_WINDOW_WEEKS = 12;  // customizable in settings
+export const ROLLING_WINDOW_WEEKS = 12; // customizable in settings
 export const COMPLIANCE_THRESHOLD = 0.6;
-export const BEST_WEEKS_COUNT = 8;       // customizable in settings
+export const BEST_WEEKS_COUNT = 8; // customizable in settings
 ```
 
 ### Shared Settings Reader
@@ -308,7 +329,7 @@ import { readSettings, writeSettings } from "./settings-reader";
 
 const settings = readSettings(); // parses localStorage once, merges defaults
 settings.rollingWindowWeeks; // 12 (default)
-settings.bestWeeksCount;     // 8 (default, clamped to <= rollingWindowWeeks)
+settings.bestWeeksCount; // 8 (default, clamped to <= rollingWindowWeeks)
 ```
 
 ---
@@ -332,6 +353,7 @@ npm test -- src/lib/__tests__/HolidayManager.test.ts
 ```
 
 **Test Location**: Co-locate with source in `__tests__/` folders:
+
 - `src/lib/__tests__/` - Core logic tests
 - `src/components/__tests__/` - Component tests
 - `src/utils/__tests__/` - Utility tests
@@ -339,22 +361,26 @@ npm test -- src/lib/__tests__/HolidayManager.test.ts
 **Writing Tests**:
 
 ```typescript
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
-describe('MyModule', () => {
+describe("MyModule", () => {
   beforeEach(() => {
     // Setup
   });
 
-  it('should do something', () => {
+  it("should do something", () => {
     // Arrange
-    const input = { /* test data */ };
+    const input = {
+      /* test data */
+    };
 
     // Act
     const result = myFunction(input);
 
     // Assert
-    expect(result).toEqual({ /* expected */ });
+    expect(result).toEqual({
+      /* expected */
+    });
   });
 });
 ```
@@ -382,7 +408,7 @@ npm run test:e2e:debug
 
 ```typescript
 // In browser console
-localStorage.setItem('rto-calculator-debug', 'true');
+localStorage.setItem("rto-calculator-debug", "true");
 
 // Or set in code (src/lib/rto-config.ts)
 export const RTO_CONFIG = {
@@ -394,33 +420,34 @@ export const RTO_CONFIG = {
 
 ```typescript
 // src/utils/logger.ts
-import { debug, info, warn, error } from '../utils/logger';
+import { debug, info, warn, error } from "../utils/logger";
 
-debug('[MyModule] Debug information');    // Only shown when DEBUG enabled
-info('[MyModule] Informational message'); // Only shown when DEBUG enabled
-warn('[MyModule] Warning message');       // Always shown
-error('[MyModule] Error message');        // Always shown
+debug("[MyModule] Debug information"); // Only shown when DEBUG enabled
+info("[MyModule] Informational message"); // Only shown when DEBUG enabled
+warn("[MyModule] Warning message"); // Always shown
+error("[MyModule] Error message"); // Always shown
 ```
 
 ### Browser DevTools
 
 **Exposed Globals** (for debugging):
+
 - `window.__holidayCountries` - Array of country objects
 - `window.__getHolidayManager` - Function to get HolidayManager instance
 - `window.__datepainterInstance` - datepainter CalendarInstance
 
 ```javascript
 // In browser console
-window.__getHolidayManager().getHolidayDates(2025, 'US');
+window.__getHolidayManager().getHolidayDates(2025, "US");
 window.__datepainterInstance.getAllDates();
 
 // Check policy settings via shared reader (preferred)
-import { readSettings } from './lib/settings-reader';
+import { readSettings } from "./lib/settings-reader";
 const s = readSettings();
-s.sickDaysPenalize;   // boolean
-s.holidayPenalize;    // boolean
+s.sickDaysPenalize; // boolean
+s.holidayPenalize; // boolean
 s.rollingWindowWeeks; // number
-s.bestWeeksCount;     // number
+s.bestWeeksCount; // number
 ```
 
 ---
@@ -433,7 +460,7 @@ s.bestWeeksCount;     // number
 // rto-core.ts - Single validation model
 // Evaluates all 12-week windows across the calendar range
 // Uses best-8-of-12 policy to determine compliance
-import { evaluateCompliance } from '../lib/rto-core';
+import { evaluateCompliance } from "../lib/rto-core";
 
 const result = evaluateCompliance(weeklyData, policyConfig);
 // result includes: compliant windows, violating windows, overall compliance %
@@ -470,6 +497,7 @@ class HolidayManager {
 ## Code Style Guidelines
 
 See [../AGENTS.md](../AGENTS.md) for complete guidelines including:
+
 - **The 5 Laws of Elegant Defense**
 - TypeScript conventions
 - Naming conventions
@@ -539,11 +567,13 @@ git push && git push --tags
 ### Build Errors
 
 **"Cannot find module"**
+
 - Check import paths are correct (absolute vs. relative)
 - Verify file exists and has proper extension
 - Check `tsconfig.json` path mappings
 
 **Type errors**
+
 - Run `npm run check` to see all type errors
 - Check type definitions in `src/types/`
 - Ensure imports include type definitions
@@ -551,11 +581,13 @@ git push && git push --tags
 ### Test Failures
 
 **Unit tests failing**
+
 - Check for missing mocks (DOM, APIs)
 - Verify test data matches expected format
 - Run single test: `npm test -- path/to/test.ts`
 
 **E2E tests failing**
+
 - Check if server is running (`npm run preview`)
 - Verify selectors are correct
 - See [PlaywrightTesting.md](./PlaywrightTesting.md#troubleshooting)
@@ -563,11 +595,13 @@ git push && git push --tags
 ### Runtime Errors
 
 **"Cannot read property of undefined"**
+
 - Check initialization order (async initialization?)
 - Verify globals are set (holidayCountries, holidayManager)
 - Enable debug logging to trace execution
 
 **Validation not working**
+
 - Check if calendar has selections
 - Check browser console for errors
 - Enable debug logging to inspect auto-compliance output
@@ -583,4 +617,4 @@ git push && git push --tags
 
 ---
 
-*Last Updated: February 2026*
+_Last Updated: February 2026_
