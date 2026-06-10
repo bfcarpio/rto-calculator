@@ -12,35 +12,26 @@ import type { CalendarInstance } from "../../packages/datepainter/src/types";
 import { dispatchRTOStateEvent, RTO_STATE_CHANGED } from "../types/events";
 import {
 	convertWeeksToCompliance,
-	readCalendarData,
 	type WeekInfo,
 } from "./calendar-data-reader";
-import { buildPolicyFromSettings, readSettings } from "./settings-reader";
+import { buildWindowRangeLabel } from "./ui/windowRange";
+import type { WindowSummary } from "./validation/all-windows";
 import { FRIDAY_OFFSET } from "./validation/constants";
 import {
 	evaluateSingleWindow,
 	getStartOfWeek,
 	type RTOPolicyConfig,
-	type SlidingWindowResult,
-	validateSlidingWindow,
 } from "./validation/rto-core";
+import {
+	computeWindowEvaluation,
+	type WindowEvaluationResult,
+} from "./validation/window-evaluation";
 
 // ─── Public Types ───────────────────────────────────────────────────
 
-export interface AnnotatedWeek {
-	weekStart: Date;
-	officeDays: number;
-	oofCount: number;
-	holidayCount: number;
-	sickCount: number;
-	isBest: boolean;
-	isIgnored: boolean;
-	isCompliant: boolean;
-}
-
 export interface ComplianceEventData {
-	/** All weeks in the evaluation window, annotated */
-	windowWeeks: AnnotatedWeek[];
+	/** The exact same WindowSummary object that Explorer uses — guarantees matching date ranges */
+	selectedSummary: WindowSummary;
 	/** Number of best weeks evaluated (up to BEST_WEEKS_COUNT) */
 	bestWeekCount: number;
 	/** Average office days across best weeks */
@@ -66,8 +57,8 @@ export interface ComplianceEventData {
 	compliancePercentage: number;
 	message: string;
 
-	/** Sliding-window validation result */
-	slidingWindowResult: SlidingWindowResult;
+	/** Human-readable date range label for the window */
+	rangeLabel: string;
 
 	/** Whether percentage rounding is enabled */
 	roundPercentage: boolean;
@@ -195,96 +186,116 @@ function isWeekComplete(weekStart: Date): boolean {
 	return friday <= today;
 }
 
-function computeComplianceData(allWeeks: WeekInfo[]): ComplianceEventData {
+function computeComplianceData(
+	evaluation: WindowEvaluationResult,
+): ComplianceEventData {
+	const { summaries, policy, allWeeks, filteredWeeks } = evaluation;
+
 	// Identify current incomplete week for display, but include ALL weeks
 	// (including future) in validation so marking future months triggers violations
 	const currentWeekInfo = allWeeks.find((w) => !isWeekComplete(w.weekStart));
 
-	// Build dynamic policy from user settings
-	const settings = readSettings();
-	const policy = buildPolicyFromSettings();
+	// Select the same window that validateSlidingWindow would pick:
+	// - If any window is invalid: use the FIRST failing window
+	// - If all windows are valid: use the LAST window
+	// Edge case: no weeks → no summaries
+	if (summaries.length === 0) {
+		const now = new Date();
+		const currentWeekStart = getStartOfWeek(now);
+		const currentWeekEnd = new Date(currentWeekStart);
+		currentWeekEnd.setDate(currentWeekStart.getDate() + 6);
 
-	// Trim weeks to starting week if configured
-	let weeks = allWeeks;
-	if (settings.startingWeek) {
-		const startDate = new Date(`${settings.startingWeek}T00:00:00`);
-		const startIdx = allWeeks.findIndex((w) => w.weekStart >= startDate);
-		if (startIdx > 0) {
-			weeks = allWeeks.slice(startIdx);
-		}
+		// Build an empty sentinel summary for the no-data case
+		const emptySummary: WindowSummary = {
+			windowIndex: 0,
+			windowStart: currentWeekStart,
+			windowEnd: currentWeekEnd,
+			isValid: true,
+			averageOfficeDays: 0,
+			weekDetails: [],
+		};
+
+		return {
+			selectedSummary: emptySummary,
+			bestWeekCount: 0,
+			averageOfficeDays: 0,
+			goodWeeks: 0,
+			bufferWeeks: 0,
+			nextWfhWeek: null,
+			rangeLabel: "",
+			currentWeek: {
+				weekStart: currentWeekStart,
+				weekEnd: currentWeekEnd,
+				officeDays: currentWeekInfo?.officeDays ?? 0,
+			},
+			totalWfhDays: 0,
+			totalHolidayDays: 0,
+			totalSickDays: 0,
+			totalWorkingDays: 0,
+			isCompliant: true,
+			compliancePercentage: 0,
+			message: "No weeks data available",
+			roundPercentage: policy.roundPercentage ?? true,
+			totalWeeks: policy.rollingPeriodWeeks,
+			requiredDays: policy.minOfficeDaysPerWeek,
+		};
 	}
 
-	// Run sliding window validation on ALL weeks in the calendar
-	const weeksForValidation = convertWeeksToCompliance(weeks);
-	const slidingWindowResult = validateSlidingWindow(weeksForValidation, policy);
+	const firstFailing = summaries.find((s) => !s.isValid);
+	const lastSummary = summaries[summaries.length - 1];
+	if (!lastSummary) {
+		throw new Error(
+			"No windows available after evaluateAllWindows — empty result",
+		);
+	}
+	const selectedSummary: WindowSummary = firstFailing ?? lastSummary;
 
-	// Determine which 12-week window to display:
-	// - If invalid: the first failing window
-	// - If valid: the last window evaluated
-	const windowWeekStartSet = new Set(slidingWindowResult.windowWeekStarts);
-	const bestWeekStartSet = new Set(slidingWindowResult.evaluatedWeekStarts);
-
-	// Get the weeks in the display window
-	const windowWeeks = weeks.filter((w) =>
-		windowWeekStartSet.has(w.weekStart.getTime()),
+	// Get the selected window's week starts for matching with original WeekInfo data
+	const selectedWeekStarts = new Set(
+		selectedSummary.weekDetails.map((w) => w.weekStart.getTime()),
 	);
 
-	// Annotate weeks
-	const annotated: AnnotatedWeek[] = windowWeeks.map((w) => {
-		const isBest = bestWeekStartSet.has(w.weekStart.getTime());
-		return {
-			weekStart: w.weekStart,
-			officeDays: w.officeDays,
-			oofCount: w.oofCount,
-			holidayCount: w.holidayCount,
-			sickCount: w.sickCount,
-			isBest,
-			isIgnored: !isBest,
-			isCompliant:
-				(policy.roundPercentage ? Math.round(w.officeDays) : w.officeDays) >=
-				policy.minOfficeDaysPerWeek,
-		};
-	});
+	// Aggregate stats from original WeekInfo objects that match the selected window
+	const windowWeekInfos = filteredWeeks.filter((w) =>
+		selectedWeekStarts.has(w.weekStart.getTime()),
+	);
 
 	// Stats over best weeks
-	const bestAnnotated = annotated.filter((w) => w.isBest);
-	const bestCount = bestAnnotated.length;
-	const totalOfficeDays = bestAnnotated.reduce(
-		(sum, w) => sum + w.officeDays,
-		0,
-	);
+	const bestDetails = selectedSummary.weekDetails.filter((w) => w.isBest);
+	const bestCount = bestDetails.length;
+	const totalOfficeDays = bestDetails.reduce((sum, w) => sum + w.officeDays, 0);
 	const averageOfficeDays = bestCount > 0 ? totalOfficeDays / bestCount : 0;
 
 	// goodWeeks = weeks with >= REQUIRED_OFFICE_DAYS in all window weeks
-	const goodWeeksInWindow = annotated.filter((w) => w.isCompliant).length;
+	const goodWeeksInWindow = selectedSummary.weekDetails.filter(
+		(w) => w.isCompliant,
+	).length;
 	// bufferWeeks = droppable slots minus slots used by non-compliant weeks
 	const droppableSlots = Math.max(
 		0,
-		annotated.length - settings.bestWeeksCount,
+		selectedSummary.weekDetails.length - policy.topWeeksToCheck,
 	);
-	const droppedNonCompliant = annotated.filter(
-		(w) => w.isIgnored && !w.isCompliant,
+	const droppedNonCompliant = selectedSummary.weekDetails.filter(
+		(w) => !w.isBest && !w.isCompliant,
 	).length;
 	const bufferWeeks = Math.max(0, droppableSlots - droppedNonCompliant);
 
-	// Find the earliest future week safe for full WFH using evaluated-set algorithm.
-	// Gates on overall compliance (slidingWindowResult.isValid checks ALL windows).
-	const nextWfhWeek = findNextSafeWfhWeek(
-		weeks,
-		policy,
-		slidingWindowResult.isValid,
-	);
+	// Overall compliance: ALL windows must be valid for the user to be compliant
+	const isCompliant = summaries.every((s) => s.isValid);
 
-	// Day counts from display window
+	// Find the earliest future week safe for full WFH using evaluated-set algorithm.
+	const nextWfhWeek = findNextSafeWfhWeek(filteredWeeks, policy, isCompliant);
+
+	// Day counts from window weeks — use original WeekInfo for OOF/holiday/sick
 	let totalWfhDays = 0;
 	let totalHolidayDays = 0;
 	let totalSickDays = 0;
-	for (const w of windowWeeks) {
+	for (const w of windowWeekInfos) {
 		totalWfhDays += w.oofCount;
 		totalHolidayDays += w.holidayCount;
 		totalSickDays += w.sickCount;
 	}
-	const totalWeekdays = windowWeeks.length * 5;
+	const totalWeekdays = windowWeekInfos.length * 5;
 	const totalWorkingDays =
 		totalWeekdays - totalWfhDays - totalHolidayDays - totalSickDays;
 
@@ -300,21 +311,28 @@ function computeComplianceData(allWeeks: WeekInfo[]): ComplianceEventData {
 		officeDays: currentWeekInfo?.officeDays ?? 0,
 	};
 
-	// Overall compliance from sliding window
-	const isCompliant = slidingWindowResult.isValid;
 	const compliancePercentage =
 		bestCount > 0
-			? (bestAnnotated.filter((w) => w.isCompliant).length / bestCount) * 100
+			? (bestDetails.filter((w) => w.isCompliant).length / bestCount) * 100
 			: 0;
-	const message = slidingWindowResult.message;
+
+	// Build a human-readable message from the selected summary
+	const indicator = policy.roundPercentage !== false ? " (rounded)" : "";
+	const avgDaysStr =
+		policy.roundPercentage !== false
+			? `${Math.round(selectedSummary.averageOfficeDays)}`
+			: `${selectedSummary.averageOfficeDays.toFixed(1)}`;
+	const label = selectedSummary.isValid ? "Compliant" : "Not compliant";
+	const message = `${label}: Best ${bestCount} of ${selectedSummary.weekDetails.length} weeks average${indicator} ${avgDaysStr} office days. Required: ${policy.minOfficeDaysPerWeek}`;
 
 	return {
-		windowWeeks: annotated,
+		selectedSummary,
 		bestWeekCount: bestCount,
 		averageOfficeDays,
 		goodWeeks: goodWeeksInWindow,
 		bufferWeeks,
 		nextWfhWeek,
+		rangeLabel: buildWindowRangeLabel(selectedSummary.weekDetails),
 		currentWeek,
 		totalWfhDays,
 		totalHolidayDays,
@@ -323,7 +341,6 @@ function computeComplianceData(allWeeks: WeekInfo[]): ComplianceEventData {
 		isCompliant,
 		compliancePercentage,
 		message,
-		slidingWindowResult,
 		roundPercentage: policy.roundPercentage ?? true,
 		totalWeeks: policy.rollingPeriodWeeks,
 		requiredDays: policy.minOfficeDaysPerWeek,
@@ -497,8 +514,8 @@ let pendingEvents: AutoComplianceEvent[] = [];
 async function runComputation(
 	calendarManager: CalendarInstance,
 ): Promise<void> {
-	const calendarData = await readCalendarData(calendarManager);
-	const data = computeComplianceData(calendarData.weeks);
+	const evaluation = await computeWindowEvaluation(calendarManager);
+	const data = computeComplianceData(evaluation);
 	latestResult = data;
 
 	dispatchRTOStateEvent({
