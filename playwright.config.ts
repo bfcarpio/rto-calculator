@@ -23,6 +23,7 @@ const CORE_TEST_FILES = [
 	"validation-flows.spec.ts",
 	"theme-system.spec.ts",
 	"verify-ui.spec.ts",
+	"window-dot-consistency.spec.ts",
 ];
 const MOBILE_TEST_FILES = ["mobile-edge-cases.spec.ts"];
 

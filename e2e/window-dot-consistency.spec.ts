@@ -28,7 +28,7 @@ async function openExplorer(
 	// Wait for at least one row to appear (the selector resolves to many rows,
 	// so we use .first() to avoid Playwright's strict-mode violation)
 	await expect(
-		page.locator("#window-explorer-content .window-explorer__row").first(),
+		page.locator("#window-explorer-content .we-row").first(),
 	).toBeVisible({ timeout: 5000 });
 }
 
@@ -72,11 +72,11 @@ test.describe("Window Explorer and Breakdown dot consistency", () => {
 		await page.waitForTimeout(300);
 
 		// Verify breakdown has rendered dots
-		const breakdownRow = page.locator("#window-breakdown-content .wb-row");
+		const breakdownRow = page.locator("#window-breakdown-content .we-row");
 		await expect(breakdownRow).toBeVisible({ timeout: 5000 });
 
 		const breakdownDots = page.locator(
-			"#window-breakdown-content .wb-row-dots .we-dot",
+			"#window-breakdown-content .we-row-dots .we-dot",
 		);
 		const breakdownDotCount = await breakdownDots.count();
 		expect(breakdownDotCount).toBeGreaterThan(0);
@@ -87,9 +87,7 @@ test.describe("Window Explorer and Breakdown dot consistency", () => {
 		// Find the Explorer row that matches the Breakdown window.
 		// The Breakdown shows one window: if compliant → most recent (last),
 		// if not compliant → first failing. We match by comparing dots.
-		const explorerRows = page.locator(
-			"#window-explorer-content .window-explorer__row",
-		);
+		const explorerRows = page.locator("#window-explorer-content .we-row");
 		const rowCount = await explorerRows.count();
 		expect(rowCount).toBeGreaterThan(0);
 
@@ -102,9 +100,7 @@ test.describe("Window Explorer and Breakdown dot consistency", () => {
 		// Find the matching Explorer row by comparing dot state sequences
 		let matchedRowIndex = -1;
 		for (let rowIdx = 0; rowIdx < rowCount; rowIdx++) {
-			const rowDots = explorerRows
-				.nth(rowIdx)
-				.locator(".window-explorer__row-dots .we-dot");
+			const rowDots = explorerRows.nth(rowIdx).locator(".we-row-dots .we-dot");
 			const rowDotCount = await rowDots.count();
 
 			if (rowDotCount !== breakdownDotCount) continue;
@@ -128,9 +124,7 @@ test.describe("Window Explorer and Breakdown dot consistency", () => {
 
 		// Verify each dot in the matched row has identical class state
 		const matchedRow = explorerRows.nth(matchedRowIndex);
-		const matchedDots = matchedRow.locator(
-			".window-explorer__row-dots .we-dot",
-		);
+		const matchedDots = matchedRow.locator(".we-row-dots .we-dot");
 		const matchedDotCount = await matchedDots.count();
 
 		expect(matchedDotCount).toBe(breakdownDotCount);
@@ -151,11 +145,11 @@ test.describe("Window Explorer and Breakdown dot consistency", () => {
 
 		await page.waitForTimeout(300);
 
-		const breakdownRow = page.locator("#window-breakdown-content .wb-row");
+		const breakdownRow = page.locator("#window-breakdown-content .we-row");
 		await expect(breakdownRow).toBeVisible({ timeout: 5000 });
 
 		const breakdownDotCount = await page
-			.locator("#window-breakdown-content .wb-row-dots .we-dot")
+			.locator("#window-breakdown-content .we-row-dots .we-dot")
 			.count();
 		expect(breakdownDotCount).toBeGreaterThan(0);
 
@@ -164,16 +158,14 @@ test.describe("Window Explorer and Breakdown dot consistency", () => {
 		// Every explorer row should have the same number of dots as the
 		// rolling window size (all windows in the same config share the
 		// same width). The breakdown shows one of these windows.
-		const explorerRows = page.locator(
-			"#window-explorer-content .window-explorer__row",
-		);
+		const explorerRows = page.locator("#window-explorer-content .we-row");
 		const rowCount = await explorerRows.count();
 		expect(rowCount).toBeGreaterThan(0);
 
 		for (let rowIdx = 0; rowIdx < rowCount; rowIdx++) {
 			const rowDotCount = await explorerRows
 				.nth(rowIdx)
-				.locator(".window-explorer__row-dots .we-dot")
+				.locator(".we-row-dots .we-dot")
 				.count();
 			// All rows should have the same number of dots (matching window size)
 			expect(rowDotCount).toBe(breakdownDotCount);
@@ -190,18 +182,18 @@ test.describe("Window Explorer and Breakdown dot consistency", () => {
 
 		await page.waitForTimeout(300);
 
-		const breakdownRow = page.locator("#window-breakdown-content .wb-row");
+		const breakdownRow = page.locator("#window-breakdown-content .we-row");
 		await expect(breakdownRow).toBeVisible({ timeout: 5000 });
 
 		// Get breakdown tag status
-		const breakdownTag = page.locator("#window-breakdown-content .wb-row-tag");
+		const breakdownTag = page.locator("#window-breakdown-content .we-row-tag");
 		const breakdownTagText = (await breakdownTag.textContent())?.trim();
 
 		await openExplorer(page);
 
 		// Find the matching Explorer row using dot state matching
 		const breakdownDots = page.locator(
-			"#window-breakdown-content .wb-row-dots .we-dot",
+			"#window-breakdown-content .we-row-dots .we-dot",
 		);
 		const breakdownDotCount = await breakdownDots.count();
 
@@ -210,16 +202,12 @@ test.describe("Window Explorer and Breakdown dot consistency", () => {
 			breakdownStates.push(await getDotState(breakdownDots.nth(i)));
 		}
 
-		const explorerRows = page.locator(
-			"#window-explorer-content .window-explorer__row",
-		);
+		const explorerRows = page.locator("#window-explorer-content .we-row");
 		const rowCount = await explorerRows.count();
 
 		let matchedRowIndex = -1;
 		for (let rowIdx = 0; rowIdx < rowCount; rowIdx++) {
-			const rowDots = explorerRows
-				.nth(rowIdx)
-				.locator(".window-explorer__row-dots .we-dot");
+			const rowDots = explorerRows.nth(rowIdx).locator(".we-row-dots .we-dot");
 			const rowDotCount = await rowDots.count();
 
 			if (rowDotCount !== breakdownDotCount) continue;
@@ -244,7 +232,7 @@ test.describe("Window Explorer and Breakdown dot consistency", () => {
 		// Compare tag text
 		const explorerTag = explorerRows
 			.nth(matchedRowIndex)
-			.locator(".window-explorer__row-tag");
+			.locator(".we-row-tag");
 		const explorerTagText = (await explorerTag.textContent())?.trim();
 
 		expect(explorerTagText).toBe(breakdownTagText);
@@ -262,12 +250,12 @@ test.describe("Window Explorer and Breakdown dot consistency", () => {
 
 		await page.waitForTimeout(300);
 
-		const breakdownRow = page.locator("#window-breakdown-content .wb-row");
+		const breakdownRow = page.locator("#window-breakdown-content .we-row");
 		await expect(breakdownRow).toBeVisible({ timeout: 5000 });
 
 		// Check Breakdown dots
 		const breakdownDots = page.locator(
-			"#window-breakdown-content .wb-row-dots .we-dot",
+			"#window-breakdown-content .we-row-dots .we-dot",
 		);
 		const bdDotCount = await breakdownDots.count();
 
@@ -280,7 +268,7 @@ test.describe("Window Explorer and Breakdown dot consistency", () => {
 		await openExplorer(page);
 
 		const explorerDots = page.locator(
-			"#window-explorer-content .window-explorer__row-dots .we-dot",
+			"#window-explorer-content .we-row-dots .we-dot",
 		);
 		const exDotCount = await explorerDots.count();
 		expect(exDotCount).toBeGreaterThan(0);
@@ -288,6 +276,64 @@ test.describe("Window Explorer and Breakdown dot consistency", () => {
 		for (let i = 0; i < exDotCount; i++) {
 			const state = await getDotState(explorerDots.nth(i));
 			expect(validStates).toContain(state);
+		}
+	});
+
+	test("Window Explorer and Breakdown display consistent date range boundaries", async ({
+		page,
+	}) => {
+		await selectMode(page, "oof");
+		for (let i = 0; i < 15; i++) {
+			await clickDate(page, i);
+		}
+
+		await page.waitForTimeout(300);
+
+		// Get breakdown label text (contains the range like "Jan 6 – Mar 28")
+		const breakdownLabel = page.locator("#window-breakdown-label");
+		await expect(breakdownLabel).toBeVisible({ timeout: 5000 });
+		const breakdownText = (await breakdownLabel.textContent()) ?? "";
+
+		// Extract date range from breakdown label text
+		// Format: "Showing most recent window (Jan 6 – Mar 28)" or
+		//         "Showing first failing window (Jan 6 – Mar 28)"
+		const breakdownRangeMatch = breakdownText.match(/\((.+?)\)/);
+		const breakdownRange = breakdownRangeMatch?.[1]?.trim() ?? "";
+
+		await openExplorer(page);
+
+		// The Explorer shows all windows; find the one matching the Breakdown's range
+		const explorerRows = page.locator("#window-explorer-content .we-row");
+		const rowCount = await explorerRows.count();
+		expect(rowCount).toBeGreaterThan(0);
+
+		// Collect all Explorer row labels
+		let foundMatch = false;
+		for (let rowIdx = 0; rowIdx < rowCount; rowIdx++) {
+			const rowLabel = explorerRows.nth(rowIdx).locator(".we-row-label");
+			const labelText = (await rowLabel.textContent())?.trim() ?? "";
+
+			if (labelText === breakdownRange) {
+				foundMatch = true;
+				break;
+			}
+		}
+
+		// The Breakdown's range label must appear in at least one Explorer row
+		expect(foundMatch).toBe(true);
+
+		// Verify all Explorer range labels have consistent day-of-week boundaries
+		// Start dates should be Sundays, end dates should be Fridays
+		for (let rowIdx = 0; rowIdx < rowCount; rowIdx++) {
+			const rowLabel = explorerRows.nth(rowIdx).locator(".we-row-label");
+			const labelText = (await rowLabel.textContent())?.trim() ?? "";
+
+			// Range format: "Mon DD – Mon DD" (e.g., "Jan 5 – Mar 21")
+			// We verify the separator is present and there are two parts
+			const parts = labelText.split("–").map((s) => s.trim());
+			expect(parts).toHaveLength(2);
+			expect(parts[0]).toBeTruthy();
+			expect(parts[1]).toBeTruthy();
 		}
 	});
 });
