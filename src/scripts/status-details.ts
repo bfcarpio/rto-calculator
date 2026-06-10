@@ -12,9 +12,8 @@ import {
 	getLatestCompliance,
 	onComplianceUpdated,
 } from "../lib/auto-compliance";
-import { fmtDate, fmtShort } from "../lib/dateUtils";
-import { buildDotHtml } from "../lib/ui/weekDot";
-import { FRIDAY_OFFSET } from "../lib/validation/constants";
+import { fmtDate } from "../lib/dateUtils";
+import { buildWindowRowHtml } from "../lib/ui/windowRow";
 
 // ─── Helper Functions ───────────────────────────────────────────────────
 
@@ -27,29 +26,11 @@ export function getStatusColor(current: number, target: number): string {
 	return "has-text-danger";
 }
 
-/**
- * Build the window date range label
- *
- * Uses the first and last week's weekStart Date objects directly,
- * which are already correctly-local (not UTC timestamps that shift by timezone).
- */
-function buildWindowRangeLabel(data: ComplianceEventData): string {
-	if (data.windowWeeks.length === 0) return "";
-
-	const firstWeek = data.windowWeeks[0];
-	const lastWeek = data.windowWeeks[data.windowWeeks.length - 1];
-	if (!firstWeek || !lastWeek) return "";
-
-	const windowEnd = new Date(lastWeek.weekStart);
-	windowEnd.setDate(windowEnd.getDate() + FRIDAY_OFFSET);
-	return `${fmtShort(firstWeek.weekStart)} – ${fmtShort(windowEnd)}`;
-}
-
 // ─── DOM Update Functions ────────────────────────────────────────────────
 
 /**
  * Render the window breakdown section into a given root element.
- * Used by both the standalone export and the controller method.
+ * Uses buildWindowRowHtml to produce the same HTML as WindowExplorer.
  */
 function renderBreakdownInto(
 	data: ComplianceEventData,
@@ -63,8 +44,11 @@ function renderBreakdownInto(
 	// Early exit if container not found
 	if (!elContent) return;
 
+	const hasData =
+		data.selectedSummary && data.selectedSummary.weekDetails.length > 0;
+
 	// Handle empty data
-	if (data.windowWeeks.length === 0) {
+	if (!hasData) {
 		if (elLabel) {
 			elLabel.textContent = "Mark dates to see window breakdown";
 		}
@@ -73,26 +57,13 @@ function renderBreakdownInto(
 		return;
 	}
 
-	// Build window date range label
-	const rangeLabel = buildWindowRangeLabel(data);
-
 	if (elLabel) {
 		elLabel.textContent = data.isCompliant
-			? `Showing most recent window (${rangeLabel})`
-			: `Showing first failing window (${rangeLabel})`;
+			? `Showing most recent window (${data.rangeLabel})`
+			: `Showing first failing window (${data.rangeLabel})`;
 	}
 
-	// Build dot row
-	const tagClass = data.isCompliant ? "wb-row-tag--pass" : "wb-row-tag--fail";
-	const tagText = data.isCompliant ? "PASS" : "FAIL";
-
-	const dots = data.windowWeeks.map(buildDotHtml).join("");
-
-	elContent.innerHTML = `<div class="wb-row">
-		<span class="wb-row-tag ${tagClass}">${tagText}</span>
-		<span class="wb-row-dots">${dots}</span>
-		<span class="wb-row-avg">${data.averageOfficeDays.toFixed(1)}</span>
-	</div>`;
+	elContent.innerHTML = buildWindowRowHtml(data.selectedSummary);
 }
 
 /**
@@ -122,7 +93,8 @@ export function updateStats(data: ComplianceEventData): void {
 	// Buffer warning: show when exactly 1 buffer week and total drop slots > 1
 	const elBufferWarning = document.getElementById("buffer-warning");
 	if (elBufferWarning) {
-		const totalDropSlots = data.windowWeeks.length - data.bestWeekCount;
+		const totalDropSlots =
+			data.selectedSummary.weekDetails.length - data.bestWeekCount;
 		const showWarning =
 			data.isCompliant && data.bufferWeeks === 1 && totalDropSlots > 1;
 		elBufferWarning.style.display = showWarning ? "" : "none";
@@ -247,7 +219,8 @@ export class StatusDetailsController {
 		const elBufferWarning =
 			this.container.querySelector<HTMLParagraphElement>("#buffer-warning");
 		if (elBufferWarning) {
-			const totalDropSlots = data.windowWeeks.length - data.bestWeekCount;
+			const totalDropSlots =
+				data.selectedSummary.weekDetails.length - data.bestWeekCount;
 			const showWarning =
 				data.isCompliant && data.bufferWeeks === 1 && totalDropSlots > 1;
 			elBufferWarning.style.display = showWarning ? "" : "none";

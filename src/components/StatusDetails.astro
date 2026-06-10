@@ -149,15 +149,21 @@ const config = validationManager?.getConfig?.() ?? {};
 		padding: 0.4rem 0.6rem;
 	}
 
-	/* Window Breakdown dot row */
-	.status-details :global(.wb-row) {
+	/* Window row — shared with WindowExplorer via buildWindowRowHtml */
+	.status-details :global(.we-row) {
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
 		font-size: 0.75rem;
 	}
 
-	.status-details :global(.wb-row-tag) {
+	.status-details :global(.we-row-label) {
+		min-width: 120px;
+		white-space: nowrap;
+		color: #334155;
+	}
+
+	.status-details :global(.we-row-tag) {
 		display: inline-block;
 		padding: 0.1rem 0.4rem;
 		border-radius: 4px;
@@ -168,24 +174,24 @@ const config = validationManager?.getConfig?.() ?? {};
 		text-align: center;
 	}
 
-	.status-details :global(.wb-row-tag--pass) {
+	.status-details :global(.we-row-tag--pass) {
 		background: #dcfce7;
 		color: #166534;
 	}
 
-	.status-details :global(.wb-row-tag--fail) {
+	.status-details :global(.we-row-tag--fail) {
 		background: #fee2e2;
 		color: #991b1b;
 	}
 
-	.status-details :global(.wb-row-dots) {
+	.status-details :global(.we-row-dots) {
 		display: flex;
 		align-items: center;
 		gap: 3px;
 		flex: 1;
 	}
 
-	.status-details :global(.wb-row-avg) {
+	.status-details :global(.we-row-avg) {
 		min-width: 28px;
 		text-align: right;
 		color: #6b7280;
@@ -305,17 +311,21 @@ const config = validationManager?.getConfig?.() ?? {};
 		color: #fde68a;
 	}
 
-	:global(body.dark-mode) .status-details :global(.wb-row-tag--pass) {
+	:global(body.dark-mode) .status-details :global(.we-row-label) {
+		color: #e2e8f0;
+	}
+
+	:global(body.dark-mode) .status-details :global(.we-row-tag--pass) {
 		background: #052e16;
 		color: #86efac;
 	}
 
-	:global(body.dark-mode) .status-details :global(.wb-row-tag--fail) {
+	:global(body.dark-mode) .status-details :global(.we-row-tag--fail) {
 		background: #450a0a;
 		color: #fca5a5;
 	}
 
-	:global(body.dark-mode) .status-details :global(.wb-row-avg) {
+	:global(body.dark-mode) .status-details :global(.we-row-avg) {
 		color: #94a3b8;
 	}
 

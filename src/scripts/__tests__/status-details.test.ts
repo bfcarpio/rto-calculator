@@ -5,10 +5,8 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import type {
-	AnnotatedWeek,
-	ComplianceEventData,
-} from "../../lib/auto-compliance";
+import type { ComplianceEventData } from "../../lib/auto-compliance";
+import type { WindowWeekDetail } from "../../lib/validation/all-windows";
 import {
 	getStatusColor,
 	renderWindowBreakdown,
@@ -17,15 +15,13 @@ import {
 
 // ─── Test Fixtures ───────────────────────────────────────────────────────
 
-function createMockWeek(overrides: Partial<AnnotatedWeek> = {}): AnnotatedWeek {
+function createMockWeekDetail(
+	overrides: Partial<WindowWeekDetail> = {},
+): WindowWeekDetail {
 	return {
 		weekStart: new Date(2025, 0, 6), // Jan 6, 2025 (local time)
 		officeDays: 3,
-		oofCount: 0,
-		holidayCount: 0,
-		sickCount: 0,
 		isBest: true,
-		isIgnored: false,
 		isCompliant: true,
 		...overrides,
 	};
@@ -35,12 +31,20 @@ function createMockComplianceData(
 	overrides: Partial<ComplianceEventData> = {},
 ): ComplianceEventData {
 	return {
-		windowWeeks: [createMockWeek()],
+		selectedSummary: {
+			windowIndex: 0,
+			windowStart: new Date(2025, 0, 5),
+			windowEnd: new Date(2025, 2, 28),
+			isValid: true,
+			averageOfficeDays: 3.5,
+			weekDetails: [createMockWeekDetail()],
+		},
 		bestWeekCount: 8,
 		averageOfficeDays: 3.5,
 		goodWeeks: 10,
 		bufferWeeks: 2,
 		nextWfhWeek: null,
+		rangeLabel: "Jan 6 – Jan 10",
 		currentWeek: {
 			weekStart: new Date(2025, 0, 6), // Jan 6, 2025 (local time)
 			weekEnd: new Date(2025, 0, 12), // Jan 12, 2025 (local time)
@@ -53,15 +57,6 @@ function createMockComplianceData(
 		isCompliant: true,
 		compliancePercentage: 100,
 		message: "Compliant",
-		slidingWindowResult: {
-			isValid: true,
-			message: "Compliant",
-			overallCompliance: 100,
-			windowStart: new Date(2025, 0, 6).getTime(),
-			windowWeekStarts: [new Date(2025, 0, 6).getTime()],
-			evaluatedWeekStarts: [new Date(2025, 0, 6).getTime()],
-			invalidWeekStart: null,
-		},
 		roundPercentage: true,
 		totalWeeks: 12,
 		requiredDays: 3,
@@ -108,7 +103,16 @@ describe("status-details module", () => {
 		});
 
 		it("should render empty message when no weeks data", () => {
-			const data = createMockComplianceData({ windowWeeks: [] });
+			const data = createMockComplianceData({
+				selectedSummary: {
+					windowIndex: 0,
+					windowStart: new Date(2025, 0, 5),
+					windowEnd: new Date(2025, 0, 10),
+					isValid: true,
+					averageOfficeDays: 0,
+					weekDetails: [],
+				},
+			});
 			renderWindowBreakdown(data);
 
 			expect(mockContent.innerHTML).toContain(
@@ -129,24 +133,52 @@ describe("status-details module", () => {
 			renderWindowBreakdown(data);
 
 			expect(mockContent.innerHTML).toContain("PASS");
-			expect(mockContent.innerHTML).toContain("wb-row-tag--pass");
+			expect(mockContent.innerHTML).toContain("we-row-tag--pass");
 		});
 
 		it("should render FAIL tag when not compliant", () => {
-			const data = createMockComplianceData({ isCompliant: false });
+			const data = createMockComplianceData({
+				isCompliant: false,
+				selectedSummary: {
+					windowIndex: 0,
+					windowStart: new Date(2025, 0, 5),
+					windowEnd: new Date(2025, 2, 28),
+					isValid: false,
+					averageOfficeDays: 3.5,
+					weekDetails: [createMockWeekDetail()],
+				},
+			});
 			renderWindowBreakdown(data);
 
 			expect(mockContent.innerHTML).toContain("FAIL");
-			expect(mockContent.innerHTML).toContain("wb-row-tag--fail");
+			expect(mockContent.innerHTML).toContain("we-row-tag--fail");
 		});
 
 		it("should render dots for each week", () => {
-			const weeks = [
-				createMockWeek({ weekStart: new Date(2025, 0, 6), officeDays: 3 }),
-				createMockWeek({ weekStart: new Date(2025, 0, 13), officeDays: 4 }),
-				createMockWeek({ weekStart: new Date(2025, 0, 20), officeDays: 2 }),
+			const weekDetails = [
+				createMockWeekDetail({
+					weekStart: new Date(2025, 0, 6),
+					officeDays: 3,
+				}),
+				createMockWeekDetail({
+					weekStart: new Date(2025, 0, 13),
+					officeDays: 4,
+				}),
+				createMockWeekDetail({
+					weekStart: new Date(2025, 0, 20),
+					officeDays: 2,
+				}),
 			];
-			const data = createMockComplianceData({ windowWeeks: weeks });
+			const data = createMockComplianceData({
+				selectedSummary: {
+					windowIndex: 0,
+					windowStart: new Date(2025, 0, 5),
+					windowEnd: new Date(2025, 0, 24),
+					isValid: true,
+					averageOfficeDays: 3,
+					weekDetails,
+				},
+			});
 
 			renderWindowBreakdown(data);
 
@@ -156,8 +188,19 @@ describe("status-details module", () => {
 		});
 
 		it("should render correct dot classes for compliant best weeks", () => {
-			const weeks = [createMockWeek({ isBest: true, isCompliant: true })];
-			const data = createMockComplianceData({ windowWeeks: weeks });
+			const weekDetails = [
+				createMockWeekDetail({ isBest: true, isCompliant: true }),
+			];
+			const data = createMockComplianceData({
+				selectedSummary: {
+					windowIndex: 0,
+					windowStart: new Date(2025, 0, 5),
+					windowEnd: new Date(2025, 0, 10),
+					isValid: true,
+					averageOfficeDays: 3,
+					weekDetails,
+				},
+			});
 
 			renderWindowBreakdown(data);
 
@@ -165,8 +208,19 @@ describe("status-details module", () => {
 		});
 
 		it("should render correct dot classes for non-compliant best weeks", () => {
-			const weeks = [createMockWeek({ isBest: true, isCompliant: false })];
-			const data = createMockComplianceData({ windowWeeks: weeks });
+			const weekDetails = [
+				createMockWeekDetail({ isBest: true, isCompliant: false }),
+			];
+			const data = createMockComplianceData({
+				selectedSummary: {
+					windowIndex: 0,
+					windowStart: new Date(2025, 0, 5),
+					windowEnd: new Date(2025, 0, 10),
+					isValid: false,
+					averageOfficeDays: 1,
+					weekDetails,
+				},
+			});
 
 			renderWindowBreakdown(data);
 
@@ -174,11 +228,20 @@ describe("status-details module", () => {
 		});
 
 		it("should render correct dot classes for dropped weeks", () => {
-			const weeks = [
-				createMockWeek({ isBest: false, isCompliant: true }),
-				createMockWeek({ isBest: false, isCompliant: false }),
+			const weekDetails = [
+				createMockWeekDetail({ isBest: false, isCompliant: true }),
+				createMockWeekDetail({ isBest: false, isCompliant: false }),
 			];
-			const data = createMockComplianceData({ windowWeeks: weeks });
+			const data = createMockComplianceData({
+				selectedSummary: {
+					windowIndex: 0,
+					windowStart: new Date(2025, 0, 5),
+					windowEnd: new Date(2025, 0, 17),
+					isValid: true,
+					averageOfficeDays: 3,
+					weekDetails,
+				},
+			});
 
 			renderWindowBreakdown(data);
 
@@ -187,7 +250,16 @@ describe("status-details module", () => {
 		});
 
 		it("should display average office days", () => {
-			const data = createMockComplianceData({ averageOfficeDays: 3.75 });
+			const data = createMockComplianceData({
+				selectedSummary: {
+					windowIndex: 0,
+					windowStart: new Date(2025, 0, 5),
+					windowEnd: new Date(2025, 0, 10),
+					isValid: true,
+					averageOfficeDays: 3.75,
+					weekDetails: [createMockWeekDetail()],
+				},
+			});
 			renderWindowBreakdown(data);
 
 			expect(mockContent.innerHTML).toContain("3.8");
@@ -285,15 +357,22 @@ describe("status-details module", () => {
 		});
 
 		it("should show buffer warning when 1 buffer week and multiple drop slots", () => {
-			const weeks = [
-				createMockWeek({ isBest: true }),
-				createMockWeek({ isBest: true }),
-				createMockWeek({ isBest: true }),
-				createMockWeek({ isBest: false, isCompliant: true }),
-				createMockWeek({ isBest: false, isCompliant: true }),
+			const weekDetails = [
+				createMockWeekDetail({ isBest: true }),
+				createMockWeekDetail({ isBest: true }),
+				createMockWeekDetail({ isBest: true }),
+				createMockWeekDetail({ isBest: false, isCompliant: true }),
+				createMockWeekDetail({ isBest: false, isCompliant: true }),
 			];
 			const data = createMockComplianceData({
-				windowWeeks: weeks,
+				selectedSummary: {
+					windowIndex: 0,
+					windowStart: new Date(2025, 0, 5),
+					windowEnd: new Date(2025, 1, 7),
+					isValid: true,
+					averageOfficeDays: 3,
+					weekDetails,
+				},
 				bestWeekCount: 3,
 				bufferWeeks: 1,
 				isCompliant: true,
@@ -347,7 +426,16 @@ describe("status-details module", () => {
 			const { StatusDetailsController } = await import("../status-details");
 			const container = createTestContainer();
 			const controller = new StatusDetailsController(container);
-			const data = createMockComplianceData({ windowWeeks: [] });
+			const data = createMockComplianceData({
+				selectedSummary: {
+					windowIndex: 0,
+					windowStart: new Date(2025, 0, 5),
+					windowEnd: new Date(2025, 0, 10),
+					isValid: true,
+					averageOfficeDays: 0,
+					weekDetails: [],
+				},
+			});
 
 			controller.renderWindowBreakdown(data);
 
@@ -367,20 +455,30 @@ describe("status-details module", () => {
 
 			const content = container.querySelector("#window-breakdown-content")!;
 			expect(content.innerHTML).toContain("PASS");
-			expect(content.innerHTML).toContain("wb-row-tag--pass");
+			expect(content.innerHTML).toContain("we-row-tag--pass");
 		});
 
 		it("should render FAIL tag when not compliant via container root", async () => {
 			const { StatusDetailsController } = await import("../status-details");
 			const container = createTestContainer();
 			const controller = new StatusDetailsController(container);
-			const data = createMockComplianceData({ isCompliant: false });
+			const data = createMockComplianceData({
+				isCompliant: false,
+				selectedSummary: {
+					windowIndex: 0,
+					windowStart: new Date(2025, 0, 5),
+					windowEnd: new Date(2025, 2, 28),
+					isValid: false,
+					averageOfficeDays: 3.5,
+					weekDetails: [createMockWeekDetail()],
+				},
+			});
 
 			controller.renderWindowBreakdown(data);
 
 			const content = container.querySelector("#window-breakdown-content")!;
 			expect(content.innerHTML).toContain("FAIL");
-			expect(content.innerHTML).toContain("wb-row-tag--fail");
+			expect(content.innerHTML).toContain("we-row-tag--fail");
 		});
 
 		it("should render dots for each week via container root", async () => {
@@ -388,11 +486,26 @@ describe("status-details module", () => {
 			const container = createTestContainer();
 			const controller = new StatusDetailsController(container);
 
-			const weeks = [
-				createMockWeek({ weekStart: new Date(2025, 0, 6), officeDays: 3 }),
-				createMockWeek({ weekStart: new Date(2025, 0, 13), officeDays: 4 }),
+			const weekDetails = [
+				createMockWeekDetail({
+					weekStart: new Date(2025, 0, 6),
+					officeDays: 3,
+				}),
+				createMockWeekDetail({
+					weekStart: new Date(2025, 0, 13),
+					officeDays: 4,
+				}),
 			];
-			const data = createMockComplianceData({ windowWeeks: weeks });
+			const data = createMockComplianceData({
+				selectedSummary: {
+					windowIndex: 0,
+					windowStart: new Date(2025, 0, 5),
+					windowEnd: new Date(2025, 0, 17),
+					isValid: true,
+					averageOfficeDays: 3.5,
+					weekDetails,
+				},
+			});
 			controller.renderWindowBreakdown(data);
 
 			const dots = container.querySelectorAll(".we-dot");
@@ -551,11 +664,26 @@ describe("status-details module", () => {
 				const controller = new StatusDetailsController(controllerContainer);
 				controller.init();
 
-				const weeks = [
-					createMockWeek({ weekStart: new Date(2025, 0, 6), officeDays: 3 }),
-					createMockWeek({ weekStart: new Date(2025, 0, 13), officeDays: 4 }),
+				const weekDetails = [
+					createMockWeekDetail({
+						weekStart: new Date(2025, 0, 6),
+						officeDays: 3,
+					}),
+					createMockWeekDetail({
+						weekStart: new Date(2025, 0, 13),
+						officeDays: 4,
+					}),
 				];
-				const data = createMockComplianceData({ windowWeeks: weeks });
+				const data = createMockComplianceData({
+					selectedSummary: {
+						windowIndex: 0,
+						windowStart: new Date(2025, 0, 5),
+						windowEnd: new Date(2025, 0, 17),
+						isValid: true,
+						averageOfficeDays: 3.5,
+						weekDetails,
+					},
+				});
 				controller.renderWindowBreakdown(data);
 
 				const dots = controllerContainer.querySelectorAll(".we-dot");
