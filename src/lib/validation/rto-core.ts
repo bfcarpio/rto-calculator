@@ -250,12 +250,12 @@ export function validateTopKWeeks(
 	const outOfOfficeDates = getOutOfOfficeDates(selections);
 	const weeksByOOF = groupDatesByWeek(outOfOfficeDates);
 
-	const firstWeekStartDate = snapToWeekStart(calendarStartDate);
+	const windowStartDate = snapToWeekStart(calendarStartDate);
 	const weeksData: WeekCompliance[] = [];
 
 	for (let week = 0; week < policy.rollingPeriodWeeks; week++) {
-		const ws = new Date(firstWeekStartDate);
-		ws.setDate(firstWeekStartDate.getDate() + week * 7);
+		const ws = new Date(windowStartDate);
+		ws.setDate(windowStartDate.getDate() + week * 7);
 		const weekData = calculateWeekCompliance(week + 1, ws, weeksByOOF, policy);
 		weeksData.push(weekData);
 	}
@@ -336,9 +336,9 @@ export function isInEvaluationPeriod(
 	calendarStartDate: Date,
 	policy: RTOPolicyConfig = DEFAULT_RTO_POLICY,
 ): boolean {
-	const firstWeekStartDate = getStartOfWeek(calendarStartDate);
+	const windowStartDate = getStartOfWeek(calendarStartDate);
 	const weekDiff = Math.round(
-		(weekStart.getTime() - firstWeekStartDate.getTime()) /
+		(weekStart.getTime() - windowStartDate.getTime()) /
 			(7 * 24 * 60 * 60 * 1000),
 	);
 	return weekDiff >= 0 && weekDiff < policy.topWeeksToCheck;
