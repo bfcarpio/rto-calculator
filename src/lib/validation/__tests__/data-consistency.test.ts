@@ -12,11 +12,15 @@
  */
 
 import { describe, expect, it } from "vitest";
+import { fmtShort } from "../../dateUtils";
+import { buildWindowEnd, buildWindowRangeLabel } from "../../ui/windowRange";
 import { evaluateAllWindows } from "../all-windows";
 import {
 	DEFAULT_RTO_POLICY,
 	evaluateSingleWindow,
+	getStartOfWeek,
 	type RTOPolicyConfig,
+	snapToWeekStart,
 	validateSlidingWindow,
 	type WeekCompliance,
 } from "../rto-core";
@@ -249,6 +253,113 @@ describe("Data consistency: evaluateAllWindows vs validateSlidingWindow", () => 
 			expect(overall.isValid).toBe(true);
 		} else {
 			expect(overall.isValid).toBe(false);
+		}
+	});
+});
+
+// ─── Range Label & Timezone Consistency ─────────────────────────────
+
+describe("Range label and timezone consistency", () => {
+	it("buildWindowRangeLabel produces the same string for WeekCompliance[] and WindowWeekDetail-like arrays", () => {
+		// Both WeekCompliance and WindowWeekDetail satisfy {weekStart: Date} structurally.
+		// buildWindowRangeLabel should produce identical output for the same weekStart dates.
+		const weeks = makeWeeks(START, 12, 4);
+
+		// Simulate WindowWeekDetail shape (only weekStart matters for the label)
+		const detailLike: Array<{ weekStart: Date }> = weeks.map((w) => ({
+			weekStart: w.weekStart,
+		}));
+
+		const labelFromCompliance = buildWindowRangeLabel(weeks);
+		const labelFromDetail = buildWindowRangeLabel(detailLike);
+
+		expect(labelFromCompliance).toBe(labelFromDetail);
+	});
+
+	it("weekStart dates from getStartOfWeek always display as Sunday", () => {
+		// Test dates across different days of the week and months
+		const testDates = [
+			new Date(2025, 0, 6), // Monday Jan 6
+			new Date(2025, 1, 14), // Friday Feb 14
+			new Date(2025, 2, 1), // Saturday Mar 1
+			new Date(2025, 3, 20), // Sunday Apr 20 (already Sunday)
+			new Date(2025, 5, 30), // Monday Jun 30
+			new Date(2025, 11, 25), // Thursday Dec 25
+		];
+
+		for (const date of testDates) {
+			const weekStart = getStartOfWeek(date);
+			expect(weekStart.getDay()).toBe(0); // Sunday = 0
+		}
+	});
+
+	it("weekStart dates from snapToWeekStart always display as Sunday", () => {
+		const testDates = [
+			new Date(2025, 0, 6), // Monday Jan 6 → snaps to next Sunday Jan 12
+			new Date(2025, 1, 14), // Friday Feb 14 → snaps to next Sunday Feb 16
+			new Date(2025, 2, 1), // Saturday Mar 1 → snaps to next Sunday Mar 2
+			new Date(2025, 3, 20), // Sunday Apr 20 → stays Sunday Apr 20
+			new Date(2025, 5, 30), // Monday Jun 30 → snaps to next Sunday Jul 6
+		];
+
+		for (const date of testDates) {
+			const weekStart = snapToWeekStart(date);
+			expect(weekStart.getDay()).toBe(0); // Sunday = 0
+		}
+	});
+
+	it("fmtShort always displays weekStart as Sunday for getStartOfWeek dates", () => {
+		// Catch timezone bugs: a UTC-midnight Sunday would display as Saturday
+		// in negative-UTC-offset timezones. Local-midnight Sundays display correctly.
+		const testDates = [
+			new Date(2025, 0, 6), // Monday
+			new Date(2025, 5, 15), // Sunday
+			new Date(2025, 10, 28), // Friday
+		];
+
+		for (const date of testDates) {
+			const weekStart = getStartOfWeek(date);
+			const displayed = fmtShort(weekStart);
+			// fmtShort uses getMonth()/getDate() (local time).
+			// If weekStart is local midnight Sunday, getDay() must return 0.
+			expect(weekStart.getDay()).toBe(0);
+			// The displayed date must match the Date object's local date
+			expect(displayed).toBe(
+				`${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][weekStart.getMonth()]} ${weekStart.getDate()}`,
+			);
+		}
+	});
+
+	it("buildWindowRangeLabel and buildWindowEnd produce consistent results", () => {
+		const weeks = makeWeeks(START, 12, 4);
+		const label = buildWindowRangeLabel(weeks);
+
+		const firstWeek = weeks[0];
+		if (!firstWeek) throw new Error("empty weeks array");
+		const windowEnd = buildWindowEnd(weeks);
+		if (!windowEnd)
+			throw new Error("buildWindowEnd returned null for non-empty weeks");
+
+		const expectedLabel = `${fmtShort(firstWeek.weekStart)} – ${fmtShort(windowEnd)}`;
+		expect(label).toBe(expectedLabel);
+	});
+
+	it("buildWindowRangeLabel produces consistent labels across evaluateAllWindows summaries", () => {
+		const weeks = makeSchedule(START, [8, 5], [4, 1]);
+		const summaries = evaluateAllWindows(weeks, DEFAULT_RTO_POLICY);
+
+		for (const summary of summaries) {
+			// The label built from weekDetails must match the manually constructed label
+			const label = buildWindowRangeLabel(summary.weekDetails);
+
+			const firstDetail = summary.weekDetails[0];
+			if (!firstDetail) continue;
+
+			const windowEnd = buildWindowEnd(summary.weekDetails);
+			if (!windowEnd) continue;
+
+			const expectedLabel = `${fmtShort(firstDetail.weekStart)} – ${fmtShort(windowEnd)}`;
+			expect(label).toBe(expectedLabel);
 		}
 	});
 });
