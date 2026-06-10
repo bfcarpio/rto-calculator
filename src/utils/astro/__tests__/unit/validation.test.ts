@@ -39,7 +39,6 @@ const policy = DEFAULT_RTO_POLICY;
 import {
 	BASE_CALENDAR,
 	createWeeksWithPatterns,
-	getWeekStart,
 	SCENARIO_8_WEEKS_COMPLIANT,
 	SCENARIO_8_WEEKS_VIOLATION,
 	SCENARIO_12_WEEKS_LATER_COMPLIANT,
@@ -54,16 +53,16 @@ import {
 // ============================================================================
 
 describe("getStartOfWeek", () => {
-	it("should return Monday for a Sunday date", () => {
-		const date = new Date(2025, 0, 12); // Sunday, Jan 12
+	it("should return Sunday for a Monday date", () => {
+		const date = new Date(2025, 0, 6); // Monday, Jan 6
 		const result = getStartOfWeek(date);
-		expect(result).toEqual(new Date(2025, 0, 6)); // Monday, Jan 6
+		expect(result).toEqual(new Date(2025, 0, 5)); // Sunday, Jan 5
 	});
 
-	it("should return Monday for a Friday date", () => {
+	it("should return Sunday for a Friday date", () => {
 		const date = new Date(2025, 0, 10); // Friday, Jan 10
 		const result = getStartOfWeek(date);
-		expect(result).toEqual(new Date(2025, 0, 6)); // Monday, Jan 6
+		expect(result).toEqual(new Date(2025, 0, 5)); // Sunday, Jan 5
 	});
 
 	it("should set time to midnight", () => {
@@ -77,34 +76,34 @@ describe("getStartOfWeek", () => {
 });
 
 describe("getFirstWeekStart", () => {
-	it("should return Monday for a Sunday date", () => {
+	it("should return same Sunday for a Sunday date", () => {
 		const date = new Date(2025, 0, 5); // Sunday, Jan 5
 		const result = getFirstWeekStart(date);
-		expect(result).toEqual(new Date(2025, 0, 6)); // Monday, Jan 6
+		expect(result).toEqual(new Date(2025, 0, 5)); // Same Sunday, Jan 5
 	});
 
-	it("should return same Monday for a Monday date", () => {
+	it("should return next Sunday for a Monday date", () => {
 		const date = new Date(2025, 0, 6); // Monday, Jan 6
 		const result = getFirstWeekStart(date);
-		expect(result).toEqual(new Date(2025, 0, 6));
+		expect(result).toEqual(new Date(2025, 0, 12)); // Next Sunday, Jan 12
 	});
 
-	it("should return next Monday for a Tuesday date", () => {
+	it("should return next Sunday for a Tuesday date", () => {
 		const date = new Date(2025, 0, 7); // Tuesday, Jan 7
 		const result = getFirstWeekStart(date);
-		expect(result).toEqual(new Date(2025, 0, 13)); // Monday, Jan 13
+		expect(result).toEqual(new Date(2025, 0, 12)); // Next Sunday, Jan 12
 	});
 
-	it("should return next Monday for a Friday date", () => {
+	it("should return next Sunday for a Friday date", () => {
 		const date = new Date(2025, 0, 10); // Friday, Jan 10
 		const result = getFirstWeekStart(date);
-		expect(result).toEqual(new Date(2025, 0, 13)); // Monday, Jan 13
+		expect(result).toEqual(new Date(2025, 0, 12)); // Next Sunday, Jan 12
 	});
 
-	it("should return next Monday for a Saturday date", () => {
+	it("should return next Sunday for a Saturday date", () => {
 		const date = new Date(2025, 0, 11); // Saturday, Jan 11
 		const result = getFirstWeekStart(date);
-		expect(result).toEqual(new Date(2025, 0, 13)); // Monday, Jan 13
+		expect(result).toEqual(new Date(2025, 0, 12)); // Next Sunday, Jan 12
 	});
 
 	it("should set time to midnight", () => {
@@ -117,20 +116,22 @@ describe("getFirstWeekStart", () => {
 });
 
 describe("getWeekDates", () => {
-	it("should return 5 weekdays starting from Monday", () => {
-		const weekStart = new Date(2025, 0, 6); // Monday, Jan 6
+	it("should return 7 dates (Sun-Sat) starting from Sunday", () => {
+		const weekStart = new Date(2025, 0, 5); // Sunday, Jan 5
 		const dates = getWeekDates(weekStart);
 
-		expect(dates).toHaveLength(5);
-		expect(dates[0]).toEqual(new Date(2025, 0, 6)); // Monday
-		expect(dates[1]).toEqual(new Date(2025, 0, 7)); // Tuesday
-		expect(dates[2]).toEqual(new Date(2025, 0, 8)); // Wednesday
-		expect(dates[3]).toEqual(new Date(2025, 0, 9)); // Thursday
-		expect(dates[4]).toEqual(new Date(2025, 0, 10)); // Friday
+		expect(dates).toHaveLength(7);
+		expect(dates[0]).toEqual(new Date(2025, 0, 5)); // Sunday
+		expect(dates[1]).toEqual(new Date(2025, 0, 6)); // Monday
+		expect(dates[2]).toEqual(new Date(2025, 0, 7)); // Tuesday
+		expect(dates[3]).toEqual(new Date(2025, 0, 8)); // Wednesday
+		expect(dates[4]).toEqual(new Date(2025, 0, 9)); // Thursday
+		expect(dates[5]).toEqual(new Date(2025, 0, 10)); // Friday
+		expect(dates[6]).toEqual(new Date(2025, 0, 11)); // Saturday
 	});
 
 	it("should return consecutive dates", () => {
-		const weekStart = new Date(2025, 0, 6); // Monday, Jan 6
+		const weekStart = new Date(2025, 0, 5); // Sunday, Jan 5
 		const dates = getWeekDates(weekStart);
 
 		for (let i = 1; i < dates.length; i++) {
@@ -242,7 +243,7 @@ describe("getOutOfOfficeDates", () => {
 });
 
 describe("groupDatesByWeek", () => {
-	it("should group dates by week start", () => {
+	it("should group dates by week start (Sunday)", () => {
 		const dates = [
 			new Date(2025, 0, 6), // Monday, Jan 6
 			new Date(2025, 0, 7), // Tuesday, Jan 7
@@ -253,9 +254,9 @@ describe("groupDatesByWeek", () => {
 		const result = groupDatesByWeek(dates);
 		expect(result.size).toBe(3);
 
-		const firstWeek = new Date(2025, 0, 6);
-		const secondWeek = new Date(2025, 0, 13);
-		const thirdWeek = new Date(2025, 0, 20);
+		const firstWeek = new Date(2025, 0, 5); // Sunday, Jan 5
+		const secondWeek = new Date(2025, 0, 12); // Sunday, Jan 12
+		const thirdWeek = new Date(2025, 0, 19); // Sunday, Jan 19
 
 		expect(result.get(firstWeek.getTime())).toBe(2);
 		expect(result.get(secondWeek.getTime())).toBe(1);
@@ -270,7 +271,7 @@ describe("groupDatesByWeek", () => {
 		];
 
 		const result = groupDatesByWeek(dates);
-		const weekStart = new Date(2025, 0, 6);
+		const weekStart = new Date(2025, 0, 5); // Sunday, Jan 5
 
 		expect(result.size).toBe(1);
 		expect(result.get(weekStart.getTime())).toBe(3);
@@ -290,40 +291,40 @@ describe("groupDatesByWeek", () => {
 		const holidayDates = [new Date(2025, 0, 6)]; // Monday is a holiday
 		const result = groupDatesByWeek(dates, holidayDates);
 
-		const weekStart = new Date(2025, 0, 6);
+		const weekStart = new Date(2025, 0, 5); // Sunday, Jan 5
 		expect(result.get(weekStart.getTime())).toBe(2); // Only 2 non-holiday days counted
 	});
 });
 
 describe("calculateOfficeDaysInWeek", () => {
 	it("should calculate none days correctly", () => {
-		const weekStart = new Date(2025, 0, 6); // Monday, Jan 6
+		const weekStart = new Date(2025, 0, 5); // Sunday, Jan 5
 		const weeksByOOF = new Map<number, number>();
 		weeksByOOF.set(weekStart.getTime(), 2);
 
 		const result = calculateOfficeDaysInWeek(weeksByOOF, weekStart);
-		expect(result).toBe(3); // 5 weekdays - 2 WFH = 3 none days
+		expect(result).toBe(3); // 5 weekdays - 2 WFH = 3 office days
 	});
 
 	it("should return 5 when no WFH days", () => {
-		const weekStart = new Date(2025, 0, 6);
+		const weekStart = new Date(2025, 0, 5); // Sunday, Jan 5
 		const weeksByOOF = new Map<number, number>();
 
 		const result = calculateOfficeDaysInWeek(weeksByOOF, weekStart);
-		expect(result).toBe(5); // 5 weekdays - 0 WFH = 5 none days
+		expect(result).toBe(5); // 5 weekdays - 0 WFH = 5 office days
 	});
 
 	it("should return 0 when all days are WFH", () => {
-		const weekStart = new Date(2025, 0, 6);
+		const weekStart = new Date(2025, 0, 5); // Sunday, Jan 5
 		const weeksByOOF = new Map<number, number>();
 		weeksByOOF.set(weekStart.getTime(), 5);
 
 		const result = calculateOfficeDaysInWeek(weeksByOOF, weekStart);
-		expect(result).toBe(0); // 5 weekdays - 5 WFH = 0 none days
+		expect(result).toBe(0); // 5 weekdays - 5 WFH = 0 office days
 	});
 
-	it("should exclude holidays from none days calculation", () => {
-		const weekStart = new Date(2025, 0, 6); // Monday, Jan 6
+	it("should exclude holidays from office days calculation", () => {
+		const weekStart = new Date(2025, 0, 5); // Sunday, Jan 5
 		const weeksByOOF = new Map<number, number>();
 		weeksByOOF.set(weekStart.getTime(), 2);
 
@@ -337,12 +338,12 @@ describe("calculateOfficeDaysInWeek", () => {
 			holidayDates,
 		);
 		// 5 weekdays - 1 holiday = 4 effective weekdays
-		// 4 effective weekdays - 2 WFH = 2 none days
+		// 4 effective weekdays - 2 WFH = 2 office days
 		expect(result).toBe(2);
 	});
 
-	it("should exclude multiple holidays from none days calculation", () => {
-		const weekStart = new Date(2025, 0, 6);
+	it("should exclude multiple holidays from office days calculation", () => {
+		const weekStart = new Date(2025, 0, 5); // Sunday, Jan 5
 		const weeksByOOF = new Map<number, number>();
 		weeksByOOF.set(weekStart.getTime(), 1); // 1 WFH day
 
@@ -359,12 +360,12 @@ describe("calculateOfficeDaysInWeek", () => {
 			holidayDates,
 		);
 		// 5 weekdays - 2 holidays = 3 effective weekdays
-		// 3 effective weekdays - 1 WFH = 2 none days
+		// 3 effective weekdays - 1 WFH = 2 office days
 		expect(result).toBe(2);
 	});
 
 	it("should handle holidays that are also marked as WFH", () => {
-		const weekStart = new Date(2025, 0, 6);
+		const weekStart = new Date(2025, 0, 5); // Sunday, Jan 5
 		const weeksByOOF = new Map<number, number>();
 		weeksByOOF.set(weekStart.getTime(), 1); // Only Tuesday marked as WFH (Monday excluded by getOutOfOfficeDates)
 
@@ -378,17 +379,17 @@ describe("calculateOfficeDaysInWeek", () => {
 			holidayDates,
 		);
 		// 5 weekdays - 1 holiday = 4 effective weekdays
-		// 4 effective weekdays - 1 WFH (Tuesday) = 3 none days
+		// 4 effective weekdays - 1 WFH (Tuesday) = 3 office days
 		expect(result).toBe(3);
 	});
 });
 
 describe("calculateWeekCompliance", () => {
 	it("should mark week as compliant with >=3 office days", () => {
+		const weekStart = new Date(2025, 0, 5); // Sunday, Jan 5
 		const weeksByOOF = new Map<number, number>();
-		weeksByOOF.set(new Date(2025, 0, 6).getTime(), 2); // 2 OOF days = 3 office days
+		weeksByOOF.set(new Date(2025, 0, 5).getTime(), 2); // 2 OOF days = 3 office days
 
-		const weekStart = new Date(2025, 0, 6);
 		const result = calculateWeekCompliance(1, weekStart, weeksByOOF);
 
 		expect(result.isCompliant).toBe(true);
@@ -398,10 +399,10 @@ describe("calculateWeekCompliance", () => {
 	});
 
 	it("should mark week as non-compliant with <3 office days", () => {
+		const weekStart = new Date(2025, 0, 5); // Sunday, Jan 5
 		const weeksByOOF = new Map<number, number>();
-		weeksByOOF.set(new Date(2025, 0, 6).getTime(), 3); // 3 OOF days = 2 office days
+		weeksByOOF.set(new Date(2025, 0, 5).getTime(), 3); // 3 OOF days = 2 office days
 
-		const weekStart = new Date(2025, 0, 6);
 		const result = calculateWeekCompliance(1, weekStart, weeksByOOF);
 
 		expect(result.isCompliant).toBe(false);
@@ -416,10 +417,10 @@ describe("calculateWeekCompliance", () => {
 			minOfficeDaysPerWeek: 4, // Stricter requirement
 		};
 
+		const weekStart = new Date(2025, 0, 5); // Sunday, Jan 5
 		const weeksByOOF = new Map<number, number>();
-		weeksByOOF.set(new Date(2025, 0, 6).getTime(), 3); // 3 OOF days
+		weeksByOOF.set(new Date(2025, 0, 5).getTime(), 3); // 3 OOF days
 
-		const weekStart = new Date(2025, 0, 6);
 		const result = calculateWeekCompliance(
 			1,
 			weekStart,
@@ -432,10 +433,10 @@ describe("calculateWeekCompliance", () => {
 	});
 
 	it("should return week number and dates", () => {
+		const weekStart = new Date(2025, 0, 5); // Sunday, Jan 5
 		const weeksByOOF = new Map<number, number>();
-		weeksByOOF.set(new Date(2025, 0, 6).getTime(), 3);
+		weeksByOOF.set(new Date(2025, 0, 5).getTime(), 3);
 
-		const weekStart = new Date(2025, 0, 6);
 		const result = calculateWeekCompliance(5, weekStart, weeksByOOF);
 
 		expect(result.weekNumber).toBe(5);
@@ -451,7 +452,7 @@ describe("getWeekCompliance", () => {
 			createDaySelection(2025, 0, 7, "out-of-office"),
 		];
 
-		const weekStart = new Date(2025, 0, 6);
+		const weekStart = new Date(2025, 0, 5); // Sunday, Jan 5
 		const result = getWeekCompliance(weekStart, selections);
 
 		expect(result.isCompliant).toBe(true);
@@ -710,11 +711,10 @@ describe("validateTopKWeeks - Pattern Builders", () => {
 			BASE_CALENDAR.startMonth,
 			BASE_CALENDAR.startDay,
 		);
-		const week1Start = getWeekStart(1);
 		const selections = createWeeksWithPatterns(
 			BASE_CALENDAR.startYear,
 			BASE_CALENDAR.startMonth,
-			week1Start.getDate(),
+			6, // Monday Jan 6 — selections must start on a weekday
 			Array(8).fill("GOOD" as const), // 8 weeks with 2 WFH days each
 		);
 
@@ -730,12 +730,11 @@ describe("validateTopKWeeks - Pattern Builders", () => {
 			BASE_CALENDAR.startMonth,
 			BASE_CALENDAR.startDay,
 		);
-		const week1Start = getWeekStart(1);
 
 		const selections = createWeeksWithPatterns(
 			BASE_CALENDAR.startYear,
 			BASE_CALENDAR.startMonth,
-			week1Start.getDate(),
+			6, // Monday Jan 6 — selections must start on a weekday
 			Array(8).fill("GOOD" as const),
 		);
 
@@ -774,11 +773,10 @@ describe("validateTopKWeeks - Pattern Builders", () => {
 		];
 
 		patternTests.forEach(({ pattern, expectedOfficeDays, expectedValid }) => {
-			const week1Start = getWeekStart(1);
 			const selections = createWeeksWithPatterns(
 				BASE_CALENDAR.startYear,
 				BASE_CALENDAR.startMonth,
-				week1Start.getDate(),
+				6, // Monday Jan 6 — selections must start on a weekday
 				Array(8).fill(pattern), // Create 8 weeks with this pattern
 			);
 
@@ -1050,9 +1048,9 @@ describe("Partial Weeks Filtering - Edge Cases", () => {
 	it("should include weeks with exactly 5 weekdays", () => {
 		// Standard week with exactly 5 weekdays should be included
 		const selections: DaySelection[] = [];
-		const weekStart = new Date(2025, 0, 6); // Monday, Jan 6
+		const weekStart = new Date(2025, 0, 5); // Sunday, Jan 5
 
-		for (let day = 0; day < 5; day++) {
+		for (let day = 1; day <= 5; day++) {
 			selections.push(
 				createDaySelection(
 					weekStart.getFullYear(),
@@ -1063,7 +1061,7 @@ describe("Partial Weeks Filtering - Edge Cases", () => {
 			);
 		}
 
-		const result = validateTopKWeeks(selections, new Date(2025, 0, 1));
+		const result = validateTopKWeeks(selections, new Date(2025, 0, 5));
 
 		// Week with exactly 5 weekdays should be included
 		expect(result.weeksData.length).toBeGreaterThan(0);
@@ -1074,10 +1072,10 @@ describe("Partial Weeks Filtering - Edge Cases", () => {
 		// Create a week with 3 WFH selections
 		// NOTE: validateTopKWeeks processes selections assuming 5 weekdays per week
 		const selections: DaySelection[] = [];
-		const weekStart = new Date(2025, 0, 6); // Monday, Jan 6
+		const weekStart = new Date(2025, 0, 5); // Sunday, Jan 5
 
 		// Only 3 days have WFH selections (Mon, Tue, Wed)
-		for (let day = 0; day < 3; day++) {
+		for (let day = 1; day <= 3; day++) {
 			selections.push(
 				createDaySelection(
 					weekStart.getFullYear(),
@@ -1088,10 +1086,10 @@ describe("Partial Weeks Filtering - Edge Cases", () => {
 			);
 		}
 
-		const result = validateTopKWeeks(selections, new Date(2025, 0, 6));
+		const result = validateTopKWeeks(selections, new Date(2025, 0, 5));
 
 		// First week has 3 WFH days out of 5
-		// With new behavior: oofDays = 3 (wfhDays), officeDays = 2, not compliant (<3)
+		// With new behavior: oofDays = 3 (wfhDays)
 		expect(result.weeksData.length).toBeGreaterThanOrEqual(1);
 		expect(result.weeksData[0]?.oofDays).toBe(3);
 		expect(result.weeksData[0]?.wfhDays).toBe(3);
@@ -1160,7 +1158,7 @@ describe("Holiday Integration - End-to-End", () => {
 
 		// Step 2: groupDatesByWeek should not count the holiday
 		const weeksByOOF = groupDatesByWeek(_oofDates, holidayDates);
-		const weekStart = new Date(2025, 0, 6);
+		const weekStart = new Date(2025, 0, 5); // Sunday, Jan 5
 		expect(weeksByOOF.get(weekStart.getTime())).toBe(2);
 
 		// Step 3: calculateOfficeDaysInWeek should adjust for holidays
@@ -1171,7 +1169,7 @@ describe("Holiday Integration - End-to-End", () => {
 			holidayDates,
 		);
 		// 5 weekdays - 1 holiday = 4 effective weekdays
-		// 4 effective weekdays - 2 WFH = 2 none days
+		// 4 effective weekdays - 2 WFH = 2 office days
 		expect(oofDays).toBe(2);
 
 		// Step 4: calculateWeekCompliance should reflect the adjusted values
@@ -1183,13 +1181,13 @@ describe("Holiday Integration - End-to-End", () => {
 			holidayDates,
 		);
 		expect(weekCompliance.isCompliant).toBe(false); // 2 < 3 required
-		// With new behavior: oofDays includes holidays = 2 WFH + 1 holiday = 3
+		// oofDays includes holidays = 2 WFH + 1 holiday = 3
 		expect(weekCompliance.oofDays).toBe(3);
 		expect(weekCompliance.totalDays).toBe(4); // Adjusted for holiday
 		expect(weekCompliance.wfhDays).toBe(2);
 	});
 
-	it("should treat holiday WFH selections as non-none days", () => {
+	it("should treat holiday WFH selections as non-office days", () => {
 		// Scenario: User marks a holiday as WFH, but holiday should override
 		const selections: DaySelection[] = [
 			createDaySelection(2025, 0, 6, "out-of-office"), // Monday - holiday
@@ -1206,16 +1204,16 @@ describe("Holiday Integration - End-to-End", () => {
 		expect(_oofDates).toHaveLength(0); // All WFH selections were on holidays
 
 		// Week has 4 effective weekdays (5 - 1 holiday)
-		// No WFH days, so 4 none days
+		// No WFH days, so 4 office days
 		const weeksByOOF = groupDatesByWeek(_oofDates, holidayDates);
-		const weekStart = new Date(2025, 0, 6);
+		const weekStart = new Date(2025, 0, 5); // Sunday, Jan 5
 		const oofDays = calculateOfficeDaysInWeek(
 			weeksByOOF,
 			weekStart,
 			DEFAULT_RTO_POLICY,
 			holidayDates,
 		);
-		expect(oofDays).toBe(4); // All 4 effective weekdays are none days
+		expect(oofDays).toBe(4); // All 4 effective weekdays are office days
 	});
 
 	it("should handle multiple holidays in a single week", () => {
@@ -1238,7 +1236,7 @@ describe("Holiday Integration - End-to-End", () => {
 		expect(_oofDates).toHaveLength(1);
 
 		const weeksByOOF = groupDatesByWeek(_oofDates, holidayDates);
-		const weekStart = new Date(2025, 0, 6);
+		const weekStart = new Date(2025, 0, 5); // Sunday, Jan 5
 		const oofDays = calculateOfficeDaysInWeek(
 			weeksByOOF,
 			weekStart,
@@ -1246,7 +1244,7 @@ describe("Holiday Integration - End-to-End", () => {
 			holidayDates,
 		);
 		// 5 weekdays - 2 holidays = 3 effective weekdays
-		// 3 effective weekdays - 1 WFH (Thursday) = 2 none days
+		// 3 effective weekdays - 1 WFH (Thursday) = 2 office days
 		expect(oofDays).toBe(2);
 	});
 
@@ -1263,7 +1261,7 @@ describe("Holiday Integration - End-to-End", () => {
 			getOutOfOfficeDates(selections, holidayDates),
 			holidayDates,
 		);
-		const weekStart = new Date(2025, 0, 6);
+		const weekStart = new Date(2025, 0, 5); // Sunday, Jan 5
 		const weekCompliance = calculateWeekCompliance(
 			1,
 			weekStart,

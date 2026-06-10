@@ -9,6 +9,7 @@
 import type { AnnotatedWeek } from "../lib/auto-compliance";
 import { fmtShort } from "../lib/dateUtils";
 import { buildDotHtml } from "../lib/ui/weekDot";
+import { FRIDAY_OFFSET } from "../lib/validation/constants";
 
 export interface WindowBreakdownProps {
 	/** All weeks in the evaluation window, annotated */
@@ -17,29 +18,27 @@ export interface WindowBreakdownProps {
 	isCompliant?: boolean;
 	/** Average office days across best weeks */
 	averageOfficeDays?: number;
-	/** Start timestamp of the displayed window (null if no data) */
-	windowStart?: number | null;
 }
 
 const {
 	windowWeeks = [],
 	isCompliant = false,
 	averageOfficeDays = 0,
-	windowStart = null,
 } = Astro.props as unknown as WindowBreakdownProps;
 
 // Early exit: no data to display
 const hasData = windowWeeks.length > 0;
 
-// Compute window date range label
+// Compute window date range label from the first and last week's weekStart,
+// which are already correctly-local Date objects (not UTC timestamps).
 let rangeLabel = "";
-if (hasData && windowStart !== null && windowWeeks.length > 0) {
-	const windowStartDate = new Date(windowStart);
+if (hasData && windowWeeks.length > 0) {
+	const firstWeek = windowWeeks[0];
 	const lastWeek = windowWeeks[windowWeeks.length - 1];
-	if (lastWeek) {
+	if (firstWeek && lastWeek) {
 		const windowEndDate = new Date(lastWeek.weekStart);
-		windowEndDate.setDate(windowEndDate.getDate() + 4);
-		rangeLabel = `${fmtShort(windowStartDate)} – ${fmtShort(windowEndDate)}`;
+		windowEndDate.setDate(windowEndDate.getDate() + FRIDAY_OFFSET);
+		rangeLabel = `${fmtShort(firstWeek.weekStart)} – ${fmtShort(windowEndDate)}`;
 	}
 }
 

@@ -141,25 +141,25 @@ describe("Calendar Rendering Functions", () => {
 	});
 
 	describe("getWeekDates()", () => {
-		it("should return 5 weekdays for a week", async () => {
+		it("should return 5 weekdays (Mon-Fri) for a Sunday-start week", async () => {
 			const dateUtils = await import("../../../dateUtils");
 
-			const weekStart = new Date(2025, 0, 6); // Monday, Jan 6
+			const weekStart = new Date(2025, 0, 5); // Sunday, Jan 5
 			const dates = dateUtils.getWeekDates(weekStart);
 
 			expect(dates).toHaveLength(5);
 
-			// Verify consecutive days
+			// Verify consecutive weekday days
 			for (let i = 1; i < dates.length; i++) {
 				const diff = dates[i]!.getTime() - dates[i - 1]!.getTime();
 				expect(diff).toBe(24 * 60 * 60 * 1000); // 1 day
 			}
 		});
 
-		it("should return correct weekday numbers", async () => {
+		it("should return correct weekday numbers (Mon-Fri)", async () => {
 			const dateUtils = await import("../../../dateUtils");
 
-			const weekStart = new Date(2025, 0, 6); // Monday, Jan 6
+			const weekStart = new Date(2025, 0, 5); // Sunday, Jan 5
 			const dates = dateUtils.getWeekDates(weekStart);
 
 			expect(dates[0]?.getDay()).toBe(1); // Monday
@@ -171,24 +171,24 @@ describe("Calendar Rendering Functions", () => {
 	});
 
 	describe("getStartOfWeek()", () => {
-		it("should return Monday for a Sunday date", async () => {
+		it("should return Sunday for a Saturday date", async () => {
 			const dateUtils = await import("../../../dateUtils");
 
-			const sunday = new Date(2025, 0, 12); // Sunday, Jan 12
-			const weekStart = dateUtils.getStartOfWeek(sunday);
+			const saturday = new Date(2025, 0, 11); // Saturday, Jan 11
+			const weekStart = dateUtils.getStartOfWeek(saturday);
 
-			expect(weekStart.getDay()).toBe(1); // Monday
-			expect(weekStart.getDate()).toBe(6); // Jan 6
+			expect(weekStart.getDay()).toBe(0); // Sunday
+			expect(weekStart.getDate()).toBe(5); // Jan 5
 		});
 
-		it("should return Monday for a Friday date", async () => {
+		it("should return Sunday for a Wednesday date", async () => {
 			const dateUtils = await import("../../../dateUtils");
 
-			const friday = new Date(2025, 0, 10); // Friday, Jan 10
-			const weekStart = dateUtils.getStartOfWeek(friday);
+			const wednesday = new Date(2025, 0, 8); // Wednesday, Jan 8
+			const weekStart = dateUtils.getStartOfWeek(wednesday);
 
-			expect(weekStart.getDay()).toBe(1); // Monday
-			expect(weekStart.getDate()).toBe(6); // Jan 6
+			expect(weekStart.getDay()).toBe(0); // Sunday
+			expect(weekStart.getDate()).toBe(5); // Jan 5
 		});
 
 		it("should set time to midnight", async () => {

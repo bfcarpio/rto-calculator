@@ -24,13 +24,12 @@ vi.mock("../holiday/CalendarHolidayIntegration", () => ({
 
 vi.mock("../validation/rto-core", () => ({
 	getStartOfWeek: vi.fn((d: Date) => {
-		// Return the Monday of the week containing d
+		// Return the Sunday of the week containing d
 		const day = d.getDay();
-		const diff = day === 0 ? -6 : 1 - day;
-		const monday = new Date(d);
-		monday.setDate(d.getDate() + diff);
-		monday.setHours(0, 0, 0, 0);
-		return monday;
+		const sunday = new Date(d);
+		sunday.setDate(d.getDate() - day);
+		sunday.setHours(0, 0, 0, 0);
+		return sunday;
 	}),
 	isWeekday: vi.fn((d: Date) => {
 		const day = d.getDay();
@@ -45,8 +44,8 @@ import { getHolidayDatesForValidation } from "../holiday/CalendarHolidayIntegrat
 
 // ─── Helpers ─────────────────────────────────────────────────────
 
-/** Create a Monday date for a given YYYY-MM-DD */
-function monday(dateStr: string): Date {
+/** Create a Sunday date for a given YYYY-MM-DD (used as week start) */
+function sunday(dateStr: string): Date {
 	const d = new Date(`${dateStr}T00:00:00`);
 	d.setHours(0, 0, 0, 0);
 	return d;
@@ -80,13 +79,13 @@ function setSettings(opts: {
 }
 
 /**
- * Configure mocks for a single-week scenario starting on the given Monday.
- * The week range is Mon–Fri (5 weekdays).
+ * Configure mocks for a single-week scenario starting on the given Sunday.
+ * The week range is Mon–Fri (5 weekdays) within the Sun–Sat week.
  */
-function setupSingleWeek(mondayDate: string): void {
-	const start = monday(mondayDate);
+function setupSingleWeek(sundayDate: string): void {
+	const start = sunday(sundayDate);
 	const end = new Date(start);
-	end.setDate(start.getDate() + 4); // Friday
+	end.setDate(start.getDate() + 6); // Saturday
 
 	vi.mocked(getDateRange).mockReturnValue({
 		startDate: start,
@@ -109,7 +108,7 @@ describe("readCalendarData – penalize settings", () => {
 	// --- Holiday penalize ON (default) ---
 
 	it("default: holidays reduce officeDays (penalize ON)", async () => {
-		setupSingleWeek("2025-06-02"); // Mon Jun 2
+		setupSingleWeek("2025-06-01"); // Mon Jun 2
 		// Mark Wed as holiday
 		const dates = new Map<string, string>([["2025-06-04", "holiday"]]);
 		const cal = mockCalendar(dates);
@@ -126,7 +125,7 @@ describe("readCalendarData – penalize settings", () => {
 
 	it("holidayPenalize=true: holidays reduce officeDays", async () => {
 		setSettings({ holidayPenalize: true });
-		setupSingleWeek("2025-06-02");
+		setupSingleWeek("2025-06-01");
 		const dates = new Map<string, string>([
 			["2025-06-03", "holiday"],
 			["2025-06-04", "holiday"],
@@ -147,7 +146,7 @@ describe("readCalendarData – penalize settings", () => {
 
 	it("holidayPenalize=false: holidays reduce totalEffectiveDays instead", async () => {
 		setSettings({ holidayPenalize: false });
-		setupSingleWeek("2025-06-02");
+		setupSingleWeek("2025-06-01");
 		const dates = new Map<string, string>([["2025-06-04", "holiday"]]);
 		const cal = mockCalendar(dates);
 
@@ -163,7 +162,7 @@ describe("readCalendarData – penalize settings", () => {
 
 	it("holidayPenalize=false: full week of holidays → compliant", async () => {
 		setSettings({ holidayPenalize: false });
-		setupSingleWeek("2025-06-02");
+		setupSingleWeek("2025-06-01");
 		const dates = new Map<string, string>([
 			["2025-06-02", "holiday"],
 			["2025-06-03", "holiday"],
@@ -187,7 +186,7 @@ describe("readCalendarData – penalize settings", () => {
 
 	it("holidayPenalize=true: full week of holidays → non-compliant", async () => {
 		setSettings({ holidayPenalize: true });
-		setupSingleWeek("2025-06-02");
+		setupSingleWeek("2025-06-01");
 		const dates = new Map<string, string>([
 			["2025-06-02", "holiday"],
 			["2025-06-03", "holiday"],
@@ -210,7 +209,7 @@ describe("readCalendarData – penalize settings", () => {
 
 	it("both penalize ON: holidays and sick days reduce officeDays", async () => {
 		setSettings({ holidayPenalize: true, sickDaysPenalize: true });
-		setupSingleWeek("2025-06-02");
+		setupSingleWeek("2025-06-01");
 		const dates = new Map<string, string>([
 			["2025-06-02", "holiday"],
 			["2025-06-03", "sick"],
@@ -233,7 +232,7 @@ describe("readCalendarData – penalize settings", () => {
 
 	it("both penalize OFF: holidays and sick days reduce totalEffectiveDays", async () => {
 		setSettings({ holidayPenalize: false, sickDaysPenalize: false });
-		setupSingleWeek("2025-06-02");
+		setupSingleWeek("2025-06-01");
 		const dates = new Map<string, string>([
 			["2025-06-02", "holiday"],
 			["2025-06-03", "sick"],
@@ -253,7 +252,7 @@ describe("readCalendarData – penalize settings", () => {
 
 	it("holiday penalize OFF, sick penalize ON: mixed behavior", async () => {
 		setSettings({ holidayPenalize: false, sickDaysPenalize: true });
-		setupSingleWeek("2025-06-02");
+		setupSingleWeek("2025-06-01");
 		const dates = new Map<string, string>([
 			["2025-06-02", "holiday"],
 			["2025-06-03", "sick"],
@@ -273,7 +272,7 @@ describe("readCalendarData – penalize settings", () => {
 
 	it("holiday penalize ON, sick penalize OFF: mixed behavior", async () => {
 		setSettings({ holidayPenalize: true, sickDaysPenalize: false });
-		setupSingleWeek("2025-06-02");
+		setupSingleWeek("2025-06-01");
 		const dates = new Map<string, string>([
 			["2025-06-02", "holiday"],
 			["2025-06-03", "sick"],
@@ -295,7 +294,7 @@ describe("readCalendarData – penalize settings", () => {
 
 	it("no settings in localStorage: defaults to penalize both", async () => {
 		// localStorage is already clear from beforeEach
-		setupSingleWeek("2025-06-02");
+		setupSingleWeek("2025-06-01");
 		const dates = new Map<string, string>([
 			["2025-06-02", "holiday"],
 			["2025-06-03", "sick"],
@@ -313,7 +312,7 @@ describe("readCalendarData – penalize settings", () => {
 
 	it("malformed localStorage: defaults to penalize both", async () => {
 		localStorage.setItem("rto-calculator-settings", "not-valid-json");
-		setupSingleWeek("2025-06-02");
+		setupSingleWeek("2025-06-01");
 		const dates = new Map<string, string>([
 			["2025-06-02", "holiday"],
 			["2025-06-03", "sick"],
@@ -332,7 +331,7 @@ describe("readCalendarData – penalize settings", () => {
 
 	it("clean week with no marks: 5 office days regardless of settings", async () => {
 		setSettings({ holidayPenalize: false, sickDaysPenalize: false });
-		setupSingleWeek("2025-06-02");
+		setupSingleWeek("2025-06-01");
 		const cal = mockCalendar(new Map());
 
 		const result = await readCalendarData(cal);
@@ -347,7 +346,7 @@ describe("readCalendarData – penalize settings", () => {
 
 	it("holidayPenalize=true with 2 holidays + 1 oof → non-compliant (2 < 3)", async () => {
 		setSettings({ holidayPenalize: true });
-		setupSingleWeek("2025-06-02");
+		setupSingleWeek("2025-06-01");
 		const dates = new Map<string, string>([
 			["2025-06-02", "holiday"],
 			["2025-06-03", "holiday"],
@@ -365,7 +364,7 @@ describe("readCalendarData – penalize settings", () => {
 
 	it("holidayPenalize=false with 2 holidays + 1 oof → compliant (4 >= 3)", async () => {
 		setSettings({ holidayPenalize: false });
-		setupSingleWeek("2025-06-02");
+		setupSingleWeek("2025-06-01");
 		const dates = new Map<string, string>([
 			["2025-06-02", "holiday"],
 			["2025-06-03", "holiday"],
@@ -395,9 +394,9 @@ describe("readCalendarData – holiday dates from external source", () => {
 
 	it("external holiday dates are counted as holidays", async () => {
 		setSettings({ holidayPenalize: true });
-		const start = monday("2025-06-02");
+		const start = sunday("2025-06-01");
 		const end = new Date(start);
-		end.setDate(start.getDate() + 4);
+		end.setDate(start.getDate() + 6); // Saturday
 
 		vi.mocked(getDateRange).mockReturnValue({ startDate: start, endDate: end });
 
@@ -421,9 +420,9 @@ describe("readCalendarData – holiday dates from external source", () => {
 
 	it("external holiday + holidayPenalize=false → excused", async () => {
 		setSettings({ holidayPenalize: false });
-		const start = monday("2025-06-02");
+		const start = sunday("2025-06-01");
 		const end = new Date(start);
-		end.setDate(start.getDate() + 4);
+		end.setDate(start.getDate() + 6); // Saturday
 
 		vi.mocked(getDateRange).mockReturnValue({ startDate: start, endDate: end });
 

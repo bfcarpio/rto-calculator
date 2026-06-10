@@ -393,19 +393,19 @@ describe("Validation Cycle Integration", () => {
 		});
 
 		it("should correctly calculate week start", async () => {
-			// Monday should return itself
+			// Monday should return previous Sunday
 			const monday = new Date(2025, 0, 6);
-			expect(dateUtils.getStartOfWeek(monday).getDay()).toBe(1);
+			expect(dateUtils.getStartOfWeek(monday).getDay()).toBe(0);
 
-			// Friday should return previous Monday
+			// Friday should return same week's Sunday
 			const friday = new Date(2025, 0, 10);
 			const weekStart = dateUtils.getStartOfWeek(friday);
-			expect(weekStart.getDay()).toBe(1);
-			expect(weekStart.getDate()).toBe(6);
+			expect(weekStart.getDay()).toBe(0);
+			expect(weekStart.getDate()).toBe(5);
 		});
 
 		it("should correctly generate week dates", async () => {
-			const weekStart = new Date(2025, 0, 6); // Monday
+			const weekStart = new Date(2025, 0, 5); // Sunday
 			const weekDates = dateUtils.getWeekDates(weekStart);
 
 			expect(weekDates).toHaveLength(5);

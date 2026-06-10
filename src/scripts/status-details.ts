@@ -14,6 +14,7 @@ import {
 } from "../lib/auto-compliance";
 import { fmtDate, fmtShort } from "../lib/dateUtils";
 import { buildDotHtml } from "../lib/ui/weekDot";
+import { FRIDAY_OFFSET } from "../lib/validation/constants";
 
 // ─── Helper Functions ───────────────────────────────────────────────────
 
@@ -28,18 +29,20 @@ export function getStatusColor(current: number, target: number): string {
 
 /**
  * Build the window date range label
+ *
+ * Uses the first and last week's weekStart Date objects directly,
+ * which are already correctly-local (not UTC timestamps that shift by timezone).
  */
 function buildWindowRangeLabel(data: ComplianceEventData): string {
-	const ws = data.slidingWindowResult.windowStart;
-	if (ws === null) return "";
+	if (data.windowWeeks.length === 0) return "";
 
-	const windowStart = new Date(ws);
+	const firstWeek = data.windowWeeks[0];
 	const lastWeek = data.windowWeeks[data.windowWeeks.length - 1];
-	if (!lastWeek) return "";
+	if (!firstWeek || !lastWeek) return "";
 
 	const windowEnd = new Date(lastWeek.weekStart);
-	windowEnd.setDate(windowEnd.getDate() + 4);
-	return `${fmtShort(windowStart)} – ${fmtShort(windowEnd)}`;
+	windowEnd.setDate(windowEnd.getDate() + FRIDAY_OFFSET);
+	return `${fmtShort(firstWeek.weekStart)} – ${fmtShort(windowEnd)}`;
 }
 
 // ─── DOM Update Functions ────────────────────────────────────────────────

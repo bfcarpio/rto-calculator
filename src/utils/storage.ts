@@ -80,7 +80,7 @@ export function loadUserPreferences(): UserPreferences {
 		colorScheme: "tol-muted-light",
 		language: "en",
 		timezone: "UTC",
-		firstDayOfWeek: 1,
+		firstDayOfWeek: 0,
 		defaultPattern: null,
 	};
 }

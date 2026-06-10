@@ -1,7 +1,7 @@
 /**
  * Date utility functions for RTO Calculator
  *
- * Work-week oriented utilities (Monday-based weeks, weekday filtering).
+ * Work-week oriented utilities (Sunday-based weeks, weekday filtering).
  * For general calendar utilities, use src/lib/dateUtils.ts.
  */
 
@@ -20,10 +20,10 @@ import {
 export { formatDateISO, isSameDay } from "../lib/dateUtils";
 
 /**
- * Get start of work week (Monday) for a given date
+ * Get start of work week (Sunday) for a given date
  */
 export function getStartOfWeek(date: Date): Date {
-	return startOfWeek(date, { weekStartsOn: 1 });
+	return startOfWeek(date, { weekStartsOn: 0 });
 }
 
 /**
@@ -45,7 +45,8 @@ export function isWeekday(date: Date): boolean {
  */
 export function getWeekDates(date: Date): Date[] {
 	const start = getStartOfWeek(date);
-	return Array.from({ length: 5 }, (_, i) => addDays(start, i));
+	// Start from Monday (day 1) through Friday (day 5) within a Sunday-start week
+	return Array.from({ length: 5 }, (_, i) => addDays(start, i + 1));
 }
 
 /**
@@ -56,7 +57,8 @@ export function getRollingPeriodDates(startDate: Date, weeks: number): Date[] {
 	const dates: Date[] = [];
 
 	for (let week = 0; week < weeks; week++) {
-		for (let day = 0; day < 5; day++) {
+		// Monday=1 through Friday=5 within Sunday-start week
+		for (let day = 1; day <= 5; day++) {
 			dates.push(addDays(start, week * 7 + day));
 		}
 	}

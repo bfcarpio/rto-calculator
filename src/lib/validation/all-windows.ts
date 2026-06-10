@@ -5,6 +5,7 @@
  * for the WindowExplorer component.
  */
 
+import { FRIDAY_OFFSET } from "./constants";
 import type { RTOPolicyConfig, WeekCompliance } from "./rto-core";
 import { evaluateSingleWindow } from "./rto-core";
 
@@ -65,7 +66,7 @@ function buildSummary(
 	const lastWeek = windowWeeks[windowWeeks.length - 1];
 	if (!firstWeek || !lastWeek) throw new Error("empty windowWeeks");
 	const windowEnd = new Date(lastWeek.weekStart);
-	windowEnd.setDate(windowEnd.getDate() + 4); // Friday
+	windowEnd.setDate(windowEnd.getDate() + FRIDAY_OFFSET);
 
 	return {
 		windowIndex: index,

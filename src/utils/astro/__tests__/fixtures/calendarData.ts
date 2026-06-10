@@ -5,32 +5,32 @@
 
 /**
  * Base calendar configuration
- * All dates are based on a starting Monday: January 6, 2025
+ * All dates are based on a starting Sunday: January 5, 2025
  */
 export const BASE_CALENDAR = {
 	startYear: 2025,
 	startMonth: 0, // January
-	startDay: 6, // Monday
-	description: "Calendar starts Monday, January 6, 2025",
+	startDay: 5, // Sunday
+	description: "Calendar starts Sunday, January 5, 2025",
 };
 
 /**
  * Week start dates for the first 12 weeks (2025)
- * Each date represents the Monday of that week
+ * Each date represents the Sunday of that week
  */
 export const WEEK_START_DATES = [
-	new Date(2025, 0, 6), // Week 1: Jan 6-10
-	new Date(2025, 0, 13), // Week 2: Jan 13-17
-	new Date(2025, 0, 20), // Week 3: Jan 20-24
-	new Date(2025, 0, 27), // Week 4: Jan 27-31
-	new Date(2025, 1, 3), // Week 5: Feb 3-7
-	new Date(2025, 1, 10), // Week 6: Feb 10-14
-	new Date(2025, 1, 17), // Week 7: Feb 17-21
-	new Date(2025, 1, 24), // Week 8: Feb 24-28
-	new Date(2025, 2, 3), // Week 9: Mar 3-7
-	new Date(2025, 2, 10), // Week 10: Mar 10-14
-	new Date(2025, 2, 17), // Week 11: Mar 17-21
-	new Date(2025, 2, 24), // Week 12: Mar 24-28
+	new Date(2025, 0, 5), // Week 1: Jan 5-11 (Sun-Sat)
+	new Date(2025, 0, 12), // Week 2: Jan 12-18
+	new Date(2025, 0, 19), // Week 3: Jan 19-25
+	new Date(2025, 0, 26), // Week 4: Jan 26-Feb 1
+	new Date(2025, 1, 2), // Week 5: Feb 2-8
+	new Date(2025, 1, 9), // Week 6: Feb 9-15
+	new Date(2025, 1, 16), // Week 7: Feb 16-22
+	new Date(2025, 1, 23), // Week 8: Feb 23-Mar 1
+	new Date(2025, 2, 2), // Week 9: Mar 2-8
+	new Date(2025, 2, 9), // Week 10: Mar 9-15
+	new Date(2025, 2, 16), // Week 11: Mar 16-22
+	new Date(2025, 2, 23), // Week 12: Mar 23-29
 ];
 
 /**
@@ -65,9 +65,9 @@ export const MONTHS = {
 } as const;
 
 /**
- * Get the Monday (week start) for a given week number
+ * Get the Sunday (week start) for a given week number
  * @param weekNumber Week number (1-12)
- * @returns Date object for Monday of that week
+ * @returns Date object for Sunday of that week
  */
 export function getWeekStart(weekNumber: number): Date {
 	if (weekNumber < 1 || weekNumber > 12) {
@@ -84,7 +84,9 @@ export function getWeekStart(weekNumber: number): Date {
  */
 export function getWeekdayDate(weekNumber: number, weekday: number): Date {
 	const weekStart = getWeekStart(weekNumber);
-	const daysToAdd = weekday === WEEKDAYS.SUNDAY ? 6 : weekday - 1;
+	// weekStart is Sunday (day 0)
+	// weekday: 0=Sunday, 1=Monday, ..., 6=Saturday
+	const daysToAdd = weekday;
 	const result = new Date(weekStart);
 	result.setDate(result.getDate() + daysToAdd);
 	return result;

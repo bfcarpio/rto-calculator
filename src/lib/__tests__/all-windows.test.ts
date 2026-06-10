@@ -12,6 +12,7 @@
 
 import { describe, expect, it } from "vitest";
 import { evaluateAllWindows } from "../validation/all-windows";
+import { FRIDAY_OFFSET } from "../validation/constants";
 import {
 	DEFAULT_RTO_POLICY,
 	evaluateSingleWindow,
@@ -152,7 +153,7 @@ describe("evaluateAllWindows", () => {
 		// windowEnd should be the Friday of the last week
 		const lastWeekStart = weeks[11]!.weekStart;
 		const expectedEnd = new Date(lastWeekStart);
-		expectedEnd.setDate(expectedEnd.getDate() + 4);
+		expectedEnd.setDate(expectedEnd.getDate() + FRIDAY_OFFSET);
 		expect(summary.windowEnd.getTime()).toBe(expectedEnd.getTime());
 	});
 

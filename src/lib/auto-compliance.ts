@@ -16,8 +16,10 @@ import {
 	type WeekInfo,
 } from "./calendar-data-reader";
 import { buildPolicyFromSettings, readSettings } from "./settings-reader";
+import { FRIDAY_OFFSET } from "./validation/constants";
 import {
 	evaluateSingleWindow,
+	getStartOfWeek,
 	type RTOPolicyConfig,
 	type SlidingWindowResult,
 	validateSlidingWindow,
@@ -187,7 +189,7 @@ function findNextSafeWfhWeek(
 
 function isWeekComplete(weekStart: Date): boolean {
 	const friday = new Date(weekStart);
-	friday.setDate(friday.getDate() + 4);
+	friday.setDate(friday.getDate() + FRIDAY_OFFSET);
 	const today = new Date();
 	today.setHours(23, 59, 59, 999);
 	return friday <= today;
@@ -238,7 +240,9 @@ function computeComplianceData(allWeeks: WeekInfo[]): ComplianceEventData {
 			sickCount: w.sickCount,
 			isBest,
 			isIgnored: !isBest,
-			isCompliant: w.officeDays >= policy.minOfficeDaysPerWeek,
+			isCompliant:
+				(policy.roundPercentage ? Math.round(w.officeDays) : w.officeDays) >=
+				policy.minOfficeDaysPerWeek,
 		};
 	});
 
@@ -286,11 +290,7 @@ function computeComplianceData(allWeeks: WeekInfo[]): ComplianceEventData {
 
 	// Current week
 	const now = new Date();
-	const dayOfWeek = now.getDay();
-	const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-	const currentWeekStart = new Date(now);
-	currentWeekStart.setDate(now.getDate() + mondayOffset);
-	currentWeekStart.setHours(0, 0, 0, 0);
+	const currentWeekStart = getStartOfWeek(now);
 	const currentWeekEnd = new Date(currentWeekStart);
 	currentWeekEnd.setDate(currentWeekStart.getDate() + 6);
 

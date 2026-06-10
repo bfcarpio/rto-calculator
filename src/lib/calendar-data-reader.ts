@@ -132,13 +132,13 @@ export async function readCalendarData(
 	const sickDaysPenalize = appSettings.sickDaysPenalize;
 	const holidayPenalize = appSettings.holidayPenalize;
 
-	// Iterate through ALL Monday-aligned weeks in the calendar range
+	// Iterate through ALL Sunday-aligned weeks in the calendar range
 	const weeks: WeekInfo[] = [];
 	let totalHolidayDays = 0;
 
-	// Start from the first Monday on or after the range start
+	// Start from the first Sunday on or after the range start
 	let weekStart = getStartOfWeek(range.startDate);
-	// If weekStart is before range start, advance to next Monday
+	// If weekStart is before range start, advance to next Sunday
 	if (weekStart < range.startDate) {
 		weekStart = new Date(weekStart);
 		weekStart.setDate(weekStart.getDate() + 7);
@@ -150,8 +150,8 @@ export async function readCalendarData(
 		let holidayCount = 0;
 		let sickCount = 0;
 
-		// Check each Mon-Fri in this week
-		for (let i = 0; i < WEEKDAY_COUNT; i++) {
+		// Check each day in this week (isWeekday filters to Mon-Fri)
+		for (let i = 0; i < 7; i++) {
 			const date = new Date(weekStart);
 			date.setDate(weekStart.getDate() + i);
 
@@ -236,7 +236,7 @@ export async function readCalendarData(
 			weeks.push(weekInfo);
 		}
 
-		// Advance to next Monday
+		// Advance to next Sunday
 		weekStart = new Date(weekStart);
 		weekStart.setDate(weekStart.getDate() + 7);
 	}

@@ -66,7 +66,7 @@ export function roundToNearest20Percent(value: number): number {
 export function getStartOfWeek(date: Date): Date {
 	const d = new Date(date.getTime());
 	const day = d.getDay();
-	const daysToSubtract = day === 0 ? 6 : day - 1;
+	const daysToSubtract = day; // Sunday: getDay() returns 0, so subtract 0
 	d.setDate(d.getDate() - daysToSubtract);
 	d.setHours(0, 0, 0, 0);
 	return d;
@@ -75,7 +75,7 @@ export function getStartOfWeek(date: Date): Date {
 export function getFirstWeekStart(date: Date): Date {
 	const d = new Date(date.getTime());
 	const day = d.getDay();
-	const daysToAdd = day === 0 ? 1 : day === 1 ? 0 : 8 - day;
+	const daysToAdd = day === 0 ? 0 : 7 - day; // Same Sunday or next Sunday
 	d.setDate(d.getDate() + daysToAdd);
 	d.setHours(0, 0, 0, 0);
 	return d;
@@ -83,7 +83,7 @@ export function getFirstWeekStart(date: Date): Date {
 
 export function getWeekDates(weekStart: Date): Date[] {
 	const dates: Date[] = [];
-	for (let i = 0; i < TOTAL_WEEK_DAYS; i++) {
+	for (let i = 0; i < 7; i++) {
 		const d = new Date(weekStart);
 		d.setDate(weekStart.getDate() + i);
 		dates.push(d);
@@ -184,9 +184,9 @@ export function calculateOfficeDaysInWeek(
 
 	const weekDates = getWeekDates(weekStart);
 	const holidaySet = new Set(holidayDates.map((d) => d.getTime()));
-	const holidayCount = weekDates.filter((d) =>
-		holidaySet.has(d.getTime()),
-	).length;
+	const holidayCount = weekDates
+		.filter((d) => isWeekday(d))
+		.filter((d) => holidaySet.has(d.getTime())).length;
 
 	const effectiveWeekdays = policy.totalWeekdaysPerWeek - holidayCount;
 	return effectiveWeekdays - wfhDays;
@@ -204,9 +204,9 @@ export function calculateWeekCompliance(
 
 	const weekDates = getWeekDates(weekStart);
 	const holidaySet = new Set(holidayDates.map((d) => d.getTime()));
-	const holidayCount = weekDates.filter((d) =>
-		holidaySet.has(d.getTime()),
-	).length;
+	const holidayCount = weekDates
+		.filter((d) => isWeekday(d))
+		.filter((d) => holidaySet.has(d.getTime())).length;
 
 	const totalDays = policy.totalWeekdaysPerWeek - holidayCount;
 	const officeDays = totalDays - wfhDays;
