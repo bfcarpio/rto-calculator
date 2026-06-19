@@ -1,6 +1,8 @@
 // Import holiday data source types and classes
+
 import type {
 	Holiday as DataSourceHoliday,
+	DataSourceStatistics,
 	DataSourceStatus,
 	HolidayCheckResult,
 	HolidayDataSource,
@@ -13,8 +15,10 @@ import type {
 	HolidayQueryResult,
 	HolidayType,
 } from "./holiday-data-source";
-
-import { HolidayDataSourceError } from "./holiday-data-source";
+import {
+	HolidayDataSourceError,
+	isHolidayDataSource,
+} from "./holiday-data-source";
 
 // Re-export types
 export type {
@@ -26,14 +30,15 @@ export type {
 	HolidayCheckResult,
 	HolidayQueryResult,
 	DataSourceStatus,
+	DataSourceStatistics,
 	HolidayDataSource,
 	HolidayDataSourceFactoryType,
 	HolidayDataSourceErrorType,
 	HolidayDataSourceProgressCallback,
 };
 
-// Re-export error class
-export { HolidayDataSourceError };
+// Re-export error class and type guard
+export { HolidayDataSourceError, isHolidayDataSource };
 
 /**
  * Represents a single day in the calendar
@@ -54,10 +59,11 @@ export interface DayData {
  */
 export interface DayInfo {
 	date: Date;
-	element: HTMLElement; // Direct DOM reference - no cache needed
+	element: HTMLElement | null; // DOM reference, null when reading from data layer
 	isWeekday: boolean;
 	isSelected: boolean;
 	selectionType: "out-of-office" | "office" | null;
+	isHoliday: boolean;
 }
 
 /**
@@ -89,8 +95,13 @@ export interface WeekInfo {
 	weekStart: Date;
 	weekNumber: number;
 	days: DayInfo[];
-	wfhCount: number;
+	oofCount: number;
+	holidayCount: number;
+	sickCount: number;
 	officeDays: number;
+	totalDays: number;
+	oofDays: number;
+	wfhCount: number;
 	isCompliant: boolean;
 	isUnderEvaluation: boolean;
 	status: WeekStatus;
@@ -159,4 +170,16 @@ export const DEFAULT_COLOR_SCHEME: UserPreferences["colorScheme"] =
 export interface CalendarState {
 	selectedDates: string[]; // Format: "YYYY-MM-DD:selectionType"
 	lastUpdated: string;
+}
+
+/**
+ * Validation configuration options
+ * Used by ValidationManager for UI settings and HistoryManager for undo snapshots
+ */
+export interface ValidationConfig {
+	minOfficeDaysPerWeek: number;
+	totalWeekdaysPerWeek: number;
+	rollingPeriodWeeks: number;
+	thresholdPercentage: number;
+	debug: boolean;
 }

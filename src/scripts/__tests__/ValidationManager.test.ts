@@ -5,7 +5,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ValidationConfig } from "../../types/validation-strategy";
+import type { ValidationConfig } from "../../types/index";
 import { ValidationManager } from "../ValidationManager";
 
 describe("ValidationManager", () => {

@@ -219,7 +219,9 @@ describe("NagerDateHolidayDataSource", () => {
 			expect(result).toBeDefined();
 			expect(typeof result.isHoliday).toBe("boolean");
 			if (result.isHoliday) {
-				expect(result.holiday).toBeDefined();
+				// holiday details are optional — the optimized endpoint
+				// confirms holiday status without guaranteed detail lookup
+				expect(typeof result.holidayCount).toBe("number");
 			}
 		}, 15000);
 

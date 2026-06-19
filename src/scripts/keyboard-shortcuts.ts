@@ -13,7 +13,7 @@ import type {
 	DateString,
 } from "../../packages/datepainter/src/types";
 import type { HistoryManager } from "../lib/history/HistoryManager";
-import type { ValidationConfig } from "../types/validation-strategy";
+import type { ValidationConfig } from "../types/index";
 import type { ValidationManager } from "./ValidationManager";
 
 /**

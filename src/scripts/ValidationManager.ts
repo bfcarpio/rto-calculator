@@ -11,7 +11,7 @@ import {
 	ROLLING_WINDOW_WEEKS,
 	TOTAL_WEEK_DAYS,
 } from "../lib/validation/constants";
-import type { ValidationConfig } from "../types/validation-strategy";
+import type { ValidationConfig } from "../types/index";
 
 const DEFAULT_CONFIG: ValidationConfig = {
 	minOfficeDaysPerWeek: MINIMUM_COMPLIANT_DAYS,

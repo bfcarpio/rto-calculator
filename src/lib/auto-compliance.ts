@@ -9,10 +9,8 @@
  */
 
 import type { CalendarInstance } from "../../packages/datepainter/src/types";
-import {
-	convertWeeksToCompliance,
-	type WeekInfo,
-} from "./calendar-data-reader";
+import type { WeekInfo } from "../types/index";
+import { convertWeeksToCompliance } from "./calendar-data-reader";
 import { complianceStore } from "./stores/complianceStore";
 import { onSettingsChange } from "./stores/settingsStore";
 import { buildWindowRangeLabel } from "./ui/windowRange";

@@ -13,7 +13,6 @@ import {
 	complianceStore,
 	onComplianceChange,
 } from "../lib/stores/complianceStore";
-import { buildWindowRangeLabel } from "../lib/ui/windowRange";
 import { buildWindowRowHtml } from "../lib/ui/windowRow";
 
 // ─── Helper Functions ───────────────────────────────────────────────────
@@ -65,52 +64,6 @@ function renderBreakdownInto(
 	}
 
 	elContent.innerHTML = buildWindowRowHtml(data.selectedSummary);
-
-	// Debug: log date values to console for comparison with Explorer
-	console.group("[Breakdown] Window Dates Debug");
-	console.log("selectedSummary.windowIndex:", data.selectedSummary.windowIndex);
-	console.log("selectedSummary.isValid:", data.selectedSummary.isValid);
-	console.log(
-		"selectedSummary.windowStart:",
-		data.selectedSummary.windowStart.toISOString(),
-		"|",
-		data.selectedSummary.windowStart.toString(),
-	);
-	console.log(
-		"selectedSummary.windowEnd:",
-		data.selectedSummary.windowEnd.toISOString(),
-		"|",
-		data.selectedSummary.windowEnd.toString(),
-	);
-	console.log("rangeLabel (pre-computed):", data.rangeLabel);
-	console.log(
-		"rangeLabel (recomputed):",
-		buildWindowRangeLabel(data.selectedSummary.weekDetails),
-	);
-	for (let i = 0; i < data.selectedSummary.weekDetails.length; i++) {
-		const w = data.selectedSummary.weekDetails[i];
-		if (!w) continue;
-		console.log(
-			`  week[${i}] weekStart: iso=${w.weekStart.toISOString()} local=${w.weekStart.toString()} day=${w.weekStart.getDay()} date=${w.weekStart.getDate()}`,
-		);
-	}
-	console.log("isCompliant:", data.isCompliant);
-	console.log(
-		`selectedSummary (${data.isCompliant ? "earliest" : "first failing"} of ${data.allSummaries.length} windows, index=${data.selectedSummary.windowIndex})`,
-	);
-	console.log(
-		"currentWeek.weekStart:",
-		data.currentWeek.weekStart.toISOString(),
-		"|",
-		data.currentWeek.weekStart.toString(),
-	);
-	console.log(
-		"currentWeek.weekEnd:",
-		data.currentWeek.weekEnd.toISOString(),
-		"|",
-		data.currentWeek.weekEnd.toString(),
-	);
-	console.groupEnd();
 }
 
 /**

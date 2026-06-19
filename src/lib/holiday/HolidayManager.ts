@@ -8,11 +8,13 @@
  * @module holiday-manager
  */
 
-import type { Holiday } from "../../types/holiday-data-source";
+import type {
+	Holiday,
+	HolidayDataSource,
+} from "../../types/holiday-data-source";
 import { logger } from "../../utils/logger";
 import companyFiltersJson from "./data/company-filters.json";
 import { HolidayDataSourceFactory } from "./sources";
-import type { HolidayDataSource } from "./sources/types";
 
 const { $schema: _, ...companyFilters } = companyFiltersJson;
 

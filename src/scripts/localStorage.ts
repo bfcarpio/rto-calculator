@@ -3,6 +3,7 @@
  * Handles auto-saving and loading of calendar selections
  */
 
+import { formatDate } from "../lib/date-helpers";
 import { logger } from "../utils/logger";
 import {
 	clearSelectedDates,
@@ -37,10 +38,9 @@ function getSelectedDatesFromDOM(): Map<string, string> {
 		const month = parseInt(monthStr, 10);
 		const day = parseInt(dayStr, 10);
 
-		// Create ISO date string
+		// Create local-safe date string (avoids UTC timezone shift)
 		const date = new Date(year, month, day);
-		const isoParts = date.toISOString().split("T");
-		const isoString = isoParts[0]; // YYYY-MM-DD format
+		const isoString = formatDate(date);
 		if (!isoString || !selectionType) {
 			return;
 		}
@@ -76,13 +76,9 @@ function applySelectionsToDOM(savedDates: Map<string, string>): void {
 		const month = parseInt(monthStr, 10);
 		const day = parseInt(dayStr, 10);
 
-		// Create ISO date string to match saved format
+		// Create local-safe date string to match saved format
 		const date = new Date(year, month, day);
-		const isoParts = date.toISOString().split("T");
-		if (!isoParts[0]) {
-			return;
-		}
-		const isoString = isoParts[0];
+		const isoString = formatDate(date);
 
 		// Check if this date has a saved selection
 		if (savedDates.has(isoString)) {

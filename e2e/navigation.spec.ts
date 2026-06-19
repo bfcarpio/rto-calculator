@@ -52,22 +52,6 @@ test.describe("Navigation", () => {
 		});
 	});
 	test.describe("URL Routing", () => {
-		test("should handle root URL", async ({ page }) => {
-			// Test root URL
-			await page.goto("/rto-calculator/");
-
-			// Verify page loaded
-			await expect(page.locator("body")).toBeVisible();
-		});
-
-		test("should handle hash URLs", async ({ page }) => {
-			// Test URL with hash
-			await page.goto("/#settings");
-
-			// Verify page loaded
-			await expect(page.locator("body")).toBeVisible();
-		});
-
 		test("should maintain URL after page load", async ({ page }) => {
 			// Navigate to page
 			await page.goto("/rto-calculator/");

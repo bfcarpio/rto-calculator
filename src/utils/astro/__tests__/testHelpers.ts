@@ -78,6 +78,7 @@ export function createMockDayInfo(
 		isWeekday,
 		isSelected: selectionType !== null,
 		selectionType,
+		isHoliday: false,
 	};
 }
 
@@ -96,20 +97,26 @@ export function createMockWeekInfo(
 ): WeekInfo {
 	const validDays = days || [];
 	const weekdays = validDays.filter((d) => d.isWeekday);
-	const wfhCount = weekdays.filter(
+	const oofCount = weekdays.filter(
 		(d) => d.isSelected && d.selectionType === "out-of-office",
 	).length;
-	const officeCount = 0; // No longer tracking office selections
-	const impliedOfficeDays = weekdays.length - wfhCount - officeCount;
-	const totalOfficeDays = officeCount + impliedOfficeDays;
+	const holidayCount = weekdays.filter((d) => d.isHoliday).length;
+	const sickCount = 0; // No sick day support in test helpers
+	const totalDays = weekdays.length - holidayCount;
+	const officeDays = totalDays - oofCount;
 
 	return {
 		weekStart,
 		weekNumber: options.weekNumber || 1,
 		days: validDays,
-		wfhCount,
-		officeDays: totalOfficeDays,
-		isCompliant: options.isCompliant ?? totalOfficeDays >= 3,
+		oofCount,
+		holidayCount,
+		sickCount,
+		officeDays,
+		totalDays,
+		oofDays: oofCount,
+		wfhCount: oofCount,
+		isCompliant: options.isCompliant ?? officeDays >= 3,
 		isUnderEvaluation: options.isUnderEvaluation ?? false,
 		status: options.status ?? "ignored",
 	};

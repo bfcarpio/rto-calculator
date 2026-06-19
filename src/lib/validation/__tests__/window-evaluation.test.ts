@@ -7,7 +7,7 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CalendarInstance } from "../../../../packages/datepainter/src/types";
-import type { WeekInfo } from "../../calendar-data-reader";
+import type { WeekInfo } from "../../../types/index";
 import type { WindowSummary } from "../all-windows";
 import { DEFAULT_RTO_POLICY } from "../rto-core";
 
@@ -70,6 +70,7 @@ function makeWeekInfo(
 		officeDays,
 		totalDays: 5,
 		oofDays: 5 - officeDays,
+		wfhCount: 5 - officeDays,
 		isCompliant: officeDays >= DEFAULT_RTO_POLICY.minOfficeDaysPerWeek,
 		isUnderEvaluation: false,
 		status:

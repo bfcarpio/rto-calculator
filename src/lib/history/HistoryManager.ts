@@ -11,7 +11,7 @@ import type {
 	DateState,
 	DateString,
 } from "../../../packages/datepainter/src/types";
-import type { ValidationConfig } from "../../types/validation-strategy";
+import type { ValidationConfig } from "../../types/index";
 
 /**
  * Represents a complete snapshot of application state

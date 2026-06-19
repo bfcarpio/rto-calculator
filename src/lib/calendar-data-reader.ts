@@ -8,6 +8,7 @@
  */
 
 import type { CalendarInstance } from "../../packages/datepainter/src/types";
+import type { DayInfo, WeekInfo } from "../types/index";
 import { logger } from "../utils/logger";
 import { assertSundayMidnight } from "./date-helpers";
 import { getDateRange } from "./dateUtils";
@@ -17,46 +18,6 @@ import { getStartOfWeek, isWeekday } from "./validation/rto-core";
 
 /** Number of weekdays in a standard work week */
 const WEEKDAY_COUNT = 5;
-
-/**
- * Day information for a single day
- */
-export interface DayInfo {
-	date: Date;
-	element: HTMLElement | null; // Reference to DOM element for UI updates
-	isWeekday: boolean;
-	isSelected: boolean;
-	selectionType: "out-of-office" | null;
-	isHoliday: boolean;
-}
-
-/**
- * Week status types for validation feedback
- */
-export type WeekStatus =
-	| "compliant"
-	| "invalid"
-	| "pending"
-	| "excluded"
-	| "ignored";
-
-/**
- * Week information for tracking
- */
-export interface WeekInfo {
-	weekStart: Date;
-	weekNumber: number;
-	days: DayInfo[];
-	oofCount: number;
-	holidayCount: number;
-	sickCount: number;
-	officeDays: number;
-	totalDays: number;
-	oofDays: number;
-	isCompliant: boolean;
-	isUnderEvaluation: boolean;
-	status: WeekStatus;
-}
 
 /**
  * Configuration for calendar reading
@@ -231,6 +192,7 @@ export async function readCalendarData(
 				officeDays,
 				totalDays: totalEffectiveDays,
 				oofDays: oofCount,
+				wfhCount: oofCount,
 				isCompliant,
 				isUnderEvaluation: true,
 				status: isCompliant ? "compliant" : "invalid",

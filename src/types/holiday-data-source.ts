@@ -1,6 +1,7 @@
 /**
  * Holiday Data Source Types
- * Defines types and interfaces for holiday data source implementations
+ * Single source of truth for holiday data source types and interfaces.
+ * All holiday data source implementations must conform to these types.
  */
 
 /**
@@ -32,7 +33,7 @@ export interface Holiday {
 	fixed?: boolean;
 	/** Indicates if this holiday applies to the entire country */
 	global?: boolean;
-	/** ISO-3166-2 codes of the subdivisions where this holiday applies */
+	/** ISO-3166-2 codes of subdivisions where this holiday applies */
 	counties?: string[];
 	/** The year the holiday was first observed */
 	launchYear?: number;
@@ -90,7 +91,7 @@ export interface HolidayCheckResult {
 	isHoliday: boolean;
 	/** Holiday information if it's a holiday */
 	holiday?: Holiday;
-	/** Count of holidays on this date (for countries with multiple holiday systems) */
+	/** Count of holidays on this date */
 	holidayCount?: number;
 }
 
@@ -98,30 +99,48 @@ export interface HolidayCheckResult {
  * Holiday query result
  */
 export interface HolidayQueryResult {
-	/** Array of holidays found */
+	/** Array of holidays matching the query */
 	holidays: Holiday[];
-	/** Total count of holidays */
-	total: number;
-	/** Query parameters used */
-	query: HolidayQueryOptions;
-	/** Cache hit status */
-	cached?: boolean;
+	/** Total number of holidays found */
+	totalCount: number;
+	/** Country code the query was for */
+	countryCode: string;
+	/** Date range the query was for, if applicable */
+	dateRange?: DateRange;
 }
 
 /**
- * Data source health/status
+ * Data source status information
  */
 export interface DataSourceStatus {
-	/** Whether the data source is available */
+	/** Whether the data source is available and operational */
 	isAvailable: boolean;
-	/** Last successful fetch timestamp */
+	/** Last time data was successfully fetched */
 	lastFetch?: Date;
-	/** Cache size (number of cached items) */
-	cacheSize?: number;
-	/** Error message if unavailable */
+	/** Number of items currently cached */
+	cacheSize: number;
+	/** Response time in milliseconds for the last check */
+	responseTime: number;
+	/** Error message if the data source is unavailable */
 	error?: string;
-	/** Response time in milliseconds */
-	responseTime?: number;
+}
+
+/**
+ * Data source usage statistics
+ */
+export interface DataSourceStatistics {
+	/** Total number of API calls made */
+	totalCalls: number;
+	/** Number of successful API calls */
+	successfulCalls: number;
+	/** Number of failed API calls */
+	failedCalls: number;
+	/** Average response time in milliseconds */
+	averageResponseTime: number;
+	/** Cache hit rate (0-1) */
+	cacheHitRate: number;
+	/** Total number of holidays fetched */
+	totalHolidaysFetched: number;
 }
 
 /**
@@ -129,40 +148,34 @@ export interface DataSourceStatus {
  * All holiday data source implementations must implement this interface
  */
 export interface HolidayDataSource {
-	/**
-	 * Unique identifier for this data source
-	 */
-	readonly name: string;
+	/** Unique identifier for this data source */
+	name: string;
+	/** Human-readable description of the data source */
+	description: string;
+	/** Configuration options */
+	config: HolidayDataSourceConfig;
+	/** Optional accessor for current configuration */
+	getConfig?: () => HolidayDataSourceConfig;
 
 	/**
-	 * Human-readable description of this data source
-	 */
-	readonly description: string;
-
-	/**
-	 * Default configuration for this data source
-	 */
-	readonly defaultConfig: HolidayDataSourceConfig;
-
-	/**
-	 * Check if this data source is available and ready to use
-	 * @returns Promise resolving to data source status
+	 * Check if the data source is available and operational
+	 * @returns Promise that resolves to the data source status
 	 */
 	checkAvailability(): Promise<DataSourceStatus>;
 
 	/**
 	 * Get all holidays for a specific year and country
-	 * @param year - Year to get holidays for
+	 * @param year - The year to get holidays for
 	 * @param countryCode - ISO 3166-1 alpha-2 country code
-	 * @returns Promise resolving to array of holidays
+	 * @returns Promise that resolves to an array of holidays
 	 */
-	getHolidaysForYear(year: number, countryCode: string): Promise<Holiday[]>;
+	getHolidaysByYear(year: number, countryCode: string): Promise<Holiday[]>;
 
 	/**
-	 * Get holidays within a date range
-	 * @param dateRange - Date range to query
+	 * Get holidays for a specific date range
+	 * @param dateRange - Start and end dates
 	 * @param countryCode - ISO 3166-1 alpha-2 country code
-	 * @returns Promise resolving to array of holidays
+	 * @returns Promise that resolves to an array of holidays
 	 */
 	getHolidaysForDateRange(
 		dateRange: DateRange,
@@ -170,66 +183,64 @@ export interface HolidayDataSource {
 	): Promise<Holiday[]>;
 
 	/**
-	 * Get upcoming holidays (next 365 days or specified limit)
+	 * Get upcoming holidays from today
 	 * @param countryCode - ISO 3166-1 alpha-2 country code
-	 * @param options - Optional query options
-	 * @returns Promise resolving to array of upcoming holidays
+	 * @param options - Query options
+	 * @returns Promise that resolves to an array of holidays
 	 */
 	getUpcomingHolidays(
 		countryCode: string,
-		options?: {
-			/** Maximum number of holidays to return */
-			limit?: number;
-			/** Start date for query (defaults to today) */
-			startDate?: Date;
-		},
+		options?: { limit?: number; startDate?: Date },
 	): Promise<Holiday[]>;
 
 	/**
 	 * Check if a specific date is a holiday
-	 * @param date - Date to check
+	 * @param date - The date to check
 	 * @param countryCode - ISO 3166-1 alpha-2 country code
-	 * @returns Promise resolving to holiday check result
+	 * @returns Promise that resolves to the holiday check result
 	 */
 	isHoliday(date: Date, countryCode: string): Promise<HolidayCheckResult>;
 
 	/**
 	 * Check if today is a holiday
 	 * @param countryCode - ISO 3166-1 alpha-2 country code
-	 * @returns Promise resolving to holiday check result
+	 * @returns Promise that resolves to the holiday check result
 	 */
 	isTodayHoliday(countryCode: string): Promise<HolidayCheckResult>;
 
 	/**
 	 * Query holidays with custom options
 	 * @param options - Query options
-	 * @returns Promise resolving to holiday query result
+	 * @returns Promise that resolves to the holiday query result
 	 */
 	queryHolidays(options: HolidayQueryOptions): Promise<HolidayQueryResult>;
 
 	/**
-	 * Clear any internal cache
-	 * @returns Promise resolving when cache is cleared
+	 * Get statistics about the data source usage
+	 * @returns The current statistics
 	 */
-	clearCache(): Promise<void>;
+	getStatistics(): DataSourceStatistics;
 
 	/**
-	 * Reset the data source to initial state
-	 * @returns Promise resolving when reset is complete
+	 * Reset the data source statistics
 	 */
-	reset(): Promise<void>;
+	resetStatistics(): void;
 
 	/**
-	 * Update configuration for this data source
-	 * @param config - New configuration values (merged with existing)
+	 * Clear the holiday cache
+	 */
+	clearCache(): void;
+
+	/**
+	 * Update the data source configuration
+	 * @param config - New configuration options (merged with existing)
 	 */
 	updateConfig(config: Partial<HolidayDataSourceConfig>): void;
 
 	/**
-	 * Get current configuration
-	 * @returns Current configuration
+	 * Reset the data source to its initial state
 	 */
-	getConfig(): HolidayDataSourceConfig;
+	reset?(): Promise<void> | void;
 }
 
 /**
@@ -299,6 +310,22 @@ export class HolidayDataSourceError extends Error {
 		super(message);
 		this.name = "HolidayDataSourceError";
 	}
+}
+
+/**
+ * Type guard to check if an object implements HolidayDataSource
+ * @param obj - Object to check
+ * @returns True if the object implements HolidayDataSource
+ */
+export function isHolidayDataSource(obj: unknown): obj is HolidayDataSource {
+	if (typeof obj !== "object" || obj === null) return false;
+	const candidate = obj as Record<string, unknown>;
+	return (
+		typeof candidate.name === "string" &&
+		typeof candidate.description === "string" &&
+		typeof candidate.checkAvailability === "function" &&
+		typeof candidate.getHolidaysByYear === "function"
+	);
 }
 
 /**

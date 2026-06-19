@@ -60,3 +60,19 @@ export function assertSundayMidnight(date: Date, context: string): void {
 		);
 	}
 }
+
+/**
+ * Format a Date as "YYYY-MM-DD" using local time components.
+ *
+ * BUG PATTERN: date.toISOString().split("T")[0] converts to UTC first,
+ * which shifts dates backward for users in negative-UTC timezones.
+ * Example: new Date(2025, 2, 22) in EST → toISOString() gives "2025-03-21T05:00:00.000Z"
+ *          → .split("T")[0] gives "2025-03-21" (WRONG — off by one day)
+ *          → formatDate(date) gives "2025-03-22" (CORRECT — uses local time)
+ */
+export function formatDate(date: Date): string {
+	const year = date.getFullYear();
+	const month = String(date.getMonth() + 1).padStart(2, "0");
+	const day = String(date.getDate()).padStart(2, "0");
+	return `${year}-${month}-${day}`;
+}

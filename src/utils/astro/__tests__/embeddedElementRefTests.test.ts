@@ -40,10 +40,11 @@ describe("Embedded Element References - DayInfo", () => {
 				isWeekday: true,
 				isSelected: true,
 				selectionType: "out-of-office",
+				isHoliday: false,
 			};
 
-			expect(dayInfo.element).toBeInstanceOf(HTMLElement);
-			expect(dayInfo.element).toBe(mockElement);
+			expect(dayInfo.element!).toBeInstanceOf(HTMLElement);
+			expect(dayInfo.element!).toBe(mockElement);
 		}, 10000); // Safety timeout for WSL environment
 
 		it("should allow direct property access to element", () => {
@@ -55,10 +56,11 @@ describe("Embedded Element References - DayInfo", () => {
 				isWeekday: true,
 				isSelected: true,
 				selectionType: "office",
+				isHoliday: false,
 			};
 
 			// Direct property access - no Map lookup
-			const element = dayInfo.element;
+			const element = dayInfo.element!;
 			expect(element).toBe(mockElement);
 			expect(element.tagName).toBe("TD");
 		});
@@ -72,9 +74,10 @@ describe("Embedded Element References - DayInfo", () => {
 				isWeekday: true,
 				isSelected: false,
 				selectionType: null,
+				isHoliday: false,
 			};
 
-			expect(dayInfo.element).toBeInstanceOf(HTMLElement);
+			expect(dayInfo.element!).toBeInstanceOf(HTMLElement);
 			expect(dayInfo.selectionType).toBe(null);
 		});
 	});
@@ -93,7 +96,7 @@ describe("Embedded Element References - DayInfo", () => {
 
 			expect(verifyElementDataAttributes(dayInfo)).toBe(true);
 
-			const element = dayInfo.element;
+			const element = dayInfo.element!;
 			expect(element.dataset.year).toBe(year.toString());
 			expect(element.dataset.month).toBe(month.toString());
 			expect(element.dataset.day).toBe(day.toString());
@@ -106,13 +109,13 @@ describe("Embedded Element References - DayInfo", () => {
 
 			// Simulate selection change
 			dayInfo.selectionType = "office";
-			dayInfo.element.dataset.selectionType = "office";
-			dayInfo.element.classList.remove("out-of-office");
-			dayInfo.element.classList.add("office");
+			dayInfo.element!.dataset.selectionType = "office";
+			dayInfo.element!.classList.remove("out-of-office");
+			dayInfo.element!.classList.add("office");
 
 			expect(dayInfo.selectionType).toBe("office");
-			expect(dayInfo.element.dataset.selectionType).toBe("office");
-			expect(dayInfo.element.classList.contains("office")).toBe(true);
+			expect(dayInfo.element!.dataset.selectionType).toBe("office");
+			expect(dayInfo.element!.classList.contains("office")).toBe(true);
 		});
 
 		it("should handle clearing selection", () => {
@@ -120,13 +123,13 @@ describe("Embedded Element References - DayInfo", () => {
 
 			// Clear selection
 			dayInfo.selectionType = null;
-			dayInfo.element.dataset.selectionType = "";
-			dayInfo.element.dataset.selected = "false";
-			dayInfo.element.classList.remove("selected", "out-of-office");
+			dayInfo.element!.dataset.selectionType = "";
+			dayInfo.element!.dataset.selected = "false";
+			dayInfo.element!.classList.remove("selected", "out-of-office");
 
 			expect(dayInfo.selectionType).toBe(null);
-			expect(dayInfo.element.dataset.selectionType).toBe("");
-			expect(dayInfo.element.classList.contains("selected")).toBe(false);
+			expect(dayInfo.element!.dataset.selectionType).toBe("");
+			expect(dayInfo.element!.classList.contains("selected")).toBe(false);
 		});
 	});
 });
@@ -152,7 +155,7 @@ describe("Embedded Element References - WeekInfo", () => {
 
 			// Verify all days have elements
 			weekInfo.days.forEach((dayInfo, index) => {
-				expect(dayInfo.element).toBeInstanceOf(HTMLElement);
+				expect(dayInfo.element!).toBeInstanceOf(HTMLElement);
 				expect(dayInfo.date.getDate()).toBe(6 + index);
 			});
 		});
@@ -203,7 +206,7 @@ describe("Embedded Element References - Verification", () => {
 					new Date(2025, 0, 6 + i),
 					i < 2 ? "out-of-office" : null,
 				);
-				originalElements.push(dayInfo.element);
+				originalElements.push(dayInfo.element!);
 				days.push(dayInfo);
 			}
 
@@ -241,10 +244,16 @@ describe("Embedded Element References - Verification", () => {
 						isWeekday: true,
 						isSelected: false,
 						selectionType: null,
+						isHoliday: false,
 					},
 				],
-				wfhCount: 0,
+				oofCount: 0,
+				holidayCount: 0,
+				sickCount: 0,
 				officeDays: 5,
+				totalDays: 5,
+				oofDays: 0,
+				wfhCount: 0,
 				isCompliant: true,
 				isUnderEvaluation: false,
 				status: "compliant",
@@ -262,9 +271,9 @@ describe("Embedded Element References - Verification", () => {
 			dayInfo.selectionType = "office";
 
 			// Update element to match
-			dayInfo.element.dataset.selectionType = "office";
-			dayInfo.element.classList.remove("out-of-office");
-			dayInfo.element.classList.add("office");
+			dayInfo.element!.dataset.selectionType = "office";
+			dayInfo.element!.classList.remove("out-of-office");
+			dayInfo.element!.classList.add("office");
 
 			// Verify consistency
 			expect(verifyElementDataAttributes(dayInfo)).toBe(true);
@@ -366,7 +375,7 @@ describe("Embedded Element References - Integration", () => {
 			// Access all elements directly (no Map lookup)
 			weeks.forEach((week) => {
 				week.days.forEach((day) => {
-					const element = day.element;
+					const element = day.element!;
 					// Access properties
 					void element.className;
 					void element.dataset;
@@ -409,10 +418,11 @@ describe("Embedded Element References - Edge Cases", () => {
 		it("should handle missing day element gracefully", () => {
 			const dayInfo: DayInfo = {
 				date: new Date(2025, 0, 6),
-				element: null as any, // Missing
+				element: null, // Missing
 				isWeekday: true,
 				isSelected: false,
 				selectionType: null,
+				isHoliday: false,
 			};
 
 			// Should not throw error
@@ -427,7 +437,7 @@ describe("Embedded Element References - Edge Cases", () => {
 
 			expect(dayInfo.selectionType).toBeNull();
 			expect(dayInfo.isSelected).toBe(false);
-			expect(dayInfo.element.dataset.selectionType).toBe("");
+			expect(dayInfo.element!.dataset.selectionType).toBe("");
 		});
 	});
 
@@ -500,7 +510,7 @@ describe("Embedded Element References - Regression Prevention", () => {
 			// Access all elements directly
 			weeks.forEach((week) => {
 				week.days.forEach((day) => {
-					const element = day.element;
+					const element = day.element!;
 					expect(element).toBeInstanceOf(HTMLElement);
 
 					// Direct property access, not Map.get()
@@ -522,7 +532,7 @@ describe("Embedded Element References - Regression Prevention", () => {
 			// Access all elements
 			weeks.forEach((week) => {
 				week.days.forEach((day) => {
-					const element = day.element;
+					const element = day.element!;
 					void element.tagName;
 				});
 			});

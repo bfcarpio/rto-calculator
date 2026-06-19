@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { assertSundayMidnight, parseLocalDate } from "../date-helpers";
+import {
+	assertSundayMidnight,
+	formatDate,
+	parseLocalDate,
+} from "../date-helpers";
 
 describe("parseLocalDate", () => {
 	it("should parse YYYY-MM-DD as local midnight, not UTC midnight", () => {
@@ -74,5 +78,40 @@ describe("assertSundayMidnight", () => {
 		} catch (e) {
 			expect((e as Error).message).toContain("readCalendarData weekStart");
 		}
+	});
+});
+
+describe("formatDate", () => {
+	it("should format a Date as YYYY-MM-DD using local time", () => {
+		const date = new Date(2025, 2, 22); // March 22, 2025 local
+		expect(formatDate(date)).toBe("2025-03-22");
+	});
+
+	it("should pad single-digit months and days", () => {
+		const date = new Date(2025, 0, 5); // January 5, 2025 local
+		expect(formatDate(date)).toBe("2025-01-05");
+	});
+
+	it("should handle December 31", () => {
+		const date = new Date(2024, 11, 31); // December 31, 2024 local
+		expect(formatDate(date)).toBe("2024-12-31");
+	});
+
+	it("should not shift dates like toISOString does in negative-UTC timezones", () => {
+		// Create a date at local midnight — formatDate should preserve the local date
+		const date = new Date(2025, 2, 22); // Sun Mar 22 local midnight
+		const formatted = formatDate(date);
+		// The formatted string should always match the local date components
+		expect(formatted).toBe("2025-03-22");
+		// Verify it matches what we'd expect from local getters
+		expect(formatted).toBe(
+			`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`,
+		);
+	});
+
+	it("should round-trip with parseLocalDate", () => {
+		const original = "2025-07-04";
+		const parsed = parseLocalDate(original);
+		expect(formatDate(parsed)).toBe(original);
 	});
 });

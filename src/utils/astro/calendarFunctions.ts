@@ -4,7 +4,6 @@
  */
 
 import { clearSavedSelections } from "../../scripts/localStorage";
-import type { WeekData } from "../../types";
 import type {
 	DateString,
 	IDragSelectionManager,
@@ -14,11 +13,11 @@ import {
 	formatDateISO,
 	getCalendarDates,
 	getStartOfWeek,
-	getWeekDates,
 	isPastDate,
 	isSameDay,
 	isWeekend,
 } from "../dateUtils";
+import { saveSelectedDates } from "../storage";
 
 // Week start configuration
 export type WeekStart = "sunday" | "monday";
@@ -31,13 +30,9 @@ export function getLocaleWeekStart(): WeekStart {
 	return DEFAULT_WEEK_START;
 }
 
-import { saveSelectedDates } from "../storage";
-import { DEFAULT_POLICY, validateSelection, validateWeek } from "../validation";
-
 // State management
 let selectedDates: Set<DateString> = new Set<DateString>();
 const weekStart: WeekStart = DEFAULT_WEEK_START;
-let weekDataMap: Map<string, WeekData> = new Map<string, WeekData>();
 let dragSelectionManager: IDragSelectionManager | null = null;
 const today = new Date();
 today.setHours(0, 0, 0, 0);
@@ -323,9 +318,8 @@ export function validateAndUpdateCalendar(
 	if (!calendarContainer) return;
 
 	const dayCells = calendarContainer.querySelectorAll(".calendar-day");
-	const weeksMap = new Map<string, WeekData>();
 
-	// Process each day cell to determine week data
+	// Update visual state of each cell (compliance styling is handled by auto-compliance)
 	dayCells.forEach((dayCell) => {
 		const dateStr = (dayCell as HTMLElement).getAttribute("data-date");
 		if (!dateStr) return;
@@ -334,49 +328,16 @@ export function validateAndUpdateCalendar(
 		const weekStartLocal = getStartOfWeek(date);
 		const weekKey = formatDateISO(weekStartLocal) as DateString;
 
-		if (!weeksMap.has(weekKey)) {
-			const weekDates = getWeekDates(date);
-			const weekData = validateWeek(
-				weekDates,
-				selectedDates as Set<string>,
-				DEFAULT_POLICY.minOfficeDaysPerWeek,
-			);
-			weeksMap.set(weekKey, weekData);
-		}
-
-		weeksMap.get(weekKey);
 		(dayCell as HTMLElement).setAttribute(
 			"aria-describedby",
 			`week-${weekKey}`,
 		);
-	});
-
-	// Update visual state of each cell
-	dayCells.forEach((dayCell) => {
-		const dateStr = (dayCell as HTMLElement).getAttribute("data-date");
-		if (!dateStr) return;
-
-		const date = new Date(dateStr);
-		const weekStartLocal = getStartOfWeek(date);
-		const weekKey = formatDateISO(weekStartLocal) as DateString;
-		const weekData = weeksMap.get(weekKey);
 
 		// Update selected state
 		if (dateStr && selectedDates.has(dateStr as DateString)) {
 			(dayCell as HTMLElement).classList.add("selected");
 		} else {
 			(dayCell as HTMLElement).classList.remove("selected");
-		}
-
-		// Update cell styles based on week data
-		if (weekData && !isWeekend(date) && !isPastDate(date)) {
-			if (weekData.compliance >= 60) {
-				(dayCell as HTMLElement).classList.remove("violation");
-				(dayCell as HTMLElement).classList.add("compliant");
-			} else {
-				(dayCell as HTMLElement).classList.remove("compliant");
-				(dayCell as HTMLElement).classList.add("violation");
-			}
 		}
 	});
 }
@@ -397,18 +358,6 @@ export function handleDayClick(event: Event): void {
 	if (dateStr && selectedDates.has(dateString)) {
 		selectedDates.delete(dateString);
 	} else if (dateStr) {
-		// Validate selection before adding
-		const date = new Date(dateStr);
-		const validation = validateSelection(
-			date,
-			selectedDates,
-			DEFAULT_POLICY.minOfficeDaysPerWeek,
-		);
-
-		if (!validation.isValid && validation.message) {
-			console.warn(validation.message);
-		}
-
 		selectedDates.add(dateString);
 	}
 
@@ -553,7 +502,6 @@ export function exportSelections(): void {
 	const data = {
 		selectedDates: Array.from(selectedDates),
 		exportDate: new Date().toISOString(),
-		policy: DEFAULT_POLICY,
 	};
 
 	const blob = new Blob([JSON.stringify(data, null, 2)], {
@@ -637,10 +585,6 @@ export function getSelectedDates(): Set<string> {
 	return selectedDates;
 }
 
-export function getWeekDataMap(): Map<string, WeekData> {
-	return weekDataMap;
-}
-
 export function getDragSelectionManager(): IDragSelectionManager | null {
 	return dragSelectionManager;
 }
@@ -648,10 +592,6 @@ export function getDragSelectionManager(): IDragSelectionManager | null {
 // Export setter functions for state variables
 export function setSelectedDates(newSelectedDates: Set<string>): void {
 	selectedDates = new Set(newSelectedDates) as Set<DateString>;
-}
-
-export function setWeekDataMap(newWeekDataMap: Map<string, WeekData>): void {
-	weekDataMap = newWeekDataMap;
 }
 
 export function setDragSelectionManager(
