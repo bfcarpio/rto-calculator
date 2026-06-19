@@ -3,8 +3,8 @@
  * Refactored to use CalendarManager public API for state management
  *
  * This module handles all user interactions with the calendar including:
- * - Drag painting (click-drag selection)
- * - Keyboard navigation
+ * - Drag painting (click-drag selection) — delegated to drag-painting module
+ * - Keyboard navigation — delegated to keyboard-navigation module
  * - Clear operations
  * - Today highlighting
  * - Screen reader announcements
@@ -13,7 +13,6 @@
  */
 
 import type { CalendarManager } from "../../packages/datepainter/src/CalendarManager";
-import { formatDate } from "../../packages/datepainter/src/lib/dateUtils";
 import { dragState } from "../../packages/datepainter/src/stores/calendarStore";
 import type {
 	DateState,
@@ -21,25 +20,31 @@ import type {
 } from "../../packages/datepainter/src/types";
 import { announceToScreenReader } from "../utils/accessibility";
 import { logger } from "../utils/logger";
+import {
+	applySelectionToDate,
+	clearMonthSelections,
+	createInternalDragState,
+	getDateFromCell,
+	getDragDirection,
+	type InternalDragState,
+	resetDragState,
+	type SelectionIntent,
+	updateCellDOM,
+} from "./drag-painting";
+import { navigateKeyboard, toggleCellSelection } from "./keyboard-navigation";
 
-/**
- * Selection intent type for drag painting operations
- * Determines what state should be applied during drag operations
- */
-type SelectionIntent = DateState | null;
-
-/**
- * Internal drag state tracking
- * Extended from package dragState to include selection intent and DOM cell reference
- */
-interface InternalDragState {
-	/** Whether a drag operation is currently in progress */
-	isDragging: boolean;
-	/** The DOM element of the starting cell */
-	startCell: HTMLElement | null;
-	/** The selection intent to apply during drag (state or null to clear) */
-	selectionIntent: SelectionIntent;
-}
+// Re-export types for backward compatibility
+export type { InternalDragState, SelectionIntent } from "./drag-painting";
+export {
+	applySelectionToDate,
+	clearMonthSelections,
+	getCellFromDate,
+	getDateFromCell,
+	getDragDirection,
+	parseDate,
+	updateCellDOM,
+} from "./drag-painting";
+export { navigateKeyboard, toggleCellSelection } from "./keyboard-navigation";
 
 /**
  * CalendarEventManager - Handles all calendar UI interactions
@@ -60,11 +65,7 @@ class CalendarEventManager {
 	private manager: CalendarManager;
 
 	/** Internal drag state tracking (extends package dragState) */
-	private internalDragState: InternalDragState = {
-		isDragging: false,
-		startCell: null,
-		selectionIntent: null,
-	};
+	private internalDragState: InternalDragState = createInternalDragState();
 
 	/** Timer for updating today's date highlight */
 	private todayTimer: number | null = null;
@@ -187,7 +188,9 @@ class CalendarEventManager {
 		const clickHandler = (e: Event) => {
 			const target = e.target as Element;
 			const clearButton = target.closest('[id^="clear-"]');
-			if (!clearButton) return;
+			if (!clearButton) {
+				return;
+			}
 
 			const buttonId = clearButton.id;
 
@@ -200,7 +203,11 @@ class CalendarEventManager {
 			}
 			// Handle month-specific clear buttons
 			else if (buttonId.startsWith("clear-")) {
-				this.clearMonthSelections(clearButton as HTMLElement);
+				const count = clearMonthSelections(
+					clearButton as HTMLElement,
+					this.manager,
+				).length;
+				announceToScreenReader(`Cleared ${count} selections`);
 			}
 		};
 
@@ -229,7 +236,7 @@ class CalendarEventManager {
 		this.stateChangeUnsubscribe = this.manager.onStateChange(
 			(date: DateString, state: DateState | null) => {
 				// Update DOM cell when state changes via CalendarManager
-				this.updateCellDOM(date, state);
+				updateCellDOM(date, state);
 			},
 		);
 	}
@@ -246,16 +253,22 @@ class CalendarEventManager {
 	private handleGridMouseDown(e: MouseEvent): void {
 		const target = e.target as Element;
 		const cell = target.closest(".calendar-day");
-		if (!cell) return;
+		if (!cell) {
+			return;
+		}
 
 		// Guard clause: only left-click (button 0)
-		if (e.button !== 0) return;
+		if (e.button !== 0) {
+			return;
+		}
 
 		e.preventDefault();
 
 		const cellElement = cell as HTMLElement;
-		const date = this.getDateFromCell(cellElement);
-		if (!date) return;
+		const date = getDateFromCell(cellElement);
+		if (!date) {
+			return;
+		}
 
 		const currentState = this.manager.getState(date);
 
@@ -279,7 +292,7 @@ class CalendarEventManager {
 		});
 
 		// Apply selection to the clicked cell
-		this.applySelectionToDate(date, intendedSelection);
+		applySelectionToDate(this.manager, date, intendedSelection);
 	}
 
 	/**
@@ -292,24 +305,34 @@ class CalendarEventManager {
 	 */
 	private handleGridMouseOver(e: MouseEvent): void {
 		// Guard clause: only process during active drag
-		if (!this.internalDragState.isDragging) return;
+		if (!this.internalDragState.isDragging) {
+			return;
+		}
 
 		const target = e.target as Element;
 		const cell = target.closest(".calendar-day");
-		if (!cell) return;
+		if (!cell) {
+			return;
+		}
 
 		const cellElement = cell as HTMLElement;
-		const date = this.getDateFromCell(cellElement);
-		if (!date) return;
+		const date = getDateFromCell(cellElement);
+		if (!date) {
+			return;
+		}
 
 		const startCell = this.internalDragState.startCell;
-		if (!startCell) return;
+		if (!startCell) {
+			return;
+		}
 
-		const startDate = this.getDateFromCell(startCell);
-		if (!startDate) return;
+		const startDate = getDateFromCell(startCell);
+		if (!startDate) {
+			return;
+		}
 
 		// Update package drag state current point
-		const direction = this.getDragDirection(startDate, date);
+		const direction = getDragDirection(startDate, date);
 		dragState.set({
 			isDragging: true,
 			startPoint: startDate,
@@ -318,7 +341,11 @@ class CalendarEventManager {
 		});
 
 		// Apply the same selection intent to all cells during drag
-		this.applySelectionToDate(date, this.internalDragState.selectionIntent);
+		applySelectionToDate(
+			this.manager,
+			date,
+			this.internalDragState.selectionIntent,
+		);
 	}
 
 	/**
@@ -331,11 +358,7 @@ class CalendarEventManager {
 	private handleDocumentMouseUp(): void {
 		if (this.internalDragState.isDragging) {
 			// Reset internal drag state
-			this.internalDragState = {
-				isDragging: false,
-				startCell: null,
-				selectionIntent: null,
-			};
+			this.internalDragState = resetDragState();
 
 			// Reset package drag state
 			dragState.set({
@@ -359,25 +382,22 @@ class CalendarEventManager {
 	private handleGridKeyDown(e: KeyboardEvent): void {
 		const target = e.target as Element;
 		const cell = target.closest(".calendar-day");
-		if (!cell) return;
+		if (!cell) {
+			return;
+		}
 
 		const cellElement = cell as HTMLElement;
-		const date = this.getDateFromCell(cellElement);
-		if (!date) return;
+		const date = getDateFromCell(cellElement);
+		if (!date) {
+			return;
+		}
 
 		switch (e.key) {
 			case "Enter":
 			case " ": {
 				e.preventDefault();
-				// Toggle OOF selection
 				const currentState = this.manager.getState(date);
-				const wasOOF = currentState === "oof";
-
-				if (wasOOF) {
-					this.applySelectionToDate(date, null);
-				} else {
-					this.applySelectionToDate(date, "oof");
-				}
+				toggleCellSelection(this.manager, date, currentState);
 				break;
 			}
 
@@ -386,135 +406,12 @@ class CalendarEventManager {
 			case "ArrowLeft":
 			case "ArrowRight":
 				e.preventDefault();
-				this.navigateKeyboard(e.key, cellElement);
+				navigateKeyboard(e.key, cellElement);
 				break;
 
 			case "Escape":
 				this.clearDragState();
 				break;
-		}
-	}
-
-	/**
-	 * Navigates between day cells with arrow keys
-	 *
-	 * Calculates the next cell based on direction and moves focus.
-	 *
-	 * @param direction - Arrow key direction
-	 * @param currentCell - Currently focused cell
-	 * @private
-	 */
-	private navigateKeyboard(direction: string, currentCell: HTMLElement): void {
-		const allCells = Array.from(
-			document.querySelectorAll(".calendar-day:not(.empty)"),
-		);
-		const currentIndex = allCells.indexOf(currentCell);
-
-		// Guard clause: current cell not found in list
-		if (currentIndex === -1) return;
-
-		let nextIndex: number;
-		switch (direction) {
-			case "ArrowRight":
-				nextIndex = (currentIndex + 1) % allCells.length;
-				break;
-			case "ArrowLeft":
-				nextIndex = (currentIndex - 1 + allCells.length) % allCells.length;
-				break;
-			case "ArrowDown":
-				nextIndex = (currentIndex + 7) % allCells.length;
-				break;
-			case "ArrowUp":
-				nextIndex = (currentIndex - 7 + allCells.length) % allCells.length;
-				break;
-			default:
-				return; // Invalid direction
-		}
-
-		// Move focus to next cell
-		if (nextIndex !== undefined && allCells[nextIndex]) {
-			(allCells[nextIndex] as HTMLElement).focus();
-		}
-	}
-
-	/**
-	 * Applies a selection state to a specific date
-	 *
-	 * Uses CalendarManager API to mutate state and updates the DOM.
-	 * Dispatches events for other modules.
-	 *
-	 * @param date - Date string in YYYY-MM-DD format
-	 * @param type - Selection state to apply (DateState or null to clear)
-	 * @private
-	 */
-	private applySelectionToDate(date: DateString, type: SelectionIntent): void {
-		if (type === null) {
-			// Clear selection using CalendarManager API
-			this.manager.clearDates([date]);
-		} else {
-			// Apply selection state using CalendarManager API
-			this.manager.setDates([date], type);
-		}
-
-		// Update DOM directly for immediate feedback
-		this.updateCellDOM(date, type);
-
-		// Dispatch event for other modules (validation, localStorage)
-		const cell = this.getCellFromDate(date);
-		if (cell) {
-			cell.dispatchEvent(
-				new CustomEvent("rto-selection-changed", {
-					bubbles: true,
-					detail: { cell, selectionType: type, date },
-				}),
-			);
-		}
-	}
-
-	/**
-	 * Updates a cell's DOM to reflect its selection state
-	 *
-	 * Updates data attributes, classes, and ARIA attributes.
-	 *
-	 * @param date - Date string in YYYY-MM-DD format
-	 * @param state - Selection state or null
-	 * @private
-	 */
-	private updateCellDOM(date: DateString, state: DateState | null): void {
-		const cell = this.getCellFromDate(date);
-		if (!cell) return;
-
-		const currentLabel = cell.getAttribute("aria-label") || "";
-
-		if (state === null) {
-			// Clear selection
-			cell.dataset.selected = "false";
-			cell.dataset.selectionType = "";
-			cell.classList.remove("selected", "out-of-office");
-			cell.ariaSelected = "false";
-
-			// Update aria-label for accessibility
-			const newLabel = currentLabel.replace(/\. .*$/, ". Unselected");
-			cell.setAttribute("aria-label", newLabel);
-		} else {
-			// Apply selection state
-			const selectionClass = state === "oof" ? "out-of-office" : state;
-			cell.dataset.selected = "true";
-			cell.dataset.selectionType = state;
-			cell.classList.add("selected", selectionClass);
-			cell.ariaSelected = "true";
-
-			// Update aria-label for accessibility
-			const label =
-				state === "oof"
-					? "Out of office"
-					: state === "holiday"
-						? "Holiday"
-						: state === "sick"
-							? "Sick"
-							: state;
-			const newLabel = currentLabel.replace(/\. .*$/, `.${label}`);
-			cell.setAttribute("aria-label", newLabel);
 		}
 	}
 
@@ -531,42 +428,6 @@ class CalendarEventManager {
 	}
 
 	/**
-	 * Clears selections for a specific month
-	 *
-	 * Clears all selected dates within the month controlled by the clear button.
-	 *
-	 * @param button - The clear button element
-	 * @private
-	 */
-	private clearMonthSelections(button: HTMLElement): void {
-		const monthId = button.getAttribute("aria-controls");
-		if (!monthId) return;
-
-		const monthContainer = document.getElementById(monthId);
-		if (!monthContainer) {
-			logger.warn(`[EventHandlers] Month container not found: ${monthId}`);
-			return;
-		}
-
-		const selectedCells = monthContainer.querySelectorAll(
-			".calendar-day.selected",
-		);
-		const count = selectedCells.length;
-
-		const datesToClear: DateString[] = [];
-		selectedCells.forEach((cell) => {
-			const date = this.getDateFromCell(cell as HTMLElement);
-			if (date) datesToClear.push(date);
-		});
-
-		if (datesToClear.length > 0) {
-			this.manager.clearDates(datesToClear);
-		}
-
-		announceToScreenReader(`Cleared ${count} selections`);
-	}
-
-	/**
 	 * Clears the drag state
 	 *
 	 * Resets both internal and package drag states.
@@ -574,11 +435,7 @@ class CalendarEventManager {
 	 * @private
 	 */
 	private clearDragState(): void {
-		this.internalDragState = {
-			isDragging: false,
-			startCell: null,
-			selectionIntent: null,
-		};
+		this.internalDragState = resetDragState();
 
 		dragState.set({
 			isDragging: false,
@@ -638,95 +495,6 @@ class CalendarEventManager {
 		this.todayTimer = window.setInterval(() => {
 			this.updateTodayHighlight();
 		}, 60000); // Check every minute
-	}
-
-	/**
-	 * Gets the date string from a calendar cell element
-	 *
-	 * Extracts year, month, day from data attributes and formats as YYYY-MM-DD.
-	 *
-	 * @param cell - The calendar cell element
-	 * @returns The date string or null if invalid
-	 * @private
-	 */
-	private getDateFromCell(cell: HTMLElement): DateString | null {
-		const year = parseInt(cell.dataset.year || "0", 10);
-		const month = parseInt(cell.dataset.month || "0", 10);
-		const day = parseInt(cell.dataset.day || "0", 10);
-
-		// Guard clause: validate date components
-		if (!year || !month || !day) return null;
-		if (Number.isNaN(year) || Number.isNaN(month) || Number.isNaN(day))
-			return null;
-
-		try {
-			const date = new Date(year, month, day);
-			const dateStr = formatDate(date);
-			return dateStr;
-		} catch (error) {
-			logger.warn("[EventHandlers] Failed to format date from cell", error);
-			return null;
-		}
-	}
-
-	/**
-	 * Gets a cell element from a date string
-	 *
-	 * Finds the calendar cell corresponding to the given date.
-	 *
-	 * @param date - The date string in YYYY-MM-DD format
-	 * @returns The cell element or null if not found
-	 * @private
-	 */
-	private getCellFromDate(date: DateString): HTMLElement | null {
-		const parsed = this.parseDate(date);
-		if (!parsed) return null;
-
-		return document.querySelector(
-			`.calendar-day[data-year="${parsed.year}"][data-month="${parsed.month}"][data-day="${parsed.day}"]`,
-		) as HTMLElement | null;
-	}
-
-	/**
-	 * Parses a date string into components
-	 *
-	 * @param date - The date string in YYYY-MM-DD format
-	 * @returns The parsed components or null if invalid
-	 * @private
-	 */
-	private parseDate(
-		date: DateString,
-	): { year: number; month: number; day: number } | null {
-		const parts = date.split("-");
-		if (parts.length !== 3) return null;
-
-		// We've validated the length, so these elements exist
-		const year = parseInt(parts[0] || "0", 10);
-		const month = parseInt(parts[1] || "0", 10);
-		const day = parseInt(parts[2] || "0", 10);
-
-		if (Number.isNaN(year) || Number.isNaN(month) || Number.isNaN(day))
-			return null;
-
-		return { year, month, day };
-	}
-
-	/**
-	 * Gets the drag direction between two dates
-	 *
-	 * @param startDate - The starting date string
-	 * @param currentDate - The current date string
-	 * @returns The drag direction or null
-	 * @private
-	 */
-	private getDragDirection(
-		startDate: DateString,
-		currentDate: DateString,
-	): "forward" | "backward" | null {
-		if (startDate === currentDate) return null;
-
-		// Simple string comparison works for YYYY-MM-DD format
-		return startDate < currentDate ? "forward" : "backward";
 	}
 
 	/**

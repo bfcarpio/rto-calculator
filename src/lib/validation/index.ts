@@ -5,6 +5,9 @@
  * @module validation
  */
 
+// Re-export elementToDaySelection from dom-adapters for backward compatibility
+// (was previously in rto-core, moved to keep validation pure)
+export { elementToDaySelection } from "../dom-adapters";
 export type { WindowSummary, WindowWeekDetail } from "./all-windows";
 export { evaluateAllWindows } from "./all-windows";
 export type {

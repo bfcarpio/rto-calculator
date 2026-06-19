@@ -1,6 +1,6 @@
 import { initializeHolidayIntegration } from "../lib/holiday/CalendarHolidayIntegration";
 import { initializeLocalStorage } from "../scripts/localStorage";
-import { setupEventListeners } from "../utils/astro/calendarFunctions";
+import { setupCalendarEventListeners } from "../utils/astro/calendar-events";
 import { isDebugEnabled, logger } from "../utils/logger";
 
 declare global {
@@ -38,9 +38,9 @@ export function initializeIndex() {
 	initializeLocalStorage();
 
 	if (document.readyState === "loading") {
-		document.addEventListener("DOMContentLoaded", setupEventListeners);
+		document.addEventListener("DOMContentLoaded", setupCalendarEventListeners);
 	} else {
-		setupEventListeners();
+		setupCalendarEventListeners();
 	}
 
 	initializeHolidayIntegration();

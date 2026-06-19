@@ -141,25 +141,10 @@ export function createDaySelection(
 	};
 }
 
-export function elementToDaySelection(
-	element: HTMLElement,
-): DaySelection | null {
-	const year = element.dataset.year;
-	const month = element.dataset.month;
-	const day = element.dataset.day;
-	const selectionType = element.dataset.selectionType;
-
-	if (!year || !month || !day) {
-		return null;
-	}
-
-	return createDaySelection(
-		parseInt(year, 10),
-		parseInt(month, 10),
-		parseInt(day, 10),
-		(selectionType as "out-of-office" | "none") || "none",
-	);
-}
+// elementToDaySelection has been moved to src/lib/dom-adapters.ts
+// to keep this module free of DOM dependencies.
+// Import from dom-adapters for backward compatibility:
+//   import { elementToDaySelection } from '../dom-adapters';
 
 // ==================== Data Processing ====================
 

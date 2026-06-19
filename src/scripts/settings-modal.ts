@@ -1,13 +1,44 @@
+/**
+ * Settings modal controller
+ *
+ * Manages the settings modal UI, including open/close behavior,
+ * event binding, and delegation to focused modules:
+ * - Toggle handling → settings-toggles
+ * - Theme management → settings-theme
+ *
+ * @module settings-modal
+ */
+
 import { isAutoComplianceReady } from "../lib/auto-compliance";
 import { getDateRange } from "../lib/dateUtils";
 import { DEFAULTS } from "../lib/settings-constants";
 import { settingsStore } from "../lib/stores/settingsStore";
-import { getColorScheme, setColorScheme } from "../lib/themeManager";
 import { getStartOfWeek } from "../lib/validation/rto-core";
 import { announceToScreenReader } from "../utils/accessibility";
 import { logger } from "../utils/logger";
 import { clearAllData } from "../utils/storage";
 import { initializeIndex } from "./index-init";
+import {
+	applyColorSchemeChange,
+	syncColorSchemeSelect,
+} from "./settings-theme";
+import {
+	readToggleState,
+	setToggleState,
+	toggleBooleanSetting,
+} from "./settings-toggles";
+
+export type { ColorScheme } from "./settings-theme";
+export {
+	applyColorSchemeChange,
+	syncColorSchemeSelect,
+} from "./settings-theme";
+// Re-export for backward compatibility
+export {
+	readToggleState,
+	setToggleState,
+	toggleBooleanSetting,
+} from "./settings-toggles";
 
 declare global {
 	interface Window {
@@ -185,63 +216,31 @@ class SettingsModal {
 	}
 
 	private toggleDebugMode(): void {
-		this.toggleBooleanSetting(this.debugToggle, "Debug mode", (newState) => {
+		toggleBooleanSetting(this.debugToggle, "Debug mode", (newState) => {
 			window.validationManager?.setDebugMode(newState);
 		});
 	}
 
 	private toggleSaveData(): void {
-		this.toggleBooleanSetting(
-			this.saveDataToggle,
-			"Data saving",
-			(newState) => {
-				window.storageManager?.setDataSavingEnabled(newState);
-			},
-		);
+		toggleBooleanSetting(this.saveDataToggle, "Data saving", (newState) => {
+			window.storageManager?.setDataSavingEnabled(newState);
+		});
 	}
 
 	private toggleHolidayOofMode(): void {
-		this.toggleBooleanSetting(this.holidayOofToggle, "Holiday OOF mode");
+		toggleBooleanSetting(this.holidayOofToggle, "Holiday OOF mode");
 	}
 
 	private toggleSickPenalize(): void {
-		this.toggleBooleanSetting(this.sickPenalizeToggle, "Sick days penalize");
+		toggleBooleanSetting(this.sickPenalizeToggle, "Sick days penalize");
 	}
 
 	private toggleHolidayPenalize(): void {
-		this.toggleBooleanSetting(this.holidayPenalizeToggle, "Holiday penalize");
+		toggleBooleanSetting(this.holidayPenalizeToggle, "Holiday penalize");
 	}
 
 	private toggleRoundPercentage(): void {
-		this.toggleBooleanSetting(this.roundPercentageToggle, "Round percentage");
-	}
-
-	/**
-	 * Toggle a boolean setting by flipping its aria-checked attribute.
-	 *
-	 * Reads the current aria-checked value, flips it, persists the change,
-	 * and optionally calls a side-effect callback with the new state.
-	 *
-	 * @param element - The toggle button element (null = no-op)
-	 * @param settingName - Human-readable name for debug logging
-	 * @param sideEffect - Optional callback invoked with the new boolean state
-	 */
-	private toggleBooleanSetting(
-		element: HTMLButtonElement | null,
-		settingName: string,
-		sideEffect?: (newState: boolean) => void,
-	): void {
-		if (!element) return;
-
-		const currentState = element.getAttribute("aria-checked") === "true";
-		const newState = !currentState;
-		element.setAttribute("aria-checked", newState.toString());
-
-		sideEffect?.(newState);
-		this.saveSettingsToLocalStorage();
-		logger.debug(
-			`[Settings] ${settingName} ${newState ? "enabled" : "disabled"}`,
-		);
+		toggleBooleanSetting(this.roundPercentageToggle, "Round percentage");
 	}
 
 	private onMinOfficeDaysChange(e: Event): void {
@@ -254,9 +253,13 @@ class SettingsModal {
 	}
 
 	private onRollingWindowChange(): void {
-		if (!this.rollingWindowInput) return;
+		if (!this.rollingWindowInput) {
+			return;
+		}
 		const value = parseInt(this.rollingWindowInput.value, 10);
-		if (value < 1 || value > 52) return;
+		if (value < 1 || value > 52) {
+			return;
+		}
 
 		// Clamp best weeks to not exceed rolling window
 		if (this.bestWeeksInput) {
@@ -272,13 +275,17 @@ class SettingsModal {
 	}
 
 	private onBestWeeksChange(): void {
-		if (!this.bestWeeksInput) return;
+		if (!this.bestWeeksInput) {
+			return;
+		}
 		const value = parseInt(this.bestWeeksInput.value, 10);
 		const maxWeeks = this.rollingWindowInput
 			? parseInt(this.rollingWindowInput.value, 10)
 			: DEFAULTS.rollingWindowWeeks;
 
-		if (value < 1 || value > maxWeeks) return;
+		if (value < 1 || value > maxWeeks) {
+			return;
+		}
 
 		this.saveSettingsToLocalStorage();
 		logger.debug(`[Settings] Best weeks changed to: ${value}`);
@@ -292,7 +299,9 @@ class SettingsModal {
 	}
 
 	private populateStartingWeekOptions(): void {
-		if (!this.startingWeekSelect) return;
+		if (!this.startingWeekSelect) {
+			return;
+		}
 
 		const savedValue = this.startingWeekSelect.value;
 		// Clear all options except the default
@@ -352,7 +361,9 @@ class SettingsModal {
 
 	private onPatternClick(e: Event): void {
 		const target = e.target as HTMLElement;
-		if (!target.classList.contains("pattern-day")) return;
+		if (!target.classList.contains("pattern-day")) {
+			return;
+		}
 
 		const dayIndex = parseInt(target.getAttribute("data-day") || "0", 10);
 		const index = this.selectedPattern.indexOf(dayIndex);
@@ -393,9 +404,11 @@ class SettingsModal {
 	}
 
 	private resetSettings(): void {
-		if (!confirm("Reset all settings to default values?")) return;
+		if (!confirm("Reset all settings to default values?")) {
+			return;
+		}
 
-		this.debugToggle?.setAttribute("aria-checked", "false");
+		setToggleState(this.debugToggle, false);
 		window.validationManager?.setDebugMode(false);
 
 		if (this.minOfficeDaysInput) {
@@ -410,11 +423,10 @@ class SettingsModal {
 			this.countrySelect.value = "";
 		}
 
-		this.holidayOofToggle?.setAttribute("aria-checked", "true");
-
-		this.sickPenalizeToggle?.setAttribute("aria-checked", "true");
-		this.holidayPenalizeToggle?.setAttribute("aria-checked", "true");
-		this.roundPercentageToggle?.setAttribute("aria-checked", "true");
+		setToggleState(this.holidayOofToggle, true);
+		setToggleState(this.sickPenalizeToggle, true);
+		setToggleState(this.holidayPenalizeToggle, true);
+		setToggleState(this.roundPercentageToggle, true);
 
 		if (this.rollingWindowInput) {
 			this.rollingWindowInput.value = DEFAULTS.rollingWindowWeeks.toString();
@@ -436,7 +448,9 @@ class SettingsModal {
 	}
 
 	private clearSavedData(): void {
-		if (!window.confirm("Clear all saved data? This cannot be undone.")) return;
+		if (!window.confirm("Clear all saved data? This cannot be undone.")) {
+			return;
+		}
 		clearAllData();
 		localStorage.removeItem("datepainter:selectedDates");
 		settingsStore.set({ ...DEFAULTS });
@@ -498,7 +512,10 @@ class SettingsModal {
 					cellElement.dispatchEvent(
 						new CustomEvent("rto-selection-changed", {
 							bubbles: true,
-							detail: { cell: cellElement, selectionType: "work-from-home" },
+							detail: {
+								cell: cellElement,
+								selectionType: "work-from-home",
+							},
 						}),
 					);
 
@@ -521,7 +538,9 @@ class SettingsModal {
 	}
 
 	private updatePatternStatus(): void {
-		if (!this.patternStatus) return;
+		if (!this.patternStatus) {
+			return;
+		}
 
 		const officeDays = 5 - this.selectedPattern.length;
 		const minOfficeDays = this.minOfficeDaysInput
@@ -546,7 +565,7 @@ class SettingsModal {
 
 	private syncSettings(): void {
 		const isDebugEnabled = window.validationManager?.getDebugMode() ?? false;
-		this.debugToggle?.setAttribute("aria-checked", isDebugEnabled.toString());
+		setToggleState(this.debugToggle, isDebugEnabled);
 
 		const config = window.validationManager?.getConfig() ?? {};
 		if (this.minOfficeDaysInput && config.minOfficeDaysPerWeek !== undefined) {
@@ -554,9 +573,7 @@ class SettingsModal {
 		}
 
 		// Sync color scheme dropdown
-		if (this.colorSchemeSelect) {
-			this.colorSchemeSelect.value = getColorScheme();
-		}
+		syncColorSchemeSelect(this.colorSchemeSelect);
 
 		this.populateStartingWeekOptions();
 		this.updatePatternSelectorUI();
@@ -565,8 +582,8 @@ class SettingsModal {
 	private saveSettingsToLocalStorage(): void {
 		settingsStore.set({
 			...settingsStore.get(),
-			debug: this.debugToggle?.getAttribute("aria-checked") === "true",
-			saveData: this.saveDataToggle?.getAttribute("aria-checked") === "true",
+			debug: readToggleState(this.debugToggle),
+			saveData: readToggleState(this.saveDataToggle),
 			minOfficeDays: this.minOfficeDaysInput
 				? parseInt(this.minOfficeDaysInput.value, 10)
 				: DEFAULTS.minOfficeDays,
@@ -581,15 +598,17 @@ class SettingsModal {
 				this.selectedPattern.length > 0 ? [...this.selectedPattern] : null,
 			holidays: {
 				countryCode: this.countrySelect?.value ?? null,
-				holidaysAsOOF:
-					this.holidayOofToggle?.getAttribute("aria-checked") === "true",
+				holidaysAsOOF: readToggleState(this.holidayOofToggle),
 			},
-			sickDaysPenalize:
-				this.sickPenalizeToggle?.getAttribute("aria-checked") !== "false",
-			holidayPenalize:
-				this.holidayPenalizeToggle?.getAttribute("aria-checked") !== "false",
-			roundPercentage:
-				this.roundPercentageToggle?.getAttribute("aria-checked") !== "false",
+			sickDaysPenalize: !readToggleState(this.sickPenalizeToggle)
+				? true
+				: readToggleState(this.sickPenalizeToggle),
+			holidayPenalize: !readToggleState(this.holidayPenalizeToggle)
+				? true
+				: readToggleState(this.holidayPenalizeToggle),
+			roundPercentage: !readToggleState(this.roundPercentageToggle)
+				? true
+				: readToggleState(this.roundPercentageToggle),
 		});
 		logger.debug("[Settings] Settings saved to localStorage");
 	}
@@ -604,18 +623,12 @@ class SettingsModal {
 			}
 
 			if (this.debugToggle) {
-				this.debugToggle.setAttribute(
-					"aria-checked",
-					settings.debug.toString(),
-				);
+				setToggleState(this.debugToggle, settings.debug);
 				window.validationManager?.setDebugMode(settings.debug);
 			}
 
 			if (this.saveDataToggle) {
-				this.saveDataToggle.setAttribute(
-					"aria-checked",
-					settings.saveData.toString(),
-				);
+				setToggleState(this.saveDataToggle, settings.saveData);
 				window.storageManager?.setDataSavingEnabled(settings.saveData);
 			}
 
@@ -653,30 +666,21 @@ class SettingsModal {
 			}
 
 			if (this.holidayOofToggle) {
-				this.holidayOofToggle.setAttribute(
-					"aria-checked",
-					settings.holidays.holidaysAsOOF.toString(),
-				);
+				setToggleState(this.holidayOofToggle, settings.holidays.holidaysAsOOF);
 			}
 
 			if (this.sickPenalizeToggle) {
-				this.sickPenalizeToggle.setAttribute(
-					"aria-checked",
-					settings.sickDaysPenalize.toString(),
-				);
+				setToggleState(this.sickPenalizeToggle, settings.sickDaysPenalize);
 			}
 
 			if (this.holidayPenalizeToggle) {
-				this.holidayPenalizeToggle.setAttribute(
-					"aria-checked",
-					settings.holidayPenalize.toString(),
-				);
+				setToggleState(this.holidayPenalizeToggle, settings.holidayPenalize);
 			}
 
 			if (this.roundPercentageToggle) {
-				this.roundPercentageToggle.setAttribute(
-					"aria-checked",
-					(settings.roundPercentage ?? true).toString(),
+				setToggleState(
+					this.roundPercentageToggle,
+					settings.roundPercentage ?? true,
 				);
 			}
 
@@ -696,7 +700,7 @@ class SettingsModal {
 			| "tol-muted-dark";
 
 		if (colorScheme) {
-			setColorScheme(colorScheme);
+			applyColorSchemeChange(colorScheme);
 			this.saveSettingsToLocalStorage();
 		}
 	}

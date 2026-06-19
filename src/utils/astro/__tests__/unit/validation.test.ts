@@ -11,13 +11,13 @@
  */
 
 import { describe, expect, it } from "vitest";
+import { elementToDaySelection } from "../../../../lib/dom-adapters";
 import {
 	calculateOfficeDaysInWeek,
 	calculateWeekCompliance,
 	createDaySelection,
 	type DaySelection,
 	DEFAULT_RTO_POLICY,
-	elementToDaySelection,
 	getFullWeekDates,
 	// Date utilities
 	getOutOfOfficeDates,

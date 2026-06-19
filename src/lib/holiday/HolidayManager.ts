@@ -1,49 +1,28 @@
 /**
  * Holiday Manager Service
  *
- * This service manages holiday data fetching, filtering, and application
- * to the calendar. It integrates with the holiday data source strategy pattern
- * and provides company-specific holiday filtering.
+ * Core singleton for holiday data management. Business logic and data access
+ * are delegated to focused modules:
+ * - holiday-data.ts — Data fetching, caching, and company filtering
+ * - holiday-dom-adapter.ts — DOM manipulation for calendar cells
  *
  * @module holiday-manager
  */
 
-import type {
-	Holiday,
-	HolidayDataSource,
-} from "../../types/holiday-data-source";
-import { logger } from "../../utils/logger";
-import companyFiltersJson from "./data/company-filters.json";
-import { HolidayDataSourceFactory } from "./sources";
-
-const { $schema: _, ...companyFilters } = companyFiltersJson;
-
-/**
- * Extra holiday: fixed date or day-after another holiday
- */
-type ExtraHoliday =
-	| { name: string; month: number; day: number }
-	| { name: string; after: string };
-
-/**
- * Company holiday filter entry
- */
-interface CompanyEntry {
-	holidays: string[];
-	extra?: ExtraHoliday[];
-}
-
-/**
- * Type for company filters JSON structure
- */
-interface CompanyFilters {
-	[countryCode: string]: {
-		name: string;
-		companies: {
-			[companyName: string]: CompanyEntry;
-		};
-	};
-}
+import type { HolidayDataSource } from "../../types/holiday-data-source";
+import {
+	buildHolidaySummary,
+	createDataSource,
+	fetchHolidaysFromSource,
+	generateCacheKey,
+	getAvailableCompaniesForCountry,
+	hasCompanyFiltersForCountry,
+	normalizeDate,
+} from "./holiday-data";
+import {
+	applyHolidaysToCalendarDOM,
+	removeHolidaysFromCalendarDOM,
+} from "./holiday-dom-adapter";
 
 /**
  * Holiday filter configuration
@@ -72,7 +51,7 @@ export interface HolidayResult {
 	weekdayHolidays: number;
 	filteredCount: number;
 	years: number[];
-	countryCode: string | null;
+	countryCode: string;
 	companyName: string | null;
 }
 
@@ -90,7 +69,8 @@ export interface FetchHolidaysOptions {
  * Holiday Manager Class
  *
  * Manages holiday data fetching, caching, and filtering with support for
- * company-specific holiday policies.
+ * company-specific holiday policies. Delegates DOM operations to
+ * holiday-dom-adapter and data access to holiday-data.
  */
 export class HolidayManager {
 	private static instance: HolidayManager | null = null;
@@ -115,15 +95,7 @@ export class HolidayManager {
 			return;
 		}
 
-		const factory = await HolidayDataSourceFactory.getInstance();
-		const dataSource = factory.getDataSource("nager-date");
-
-		// Type guard to ensure it's a valid HolidayDataSource
-		if (!dataSource || typeof dataSource.getHolidaysByYear !== "function") {
-			throw new Error("Invalid holiday data source");
-		}
-
-		this.dataSource = dataSource as HolidayDataSource;
+		this.dataSource = await createDataSource();
 		this.initialized = true;
 	}
 
@@ -160,217 +132,44 @@ export class HolidayManager {
 	}
 
 	/**
-	 * Generate a cache key for the given options
-	 */
-	private generateCacheKey(options: FetchHolidaysOptions): string {
-		const { countryCode, companyName, years, onlyWeekdays } = options;
-		const company = companyName || "all";
-		const weekday = onlyWeekdays ? "weekdays" : "all";
-		const yearsStr = years.sort().join(",");
-		return `${countryCode}:${company}:${yearsStr}:${weekday}`;
-	}
-
-	/**
-	 * Check if a date is a weekday (Monday-Friday)
-	 */
-	private isWeekday(date: Date): boolean {
-		const day = date.getDay();
-		return day >= 1 && day <= 5; // 1 = Monday, 5 = Friday
-	}
-
-	/**
-	 * Normalize date to midnight for consistent comparison
-	 */
-	private normalizeDate(date: Date): Date {
-		const normalized = new Date(date);
-		normalized.setHours(0, 0, 0, 0);
-		return normalized;
-	}
-
-	/**
-	 * Get company holiday filters for a country
-	 */
-	private getCompanyHolidays(
-		countryCode: string,
-		companyName: string,
-	): Set<string> | null {
-		const filters = companyFilters as CompanyFilters;
-		const countryData = filters[countryCode];
-		if (!countryData || !countryData.companies) {
-			return null;
-		}
-
-		const companyData = countryData.companies[companyName];
-		if (!companyData || !companyData.holidays) {
-			return null;
-		}
-
-		return new Set(companyData.holidays);
-	}
-
-	/**
-	 * Resolve extra holidays for a company into HolidayInfo objects
-	 */
-	private resolveExtraHolidays(
-		countryCode: string,
-		companyName: string,
-		apiHolidays: HolidayInfo[],
-		years: number[],
-	): HolidayInfo[] {
-		const filters = companyFilters as CompanyFilters;
-		const companyData = filters[countryCode]?.companies?.[companyName];
-		if (!companyData?.extra) {
-			return [];
-		}
-
-		const extras: HolidayInfo[] = [];
-		for (const rule of companyData.extra) {
-			if ("month" in rule) {
-				// Fixed date: create one per year
-				for (const year of years) {
-					const date = new Date(year, rule.month - 1, rule.day);
-					extras.push({
-						date: this.normalizeDate(date),
-						name: rule.name,
-						countryCode,
-						isWeekday: this.isWeekday(date),
-					});
-				}
-			} else if ("after" in rule) {
-				// Day after a named holiday
-				for (const h of apiHolidays) {
-					if (h.name === rule.after) {
-						// h.date is always a Date object here — safe to copy via Date constructor
-						// (Unlike new Date(string) which has the UTC-midnight bug)
-						const date = new Date(h.date);
-						date.setDate(date.getDate() + 1);
-						extras.push({
-							date: this.normalizeDate(date),
-							name: rule.name,
-							countryCode,
-							isWeekday: this.isWeekday(date),
-						});
-					}
-				}
-			}
-		}
-		return extras;
-	}
-
-	/**
 	 * Fetch holidays for specified years and options
 	 */
 	public async fetchHolidays(
 		options: FetchHolidaysOptions,
 	): Promise<HolidayResult> {
-		const { countryCode, companyName, years, onlyWeekdays = false } = options;
-
-		// Ensure companyName is null if undefined
-		const companyFilter: string | null =
-			companyName === undefined ? null : companyName;
-
 		// Check cache first
-		const cacheKey = this.generateCacheKey(options);
+		const cacheKey = generateCacheKey(options);
 		const cached = this.cache.get(cacheKey);
 		if (cached) {
 			return cached;
 		}
 
-		try {
-			// Fail fast if data source is not initialized
-			if (!this.dataSource) {
-				throw new Error(
-					"HolidayManager data source not initialized. " +
-						"Call initialize() before fetching holidays.",
-				);
-			}
-
-			// Fetch holidays for all years
-			const allHolidays: Holiday[] = [];
-			for (const year of years) {
-				const holidays = await this.dataSource.getHolidaysByYear(
-					year,
-					countryCode,
-				);
-				allHolidays.push(...holidays);
-			}
-
-			// Get company filter if specified
-			const companyHolidays =
-				companyFilter && companyFilter !== null && companyFilter !== ""
-					? this.getCompanyHolidays(countryCode, companyFilter)
-					: null;
-
-			// Filter and transform holidays
-			const holidayInfoList: HolidayInfo[] = allHolidays
-				.filter((holiday) => {
-					// Filter by company if specified
-					if (companyHolidays) {
-						return companyHolidays.has(holiday.name);
-					}
-					return true;
-				})
-				.map((holiday) => ({
-					date: this.normalizeDate(holiday.date),
-					name: holiday.name,
-					countryCode: holiday.countryCode,
-					isWeekday: this.isWeekday(holiday.date),
-				}))
-				.filter((holiday) => {
-					// Filter to only weekdays if specified
-					if (onlyWeekdays) {
-						return holiday.isWeekday;
-					}
-					return true;
-				});
-
-			// Inject extra company holidays (fixed dates, day-after rules)
-			if (companyFilter && companyFilter !== "") {
-				const extras = this.resolveExtraHolidays(
-					countryCode,
-					companyFilter,
-					holidayInfoList,
-					years,
-				);
-				for (const extra of extras) {
-					if (!onlyWeekdays || extra.isWeekday) {
-						holidayInfoList.push(extra);
-					}
-				}
-			}
-
-			const weekdayHolidays = holidayInfoList.filter((h) => h.isWeekday).length;
-
-			const result: HolidayResult = {
-				holidays: holidayInfoList,
-				totalHolidays: holidayInfoList.length,
-				weekdayHolidays,
-				filteredCount:
-					companyHolidays && companyFilter !== null
-						? allHolidays.length - holidayInfoList.length
-						: 0,
-				years,
-				countryCode,
-				companyName: companyFilter,
-			};
-
-			// Cache the result
-			this.cache.set(cacheKey, result);
-
-			return result;
-		} catch (error) {
-			logger.error("Error fetching holidays:", error);
-			// Return empty result on error
-			return {
-				holidays: [],
-				totalHolidays: 0,
-				weekdayHolidays: 0,
-				filteredCount: 0,
-				years,
-				countryCode,
-				companyName: companyName || null,
-			};
+		// Fail fast if data source is not initialized
+		if (!this.dataSource) {
+			throw new Error(
+				"HolidayManager data source not initialized. " +
+					"Call initialize() before fetching holidays.",
+			);
 		}
+
+		const { countryCode, companyName, years } = options;
+		const result = await fetchHolidaysFromSource(this.dataSource, options);
+
+		// Build full HolidayResult with metadata
+		const holidayResult: HolidayResult = {
+			holidays: result.holidays,
+			totalHolidays: result.totalHolidays,
+			weekdayHolidays: result.weekdayHolidays,
+			filteredCount: result.filteredCount,
+			years,
+			countryCode,
+			companyName: companyName ?? null,
+		};
+
+		// Cache the result
+		this.cache.set(cacheKey, holidayResult);
+
+		return holidayResult;
 	}
 
 	/**
@@ -400,9 +199,9 @@ export class HolidayManager {
 		countryCode: string,
 		companyName: string | null = null,
 	): Promise<boolean> {
-		const normalizedDate = this.normalizeDate(date);
+		const normalizedDate = normalizeDate(date);
 		const year = normalizedDate.getFullYear();
-		const years = [year - 1, year, year + 1]; // Check surrounding years to be safe
+		const years = [year - 1, year, year + 1]; // Check surrounding years
 
 		const holidays = await this.fetchHolidays({
 			countryCode,
@@ -418,7 +217,8 @@ export class HolidayManager {
 
 	/**
 	 * Apply holidays to the calendar UI
-	 * This adds visual markers to calendar day cells
+	 *
+	 * Delegates to holiday-dom-adapter for DOM manipulation.
 	 */
 	public async applyHolidaysToCalendar(
 		countryCode: string,
@@ -433,78 +233,16 @@ export class HolidayManager {
 			onlyWeekdays: false,
 		});
 
-		result.holidays.forEach((holiday) => {
-			const year = holiday.date.getFullYear();
-			const month = holiday.date.getMonth();
-			const day = holiday.date.getDate();
-
-			// Find the calendar day cell
-			const cell = document.querySelector(
-				`.calendar-day[data-year="${year}"][data-month="${month}"][data-day="${day}"]`,
-			) as HTMLElement;
-
-			if (!cell) return;
-
-			// Skip if already marked as a holiday to prevent duplicate processing
-			if (cell.classList.contains("holiday")) return;
-
-			// Always add holiday class for visual styling
-			cell.classList.add("holiday");
-
-			// Only mark as OOF if holidaysAsOOF is enabled
-			if (holidaysAsOOF) {
-				cell.dataset.selected = "true";
-				cell.dataset.selectionType = "out-of-office";
-				cell.classList.add("selected", "out-of-office");
-			}
-
-			// Add data attribute for holiday info
-			cell.dataset.holiday = "true";
-			cell.dataset.holidayName = holiday.name;
-			cell.dataset.holidayCountry = holiday.countryCode;
-
-			// Update aria-label for accessibility
-			const currentLabel = cell.getAttribute("aria-label") || "";
-			const holidayLabel = ` - ${holiday.name} (Holiday)`;
-			cell.setAttribute("aria-label", currentLabel + holidayLabel);
-
-			// Add title for hover tooltip
-			cell.title = `${holiday.name} (${holiday.countryCode})`;
-		});
+		applyHolidaysToCalendarDOM(result.holidays, holidaysAsOOF);
 	}
 
 	/**
 	 * Remove holiday markers from the calendar
+	 *
+	 * Delegates to holiday-dom-adapter for DOM manipulation.
 	 */
 	public removeHolidaysFromCalendar(): void {
-		const holidayCells = document.querySelectorAll(
-			".calendar-day[data-holiday='true']",
-		);
-
-		holidayCells.forEach((cell) => {
-			const element = cell as HTMLElement;
-			element.classList.remove("holiday");
-			delete element.dataset.holiday;
-			delete element.dataset.holidayName;
-			delete element.dataset.holidayCountry;
-
-			// Also remove OOF selection that was applied to holidays
-			element.classList.remove("selected", "out-of-office");
-			element.dataset.selected = "false";
-			element.dataset.selectionType = "";
-			element.ariaSelected = "false";
-
-			// Remove holiday suffix from aria-label
-			const currentLabel = element.getAttribute("aria-label") || "";
-			const holidaySuffix = " (Holiday)";
-			if (currentLabel.includes(holidaySuffix)) {
-				const baseLabel = currentLabel.replace(holidaySuffix, "");
-				element.setAttribute("aria-label", baseLabel);
-			}
-
-			// Remove title
-			element.title = "";
-		});
+		removeHolidaysFromCalendarDOM();
 	}
 
 	/**
@@ -532,45 +270,21 @@ export class HolidayManager {
 	 * Get a summary of holiday data for display
 	 */
 	public getHolidaySummary(result: HolidayResult): string {
-		const { totalHolidays, weekdayHolidays, countryCode, companyName } = result;
-
-		if (totalHolidays === 0) {
-			return `No holidays found for ${countryCode}`;
-		}
-
-		let summary = `${totalHolidays} holiday${totalHolidays !== 1 ? "s" : ""} found for ${countryCode}`;
-
-		if (weekdayHolidays > 0) {
-			summary += ` (${weekdayHolidays} on weekdays)`;
-		}
-
-		if (companyName) {
-			summary += ` filtered by ${companyName}`;
-		}
-
-		return summary;
+		return buildHolidaySummary(result);
 	}
 
 	/**
 	 * Get available companies for a country
 	 */
 	public getAvailableCompanies(countryCode: string): string[] {
-		const filters = companyFilters as CompanyFilters;
-		const countryData = filters[countryCode];
-		if (!countryData || !countryData.companies) {
-			return [];
-		}
-
-		return Object.keys(countryData.companies);
+		return getAvailableCompaniesForCountry(countryCode);
 	}
 
 	/**
 	 * Check if a country has company filters available
 	 */
 	public hasCompanyFilters(countryCode: string): boolean {
-		const filters = companyFilters as CompanyFilters;
-		const countryData = filters[countryCode];
-		return !!countryData && !!countryData.companies;
+		return hasCompanyFiltersForCountry(countryCode);
 	}
 }
 
