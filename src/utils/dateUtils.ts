@@ -2,52 +2,47 @@
  * Date utility functions for RTO Calculator
  *
  * Work-week oriented utilities (Sunday-based weeks, weekday filtering).
- * For general calendar utilities, use src/lib/dateUtils.ts.
+ * Canonical implementations live in src/lib/dateUtils.ts — this module
+ * re-exports them for backward compatibility and adds UI-specific helpers.
  */
 
 import {
 	addDays,
-	isWeekend as dfIsWeekend,
 	eachDayOfInterval,
 	format,
 	isBefore,
 	startOfDay,
 	startOfMonth,
-	startOfWeek,
 } from "date-fns";
+import { getStartOfWeek } from "../lib/dateUtils";
 
-// Re-export shared utilities from lib for consumers that import from here
-export { formatDateISO, isSameDay } from "../lib/dateUtils";
-
-/**
- * Get start of work week (Sunday) for a given date
- */
-export function getStartOfWeek(date: Date): Date {
-	return startOfWeek(date, { weekStartsOn: 0 });
-}
-
-/**
- * Check if a date is a weekend (Saturday or Sunday)
- */
-export function isWeekend(date: Date): boolean {
-	return dfIsWeekend(date);
-}
+// Re-export shared utilities from lib for consumers that import from here.
+// These are the canonical implementations — the local duplicates have been removed.
+export {
+	formatDateISO,
+	getFullWeekDates,
+	getStartOfWeek,
+	isSameDay,
+	isWeekday,
+	isWeekend,
+} from "../lib/dateUtils";
 
 /**
- * Check if a date is a weekday (Monday-Friday)
+ * Get all weekday dates (Mon-Fri) in the week containing the given date.
+ *
+ * IMPORTANT: This returns only 5 weekday dates (Monday through Friday).
+ * For all 7 days (Sun-Sat), use getFullWeekDates from lib/dateUtils.
  */
-export function isWeekday(date: Date): boolean {
-	return !dfIsWeekend(date);
-}
-
-/**
- * Get all weekday dates (Mon-Fri) in a week
- */
-export function getWeekDates(date: Date): Date[] {
+export function getWeekdayDates(date: Date): Date[] {
 	const start = getStartOfWeek(date);
 	// Start from Monday (day 1) through Friday (day 5) within a Sunday-start week
 	return Array.from({ length: 5 }, (_, i) => addDays(start, i + 1));
 }
+
+/**
+ * @deprecated Use getWeekdayDates instead. This alias will be removed in a future release.
+ */
+export const getWeekDates = getWeekdayDates;
 
 /**
  * Get all weekday dates in a rolling period

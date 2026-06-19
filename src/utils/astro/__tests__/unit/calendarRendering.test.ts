@@ -140,12 +140,12 @@ describe("Calendar Rendering Functions", () => {
 		});
 	});
 
-	describe("getWeekDates()", () => {
+	describe("getWeekdayDates()", () => {
 		it("should return 5 weekdays (Mon-Fri) for a Sunday-start week", async () => {
 			const dateUtils = await import("../../../dateUtils");
 
 			const weekStart = new Date(2025, 0, 5); // Sunday, Jan 5
-			const dates = dateUtils.getWeekDates(weekStart);
+			const dates = dateUtils.getWeekdayDates(weekStart);
 
 			expect(dates).toHaveLength(5);
 
@@ -160,7 +160,7 @@ describe("Calendar Rendering Functions", () => {
 			const dateUtils = await import("../../../dateUtils");
 
 			const weekStart = new Date(2025, 0, 5); // Sunday, Jan 5
-			const dates = dateUtils.getWeekDates(weekStart);
+			const dates = dateUtils.getWeekdayDates(weekStart);
 
 			expect(dates[0]?.getDay()).toBe(1); // Monday
 			expect(dates[1]?.getDay()).toBe(2); // Tuesday

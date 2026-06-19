@@ -14,6 +14,20 @@ import type {
 import type { ValidationConfig } from "../../types/index";
 
 /**
+ * Deep copy a Map, creating a new Map with the same entries.
+ *
+ * Since DateState is a string (primitive), copying the entries
+ * is sufficient — no recursive deep copy is needed.
+ */
+function deepCopyMap<K, V>(source: Map<K, V>): Map<K, V> {
+	const copy = new Map<K, V>();
+	for (const [key, value] of source.entries()) {
+		copy.set(key, value);
+	}
+	return copy;
+}
+
+/**
  * Represents a complete snapshot of application state
  *
  * @interface StateSnapshot
@@ -91,10 +105,7 @@ export class HistoryManager {
 		}
 
 		// Deep copy Map
-		const copiedCalendarState = new Map<DateString, DateState>();
-		for (const [date, state] of snapshot.calendarState.entries()) {
-			copiedCalendarState.set(date, state);
-		}
+		const copiedCalendarState = deepCopyMap(snapshot.calendarState);
 
 		// Deep copy Date
 		const copiedCurrentMonth = new Date(snapshot.currentMonth);
@@ -201,13 +212,8 @@ export class HistoryManager {
 			return undefined;
 		}
 
-		const copiedCalendarState = new Map<DateString, DateState>();
-		for (const [date, state] of latest.calendarState.entries()) {
-			copiedCalendarState.set(date, state);
-		}
-
 		return {
-			calendarState: copiedCalendarState,
+			calendarState: deepCopyMap(latest.calendarState),
 			currentMonth: new Date(latest.currentMonth),
 			validationConfig: { ...latest.validationConfig },
 			timestamp: latest.timestamp,

@@ -6,6 +6,7 @@
  * across the calendar, using best-8-of-12 policy.
  */
 
+import { getFullWeekDates, getStartOfWeek, isWeekday } from "../dateUtils";
 import {
 	BEST_WEEKS_COUNT,
 	COMPLIANCE_THRESHOLD,
@@ -61,18 +62,46 @@ export function roundToNearest20Percent(value: number): number {
 	return Math.round(value / 20) * 20;
 }
 
-// ==================== Date Utilities ====================
+// ==================== Compliance Message Builder ====================
 
-export function getStartOfWeek(date: Date): Date {
-	const d = new Date(date.getTime());
-	const day = d.getDay();
-	const daysToSubtract = day; // Sunday: getDay() returns 0, so subtract 0
-	d.setDate(d.getDate() - daysToSubtract);
-	d.setHours(0, 0, 0, 0);
-	// Note: assertSundayMidnight() is called downstream in readCalendarData and
-	// buildWindowRangeLabel to catch any UTC-midnight date bugs that slip through.
-	return d;
+/**
+ * Build the common parts of a compliance message.
+ *
+ * Extracts the repeated logic of computing avgDaysStr, indicator,
+ * and label that appears in every compliance message throughout the codebase.
+ *
+ * @param averageDays - The average office days value
+ * @param isCompliant - Whether the result is compliant
+ * @param roundPercentage - Whether to round the percentage display
+ * @returns The formatted message components
+ */
+export interface ComplianceMessageParts {
+	avgDaysStr: string;
+	indicator: string;
+	label: string;
 }
+
+export function buildComplianceMessage(
+	averageDays: number,
+	isCompliant: boolean,
+	roundPercentage?: boolean,
+): ComplianceMessageParts {
+	const avgDaysStr =
+		roundPercentage !== false
+			? `${Math.round(averageDays)}`
+			: `${averageDays.toFixed(1)}`;
+	const indicator = roundPercentage !== false ? " (rounded)" : "";
+	const label = isCompliant ? "Compliant" : "Not compliant";
+	return { avgDaysStr, indicator, label };
+}
+
+// ==================== Date Utilities ====================
+// Note: getStartOfWeek, isWeekday, and getFullWeekDates are now canonical
+// in src/lib/dateUtils.ts. They are imported above for use in this module.
+// Re-exported here for backward compatibility with consumers that import
+// from this module.
+
+export { getFullWeekDates, getStartOfWeek, isWeekday } from "../dateUtils";
 
 /**
  * Snap a date forward to the next Sunday (or return same Sunday if already Sunday).
@@ -85,21 +114,6 @@ export function snapToWeekStart(date: Date): Date {
 	d.setDate(d.getDate() + daysToAdd);
 	d.setHours(0, 0, 0, 0);
 	return d;
-}
-
-export function getWeekDates(weekStart: Date): Date[] {
-	const dates: Date[] = [];
-	for (let i = 0; i < 7; i++) {
-		const d = new Date(weekStart);
-		d.setDate(weekStart.getDate() + i);
-		dates.push(d);
-	}
-	return dates;
-}
-
-export function isWeekday(date: Date): boolean {
-	const day = date.getDay();
-	return day >= 1 && day <= TOTAL_WEEK_DAYS;
 }
 
 // ==================== Utility ====================
@@ -188,7 +202,7 @@ export function calculateOfficeDaysInWeek(
 	const weekKey = weekStart.getTime();
 	const wfhDays = weeksByOOF.get(weekKey) || 0;
 
-	const weekDates = getWeekDates(weekStart);
+	const weekDates = getFullWeekDates(weekStart);
 	const holidaySet = new Set(holidayDates.map((d) => d.getTime()));
 	const holidayCount = weekDates
 		.filter((d) => isWeekday(d))
@@ -208,7 +222,7 @@ export function calculateWeekCompliance(
 	const weekKey = weekStart.getTime();
 	const wfhDays = weeksByOOF.get(weekKey) || 0;
 
-	const weekDates = getWeekDates(weekStart);
+	const weekDates = getFullWeekDates(weekStart);
 	const holidaySet = new Set(holidayDates.map((d) => d.getTime()));
 	const holidayCount = weekDates
 		.filter((d) => isWeekday(d))
@@ -290,18 +304,13 @@ export function validateTopKWeeks(
 			? `${averageOfficePercentage.toFixed(0)}%`
 			: `${rawPercentage.toFixed(1)}%`;
 
-	const avgDaysStr =
-		policy.roundPercentage !== false
-			? `${Math.round(averageOfficeDays)}`
-			: `${averageOfficeDays.toFixed(1)}`;
-	const indicator = policy.roundPercentage !== false ? " (rounded)" : "";
-
-	let message: string;
-	if (isValid) {
-		message = `Compliant: Top ${policy.topWeeksToCheck} weeks average${indicator} ${avgDaysStr} office days (${percentageStr}) of ${totalWeekdays} weekdays. Required: ${requiredAverage} days (${requiredPercentage}%)`;
-	} else {
-		message = `Not compliant: Top ${policy.topWeeksToCheck} weeks average${indicator} ${avgDaysStr} office days (${percentageStr}) of ${totalWeekdays} weekdays. Required: ${requiredAverage} days (${requiredPercentage}%)`;
-	}
+	const { avgDaysStr, indicator } = buildComplianceMessage(
+		averageOfficeDays,
+		isValid,
+		policy.roundPercentage,
+	);
+	const label = isValid ? "Compliant" : "Not compliant";
+	const message = `${label}: Top ${policy.topWeeksToCheck} weeks average${indicator} ${avgDaysStr} office days (${percentageStr}) of ${totalWeekdays} weekdays. Required: ${requiredAverage} days (${requiredPercentage}%)`;
 
 	return {
 		isValid,
@@ -419,12 +428,11 @@ export function validateSlidingWindow(
 		const windowWeekStarts = weeksData.map((w) => w.weekStart.getTime());
 		const windowStartTimestamp = weeksData[0]?.weekStart.getTime() ?? null;
 
-		const avgDaysStr =
-			policy.roundPercentage !== false
-				? `${Math.round(averageOfficeDays)}`
-				: `${averageOfficeDays.toFixed(1)}`;
-		const indicator = policy.roundPercentage !== false ? " (rounded)" : "";
-		const label = isValid ? "Compliant" : "Not compliant";
+		const { avgDaysStr, indicator, label } = buildComplianceMessage(
+			averageOfficeDays,
+			isValid,
+			policy.roundPercentage,
+		);
 		message = `${label}: Best ${bestWeeks.length} of ${weeksData.length} weeks average${indicator} ${avgDaysStr} office days. Required: ${policy.minOfficeDaysPerWeek}`;
 		return {
 			isValid,
@@ -457,12 +465,12 @@ export function validateSlidingWindow(
 			const windowWeek = weeksData[windowStart];
 			const windowStartTimestamp = windowWeek?.weekStart.getTime() ?? null;
 
-			const avgDaysStr =
-				policy.roundPercentage !== false
-					? `${Math.round(averageOfficeDays)}`
-					: `${averageOfficeDays.toFixed(1)}`;
-			const indicator = policy.roundPercentage !== false ? " (rounded)" : "";
-			message = `Not compliant: Best ${weeksToEvaluate} of ${windowSize} weeks average${indicator} ${avgDaysStr} office days. Required: ${policy.minOfficeDaysPerWeek}`;
+			const { avgDaysStr, indicator, label } = buildComplianceMessage(
+				averageOfficeDays,
+				false,
+				policy.roundPercentage,
+			);
+			message = `${label}: Best ${weeksToEvaluate} of ${windowSize} weeks average${indicator} ${avgDaysStr} office days. Required: ${policy.minOfficeDaysPerWeek}`;
 			return {
 				isValid: false,
 				message,
@@ -488,12 +496,12 @@ export function validateSlidingWindow(
 	const lastWindowWeek = weeksData[lastWindowStart];
 	const windowStartTimestamp = lastWindowWeek?.weekStart.getTime() ?? null;
 
-	const avgDaysStr =
-		policy.roundPercentage !== false
-			? `${Math.round(averageOfficeDays)}`
-			: `${averageOfficeDays.toFixed(1)}`;
-	const indicator = policy.roundPercentage !== false ? " (rounded)" : "";
-	message = `Compliant: Best ${weeksToEvaluate} of ${windowSize} weeks average${indicator} ${avgDaysStr} office days. Required: ${policy.minOfficeDaysPerWeek}`;
+	const { avgDaysStr, indicator, label } = buildComplianceMessage(
+		averageOfficeDays,
+		true,
+		policy.roundPercentage,
+	);
+	message = `${label}: Best ${weeksToEvaluate} of ${windowSize} weeks average${indicator} ${avgDaysStr} office days. Required: ${policy.minOfficeDaysPerWeek}`;
 	return {
 		isValid: true,
 		message,

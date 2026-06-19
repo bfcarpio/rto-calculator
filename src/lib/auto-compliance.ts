@@ -17,6 +17,7 @@ import { buildWindowRangeLabel } from "./ui/windowRange";
 import type { WindowSummary } from "./validation/all-windows";
 import { FRIDAY_OFFSET } from "./validation/constants";
 import {
+	buildComplianceMessage,
 	evaluateSingleWindow,
 	getStartOfWeek,
 	type RTOPolicyConfig,
@@ -298,12 +299,11 @@ function computeComplianceData(
 			: 0;
 
 	// Build a human-readable message from the selected summary
-	const indicator = policy.roundPercentage !== false ? " (rounded)" : "";
-	const avgDaysStr =
-		policy.roundPercentage !== false
-			? `${Math.round(selectedSummary.averageOfficeDays)}`
-			: `${selectedSummary.averageOfficeDays.toFixed(1)}`;
-	const label = selectedSummary.isValid ? "Compliant" : "Not compliant";
+	const { avgDaysStr, indicator, label } = buildComplianceMessage(
+		selectedSummary.averageOfficeDays,
+		selectedSummary.isValid,
+		policy.roundPercentage,
+	);
 	const message = `${label}: Best ${bestCount} of ${selectedSummary.weekDetails.length} weeks average${indicator} ${avgDaysStr} office days. Required: ${policy.minOfficeDaysPerWeek}`;
 
 	return {

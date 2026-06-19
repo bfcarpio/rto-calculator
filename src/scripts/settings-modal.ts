@@ -4,6 +4,7 @@ import { DEFAULTS } from "../lib/settings-constants";
 import { settingsStore } from "../lib/stores/settingsStore";
 import { getColorScheme, setColorScheme } from "../lib/themeManager";
 import { getStartOfWeek } from "../lib/validation/rto-core";
+import { announceToScreenReader } from "../utils/accessibility";
 import { logger } from "../utils/logger";
 import { clearAllData } from "../utils/storage";
 import { initializeIndex } from "./index-init";
@@ -184,83 +185,62 @@ class SettingsModal {
 	}
 
 	private toggleDebugMode(): void {
-		if (!this.debugToggle) return;
-		const currentState =
-			this.debugToggle.getAttribute("aria-checked") === "true";
-		const newState = !currentState;
-		this.debugToggle.setAttribute("aria-checked", newState.toString());
-
-		window.validationManager?.setDebugMode(newState);
-		this.saveSettingsToLocalStorage();
-		logger.debug(`[Settings] Debug mode ${newState ? "enabled" : "disabled"}`);
+		this.toggleBooleanSetting(this.debugToggle, "Debug mode", (newState) => {
+			window.validationManager?.setDebugMode(newState);
+		});
 	}
 
 	private toggleSaveData(): void {
-		if (!this.saveDataToggle) return;
-		const currentState =
-			this.saveDataToggle.getAttribute("aria-checked") === "true";
-		const newState = !currentState;
-		this.saveDataToggle.setAttribute("aria-checked", newState.toString());
-
-		window.storageManager?.setDataSavingEnabled(newState);
-		this.saveSettingsToLocalStorage();
-		logger.debug(`[Settings] Data saving ${newState ? "enabled" : "disabled"}`);
+		this.toggleBooleanSetting(
+			this.saveDataToggle,
+			"Data saving",
+			(newState) => {
+				window.storageManager?.setDataSavingEnabled(newState);
+			},
+		);
 	}
 
 	private toggleHolidayOofMode(): void {
-		if (!this.holidayOofToggle) return;
-		const currentState =
-			this.holidayOofToggle.getAttribute("aria-checked") === "true";
-		const newState = !currentState;
-		this.holidayOofToggle.setAttribute("aria-checked", newState.toString());
-
-		this.saveSettingsToLocalStorage();
-		logger.debug(
-			`[Settings] Holiday OOF mode ${newState ? "enabled" : "disabled"}`,
-		);
+		this.toggleBooleanSetting(this.holidayOofToggle, "Holiday OOF mode");
 	}
 
 	private toggleSickPenalize(): void {
-		if (!this.sickPenalizeToggle) return;
-		const currentState =
-			this.sickPenalizeToggle.getAttribute("aria-checked") === "true";
-		const newState = !currentState;
-		this.sickPenalizeToggle.setAttribute("aria-checked", newState.toString());
-
-		this.saveSettingsToLocalStorage();
-		logger.debug(
-			`[Settings] Sick days penalize ${newState ? "enabled" : "disabled"}`,
-		);
+		this.toggleBooleanSetting(this.sickPenalizeToggle, "Sick days penalize");
 	}
 
 	private toggleHolidayPenalize(): void {
-		if (!this.holidayPenalizeToggle) return;
-		const currentState =
-			this.holidayPenalizeToggle.getAttribute("aria-checked") === "true";
-		const newState = !currentState;
-		this.holidayPenalizeToggle.setAttribute(
-			"aria-checked",
-			newState.toString(),
-		);
-
-		this.saveSettingsToLocalStorage();
-		logger.debug(
-			`[Settings] Holiday penalize ${newState ? "enabled" : "disabled"}`,
-		);
+		this.toggleBooleanSetting(this.holidayPenalizeToggle, "Holiday penalize");
 	}
 
 	private toggleRoundPercentage(): void {
-		if (!this.roundPercentageToggle) return;
-		const currentState =
-			this.roundPercentageToggle.getAttribute("aria-checked") === "true";
+		this.toggleBooleanSetting(this.roundPercentageToggle, "Round percentage");
+	}
+
+	/**
+	 * Toggle a boolean setting by flipping its aria-checked attribute.
+	 *
+	 * Reads the current aria-checked value, flips it, persists the change,
+	 * and optionally calls a side-effect callback with the new state.
+	 *
+	 * @param element - The toggle button element (null = no-op)
+	 * @param settingName - Human-readable name for debug logging
+	 * @param sideEffect - Optional callback invoked with the new boolean state
+	 */
+	private toggleBooleanSetting(
+		element: HTMLButtonElement | null,
+		settingName: string,
+		sideEffect?: (newState: boolean) => void,
+	): void {
+		if (!element) return;
+
+		const currentState = element.getAttribute("aria-checked") === "true";
 		const newState = !currentState;
-		this.roundPercentageToggle.setAttribute(
-			"aria-checked",
-			newState.toString(),
-		);
+		element.setAttribute("aria-checked", newState.toString());
+
+		sideEffect?.(newState);
 		this.saveSettingsToLocalStorage();
 		logger.debug(
-			`[Settings] Round percentage ${newState ? "enabled" : "disabled"}`,
+			`[Settings] ${settingName} ${newState ? "enabled" : "disabled"}`,
 		);
 	}
 
@@ -402,7 +382,7 @@ class SettingsModal {
 			const appliedCount = this.applyPatternToCalendar();
 			if (appliedCount > 0) {
 				logger.debug(`[Settings] Pattern applied to ${appliedCount} day(s)`);
-				this.announceToScreenReader(
+				announceToScreenReader(
 					`Pattern applied to ${appliedCount} day(s). Settings saved`,
 				);
 			}
@@ -452,7 +432,7 @@ class SettingsModal {
 		logger.debug("[Settings] Settings reset to defaults");
 
 		this.modal?.close();
-		this.announceToScreenReader("Settings reset to defaults");
+		announceToScreenReader("Settings reset to defaults");
 	}
 
 	private clearSavedData(): void {
@@ -466,7 +446,7 @@ class SettingsModal {
 	private clearPatternSelection(): void {
 		this.selectedPattern = [];
 		this.updatePatternSelectorUI();
-		this.announceToScreenReader("Pattern selection cleared");
+		announceToScreenReader("Pattern selection cleared");
 
 		if (this.patternStatus) {
 			this.patternStatus.textContent = "No pattern selected";
@@ -704,17 +684,6 @@ class SettingsModal {
 		} catch (error) {
 			logger.error("[Settings] Error loading settings:", error);
 		}
-	}
-
-	private announceToScreenReader(message: string): void {
-		const announcement = document.createElement("div");
-		announcement.setAttribute("role", "status");
-		announcement.setAttribute("aria-live", "polite");
-		announcement.setAttribute("aria-atomic", "true");
-		announcement.className = "sr-only calendar-announcement";
-		announcement.textContent = message;
-		document.body.appendChild(announcement);
-		setTimeout(() => document.body.removeChild(announcement), 1000);
 	}
 
 	private onColorSchemeChange(): void {

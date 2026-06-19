@@ -26,7 +26,90 @@ export function getStatusColor(current: number, target: number): string {
 	return "has-text-danger";
 }
 
-// ─── DOM Update Functions ────────────────────────────────────────────────
+/**
+ * Render all stats into a given root element.
+ *
+ * Shared implementation used by both the standalone updateStats export
+ * and the StatusDetailsController.updateStats method.
+ *
+ * @param root - The document or container element to query
+ * @param data - Compliance event data to render
+ */
+function renderStatsInto(
+	root: Document | HTMLElement,
+	data: ComplianceEventData,
+): void {
+	// Update capacity stats
+	const elBuffer = root.querySelector<HTMLElement>("#stat-buffer");
+	const elOof = root.querySelector<HTMLElement>("#stat-oof-available");
+
+	if (elBuffer) {
+		elBuffer.textContent = `Good weeks = ${data.goodWeeks} of ${data.bestWeekCount} needed`;
+	}
+	if (elOof) {
+		elOof.textContent = `${data.bufferWeeks} full weeks WFH`;
+	}
+
+	// Buffer warning: show when exactly 1 buffer week and total drop slots > 1
+	const elBufferWarning = root.querySelector<HTMLElement>("#buffer-warning");
+	if (elBufferWarning) {
+		const totalDropSlots =
+			data.selectedSummary.weekDetails.length - data.bestWeekCount;
+		const showWarning =
+			data.isCompliant && data.bufferWeeks === 1 && totalDropSlots > 1;
+		elBufferWarning.style.display = showWarning ? "" : "none";
+	}
+
+	// Next WFH week
+	const elNextWfh = root.querySelector<HTMLElement>("#stat-next-wfh");
+	if (elNextWfh) {
+		elNextWfh.textContent = data.nextWfhWeek
+			? `Week of ${fmtDate(data.nextWfhWeek)}`
+			: "\u2014";
+	}
+
+	// Current week range
+	const elWeekRange = root.querySelector<HTMLElement>(
+		"#stat-current-week-range",
+	);
+	if (elWeekRange) {
+		elWeekRange.textContent = `${fmtDate(data.currentWeek.weekStart)} - ${fmtDate(data.currentWeek.weekEnd)}`;
+	}
+
+	// Current week office days
+	const elWeekDays = root.querySelector<HTMLElement>("#stat-current-week-days");
+	const elCurrentWeekOffice = root.querySelector<HTMLElement>(
+		"#current-week-office",
+	);
+	if (elCurrentWeekOffice) {
+		elCurrentWeekOffice.textContent = `${data.currentWeek.officeDays}`;
+	}
+	if (elWeekDays) {
+		elWeekDays.className = `has-text-weight-bold ${getStatusColor(
+			data.currentWeek.officeDays,
+			data.requiredDays,
+		)}`;
+	}
+
+	// Update setting indicators from compliance data to stay in sync with policy
+	const elMinDays = root.querySelector(
+		'.setting-value[data-setting-key="minOfficeDaysPerWeek"]',
+	);
+	if (elMinDays) {
+		elMinDays.textContent = String(data.requiredDays);
+	}
+
+	// Render window breakdown
+	renderBreakdownInto(data, root);
+
+	// Update compliance status box styling
+	const elStatusBox = root.querySelector<HTMLElement>("#compliance-status-box");
+	if (elStatusBox) {
+		elStatusBox.className = `box compliance-status ${data.isCompliant ? "is-success" : "is-warning"}`;
+	}
+}
+
+// ─── Standalone Exports ────────────────────────────────────────────────
 
 /**
  * Render the window breakdown section into a given root element.
@@ -74,73 +157,11 @@ export function renderWindowBreakdown(data: ComplianceEventData): void {
 }
 
 /**
- * Update all stats in the StatusDetails panel
+ * Update all stats in the StatusDetails panel (standalone version).
+ * Delegates to renderStatsInto with the global document.
  */
 export function updateStats(data: ComplianceEventData): void {
-	// Update capacity stats
-	const elBuffer = document.getElementById("stat-buffer");
-	const elOof = document.getElementById("stat-oof-available");
-	const elWeekRange = document.getElementById("stat-current-week-range");
-	const elWeekDays = document.getElementById("stat-current-week-days");
-
-	if (elBuffer) {
-		elBuffer.textContent = `Good weeks = ${data.goodWeeks} of ${data.bestWeekCount} needed`;
-	}
-	if (elOof) {
-		elOof.textContent = `${data.bufferWeeks} full weeks WFH`;
-	}
-
-	// Buffer warning: show when exactly 1 buffer week and total drop slots > 1
-	const elBufferWarning = document.getElementById("buffer-warning");
-	if (elBufferWarning) {
-		const totalDropSlots =
-			data.selectedSummary.weekDetails.length - data.bestWeekCount;
-		const showWarning =
-			data.isCompliant && data.bufferWeeks === 1 && totalDropSlots > 1;
-		elBufferWarning.style.display = showWarning ? "" : "none";
-	}
-
-	// Next WFH week
-	const elNextWfh = document.getElementById("stat-next-wfh");
-	if (elNextWfh) {
-		elNextWfh.textContent = data.nextWfhWeek
-			? `Week of ${fmtDate(data.nextWfhWeek)}`
-			: "\u2014";
-	}
-
-	// Current week range
-	if (elWeekRange) {
-		elWeekRange.textContent = `${fmtDate(data.currentWeek.weekStart)} - ${fmtDate(data.currentWeek.weekEnd)}`;
-	}
-
-	// Current week office days
-	const elCurrentWeekOffice = document.getElementById("current-week-office");
-	if (elCurrentWeekOffice) {
-		elCurrentWeekOffice.textContent = `${data.currentWeek.officeDays}`;
-	}
-	if (elWeekDays) {
-		elWeekDays.className = `has-text-weight-bold ${getStatusColor(
-			data.currentWeek.officeDays,
-			data.requiredDays,
-		)}`;
-	}
-
-	// Update setting indicators from compliance data to stay in sync with policy
-	const elMinDays = document.querySelector(
-		'.setting-value[data-setting-key="minOfficeDaysPerWeek"]',
-	);
-	if (elMinDays) {
-		elMinDays.textContent = String(data.requiredDays);
-	}
-
-	// Render window breakdown
-	renderWindowBreakdown(data);
-
-	// Update compliance status box styling
-	const elStatusBox = document.getElementById("compliance-status-box");
-	if (elStatusBox) {
-		elStatusBox.className = `box compliance-status ${data.isCompliant ? "is-success" : "is-warning"}`;
-	}
+	renderStatsInto(document, data);
 }
 
 // ─── Controller Class ─────────────────────────────────────────────────────
@@ -203,83 +224,7 @@ export class StatusDetailsController {
 	 * Uses the container element for scoped DOM queries.
 	 */
 	updateStats(data: ComplianceEventData): void {
-		// Update capacity stats
-		const elBuffer =
-			this.container.querySelector<HTMLParagraphElement>("#stat-buffer");
-		const elOof = this.container.querySelector<HTMLParagraphElement>(
-			"#stat-oof-available",
-		);
-		const elWeekRange = this.container.querySelector<HTMLSpanElement>(
-			"#stat-current-week-range",
-		);
-		const elWeekDays = this.container.querySelector<HTMLParagraphElement>(
-			"#stat-current-week-days",
-		);
-
-		if (elBuffer) {
-			elBuffer.textContent = `Good weeks = ${data.goodWeeks} of ${data.bestWeekCount} needed`;
-		}
-		if (elOof) {
-			elOof.textContent = `${data.bufferWeeks} full weeks WFH`;
-		}
-
-		// Buffer warning: show when exactly 1 buffer week and total drop slots > 1
-		const elBufferWarning =
-			this.container.querySelector<HTMLParagraphElement>("#buffer-warning");
-		if (elBufferWarning) {
-			const totalDropSlots =
-				data.selectedSummary.weekDetails.length - data.bestWeekCount;
-			const showWarning =
-				data.isCompliant && data.bufferWeeks === 1 && totalDropSlots > 1;
-			elBufferWarning.style.display = showWarning ? "" : "none";
-		}
-
-		// Next WFH week
-		const elNextWfh =
-			this.container.querySelector<HTMLParagraphElement>("#stat-next-wfh");
-		if (elNextWfh) {
-			elNextWfh.textContent = data.nextWfhWeek
-				? `Week of ${fmtDate(data.nextWfhWeek)}`
-				: "\u2014";
-		}
-
-		// Current week range
-		if (elWeekRange) {
-			elWeekRange.textContent = `${fmtDate(data.currentWeek.weekStart)} - ${fmtDate(data.currentWeek.weekEnd)}`;
-		}
-
-		// Current week office days
-		const elCurrentWeekOffice = this.container.querySelector<HTMLSpanElement>(
-			"#current-week-office",
-		);
-		if (elCurrentWeekOffice) {
-			elCurrentWeekOffice.textContent = `${data.currentWeek.officeDays}`;
-		}
-		if (elWeekDays) {
-			elWeekDays.className = `has-text-weight-bold ${getStatusColor(
-				data.currentWeek.officeDays,
-				data.requiredDays,
-			)}`;
-		}
-
-		// Update setting indicators from compliance data to stay in sync with policy
-		const elMinDays = this.container.querySelector(
-			'.setting-value[data-setting-key="minOfficeDaysPerWeek"]',
-		);
-		if (elMinDays) {
-			elMinDays.textContent = String(data.requiredDays);
-		}
-
-		// Render window breakdown
-		this.renderWindowBreakdown(data);
-
-		// Update compliance status box styling
-		const elStatusBox = this.container.querySelector<HTMLDivElement>(
-			"#compliance-status-box",
-		);
-		if (elStatusBox) {
-			elStatusBox.className = `box compliance-status ${data.isCompliant ? "is-success" : "is-warning"}`;
-		}
+		renderStatsInto(this.container, data);
 	}
 
 	/**

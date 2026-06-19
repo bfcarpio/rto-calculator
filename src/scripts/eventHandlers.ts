@@ -19,6 +19,7 @@ import type {
 	DateState,
 	DateString,
 } from "../../packages/datepainter/src/types";
+import { announceToScreenReader } from "../utils/accessibility";
 import { logger } from "../utils/logger";
 
 /**
@@ -526,7 +527,7 @@ class CalendarEventManager {
 	 */
 	private clearAllSelections(): void {
 		this.manager.clearAll();
-		this.announceToScreenReader("Cleared all selections");
+		announceToScreenReader("Cleared all selections");
 	}
 
 	/**
@@ -562,7 +563,7 @@ class CalendarEventManager {
 			this.manager.clearDates(datesToClear);
 		}
 
-		this.announceToScreenReader(`Cleared ${count} selections`);
+		announceToScreenReader(`Cleared ${count} selections`);
 	}
 
 	/**
@@ -637,31 +638,6 @@ class CalendarEventManager {
 		this.todayTimer = window.setInterval(() => {
 			this.updateTodayHighlight();
 		}, 60000); // Check every minute
-	}
-
-	/**
-	 * Announces a message to screen readers
-	 *
-	 * Creates a temporary ARIA live region and removes it after announcement.
-	 *
-	 * @param message - The message to announce
-	 * @private
-	 */
-	private announceToScreenReader(message: string): void {
-		const announcement = document.createElement("div");
-		announcement.setAttribute("role", "status");
-		announcement.setAttribute("aria-live", "polite");
-		announcement.setAttribute("aria-atomic", "true");
-		announcement.className = "sr-only calendar-announcement";
-		announcement.textContent = message;
-
-		document.body.appendChild(announcement);
-
-		setTimeout(() => {
-			if (document.body.contains(announcement)) {
-				document.body.removeChild(announcement);
-			}
-		}, 1000);
 	}
 
 	/**

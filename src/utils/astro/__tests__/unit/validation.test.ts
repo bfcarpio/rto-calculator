@@ -18,11 +18,11 @@ import {
 	type DaySelection,
 	DEFAULT_RTO_POLICY,
 	elementToDaySelection,
+	getFullWeekDates,
 	// Date utilities
 	getOutOfOfficeDates,
 	getStartOfWeek,
 	getWeekCompliance,
-	getWeekDates,
 	groupDatesByWeek,
 	type RTOPolicyConfig,
 	// Main validation function
@@ -115,10 +115,10 @@ describe("snapToWeekStart", () => {
 	});
 });
 
-describe("getWeekDates", () => {
+describe("getFullWeekDates", () => {
 	it("should return 7 dates (Sun-Sat) starting from Sunday", () => {
 		const weekStart = new Date(2025, 0, 5); // Sunday, Jan 5
-		const dates = getWeekDates(weekStart);
+		const dates = getFullWeekDates(weekStart);
 
 		expect(dates).toHaveLength(7);
 		expect(dates[0]).toEqual(new Date(2025, 0, 5)); // Sunday
@@ -132,7 +132,7 @@ describe("getWeekDates", () => {
 
 	it("should return consecutive dates", () => {
 		const weekStart = new Date(2025, 0, 5); // Sunday, Jan 5
-		const dates = getWeekDates(weekStart);
+		const dates = getFullWeekDates(weekStart);
 
 		for (let i = 1; i < dates.length; i++) {
 			const current = dates[i];

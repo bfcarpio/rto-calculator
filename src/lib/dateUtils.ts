@@ -2,7 +2,8 @@
  * Date Utilities - Range calculations and date operations
  *
  * Calendar-agnostic date/date-fns wrappers for general use across the app.
- * For work-week specific utilities (Monday-based), see src/utils/dateUtils.ts
+ * Contains canonical implementations of week-oriented utilities used by
+ * both validation logic and UI components.
  */
 
 import {
@@ -10,6 +11,7 @@ import {
 	addWeeks,
 	getDaysInMonth as dfGetDaysInMonth,
 	isSameDay as dfIsSameDay,
+	isWeekend as dfIsWeekend,
 	differenceInDays,
 	eachDayOfInterval,
 	endOfWeek,
@@ -197,6 +199,58 @@ export function getTotalDaysInRange(range: DateRange): number {
  */
 export function getWeeksCount(): number {
 	return WEEKS_BACK + WEEKS_FORWARD + 1;
+}
+
+// ─── Week-Oriented Utilities ───────────────────────────────────────
+
+/**
+ * Get the start of the work week (Sunday) for a given date.
+ *
+ * Returns the Sunday at or before the given date, with time set to midnight.
+ * Always uses Sunday as week start (weekStartsOn: 0).
+ * This is the canonical implementation used across validation and UI code.
+ */
+export function getStartOfWeek(date: Date): Date {
+	return startOfWeek(date, { weekStartsOn: 0 });
+}
+
+/**
+ * Check if a date is a weekday (Monday-Friday).
+ *
+ * Returns true for Mon-Fri, false for Sat/Sun.
+ * This is the canonical implementation used across validation and UI code.
+ */
+export function isWeekday(date: Date): boolean {
+	return !dfIsWeekend(date);
+}
+
+/**
+ * Check if a date is a weekend (Saturday or Sunday).
+ *
+ * Returns true for Sat/Sun, false for Mon-Fri.
+ * Convenience wrapper around date-fns isWeekend.
+ */
+export function isWeekend(date: Date): boolean {
+	return dfIsWeekend(date);
+}
+
+/**
+ * Get all 7 dates (Sun-Sat) for the week starting from the given Sunday.
+ *
+ * IMPORTANT: This returns all 7 days of the week (Sunday through Saturday).
+ * For weekday-only results (Mon-Fri), use getWeekdayDates from utils/dateUtils.
+ *
+ * @param weekStart - The Sunday start of the week (as returned by getStartOfWeek)
+ * @returns Array of 7 Date objects, Sunday through Saturday
+ */
+export function getFullWeekDates(weekStart: Date): Date[] {
+	const dates: Date[] = [];
+	for (let i = 0; i < 7; i++) {
+		const d = new Date(weekStart);
+		d.setDate(weekStart.getDate() + i);
+		dates.push(d);
+	}
+	return dates;
 }
 
 // ─── Display Formatting ─────────────────────────────────────────
