@@ -11,6 +11,7 @@ import { getStartOfWeek } from "../../lib/dateUtils";
 import { clearSavedSelections } from "../../scripts/localStorage";
 import type { DateString } from "../../types/calendar-types";
 import { formatDateISO } from "../dateUtils";
+import { logger } from "../logger";
 import { saveSelectedDates } from "../storage";
 import { updateDayCellState } from "./calendar-rendering";
 import {
@@ -241,14 +242,14 @@ export function setupCalendarEventListeners(): void {
 	if (!calendarContainer) {
 		calendarContainer = document.getElementById("calendar");
 		if (calendarContainer) {
-			console.warn(
+			logger.warn(
 				"[CalendarEvents] Using fallback ID 'calendar' instead of 'calendar-container'",
 			);
 		}
 	}
 
 	if (!calendarContainer) {
-		console.error(
+		logger.error(
 			"[CalendarEvents] Calendar container not found. Button event listeners not attached.",
 		);
 		return;
@@ -256,37 +257,37 @@ export function setupCalendarEventListeners(): void {
 
 	// Click events
 	calendarContainer.addEventListener("click", handleDayClick);
-	console.log("[CalendarEvents] Attached calendar click handler");
+	logger.debug("[CalendarEvents] Attached calendar click handler");
 
 	// Drag selection events
 	calendarContainer.addEventListener("mousedown", handleDayMouseDown);
 	calendarContainer.addEventListener("mouseover", handleDayMouseOver);
 	document.addEventListener("mouseup", handleDayMouseUp);
-	console.log("[CalendarEvents] Attached drag selection handlers");
+	logger.debug("[CalendarEvents] Attached drag selection handlers");
 
 	// Action buttons
 	const clearAllButtons = document.querySelectorAll(
 		'[id^="clear-all-button-"]',
 	);
-	console.log(
+	logger.debug(
 		`[CalendarEvents] Found ${clearAllButtons.length} clear-all button(s)`,
 	);
 	clearAllButtons.forEach((button) => {
 		const buttonElement = button as HTMLElement;
 		buttonElement.addEventListener("click", clearCalendarSelections);
-		console.log(
+		logger.debug(
 			`[CalendarEvents] Attached click listener to clear-all button: ${buttonElement.id}`,
 		);
 	});
 
 	const exportButtons = document.querySelectorAll('[id^="export-button-"]');
-	console.log(
+	logger.debug(
 		`[CalendarEvents] Found ${exportButtons.length} export button(s)`,
 	);
 	exportButtons.forEach((button) => {
 		const buttonElement = button as HTMLElement;
 		buttonElement.addEventListener("click", exportCalendarSelections);
-		console.log(
+		logger.debug(
 			`[CalendarEvents] Attached click listener to export button: ${buttonElement.id}`,
 		);
 	});

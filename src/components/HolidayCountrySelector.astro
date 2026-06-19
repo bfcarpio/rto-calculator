@@ -194,6 +194,7 @@
   import { COUNTRIES } from '../lib/holiday/data/countries';
   import { getHolidayManager } from '../lib/holiday/HolidayManager';
   import { getDateRange, formatDateISO } from '../lib/dateUtils';
+  import { logger } from '../utils/logger';
 
   const autoAddedHolidays = new Set<DateString>();
 
@@ -241,7 +242,7 @@
   }
 
   async function fetchAndApplyHolidays(countryCode: string, companyName: string): Promise<void> {
-    const calendarManager = (window as any).__datepainterInstance as CalendarInstance | null;
+    const calendarManager = window.__datepainterInstance as CalendarInstance | null;
     if (!calendarManager) {
       setStatus('Calendar not ready. Please try again.', 'error');
       return;
@@ -310,7 +311,7 @@
         'success'
       );
     } catch (error) {
-      console.error('[HolidayCountrySelector] Failed to fetch holidays:', error);
+      logger.error('[HolidayCountrySelector] Failed to fetch holidays:', error);
       setStatus('Failed to fetch holidays. Please try again.', 'error');
     } finally {
       countrySelect.disabled = false;

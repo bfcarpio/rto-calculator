@@ -319,7 +319,7 @@ import "../styles/window-shared.css";
   import { buildWindowRowHtml } from '../lib/ui/windowRow';
   import type { ComplianceEventData } from '../lib/auto-compliance';
   import { complianceStore, onComplianceChange } from '../lib/stores/complianceStore';
-  import { buildWindowRangeLabel } from '../lib/ui/windowRange';
+  import { logger } from '../utils/logger';
 
   const details = document.getElementById('window-explorer') as HTMLDetailsElement;
   const contentEl = document.getElementById('window-explorer-content')!;
@@ -397,25 +397,8 @@ import "../styles/window-shared.css";
 
     contentEl.innerHTML = html;
 
-    // Debug: log date values to console for comparison with Breakdown
-    console.group('[Explorer] Window Dates Debug');
-    for (const s of summaries) {
-      console.group(`Window ${s.windowIndex} (isValid=${s.isValid})`);
-      if (s.windowIndex === selectedIndex) {
-        console.log('  ↑ SELECTED (matches Breakdown)');
-      }
-      console.log('windowStart:', s.windowStart.toISOString(), '|', s.windowStart.toString());
-      console.log('windowEnd:', s.windowEnd.toISOString(), '|', s.windowEnd.toString());
-      console.log('rangeLabel:', buildWindowRangeLabel(s.weekDetails));
-      for (let i = 0; i < s.weekDetails.length; i++) {
-        const w = s.weekDetails[i];
-        if (!w) continue;
-        console.log(`  week[${i}] weekStart: iso=${w.weekStart.toISOString()} local=${w.weekStart.toString()} day=${w.weekStart.getDay()} date=${w.weekStart.getDate()}`);
-      }
-      console.groupEnd();
-    }
-    console.log('policy:', policy);
-    console.groupEnd();
+    // Debug: log date values for comparison with Breakdown
+    logger.debug('[Explorer] Window Dates Debug:', { summaries, selectedIndex, policy });
 
     // Wire up scenario details on-expand
     const scenarioDetails = contentEl.querySelector('#scenario-details') as HTMLDetailsElement | null;

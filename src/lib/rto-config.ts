@@ -40,27 +40,3 @@ export const DEFAULT_POLICY = {
 	/** Number of top weeks to check for compliance */
 	topWeeksToCheck: 8,
 };
-
-/**
- * Get the minimum office days per week setting
- * @returns The configured minimum office days per week
- */
-export function getMinOfficeDaysPerWeek(): number {
-	return RTO_CONFIG.minOfficeDaysPerWeek;
-}
-
-/**
- * Get the total weekdays per week setting
- * @returns The total number of weekdays in a week
- */
-export function getTotalWeekdaysPerWeek(): number {
-	return RTO_CONFIG.totalWeekdaysPerWeek;
-}
-
-/**
- * Check if debug mode is enabled
- * @returns True if debug mode is enabled
- */
-export function isDebugEnabled(): boolean {
-	return RTO_CONFIG.DEBUG;
-}

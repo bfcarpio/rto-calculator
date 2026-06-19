@@ -213,7 +213,7 @@ const _buttons: ButtonConfig[] = [
   import type { CalendarInstance, DateString } from 'datepainter';
 
   function getCalendarManager(): CalendarInstance | null {
-    return (window as any).__datepainterInstance || null;
+    return window.__datepainterInstance ?? null;
   }
 
   /** Clear date selections in the current month only */

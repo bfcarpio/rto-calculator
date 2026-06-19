@@ -216,17 +216,6 @@ export interface HolidayDataSource {
 	queryHolidays(options: HolidayQueryOptions): Promise<HolidayQueryResult>;
 
 	/**
-	 * Get statistics about the data source usage
-	 * @returns The current statistics
-	 */
-	getStatistics(): DataSourceStatistics;
-
-	/**
-	 * Reset the data source statistics
-	 */
-	resetStatistics(): void;
-
-	/**
 	 * Clear the holiday cache
 	 */
 	clearCache(): void;

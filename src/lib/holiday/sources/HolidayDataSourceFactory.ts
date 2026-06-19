@@ -47,10 +47,14 @@ export class HolidayDataSourceFactory {
 	}
 
 	/**
-	 * Constructs a new HolidayDataSourceFactory (private constructor)
+	 * Constructs a new HolidayDataSourceFactory
+	 *
+	 * Private to enforce singleton pattern. Use getInstance() instead.
+	 * For testing, use the _testResetInstance() method.
+	 *
 	 * @private
 	 */
-	constructor() {
+	private constructor() {
 		this.dataSources = new Map();
 		this.defaultDataSourceName = "nager-date";
 		this.initialized = false;

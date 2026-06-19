@@ -367,15 +367,6 @@ describe("HolidayDataSourceFactory", () => {
 					totalCount: 0,
 					countryCode: "",
 				}),
-				getStatistics: () => ({
-					totalCalls: 0,
-					successfulCalls: 0,
-					failedCalls: 0,
-					averageResponseTime: 0,
-					cacheHitRate: 0,
-					totalHolidaysFetched: 0,
-				}),
-				resetStatistics: () => {},
 				clearCache: () => {},
 				updateConfig: () => {},
 			};
@@ -443,15 +434,6 @@ describe("HolidayDataSourceFactory", () => {
 					totalCount: 0,
 					countryCode: "",
 				}),
-				getStatistics: () => ({
-					totalCalls: 0,
-					successfulCalls: 0,
-					failedCalls: 0,
-					averageResponseTime: 0,
-					cacheHitRate: 0,
-					totalHolidaysFetched: 0,
-				}),
-				resetStatistics: () => {},
 				updateConfig: () => {},
 			};
 			factory.registerDataSource(noCacheSource);
@@ -515,15 +497,6 @@ describe("HolidayDataSourceFactory", () => {
 						totalCount: 0,
 						countryCode: "",
 					}),
-					getStatistics: () => ({
-						totalCalls: 0,
-						successfulCalls: 0,
-						failedCalls: 0,
-						averageResponseTime: 0,
-						cacheHitRate: 0,
-						totalHolidaysFetched: 0,
-					}),
-					resetStatistics: () => {},
 					clearCache: () => {},
 					updateConfig: () => {},
 				};
@@ -663,15 +636,6 @@ describe("HolidayDataSourceFactory", () => {
 					totalCount: 0,
 					countryCode: "",
 				}),
-				getStatistics: () => ({
-					totalCalls: 0,
-					successfulCalls: 0,
-					failedCalls: 0,
-					averageResponseTime: 0,
-					cacheHitRate: 0,
-					totalHolidaysFetched: 0,
-				}),
-				resetStatistics: () => {},
 				clearCache: () => {},
 			};
 			factory.registerDataSource(customSource);

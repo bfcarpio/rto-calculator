@@ -7,7 +7,6 @@
 import { logger } from "../../../utils/logger";
 import { parseLocalDate } from "../../date-helpers";
 import type {
-	DataSourceStatistics,
 	DataSourceStatus,
 	DateRange,
 	Holiday,
@@ -288,28 +287,6 @@ abstract class HolidayDataSourceStrategy implements HolidayDataSource {
 		if (this.config.debug) {
 			logger.debug(`[HolidayDataSource] Cache cleared`);
 		}
-	}
-
-	/**
-	 * Get data source statistics
-	 */
-	getStatistics(): DataSourceStatistics {
-		// Implement a basic return to satisfy the interface or full stats if needed
-		return {
-			totalCalls: 0,
-			successfulCalls: 0,
-			failedCalls: 0,
-			averageResponseTime: 0,
-			cacheHitRate: 0,
-			totalHolidaysFetched: 0,
-		};
-	}
-
-	/**
-	 * Reset the data source statistics
-	 */
-	resetStatistics(): void {
-		// No-op for base class, or reset specific stats if we had them
 	}
 
 	/**

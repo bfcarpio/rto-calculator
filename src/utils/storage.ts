@@ -10,6 +10,7 @@ const STORAGE_KEYS = {
 	SELECTED_DATES: "rto-calculator-selected-dates",
 	USER_PREFERENCES: "rto-calculator-user-preferences",
 	LAST_UPDATED: "rto-calculator-last-updated",
+	COLOR_SCHEME: "colorScheme",
 };
 
 /**
@@ -106,6 +107,31 @@ export function clearSelectedDates(): void {
 		localStorage.removeItem(STORAGE_KEYS.SELECTED_DATES);
 	} catch (error) {
 		logger.error("Error clearing selected dates from localStorage:", error);
+	}
+}
+
+/**
+ * Save color scheme preference to localStorage
+ * @param colorScheme - The color scheme string (e.g., "tol-muted-light")
+ */
+export function saveColorScheme(colorScheme: string): void {
+	try {
+		localStorage.setItem(STORAGE_KEYS.COLOR_SCHEME, colorScheme);
+	} catch (error) {
+		logger.error("Error saving color scheme to localStorage:", error);
+	}
+}
+
+/**
+ * Load color scheme preference from localStorage
+ * @returns The stored color scheme string, or null if not found
+ */
+export function loadColorScheme(): string | null {
+	try {
+		return localStorage.getItem(STORAGE_KEYS.COLOR_SCHEME);
+	} catch (error) {
+		logger.error("Error loading color scheme from localStorage:", error);
+		return null;
 	}
 }
 

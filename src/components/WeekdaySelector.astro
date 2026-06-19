@@ -210,7 +210,7 @@
   }
 
   const getCalendarManager = (): CalendarInstance | null => {
-    return (window as any).__datepainterInstance || null;
+    return window.__datepainterInstance ?? null;
   };
 
   let calendarManager: CalendarInstance | null = null;

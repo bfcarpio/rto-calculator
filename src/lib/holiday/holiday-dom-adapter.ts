@@ -8,6 +8,7 @@
  * @module holiday-dom-adapter
  */
 
+import { isHTMLElement } from "../type-guards";
 import type { HolidayInfo } from "./HolidayManager";
 
 /**
@@ -29,42 +30,42 @@ export function applyHolidaysToCalendarDOM(
 		const month = holiday.date.getMonth();
 		const day = holiday.date.getDate();
 
-		// Find the calendar day cell
-		const cell = document.querySelector(
+		// Find the calendar day cell with type guard
+		const maybeCell = document.querySelector(
 			`.calendar-day[data-year="${year}"][data-month="${month}"][data-day="${day}"]`,
-		) as HTMLElement;
+		);
 
-		if (!cell) {
+		if (!isHTMLElement(maybeCell)) {
 			return;
 		}
 
 		// Skip if already marked as a holiday to prevent duplicate processing
-		if (cell.classList.contains("holiday")) {
+		if (maybeCell.classList.contains("holiday")) {
 			return;
 		}
 
 		// Always add holiday class for visual styling
-		cell.classList.add("holiday");
+		maybeCell.classList.add("holiday");
 
 		// Only mark as OOF if holidaysAsOOF is enabled
 		if (holidaysAsOOF) {
-			cell.dataset.selected = "true";
-			cell.dataset.selectionType = "out-of-office";
-			cell.classList.add("selected", "out-of-office");
+			maybeCell.dataset.selected = "true";
+			maybeCell.dataset.selectionType = "out-of-office";
+			maybeCell.classList.add("selected", "out-of-office");
 		}
 
 		// Add data attribute for holiday info
-		cell.dataset.holiday = "true";
-		cell.dataset.holidayName = holiday.name;
-		cell.dataset.holidayCountry = holiday.countryCode;
+		maybeCell.dataset.holiday = "true";
+		maybeCell.dataset.holidayName = holiday.name;
+		maybeCell.dataset.holidayCountry = holiday.countryCode;
 
 		// Update aria-label for accessibility
-		const currentLabel = cell.getAttribute("aria-label") || "";
+		const currentLabel = maybeCell.getAttribute("aria-label") || "";
 		const holidayLabel = ` - ${holiday.name} (Holiday)`;
-		cell.setAttribute("aria-label", currentLabel + holidayLabel);
+		maybeCell.setAttribute("aria-label", currentLabel + holidayLabel);
 
 		// Add title for hover tooltip
-		cell.title = `${holiday.name} (${holiday.countryCode})`;
+		maybeCell.title = `${holiday.name} (${holiday.countryCode})`;
 	});
 }
 
@@ -80,27 +81,30 @@ export function removeHolidaysFromCalendarDOM(): void {
 	);
 
 	holidayCells.forEach((cell) => {
-		const element = cell as HTMLElement;
-		element.classList.remove("holiday");
-		delete element.dataset.holiday;
-		delete element.dataset.holidayName;
-		delete element.dataset.holidayCountry;
+		if (!isHTMLElement(cell)) {
+			return;
+		}
+
+		cell.classList.remove("holiday");
+		delete cell.dataset.holiday;
+		delete cell.dataset.holidayName;
+		delete cell.dataset.holidayCountry;
 
 		// Also remove OOF selection that was applied to holidays
-		element.classList.remove("selected", "out-of-office");
-		element.dataset.selected = "false";
-		element.dataset.selectionType = "";
-		element.ariaSelected = "false";
+		cell.classList.remove("selected", "out-of-office");
+		cell.dataset.selected = "false";
+		cell.dataset.selectionType = "";
+		cell.ariaSelected = "false";
 
 		// Remove holiday suffix from aria-label
-		const currentLabel = element.getAttribute("aria-label") || "";
+		const currentLabel = cell.getAttribute("aria-label") || "";
 		const holidaySuffix = " (Holiday)";
 		if (currentLabel.includes(holidaySuffix)) {
 			const baseLabel = currentLabel.replace(holidaySuffix, "");
-			element.setAttribute("aria-label", baseLabel);
+			cell.setAttribute("aria-label", baseLabel);
 		}
 
 		// Remove title
-		element.title = "";
+		cell.title = "";
 	});
 }

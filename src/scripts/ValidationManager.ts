@@ -52,23 +52,6 @@ export class ValidationManager {
 		return this.config.debug;
 	}
 
-	// Individual config getters for convenient access
-	getMinOfficeDaysPerWeek(): number {
-		return this.config.minOfficeDaysPerWeek;
-	}
-
-	getTotalWeekdaysPerWeek(): number {
-		return this.config.totalWeekdaysPerWeek;
-	}
-
-	getRollingPeriodWeeks(): number {
-		return this.config.rollingPeriodWeeks;
-	}
-
-	getThresholdPercentage(): number {
-		return this.config.thresholdPercentage;
-	}
-
 	// State subscription system
 	subscribe(callback: StateSubscriber): void {
 		this.subscribers.push(callback);
@@ -85,9 +68,7 @@ export class ValidationManager {
 export const validationManager = new ValidationManager();
 
 if (typeof window !== "undefined") {
-	(
-		window as typeof window & { validationManager?: ValidationManager }
-	).validationManager = validationManager;
+	window.validationManager = validationManager;
 }
 
 export default validationManager;

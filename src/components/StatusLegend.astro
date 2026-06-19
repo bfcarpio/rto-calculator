@@ -112,6 +112,7 @@
 <script>
   import type { DateState } from 'datepainter';
   import type { CalendarInstance } from 'datepainter';
+  import { logger } from '../utils/logger';
 
   /**
    * Update count badge elements based on current calendar state
@@ -145,7 +146,7 @@
    */
   function setMarkingMode(mode: DateState): void {
     if (!calendarManager) {
-      console.error('CalendarManager not available');
+      logger.error('CalendarManager not available');
       return;
     }
 
@@ -169,7 +170,7 @@
    * Get calendar manager instance from window
    */
   const getCalendarManager = (): CalendarInstance | null => {
-    return (window as any).__datepainterInstance || null;
+    return window.__datepainterInstance ?? null;
   };
 
   let calendarManager: CalendarInstance | null = null;

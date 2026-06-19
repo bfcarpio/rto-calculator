@@ -5,6 +5,8 @@
 
 import { DEFAULT_COLOR_SCHEME, type UserPreferences } from "../types/index";
 import { logger } from "../utils/logger";
+import { loadColorScheme, saveColorScheme } from "../utils/storage";
+import { isColorScheme } from "./type-guards";
 
 export type ThemeMode = "system" | "light" | "dark";
 
@@ -46,11 +48,11 @@ export class ThemeManager {
 
 	constructor() {
 		// Try to get colorScheme from localStorage, default to tol-muted-light
-		const savedScheme =
-			typeof localStorage !== "undefined"
-				? (localStorage.getItem("colorScheme") as ColorScheme | null)
-				: null;
-		const colorScheme = savedScheme || DEFAULT_COLOR_SCHEME;
+		const savedScheme = loadColorScheme();
+		const colorScheme =
+			savedScheme && isColorScheme(savedScheme)
+				? savedScheme
+				: DEFAULT_COLOR_SCHEME;
 
 		// Determine isDarkMode from colorScheme suffix
 		const isDark = colorScheme.endsWith("-dark");
@@ -112,10 +114,8 @@ export class ThemeManager {
 
 		applyThemeToDocument(this.state.isDarkMode);
 
-		// Save colorScheme to localStorage
-		if (typeof localStorage !== "undefined") {
-			localStorage.setItem("colorScheme", this.state.colorScheme);
-		}
+		// Save colorScheme to localStorage via storage utility
+		saveColorScheme(this.state.colorScheme);
 
 		this.notifyListeners();
 	}
@@ -132,8 +132,10 @@ export class ThemeManager {
 
 		// Update colorScheme with new dark/light suffix based on theme mode
 		const basePalette = this.state.colorScheme.split("-").slice(0, 2).join("-");
-		const newColorScheme =
-			`${basePalette}-${isDark ? "dark" : "light"}` as ColorScheme;
+		const candidateScheme = `${basePalette}-${isDark ? "dark" : "light"}`;
+		const newColorScheme = isColorScheme(candidateScheme)
+			? candidateScheme
+			: DEFAULT_COLOR_SCHEME;
 
 		this.state = {
 			currentTheme: mode,
@@ -144,10 +146,8 @@ export class ThemeManager {
 		applyThemeToDocument(this.state.isDarkMode);
 		this.applyPaletteAttribute(this.state.colorScheme);
 
-		// Save to localStorage
-		if (typeof localStorage !== "undefined") {
-			localStorage.setItem("colorScheme", this.state.colorScheme);
-		}
+		// Save to localStorage via storage utility
+		saveColorScheme(this.state.colorScheme);
 
 		this.notifyListeners();
 	}
@@ -177,10 +177,8 @@ export class ThemeManager {
 		applyThemeToDocument(isDark);
 		this.applyPaletteAttribute(colorScheme);
 
-		// Save to localStorage
-		if (typeof localStorage !== "undefined") {
-			localStorage.setItem("colorScheme", colorScheme);
-		}
+		// Save to localStorage via storage utility
+		saveColorScheme(colorScheme);
 
 		this.notifyListeners();
 	}

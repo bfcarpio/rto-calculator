@@ -11,6 +11,7 @@
  */
 
 import type { CalendarInstance } from "../../packages/datepainter/src/types";
+import { logger } from "../utils/logger";
 import { computeComplianceData } from "./compute-compliance";
 import { complianceStore } from "./stores/complianceStore";
 import { onSettingsChange } from "./stores/settingsStore";
@@ -175,7 +176,7 @@ class EventQueue {
 				}
 			}
 		} catch (error) {
-			console.error("EventQueue processing error:", error);
+			logger.error("EventQueue processing error:", error);
 		} finally {
 			this.isProcessing = false;
 			setComputingState(false);
@@ -307,9 +308,7 @@ function initAutoCompliance(): void {
 		return;
 	}
 
-	const calendarManager = (
-		window as unknown as { __datepainterInstance?: CalendarInstance }
-	).__datepainterInstance;
+	const calendarManager = window.__datepainterInstance;
 	if (!calendarManager) {
 		setTimeout(initAutoCompliance, 50);
 		return;

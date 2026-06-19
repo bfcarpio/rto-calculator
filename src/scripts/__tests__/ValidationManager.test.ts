@@ -15,54 +15,43 @@ describe("ValidationManager", () => {
 		manager = new ValidationManager();
 	});
 
-	describe("Task 1.1: Config Getters", () => {
-		describe("getMinOfficeDaysPerWeek", () => {
-			it("should return default min office days", () => {
-				const result = manager.getMinOfficeDaysPerWeek();
-				expect(result).toBe(3);
-			});
-
-			it("should return updated value after config change", () => {
-				manager.updateConfig({ minOfficeDaysPerWeek: 4 });
-				expect(manager.getMinOfficeDaysPerWeek()).toBe(4);
-			});
+	describe("getConfig", () => {
+		it("should return default config values", () => {
+			const config = manager.getConfig();
+			expect(config.minOfficeDaysPerWeek).toBe(3);
+			expect(config.totalWeekdaysPerWeek).toBe(5);
+			expect(config.rollingPeriodWeeks).toBe(12);
+			expect(config.thresholdPercentage).toBe(0.6);
 		});
 
-		describe("getTotalWeekdaysPerWeek", () => {
-			it("should return default total weekdays", () => {
-				expect(manager.getTotalWeekdaysPerWeek()).toBe(5);
-			});
-
-			it("should return updated value after config change", () => {
-				manager.updateConfig({ totalWeekdaysPerWeek: 4 });
-				expect(manager.getTotalWeekdaysPerWeek()).toBe(4);
-			});
+		it("should return updated values after config change", () => {
+			manager.updateConfig({ minOfficeDaysPerWeek: 4 });
+			expect(manager.getConfig().minOfficeDaysPerWeek).toBe(4);
 		});
 
-		describe("getRollingPeriodWeeks", () => {
-			it("should return default rolling period weeks", () => {
-				expect(manager.getRollingPeriodWeeks()).toBe(12);
-			});
-
-			it("should return updated value after config change", () => {
-				manager.updateConfig({ rollingPeriodWeeks: 8 });
-				expect(manager.getRollingPeriodWeeks()).toBe(8);
-			});
+		it("should return total weekdays after config change", () => {
+			manager.updateConfig({ totalWeekdaysPerWeek: 4 });
+			expect(manager.getConfig().totalWeekdaysPerWeek).toBe(4);
 		});
 
-		describe("getThresholdPercentage", () => {
-			it("should return default threshold percentage", () => {
-				expect(manager.getThresholdPercentage()).toBe(0.6);
-			});
+		it("should return rolling period weeks after config change", () => {
+			manager.updateConfig({ rollingPeriodWeeks: 8 });
+			expect(manager.getConfig().rollingPeriodWeeks).toBe(8);
+		});
 
-			it("should return updated value after config change", () => {
-				manager.updateConfig({ thresholdPercentage: 0.75 });
-				expect(manager.getThresholdPercentage()).toBe(0.75);
-			});
+		it("should return threshold percentage after config change", () => {
+			manager.updateConfig({ thresholdPercentage: 0.75 });
+			expect(manager.getConfig().thresholdPercentage).toBe(0.75);
+		});
+
+		it("should return a copy, not a reference", () => {
+			const config = manager.getConfig();
+			config.minOfficeDaysPerWeek = 99;
+			expect(manager.getConfig().minOfficeDaysPerWeek).toBe(3);
 		});
 	});
 
-	describe("Task 1.2: State Subscription", () => {
+	describe("State Subscription", () => {
 		describe("subscribe", () => {
 			it("should register a callback that receives config on updates", () => {
 				const callback = vi.fn();

@@ -40,20 +40,6 @@ export {
 	toggleBooleanSetting,
 } from "./settings-toggles";
 
-declare global {
-	interface Window {
-		validationManager?: {
-			setDebugMode(enabled: boolean): void;
-			getDebugMode(): boolean;
-			updateConfig(config: { minOfficeDaysPerWeek: number }): void;
-			getConfig(): { minOfficeDaysPerWeek?: number };
-		};
-		storageManager?: {
-			setDataSavingEnabled(enabled: boolean): void;
-		};
-	}
-}
-
 class SettingsModal {
 	private modal: HTMLDialogElement | null = null;
 	private settingsButton: HTMLElement | null = null;

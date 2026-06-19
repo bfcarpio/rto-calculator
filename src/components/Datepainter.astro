@@ -94,10 +94,11 @@ const {
   import { HistoryManager } from '../lib/history/HistoryManager';
   import { KeyboardShortcuts } from '../scripts/keyboard-shortcuts';
   import validationManager from '../scripts/ValidationManager';
+  import { logger } from '../utils/logger';
 
   // Guard clause: ensure ValidationManager is available at module level
   if (!validationManager) {
-    console.error('ValidationManager not available');
+    logger.error('ValidationManager not available');
   }
 
   /**
@@ -206,7 +207,7 @@ const {
     calendarManager.navigateToDate(new Date());
 
     // Expose calendar manager globally for StatusLegend component
-    (window as any).__datepainterInstance = calendarManager;
+    window.__datepainterInstance = calendarManager;
 
     // Add data-testid attributes to day cells after initialization
     addTestIdsToDayCells(containerEl);
@@ -224,7 +225,7 @@ const {
       validationManager,
     );
     keyboardShortcuts.initialize();
-    (window as any).__keyboardShortcutsInstance = keyboardShortcuts;
+    window.__keyboardShortcutsInstance = keyboardShortcuts;
 
     // Subscribe to state changes to trigger undo tracking
     const unsubscribe = calendarManager.onStateChange(() => {

@@ -711,9 +711,7 @@ describe("Pending Events Buffer", () => {
 			vi.useFakeTimers();
 
 			// Mock window.__datepainterInstance
-			(
-				window as unknown as { __datepainterInstance?: CalendarInstance }
-			).__datepainterInstance = mockCalendarManager;
+			window.__datepainterInstance = mockCalendarManager;
 
 			_testExports.reset();
 
@@ -727,8 +725,7 @@ describe("Pending Events Buffer", () => {
 			expect(_testExports.isInitialized()).toBe(true);
 
 			// Cleanup mock
-			delete (window as unknown as { __datepainterInstance?: CalendarInstance })
-				.__datepainterInstance;
+			delete window.__datepainterInstance;
 		});
 	});
 });

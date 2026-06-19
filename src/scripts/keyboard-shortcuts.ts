@@ -14,6 +14,7 @@ import type {
 } from "../../packages/datepainter/src/types";
 import type { HistoryManager } from "../lib/history/HistoryManager";
 import type { ValidationConfig } from "../types/index";
+import { logger } from "../utils/logger";
 import type { ValidationManager } from "./ValidationManager";
 
 /**
@@ -285,7 +286,7 @@ export class KeyboardShortcuts {
 				this.debounceTimeout = null;
 				this.dispatchHistoryChanged();
 			} catch (error) {
-				console.error("Failed to push state to history:", error);
+				logger.error("Failed to push state to history:", error);
 			}
 		}, this.DEBOUNCE_DELAY);
 	}

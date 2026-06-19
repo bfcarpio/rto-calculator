@@ -12,11 +12,17 @@ import type {
 	HolidayDataSource,
 } from "../../types/holiday-data-source";
 import { logger } from "../../utils/logger";
+import { isCompanyFilters } from "../type-guards";
 import companyFiltersJson from "./data/company-filters.json";
 import type { FetchHolidaysOptions, HolidayInfo } from "./HolidayManager";
 import { HolidayDataSourceFactory } from "./sources";
 
-const { $schema: _, ...companyFilters } = companyFiltersJson;
+const { $schema: _, ...rawCompanyFilters } = companyFiltersJson;
+
+// Parse company filters once at module scope with validation
+const companyFilters: CompanyFilters = isCompanyFilters(rawCompanyFilters)
+	? rawCompanyFilters
+	: {};
 
 /**
  * Extra holiday: fixed date or day-after another holiday
@@ -36,7 +42,7 @@ interface CompanyEntry {
 /**
  * Type for company filters JSON structure
  */
-interface CompanyFilters {
+export interface CompanyFilters {
 	[countryCode: string]: {
 		name: string;
 		companies: {
@@ -91,7 +97,7 @@ export function getCompanyHolidays(
 	countryCode: string,
 	companyName: string,
 ): Set<string> | null {
-	const filters = companyFilters as CompanyFilters;
+	const filters = companyFilters;
 	const countryData = filters[countryCode];
 	if (!countryData || !countryData.companies) {
 		return null;
@@ -124,7 +130,7 @@ export function resolveExtraHolidays(
 	apiHolidays: HolidayInfo[],
 	years: number[],
 ): HolidayInfo[] {
-	const filters = companyFilters as CompanyFilters;
+	const filters = companyFilters;
 	const companyData = filters[countryCode]?.companies?.[companyName];
 	if (!companyData?.extra) {
 		return [];
@@ -302,7 +308,7 @@ export function buildHolidaySummary(result: {
  * Get available companies for a country
  */
 export function getAvailableCompaniesForCountry(countryCode: string): string[] {
-	const filters = companyFilters as CompanyFilters;
+	const filters = companyFilters;
 	const countryData = filters[countryCode];
 	if (!countryData || !countryData.companies) {
 		return [];
@@ -315,7 +321,7 @@ export function getAvailableCompaniesForCountry(countryCode: string): string[] {
  * Check if a country has company filters available
  */
 export function hasCompanyFiltersForCountry(countryCode: string): boolean {
-	const filters = companyFilters as CompanyFilters;
+	const filters = companyFilters;
 	const countryData = filters[countryCode];
 	return !!countryData && !!countryData.companies;
 }

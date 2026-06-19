@@ -96,8 +96,6 @@ describe("HolidayManager", () => {
 			isHoliday: vi.fn(),
 			isTodayHoliday: vi.fn(),
 			queryHolidays: vi.fn(),
-			getStatistics: vi.fn(),
-			resetStatistics: vi.fn(),
 			clearCache: vi.fn(),
 			updateConfig: vi.fn(),
 			name: "mock-data-source",

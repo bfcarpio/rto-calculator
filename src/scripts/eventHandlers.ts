@@ -572,9 +572,7 @@ export function initializeEventHandlers(
 	eventManager.initialize();
 
 	// Expose for debugging/cleanup if needed
-	(
-		window as unknown as { __calendarEventManager?: CalendarEventManager }
-	).__calendarEventManager = eventManager;
+	window.__calendarEventManager = eventManager;
 
 	return eventManager;
 }
