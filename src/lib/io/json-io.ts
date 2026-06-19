@@ -4,13 +4,9 @@
  */
 
 import type { CalendarInstance, DateState } from "datepainter";
-import { dispatchRTOStateEvent } from "../../types/events";
-import {
-	type AppSettings,
-	readSettings,
-	writeSettings,
-} from "../settings-reader";
+import type { AppSettings } from "../settings-constants";
 import { STATE_DEFAULTS } from "../state-defaults";
+import { settingsStore } from "../stores/settingsStore";
 import { downloadFile } from "./download";
 import { type ExportData, validateExportData } from "./schema";
 
@@ -32,7 +28,7 @@ export function buildExportJSON(calendar: CalendarInstance): string {
 }
 
 function buildExportData(calendar: CalendarInstance): ExportData {
-	const settings = readSettings();
+	const settings = settingsStore.get();
 	// Omit internal-only fields
 	const {
 		debug: _debug,
@@ -131,10 +127,12 @@ export function importJSON(
 		}
 	}
 
-	// Apply settings if present
+	// Apply settings if present — settingsStore.set() auto-notifies subscribers
 	if (exportData.settings) {
-		writeSettings(exportData.settings as Partial<AppSettings>);
-		dispatchRTOStateEvent({ type: "settings" });
+		settingsStore.set({
+			...settingsStore.get(),
+			...(exportData.settings as Partial<AppSettings>),
+		});
 	}
 
 	return { success: true };

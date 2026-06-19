@@ -11,7 +11,6 @@ import {
 	ROLLING_WINDOW_WEEKS,
 	TOTAL_WEEK_DAYS,
 } from "../lib/validation/constants";
-import { dispatchRTOStateEvent } from "../types/events";
 import type { ValidationConfig } from "../types/validation-strategy";
 
 const DEFAULT_CONFIG: ValidationConfig = {
@@ -30,9 +29,7 @@ export class ValidationManager {
 	private subscribers: StateSubscriber[] = [];
 
 	updateConfig(newConfig: Partial<ValidationConfig>): void {
-		const oldConfig = { ...this.config };
 		this.config = { ...this.config, ...newConfig };
-		this.emitConfigChange(oldConfig, this.config);
 		this.notifySubscribers();
 	}
 
@@ -40,23 +37,6 @@ export class ValidationManager {
 		const config = this.getConfig();
 		for (const subscriber of this.subscribers) {
 			subscriber(config);
-		}
-	}
-
-	private emitConfigChange(
-		oldConfig: ValidationConfig,
-		newConfig: ValidationConfig,
-	): void {
-		// Dispatch event for each changed key
-		for (const key of Object.keys(newConfig) as Array<keyof ValidationConfig>) {
-			if (oldConfig[key] !== newConfig[key]) {
-				dispatchRTOStateEvent({
-					type: "config",
-					settingKey: key,
-					oldValue: oldConfig[key],
-					newValue: newConfig[key],
-				});
-			}
 		}
 	}
 

@@ -77,7 +77,8 @@ import SettingIndicator from "./SettingIndicator.astro";
 </style>
 
 <script>
-	import { onComplianceUpdated, getLatestCompliance, type ComplianceEventData } from '../lib/auto-compliance';
+	import { onComplianceChange } from '../lib/stores/complianceStore';
+	import type { ComplianceEventData } from '../lib/auto-compliance';
 
 	function updateSummary(data: ComplianceEventData): void {
 		const elAvg = document.getElementById('summary-average');
@@ -100,10 +101,7 @@ import SettingIndicator from "./SettingIndicator.astro";
 		if (elHoliday) elHoliday.textContent = String(data.totalHolidayDays);
 	}
 
-	// Subscribe to auto-compliance events
-	onComplianceUpdated(updateSummary);
-
-	// If auto-compliance already ran before we loaded, use cached result
-	const cached = getLatestCompliance();
-	if (cached) updateSummary(cached);
+	// Page-lifetime subscription — no cleanup needed for static Astro pages
+	// onComplianceChange fires immediately if store has data, so no separate get() needed
+	onComplianceChange(updateSummary);
 </script>

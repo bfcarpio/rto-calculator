@@ -3,17 +3,18 @@
  *
  * Singleton that subscribes to datepainter state changes, debounces computation,
  * reads calendar data, runs sliding-window validation across ALL 12-week windows,
- * and dispatches `rto:state-changed` CustomEvents with compliance data.
+ * and writes compliance results to the complianceStore nanostore.
  *
  * @module auto-compliance
  */
 
 import type { CalendarInstance } from "../../packages/datepainter/src/types";
-import { dispatchRTOStateEvent, RTO_STATE_CHANGED } from "../types/events";
 import {
 	convertWeeksToCompliance,
 	type WeekInfo,
 } from "./calendar-data-reader";
+import { complianceStore } from "./stores/complianceStore";
+import { onSettingsChange } from "./stores/settingsStore";
 import { buildWindowRangeLabel } from "./ui/windowRange";
 import type { WindowSummary } from "./validation/all-windows";
 import { FRIDAY_OFFSET } from "./validation/constants";
@@ -76,31 +77,6 @@ export interface ComplianceEventData {
 }
 
 // ─── Event Helpers ──────────────────────────────────────────────────
-
-export function onComplianceUpdated(
-	cb: (data: ComplianceEventData) => void,
-): () => void {
-	// Handler for unified event
-	const handler = (e: Event): void => {
-		const event = e as CustomEvent;
-		if (event.detail?.type === "compliance" && event.detail.compliance) {
-			cb(event.detail.compliance);
-		}
-	};
-
-	window.addEventListener(RTO_STATE_CHANGED, handler);
-
-	return () => {
-		window.removeEventListener(RTO_STATE_CHANGED, handler);
-	};
-}
-
-/** Latest cached result for late-loading components */
-let latestResult: ComplianceEventData | null = null;
-
-export function getLatestCompliance(): ComplianceEventData | null {
-	return latestResult;
-}
 
 /**
  * Check if auto-compliance has finished initializing.
@@ -200,15 +176,15 @@ function computeComplianceData(
 	// (including future) in validation so marking future months triggers violations
 	const currentWeekInfo = allWeeks.find((w) => !isWeekComplete(w.weekStart));
 
-	// Select the same window that validateSlidingWindow would pick:
+	// Select the window to show in Breakdown:
 	// - If any window is invalid: use the FIRST failing window
-	// - If all windows are valid: use the LAST window
+	// - If all windows are valid: use the FIRST (earliest) window
 	// Edge case: no weeks → no summaries
 	if (summaries.length === 0) {
 		const now = new Date();
 		const currentWeekStart = getStartOfWeek(now);
 		const currentWeekEnd = new Date(currentWeekStart);
-		currentWeekEnd.setDate(currentWeekStart.getDate() + 6);
+		currentWeekEnd.setDate(currentWeekStart.getDate() + FRIDAY_OFFSET);
 
 		// Build an empty sentinel summary for the no-data case
 		const emptySummary: WindowSummary = {
@@ -249,13 +225,13 @@ function computeComplianceData(
 	}
 
 	const firstFailing = summaries.find((s) => !s.isValid);
-	const lastSummary = summaries[summaries.length - 1];
-	if (!lastSummary) {
+	const firstSummary = summaries[0];
+	if (!firstSummary) {
 		throw new Error(
 			"No windows available after evaluateAllWindows — empty result",
 		);
 	}
-	const selectedSummary: WindowSummary = firstFailing ?? lastSummary;
+	const selectedSummary: WindowSummary = firstFailing ?? firstSummary;
 
 	// Get the selected window's week starts for matching with original WeekInfo data
 	const selectedWeekStarts = new Set(
@@ -310,7 +286,7 @@ function computeComplianceData(
 	const now = new Date();
 	const currentWeekStart = getStartOfWeek(now);
 	const currentWeekEnd = new Date(currentWeekStart);
-	currentWeekEnd.setDate(currentWeekStart.getDate() + 6);
+	currentWeekEnd.setDate(currentWeekStart.getDate() + FRIDAY_OFFSET);
 
 	const currentWeek = {
 		weekStart: currentWeekStart,
@@ -403,6 +379,8 @@ class EventQueue {
 	private isProcessing = false;
 	private timer: ReturnType<typeof setTimeout> | null = null;
 	private calendarManager: CalendarInstance | null = null;
+	private settingsUnsub: (() => void) | null = null;
+	private dateStateUnsub: (() => void) | null = null;
 
 	/**
 	 * Set the calendar manager instance for processing state-change events.
@@ -416,6 +394,20 @@ class EventQueue {
 			);
 		}
 		this.calendarManager = manager;
+	}
+
+	/**
+	 * Store the settings unsubscribe function for cleanup on destroy.
+	 */
+	setSettingsUnsubscribe(unsub: () => void): void {
+		this.settingsUnsub = unsub;
+	}
+
+	/**
+	 * Store the date state unsubscribe function for cleanup on destroy.
+	 */
+	setDateStateUnsubscribe(unsub: () => void): void {
+		this.dateStateUnsub = unsub;
 	}
 
 	/**
@@ -505,6 +497,14 @@ class EventQueue {
 			clearTimeout(this.timer);
 			this.timer = null;
 		}
+		if (this.settingsUnsub) {
+			this.settingsUnsub();
+			this.settingsUnsub = null;
+		}
+		if (this.dateStateUnsub) {
+			this.dateStateUnsub();
+			this.dateStateUnsub = null;
+		}
 		this.queue = [];
 		this.calendarManager = null;
 	}
@@ -525,12 +525,7 @@ async function runComputation(
 ): Promise<void> {
 	const evaluation = await computeWindowEvaluation(calendarManager);
 	const data = computeComplianceData(evaluation);
-	latestResult = data;
-
-	dispatchRTOStateEvent({
-		type: "compliance",
-		compliance: data,
-	});
+	complianceStore.set(data);
 }
 
 /**
@@ -546,23 +541,26 @@ function setupEventListeners(
 	calendarManager: CalendarInstance,
 	_eventQueue: EventQueue,
 ): void {
-	// Subscribe to calendar state changes
-	calendarManager.onStateChange(() => {
-		enqueueEvent({
-			type: "state-change",
-			timestamp: Date.now(),
-			calendarManager,
-		});
-	});
+	// Only recompute compliance when dates change, not on month navigation
+	_eventQueue.setDateStateUnsubscribe(
+		calendarManager.onDateStateChange(() => {
+			enqueueEvent({
+				type: "state-change",
+				timestamp: Date.now(),
+				calendarManager,
+			});
+		}),
+	);
 
-	// Subscribe to settings changes
-	window.addEventListener(RTO_STATE_CHANGED, ((e: CustomEvent) => {
-		if (e.detail?.type !== "settings") return;
-		enqueueEvent({
-			type: "settings-change",
-			timestamp: Date.now(),
-		});
-	}) as EventListener);
+	// Subscribe to settings changes via nanostore (replaces CustomEvent listener)
+	_eventQueue.setSettingsUnsubscribe(
+		onSettingsChange(() => {
+			enqueueEvent({
+				type: "settings-change",
+				timestamp: Date.now(),
+			});
+		}),
+	);
 }
 
 /**

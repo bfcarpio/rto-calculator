@@ -6,6 +6,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { parseLocalDate } from "../date-helpers";
 import { HolidayManager } from "../holiday/HolidayManager";
 import { HolidayDataSourceFactory } from "../holiday/sources";
 
@@ -355,7 +356,7 @@ describe("HolidayManager", () => {
 		it("should filter by company when specified", async () => {
 			// Independence Day is not in Amazon's company filter
 			const isHoliday = await manager.isHoliday(
-				new Date("2024-07-04"),
+				parseLocalDate("2024-07-04"),
 				"US",
 				"Amazon",
 			);

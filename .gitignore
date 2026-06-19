@@ -143,6 +143,8 @@ dist
 
 # End of https://www.toptal.com/developers/gitignore/api/node
 
+node-compile-cache/
+
 .astro
 
 # Playwright
@@ -151,6 +153,7 @@ dist
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+playwright-transform-cache-*/
 
 # AI agent temp files
 .sisyphus/

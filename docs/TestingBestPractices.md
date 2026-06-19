@@ -131,28 +131,28 @@ page.locator("#input-123");
 
 **Key selectors for this project:**
 
-| Element | Selector |
-|---------|----------|
+| Element          | Selector                                                                                      |
+| ---------------- | --------------------------------------------------------------------------------------------- |
 | Enabled day cell | `[data-testid="calendar-day"]:not(.datepainter__day--empty):not(.datepainter__day--disabled)` |
-| Day with state | `.datepainter-day--oof`, `.datepainter-day--holiday`, `.datepainter-day--sick` |
-| Count badges | `#count-oof`, `#count-holiday`, `#count-sick` (scope to `#status-legend`) |
-| Palette mode | `[data-testid="mode-oof"]`, `mode-holiday`, `mode-sick` |
-| Clear all button | `[data-testid="clear-all-button"]` |
-| Mobile menu | `[data-testid="mobile-menu-button"]` |
-| Settings button | `[data-testid="settings-button"]` |
+| Day with state   | `.datepainter-day--oof`, `.datepainter-day--holiday`, `.datepainter-day--sick`                |
+| Count badges     | `#count-oof`, `#count-holiday`, `#count-sick` (scope to `#status-legend`)                     |
+| Palette mode     | `[data-testid="mode-oof"]`, `mode-holiday`, `mode-sick`                                       |
+| Clear all button | `[data-testid="clear-all-button"]`                                                            |
+| Mobile menu      | `[data-testid="mobile-menu-button"]`                                                          |
+| Settings button  | `[data-testid="settings-button"]`                                                             |
 
 ### Helper Modules
 
 There are two helper systems. **Prefer `e2e/helpers/`** for new code:
 
-| Module | Domain | Key exports |
-|--------|--------|-------------|
-| `e2e/helpers/common.ts` | Navigation | `navigateToApp`, `waitForAppLoad` |
-| `e2e/helpers/datepainter.ts` | Calendar | `clickDate`, `expectDateHasState`, `getDateCells`, `navigateToMonth` |
-| `e2e/helpers/statusLegend.ts` | Palette | `selectMode`, `expectModeActive`, `getModeCounts` |
-| `e2e/helpers/settingsModal.ts` | Settings | `openSettings`, `setTargetDays` |
-| `e2e/helpers/theme.ts` | Theme | `openSettings`, `cycleTheme`, `expectTheme` |
-| `e2e/test-helpers.ts` | Legacy (mixed) | `waitForCalendarReady`, `applyWeekdayPattern`, `setupValidationScenario` |
+| Module                         | Domain         | Key exports                                                              |
+| ------------------------------ | -------------- | ------------------------------------------------------------------------ |
+| `e2e/helpers/common.ts`        | Navigation     | `navigateToApp`, `waitForAppLoad`                                        |
+| `e2e/helpers/datepainter.ts`   | Calendar       | `clickDate`, `expectDateHasState`, `getDateCells`, `navigateToMonth`     |
+| `e2e/helpers/statusLegend.ts`  | Palette        | `selectMode`, `expectModeActive`, `getModeCounts`                        |
+| `e2e/helpers/settingsModal.ts` | Settings       | `openSettings`, `setTargetDays`                                          |
+| `e2e/helpers/theme.ts`         | Theme          | `openSettings`, `cycleTheme`, `expectTheme`                              |
+| `e2e/test-helpers.ts`          | Legacy (mixed) | `waitForCalendarReady`, `applyWeekdayPattern`, `setupValidationScenario` |
 
 When adding a helper, put it in the domain-specific module. Only use `test-helpers.ts` for cross-cutting utilities.
 
@@ -160,19 +160,20 @@ When adding a helper, put it in the domain-specific module. Only use `test-helpe
 
 Not every test needs to run on every browser. The `playwright.config.ts` scopes projects to reduce total runs while maintaining coverage where it matters:
 
-| Project | Runs | Scope |
-|---------|------|-------|
-| `firefox-desktop` | All tests | Primary browser — catches regressions |
-| `chromium-desktop` | Core tests only | Cross-browser validation for behavioral tests |
-| `webkit-desktop` | Core tests only | Cross-browser validation for behavioral tests |
-| `chromium-mobile` | Mobile tests only | Mobile viewport interactions |
-| `tablet` | Mobile tests only | Tablet viewport interactions |
+| Project            | Runs              | Scope                                         |
+| ------------------ | ----------------- | --------------------------------------------- |
+| `firefox-desktop`  | All tests         | Primary browser — catches regressions         |
+| `chromium-desktop` | Core tests only   | Cross-browser validation for behavioral tests |
+| `webkit-desktop`   | Core tests only   | Cross-browser validation for behavioral tests |
+| `chromium-mobile`  | Mobile tests only | Mobile viewport interactions                  |
+| `tablet`           | Mobile tests only | Tablet viewport interactions                  |
 
 **Core test files** (cross-browser): `date-marking`, `validation-flows`, `theme-system`, `verify-ui`
 **Mobile test files**: `mobile-edge-cases`
 **Firefox-only**: `navigation`, `responsive-navigation`, `desktop-edge-cases`
 
 When adding a new spec file, decide its scope:
+
 - **Core behavioral flow?** Add to `CORE_TEST_FILES` in `playwright.config.ts`.
 - **Mobile/tablet specific?** Add to `MOBILE_TEST_FILES`.
 - **Layout, navigation, or edge case?** Firefox-only (no entry needed — it's the default).
@@ -187,6 +188,7 @@ npx playwright test --list --grep "mobile menu"
 ```
 
 **Rules of thumb:**
+
 - Each behavior should be asserted in exactly one spec file.
 - Smoke tests (page loads, body visible) are low value — only test once in `navigation.spec.ts`.
 - If a test's only assertion is `toBeVisible()` on `body`, delete it.
@@ -253,16 +255,62 @@ npx playwright test  # E2E tests (all browsers)
 
 ## Anti-Patterns to Avoid
 
-| Anti-pattern | Why it's bad | Do this instead |
-|---|---|---|
-| `waitForTimeout(N)` | Flaky (too short) or slow (too long) | Use auto-retrying assertions |
-| `waitForLoadState("networkidle")` | Never settles with timers/WebSockets | Wait for a specific visible element |
-| `body.toBeVisible()` as sole assertion | Tests nothing meaningful | Assert specific UI state |
-| Same test in multiple spec files | Wastes CI time, maintains two copies | Test each behavior once |
-| `page.locator(".css-class")` | Breaks when styles change | Use `data-testid` attributes |
-| `expect(true).toBe(true)` | Trivially passes, tests nothing | Assert meaningful outcomes |
-| Sleeps between viewport changes | Playwright assertions auto-retry | Remove the sleep, keep the assertion |
+| Anti-pattern                           | Why it's bad                         | Do this instead                      |
+| -------------------------------------- | ------------------------------------ | ------------------------------------ |
+| `waitForTimeout(N)`                    | Flaky (too short) or slow (too long) | Use auto-retrying assertions         |
+| `waitForLoadState("networkidle")`      | Never settles with timers/WebSockets | Wait for a specific visible element  |
+| `body.toBeVisible()` as sole assertion | Tests nothing meaningful             | Assert specific UI state             |
+| Same test in multiple spec files       | Wastes CI time, maintains two copies | Test each behavior once              |
+| `page.locator(".css-class")`           | Breaks when styles change            | Use `data-testid` attributes         |
+| `expect(true).toBe(true)`              | Trivially passes, tests nothing      | Assert meaningful outcomes           |
+| Sleeps between viewport changes        | Playwright assertions auto-retry     | Remove the sleep, keep the assertion |
 
 ---
 
-*Last updated: February 2026*
+## Date Handling in Tests
+
+### Always use local date construction
+
+Date bugs caused by UTC parsing are a recurring issue. Follow these rules in all tests:
+
+```typescript
+// WRONG — parses as UTC midnight, shows previous day in negative-UTC timezones
+new Date("2025-03-22");
+
+// CORRECT — constructor with numeric args (month is 0-indexed, so March = 2)
+new Date(2025, 2, 22);
+
+// CORRECT — parseLocalDate from date-helpers (for string input)
+import { parseLocalDate } from "../lib/date-helpers";
+parseLocalDate("2025-03-22");
+```
+
+### Use assertSundayMidnight to validate week-start dates
+
+The `assertSundayMidnight()` function catches the most common UTC date bug: a `weekStart` that was created via `new Date("YYYY-MM-DD")` and therefore has `getDay() !== 0` in negative-UTC timezones.
+
+```typescript
+import { assertSundayMidnight } from "../lib/date-helpers";
+
+test("week starts should be Sunday midnight local time", () => {
+  const weeks = enumerateWeeks(calendarStart, calendarEnd);
+  for (const week of weeks) {
+    // Throws descriptive error if weekStart is not Sunday midnight local
+    assertSundayMidnight(week.weekStart, "enumerateWeeks");
+  }
+});
+```
+
+### Why this matters
+
+`new Date("2025-03-22")` creates a Date at **UTC midnight** (`2025-03-22T00:00:00Z`). In EST (`UTC-5`), this becomes **March 21 at 7pm** — the wrong day. This causes:
+
+- Weeks starting on Saturday instead of Sunday
+- Off-by-one errors in compliance calculations
+- Tests that pass in UTC-timezone CI but fail locally
+
+Always use `new Date(year, month-1, day)` or `parseLocalDate()` for local dates.
+
+---
+
+_Last updated: June 2026_

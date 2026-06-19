@@ -12,7 +12,7 @@ import "../styles/window-shared.css";
     </span>
   </summary>
   <div class="window-explorer__content" id="window-explorer-content">
-    <p class="window-explorer__loading">Computing windows...</p>
+    <p class="window-explorer__loading">Waiting for compliance data...</p>
   </div>
 </details>
 
@@ -273,82 +273,83 @@ import "../styles/window-shared.css";
   :global(body.dark-mode) .window-explorer :global(.window-explorer__table tr.we-table-invalid td) {
     color: #fca5a5;
   }
+
+  /* Selected window highlight */
+  .window-explorer :global(.we-row-wrapper) {
+    position: relative;
+  }
+
+  .window-explorer :global(.we-row-wrapper--selected) {
+    background: #eff6ff;
+    border-left: 3px solid #3b82f6;
+    margin: 0.25rem -1rem;
+    padding: 0.25rem 1rem 0.25rem calc(1rem + 3px);
+    border-radius: 4px;
+  }
+
+  .window-explorer :global(.we-selected-badge) {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #3b82f6;
+    background: #dbeafe;
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+    margin-bottom: 0.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  :global(body.dark-mode) .window-explorer :global(.we-row-wrapper--selected) {
+    background: #1e3a5f;
+    border-left-color: #60a5fa;
+  }
+
+  :global(body.dark-mode) .window-explorer :global(.we-selected-badge) {
+    color: #93c5fd;
+    background: #1e3a5f;
+  }
 </style>
 
 <script>
-  import type { CalendarInstance } from 'datepainter';
-  import { computeWindowEvaluation } from '../lib/validation/window-evaluation';
   import type { WindowSummary } from '../lib/validation/all-windows';
   import type { RTOPolicyConfig } from '../lib/validation/rto-core';
   import { getTwoGroupCombinations, type SolverConfig } from '../lib/validation/combination-solver';
-  import { readSettings } from '../lib/settings-reader';
+  import { settingsStore } from '../lib/stores/settingsStore';
   import { buildWindowRowHtml } from '../lib/ui/windowRow';
   import type { ComplianceEventData } from '../lib/auto-compliance';
-  import { RTO_STATE_CHANGED } from '../types/events';
+  import { complianceStore, onComplianceChange } from '../lib/stores/complianceStore';
+  import { buildWindowRangeLabel } from '../lib/ui/windowRange';
 
   const details = document.getElementById('window-explorer') as HTMLDetailsElement;
   const contentEl = document.getElementById('window-explorer-content')!;
 
-  let cachedSummaries: WindowSummary[] | null = null;
-  let cachedPolicy: RTOPolicyConfig | null = null;
+  function renderFromStore(): void {
+    const data = complianceStore.get();
+    if (data?.allSummaries && data.allSummaries.length > 0) {
+      renderExplorer(data.allSummaries, data.policy, data.selectedSummary.windowIndex);
+      return;
+    }
 
-  function invalidate(): void {
-    cachedSummaries = null;
-    cachedPolicy = null;
+    // No data yet — show loading message
+    contentEl.innerHTML = '<p class="window-explorer__loading">Waiting for compliance data...</p>';
+  }
+
+  // Page-lifetime subscription — no cleanup needed for static Astro pages
+  onComplianceChange((data: ComplianceEventData) => {
     if (details.open) {
-      renderFromCacheOrCompute();
+      renderExplorer(data.allSummaries, data.policy, data.selectedSummary.windowIndex);
     }
-  }
+  });
 
-  async function renderFromCacheOrCompute(): Promise<void> {
-    if (cachedSummaries && cachedPolicy) {
-      renderExplorer(cachedSummaries, cachedPolicy);
-      return;
-    }
-
-    // No cached data yet — compute from calendar
-    const calendarManager = (window as any).__datepainterInstance as CalendarInstance | null;
-    if (!calendarManager) {
-      contentEl.innerHTML = '<p class="window-explorer__loading">Calendar not ready.</p>';
-      return;
-    }
-
-    contentEl.innerHTML = '<p class="window-explorer__loading">Computing windows...</p>';
-
-    try {
-      const evaluation = await computeWindowEvaluation(calendarManager);
-      cachedSummaries = evaluation.summaries;
-      cachedPolicy = evaluation.policy;
-      renderExplorer(cachedSummaries, cachedPolicy);
-    } catch (err) {
-      console.error('[WindowExplorer] Failed:', err);
-      contentEl.innerHTML = '<p class="window-explorer__loading">Failed to compute windows.</p>';
-    }
-  }
-
-  // Listen for compliance events — use cached data from auto-compliance
-  window.addEventListener(RTO_STATE_CHANGED, ((e: CustomEvent) => {
-    const detail = e.detail;
-    if (detail?.type === 'compliance' && detail.compliance) {
-      const data = detail.compliance as ComplianceEventData;
-      cachedSummaries = data.allSummaries;
-      cachedPolicy = data.policy;
-      if (details.open) {
-        renderExplorer(cachedSummaries, cachedPolicy);
-      }
-    } else if (detail?.type === 'settings') {
-      invalidate();
-    }
-  }) as EventListener);
-
-  // On toggle, render from cache or compute
-  details.addEventListener('toggle', async () => {
+  // On toggle, render from store
+  details.addEventListener('toggle', () => {
     if (!details.open) return;
-    await renderFromCacheOrCompute();
+    renderFromStore();
   });
 
   function buildSolverConfig(): SolverConfig {
-    const settings = readSettings();
+    const settings = settingsStore.get();
     return {
       windowSize: settings.rollingWindowWeeks,
       bestWeeksCount: settings.bestWeeksCount,
@@ -357,7 +358,7 @@ import "../styles/window-shared.css";
     };
   }
 
-  function renderExplorer(summaries: WindowSummary[], policy: RTOPolicyConfig): void {
+  function renderExplorer(summaries: WindowSummary[], policy: RTOPolicyConfig, selectedIndex: number): void {
     if (summaries.length === 0) {
       contentEl.innerHTML = '<p class="window-explorer__loading">Mark dates to see windows.</p>';
       return;
@@ -383,7 +384,11 @@ import "../styles/window-shared.css";
     // Window rows
     html += `<div role="list" aria-label="Sliding window results">`;
     for (const s of summaries) {
+      const isSelected = s.windowIndex === selectedIndex;
+      html += `<div class="we-row-wrapper${isSelected ? ' we-row-wrapper--selected' : ''}">`;
+      html += isSelected ? '<span class="we-selected-badge">Showing</span>' : '';
       html += buildWindowRowHtml(s);
+      html += '</div>';
     }
     html += `</div>`;
 
@@ -391,6 +396,26 @@ import "../styles/window-shared.css";
     html += renderScenarioSection();
 
     contentEl.innerHTML = html;
+
+    // Debug: log date values to console for comparison with Breakdown
+    console.group('[Explorer] Window Dates Debug');
+    for (const s of summaries) {
+      console.group(`Window ${s.windowIndex} (isValid=${s.isValid})`);
+      if (s.windowIndex === selectedIndex) {
+        console.log('  ↑ SELECTED (matches Breakdown)');
+      }
+      console.log('windowStart:', s.windowStart.toISOString(), '|', s.windowStart.toString());
+      console.log('windowEnd:', s.windowEnd.toISOString(), '|', s.windowEnd.toString());
+      console.log('rangeLabel:', buildWindowRangeLabel(s.weekDetails));
+      for (let i = 0; i < s.weekDetails.length; i++) {
+        const w = s.weekDetails[i];
+        if (!w) continue;
+        console.log(`  week[${i}] weekStart: iso=${w.weekStart.toISOString()} local=${w.weekStart.toString()} day=${w.weekStart.getDay()} date=${w.weekStart.getDate()}`);
+      }
+      console.groupEnd();
+    }
+    console.log('policy:', policy);
+    console.groupEnd();
 
     // Wire up scenario details on-expand
     const scenarioDetails = contentEl.querySelector('#scenario-details') as HTMLDetailsElement | null;

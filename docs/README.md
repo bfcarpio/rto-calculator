@@ -5,14 +5,17 @@ This directory contains documentation for users and developers.
 ## Documentation Index
 
 ### User Documentation
+
 - **[USER_GUIDE.md](./USER_GUIDE.md)** - End-user guide for tracking RTO compliance
 
 ### Developer Documentation
-- **[DEVELOPER_GUIDE.md](./DEVELOPER_GUIDE.md)** - Development workflows, patterns, and conventions
-- **[ARCHITECTURE.md](./ARCHITECTURE.md)** - System design, data flow, and validation logic
+
+- **[DEVELOPER_GUIDE.md](./DEVELOPER_GUIDE.md)** - Development workflows, patterns, and conventions (including nanostores and date-helpers)
+- **[ARCHITECTURE.md](./ARCHITECTURE.md)** - System design, data flow, store layer, and validation logic
 
 ### Testing Documentation
-- **[TestingBestPractices.md](./TestingBestPractices.md)** - Unit and E2E testing guidelines
+
+- **[TestingBestPractices.md](./TestingBestPractices.md)** - Unit and E2E testing guidelines (including date handling)
 - **[PlaywrightTesting.md](./PlaywrightTesting.md)** - E2E commands and debugging
 
 ---
@@ -20,11 +23,13 @@ This directory contains documentation for users and developers.
 ## Quick Start
 
 ### For Users
+
 1. Read [USER_GUIDE.md](./USER_GUIDE.md)
 2. Configure holidays in Settings (select country)
 3. Mark WFH days on the calendar — compliance is automatic
 
 ### For Developers
+
 1. Read [DEVELOPER_GUIDE.md](./DEVELOPER_GUIDE.md) for workflows
 2. Review [ARCHITECTURE.md](./ARCHITECTURE.md) for design
 3. Run `npm run build:all && npm run dev` to start
@@ -66,4 +71,4 @@ See [DEVELOPER_GUIDE.md](./DEVELOPER_GUIDE.md) for complete command reference.
 
 ---
 
-*Last Updated: March 2026*
+_Last Updated: June 2026_

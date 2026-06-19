@@ -9,6 +9,7 @@
 
 import type { CalendarInstance } from "../../packages/datepainter/src/types";
 import { logger } from "../utils/logger";
+import { assertSundayMidnight } from "./date-helpers";
 import { getDateRange } from "./dateUtils";
 import { getHolidayDatesForValidation } from "./holiday/CalendarHolidayIntegration";
 import { RTO_CONFIG } from "./rto-config";
@@ -85,7 +86,7 @@ export interface CalendarDataResult {
 	readTimeMs: number;
 }
 
-import { readSettings } from "./settings-reader";
+import { settingsStore } from "./stores/settingsStore";
 
 /**
  * Read calendar data from datepainter API into pure data structure
@@ -127,8 +128,8 @@ export async function readCalendarData(
 	// Get the full calendar range
 	const range = getDateRange();
 
-	// Read penalize settings
-	const appSettings = readSettings();
+	// Read penalize settings from nanostore
+	const appSettings = settingsStore.get();
 	const sickDaysPenalize = appSettings.sickDaysPenalize;
 	const holidayPenalize = appSettings.holidayPenalize;
 
@@ -138,10 +139,12 @@ export async function readCalendarData(
 
 	// Start from the first Sunday on or after the range start
 	let weekStart = getStartOfWeek(range.startDate);
+	assertSundayMidnight(weekStart, "readCalendarData initial weekStart");
 	// If weekStart is before range start, advance to next Sunday
 	if (weekStart < range.startDate) {
 		weekStart = new Date(weekStart);
 		weekStart.setDate(weekStart.getDate() + 7);
+		assertSundayMidnight(weekStart, "readCalendarData advanced weekStart");
 	}
 
 	while (weekStart <= range.endDate) {
@@ -239,6 +242,7 @@ export async function readCalendarData(
 		// Advance to next Sunday
 		weekStart = new Date(weekStart);
 		weekStart.setDate(weekStart.getDate() + 7);
+		assertSundayMidnight(weekStart, "readCalendarData loop advancement");
 	}
 
 	const readTimeMs = performance.now() - startTime;

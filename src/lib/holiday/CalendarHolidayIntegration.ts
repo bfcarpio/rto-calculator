@@ -8,12 +8,12 @@
  * @module calendar-holiday-integration
  */
 
-import { onRTOStateChanged } from "../../types/events";
 import {
 	isDebugEnabled as isLoggerDebugEnabled,
 	logger,
 } from "../../utils/logger";
-import { readSettings } from "../settings-reader";
+import type { AppSettings } from "../settings-constants";
+import { settingsStore } from "../stores/settingsStore";
 import { getHolidayManager } from "./HolidayManager";
 
 /**
@@ -44,10 +44,20 @@ export function initializeHolidayIntegration(): void {
 		);
 	}
 
-	// Listen for settings changes via unified event
-	onRTOStateChanged((detail) => {
-		if (detail.type === "settings" && detail.holidays) {
-			handleSettingsChanged(detail);
+	// Listen for settings changes via nanostore (replaces CustomEvent listener)
+	let previousHolidays: AppSettings["holidays"] | null = null;
+	settingsStore.subscribe((settings) => {
+		if (!previousHolidays) {
+			previousHolidays = settings.holidays;
+			return;
+		}
+		const changed =
+			settings.holidays.countryCode !== previousHolidays.countryCode ||
+			settings.holidays.holidaysAsOOF !== previousHolidays.holidaysAsOOF ||
+			settings.holidays.companyName !== previousHolidays.companyName;
+		previousHolidays = settings.holidays;
+		if (changed) {
+			handleSettingsChanged(settings);
 		}
 	});
 
@@ -101,8 +111,8 @@ export function getCalendarYears(): number[] {
  */
 export async function applySavedHolidays(): Promise<void> {
 	try {
-		// Load saved settings
-		const settings = readSettings();
+		// Load saved settings from nanostore
+		const settings = settingsStore.get();
 
 		// Check if data saving is enabled before applying saved holidays
 		if (settings.saveData !== true) {
@@ -231,16 +241,10 @@ export async function refreshCalendarHolidays(): Promise<void> {
 }
 
 /**
- * Handle settings changed event
+ * Handle settings changed — refreshes holidays when holiday config changes.
  */
-async function handleSettingsChanged(detail: {
-	holidays?: { countryCode?: string | null; companyName?: string | null };
-}): Promise<void> {
-	const holidays = detail.holidays;
-
-	if (!holidays) {
-		return;
-	}
+async function handleSettingsChanged(settings: AppSettings): Promise<void> {
+	const holidays = settings.holidays;
 
 	if (isDebugEnabled()) {
 		logger.debug(
@@ -278,7 +282,7 @@ async function handleCalendarLoaded(): Promise<void> {
  */
 export async function getHolidayDatesForValidation(): Promise<Set<Date>> {
 	try {
-		const settings = readSettings();
+		const settings = settingsStore.get();
 
 		// Check if data saving is enabled before using saved holiday settings
 		if (settings.saveData !== true) {

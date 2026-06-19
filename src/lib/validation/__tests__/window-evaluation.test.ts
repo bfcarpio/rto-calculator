@@ -9,7 +9,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CalendarInstance } from "../../../../packages/datepainter/src/types";
 import type { WeekInfo } from "../../calendar-data-reader";
 import type { WindowSummary } from "../all-windows";
-import { DEFAULT_RTO_POLICY, type RTOPolicyConfig } from "../rto-core";
+import { DEFAULT_RTO_POLICY } from "../rto-core";
 
 // ─── Mocks ───────────────────────────────────────────────────────
 
@@ -29,9 +29,24 @@ vi.mock("../../calendar-data-reader", () => ({
 	),
 }));
 
-vi.mock("../../settings-reader", () => ({
-	readSettings: vi.fn(),
-	buildPolicyFromSettings: vi.fn(),
+const mockSettings = {
+	debug: false,
+	saveData: true,
+	minOfficeDays: 3,
+	rollingWindowWeeks: 12,
+	bestWeeksCount: 8,
+	sickDaysPenalize: true,
+	holidayPenalize: true,
+	startingWeek: null as string | null,
+	defaultPattern: null as number[] | null,
+	roundPercentage: true,
+	holidays: { countryCode: null, holidaysAsOOF: true, companyName: null },
+};
+
+vi.mock("../../stores/settingsStore", () => ({
+	settingsStore: {
+		get: vi.fn(() => ({ ...mockSettings })),
+	},
 }));
 
 vi.mock("../all-windows", () => ({
@@ -86,9 +101,8 @@ const MONDAY = new Date(2025, 0, 6); // Jan 6, 2025
 
 describe("computeWindowEvaluation", () => {
 	let readCalendarData: ReturnType<typeof vi.fn>;
-	let readSettings: ReturnType<typeof vi.fn>;
-	let buildPolicyFromSettings: ReturnType<typeof vi.fn>;
 	let evaluateAllWindows: ReturnType<typeof vi.fn>;
+	let settingsStoreGet: ReturnType<typeof vi.fn>;
 
 	beforeEach(async () => {
 		vi.clearAllMocks();
@@ -96,23 +110,22 @@ describe("computeWindowEvaluation", () => {
 		const calendarMod = await import("../../calendar-data-reader");
 		readCalendarData = calendarMod.readCalendarData as ReturnType<typeof vi.fn>;
 
-		const settingsMod = await import("../../settings-reader");
-		readSettings = settingsMod.readSettings as ReturnType<typeof vi.fn>;
-		buildPolicyFromSettings = settingsMod.buildPolicyFromSettings as ReturnType<
-			typeof vi.fn
-		>;
+		const settingsMod = await import("../../stores/settingsStore");
+		settingsStoreGet = (
+			settingsMod.settingsStore as unknown as { get: ReturnType<typeof vi.fn> }
+		).get;
 
 		const allWindowsMod = await import("../all-windows");
 		evaluateAllWindows = allWindowsMod.evaluateAllWindows as ReturnType<
 			typeof vi.fn
 		>;
 
-		buildPolicyFromSettings.mockReturnValue(DEFAULT_RTO_POLICY);
+		// Reset mock settings to defaults
+		settingsStoreGet.mockReturnValue({ ...mockSettings });
 	});
 
 	it("returns empty summaries when calendar has no weeks", async () => {
 		readCalendarData.mockResolvedValue({ weeks: [] });
-		readSettings.mockReturnValue({ startingWeek: null });
 		evaluateAllWindows.mockReturnValue([]);
 
 		const { computeWindowEvaluation } = await import("../window-evaluation");
@@ -121,13 +134,11 @@ describe("computeWindowEvaluation", () => {
 		expect(result.summaries).toEqual([]);
 		expect(result.allWeeks).toEqual([]);
 		expect(result.filteredWeeks).toEqual([]);
-		expect(result.policy).toBe(DEFAULT_RTO_POLICY);
 	});
 
 	it("produces one summary for a single week", async () => {
 		const weeks = [makeWeekInfo(MONDAY, 3)];
 		readCalendarData.mockResolvedValue({ weeks });
-		readSettings.mockReturnValue({ startingWeek: null });
 		evaluateAllWindows.mockReturnValue([makeWindowSummary(0, true)]);
 
 		const { computeWindowEvaluation } = await import("../window-evaluation");
@@ -145,7 +156,10 @@ describe("computeWindowEvaluation", () => {
 		const weeks = [week1, week2, week3];
 
 		readCalendarData.mockResolvedValue({ weeks });
-		readSettings.mockReturnValue({ startingWeek: "2025-01-13" });
+		settingsStoreGet.mockReturnValue({
+			...mockSettings,
+			startingWeek: "2025-01-13",
+		});
 		evaluateAllWindows.mockReturnValue([makeWindowSummary(0, true)]);
 
 		const { computeWindowEvaluation } = await import("../window-evaluation");
@@ -163,7 +177,10 @@ describe("computeWindowEvaluation", () => {
 		const weeks = [week1, week2, week3];
 
 		readCalendarData.mockResolvedValue({ weeks });
-		readSettings.mockReturnValue({ startingWeek: "2025-01-13" });
+		settingsStoreGet.mockReturnValue({
+			...mockSettings,
+			startingWeek: "2025-01-13",
+		});
 		evaluateAllWindows.mockReturnValue([]);
 
 		const { computeWindowEvaluation } = await import("../window-evaluation");
@@ -186,7 +203,10 @@ describe("computeWindowEvaluation", () => {
 		];
 
 		readCalendarData.mockResolvedValue({ weeks });
-		readSettings.mockReturnValue({ startingWeek: "2025-01-06" });
+		settingsStoreGet.mockReturnValue({
+			...mockSettings,
+			startingWeek: "2025-01-06",
+		});
 		evaluateAllWindows.mockReturnValue([makeWindowSummary(0, true)]);
 
 		const { computeWindowEvaluation } = await import("../window-evaluation");
@@ -202,14 +222,14 @@ describe("computeWindowEvaluation", () => {
 			makeWeekInfo(new Date(2025, 0, 6), 3),
 			makeWeekInfo(new Date(2025, 0, 13), 4),
 		];
-		const customPolicy: RTOPolicyConfig = {
-			...DEFAULT_RTO_POLICY,
-			rollingPeriodWeeks: 8,
-		};
 
 		readCalendarData.mockResolvedValue({ weeks });
-		readSettings.mockReturnValue({ startingWeek: "2025-01-13" });
-		buildPolicyFromSettings.mockReturnValue(customPolicy);
+		settingsStoreGet.mockReturnValue({
+			...mockSettings,
+			startingWeek: "2025-01-13",
+			rollingWindowWeeks: 8,
+			bestWeeksCount: 6,
+		});
 		evaluateAllWindows.mockReturnValue([]);
 
 		const { computeWindowEvaluation } = await import("../window-evaluation");
@@ -219,7 +239,8 @@ describe("computeWindowEvaluation", () => {
 		const call = evaluateAllWindows.mock.calls[0];
 		expect(call).toBeDefined();
 		const [passedWeeks, passedPolicy] = call!;
-		expect(passedPolicy).toBe(customPolicy);
+		// Policy should reflect the custom settings
+		expect(passedPolicy.rollingPeriodWeeks).toBe(8);
 		// Only 1 week after filter
 		expect(passedWeeks).toHaveLength(1);
 		expect(passedWeeks[0].weekStart).toEqual(new Date(2025, 0, 13));

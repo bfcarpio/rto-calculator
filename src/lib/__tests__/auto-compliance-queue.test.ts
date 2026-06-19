@@ -30,6 +30,8 @@ function createMockCalendarManager(): CalendarInstance {
 		getDates: vi.fn().mockReturnValue([]),
 		setDates: vi.fn(),
 		onStateChange: vi.fn(),
+		onDateStateChange: vi.fn(),
+		onMonthChange: vi.fn(),
 		refresh: vi.fn(),
 	} as unknown as CalendarInstance;
 }

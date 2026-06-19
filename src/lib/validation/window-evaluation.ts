@@ -14,9 +14,10 @@ import {
 	readCalendarData,
 	type WeekInfo,
 } from "../calendar-data-reader";
-import { buildPolicyFromSettings, readSettings } from "../settings-reader";
+import type { AppSettings } from "../settings-constants";
+import { settingsStore } from "../stores/settingsStore";
 import { evaluateAllWindows, type WindowSummary } from "./all-windows";
-import type { RTOPolicyConfig } from "./rto-core";
+import { DEFAULT_RTO_POLICY, type RTOPolicyConfig } from "./rto-core";
 
 export interface WindowEvaluationResult {
 	/** All sliding window summaries */
@@ -27,6 +28,24 @@ export interface WindowEvaluationResult {
 	allWeeks: WeekInfo[];
 	/** Weeks after startingWeek filter applied */
 	filteredWeeks: WeekInfo[];
+}
+
+/**
+ * Build an RTOPolicyConfig from explicit settings.
+ *
+ * Pure function: same input always produces the same output.
+ * Replaces the old readSettings-based buildPolicyFromSettings().
+ */
+export function buildPolicyFromSettings(
+	settings: AppSettings,
+): RTOPolicyConfig {
+	return {
+		...DEFAULT_RTO_POLICY,
+		minOfficeDaysPerWeek: settings.minOfficeDays,
+		rollingPeriodWeeks: settings.rollingWindowWeeks,
+		topWeeksToCheck: settings.bestWeeksCount,
+		roundPercentage: settings.roundPercentage,
+	};
 }
 
 /**
@@ -43,7 +62,7 @@ export async function computeWindowEvaluation(
 	calendarManager: CalendarInstance,
 ): Promise<WindowEvaluationResult> {
 	const calendarData = await readCalendarData(calendarManager);
-	const settings = readSettings();
+	const settings = settingsStore.get();
 
 	const allWeeks = calendarData.weeks;
 	let filteredWeeks = allWeeks;
@@ -56,7 +75,7 @@ export async function computeWindowEvaluation(
 		}
 	}
 
-	const policy = buildPolicyFromSettings();
+	const policy = buildPolicyFromSettings(settings);
 	const weeksForValidation = convertWeeksToCompliance(filteredWeeks);
 	const summaries = evaluateAllWindows(weeksForValidation, policy);
 

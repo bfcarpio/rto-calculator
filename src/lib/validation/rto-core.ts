@@ -69,6 +69,8 @@ export function getStartOfWeek(date: Date): Date {
 	const daysToSubtract = day; // Sunday: getDay() returns 0, so subtract 0
 	d.setDate(d.getDate() - daysToSubtract);
 	d.setHours(0, 0, 0, 0);
+	// Note: assertSundayMidnight() is called downstream in readCalendarData and
+	// buildWindowRangeLabel to catch any UTC-midnight date bugs that slip through.
 	return d;
 }
 

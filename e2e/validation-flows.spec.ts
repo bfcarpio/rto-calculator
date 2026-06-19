@@ -205,9 +205,11 @@ test.describe("Validation Flows", () => {
 				await clickDate(page, i);
 			}
 
-			// Wait for window breakdown to populate
+			// Wait for compliance data to be computed and rendered (debounce is 1500ms)
 			const windowBreakdown = page.locator("#window-breakdown-content");
-			await expect(windowBreakdown).toBeVisible();
+			await expect(windowBreakdown.locator(".we-dot").first()).toBeVisible({
+				timeout: 10000,
+			});
 
 			// Count initial windows shown (each dot represents a week)
 			const dotsLocator = windowBreakdown.locator(".we-dot");

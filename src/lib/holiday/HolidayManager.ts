@@ -238,6 +238,8 @@ export class HolidayManager {
 				// Day after a named holiday
 				for (const h of apiHolidays) {
 					if (h.name === rule.after) {
+						// h.date is always a Date object here — safe to copy via Date constructor
+						// (Unlike new Date(string) which has the UTC-midnight bug)
 						const date = new Date(h.date);
 						date.setDate(date.getDate() + 1);
 						extras.push({

@@ -1,14 +1,9 @@
 import { isAutoComplianceReady } from "../lib/auto-compliance";
 import { getDateRange } from "../lib/dateUtils";
-import {
-	DEFAULTS,
-	readSettings,
-	SETTINGS_KEY,
-	writeSettings,
-} from "../lib/settings-reader";
+import { DEFAULTS } from "../lib/settings-constants";
+import { settingsStore } from "../lib/stores/settingsStore";
 import { getColorScheme, setColorScheme } from "../lib/themeManager";
 import { getStartOfWeek } from "../lib/validation/rto-core";
-import { dispatchRTOStateEvent } from "../types/events";
 import { logger } from "../utils/logger";
 import { clearAllData } from "../utils/storage";
 import { initializeIndex } from "./index-init";
@@ -197,7 +192,6 @@ class SettingsModal {
 
 		window.validationManager?.setDebugMode(newState);
 		this.saveSettingsToLocalStorage();
-		this.dispatchSettingsChanged();
 		logger.debug(`[Settings] Debug mode ${newState ? "enabled" : "disabled"}`);
 	}
 
@@ -210,7 +204,6 @@ class SettingsModal {
 
 		window.storageManager?.setDataSavingEnabled(newState);
 		this.saveSettingsToLocalStorage();
-		this.dispatchSettingsChanged();
 		logger.debug(`[Settings] Data saving ${newState ? "enabled" : "disabled"}`);
 	}
 
@@ -225,10 +218,6 @@ class SettingsModal {
 		logger.debug(
 			`[Settings] Holiday OOF mode ${newState ? "enabled" : "disabled"}`,
 		);
-		dispatchRTOStateEvent({
-			type: "settings",
-			holidays: { holidaysAsOOF: newState },
-		});
 	}
 
 	private toggleSickPenalize(): void {
@@ -239,7 +228,6 @@ class SettingsModal {
 		this.sickPenalizeToggle.setAttribute("aria-checked", newState.toString());
 
 		this.saveSettingsToLocalStorage();
-		this.dispatchSettingsChanged();
 		logger.debug(
 			`[Settings] Sick days penalize ${newState ? "enabled" : "disabled"}`,
 		);
@@ -256,7 +244,6 @@ class SettingsModal {
 		);
 
 		this.saveSettingsToLocalStorage();
-		this.dispatchSettingsChanged();
 		logger.debug(
 			`[Settings] Holiday penalize ${newState ? "enabled" : "disabled"}`,
 		);
@@ -272,7 +259,6 @@ class SettingsModal {
 			newState.toString(),
 		);
 		this.saveSettingsToLocalStorage();
-		this.dispatchSettingsChanged();
 		logger.debug(
 			`[Settings] Round percentage ${newState ? "enabled" : "disabled"}`,
 		);
@@ -284,7 +270,6 @@ class SettingsModal {
 			logger.debug(`[Settings] Min office days changed to: ${value}`);
 			window.validationManager?.updateConfig({ minOfficeDaysPerWeek: value });
 			this.saveSettingsToLocalStorage();
-			this.dispatchSettingsChanged();
 		}
 	}
 
@@ -303,7 +288,6 @@ class SettingsModal {
 		}
 
 		this.saveSettingsToLocalStorage();
-		this.dispatchSettingsChanged();
 		logger.debug(`[Settings] Rolling window changed to: ${value}`);
 	}
 
@@ -317,13 +301,11 @@ class SettingsModal {
 		if (value < 1 || value > maxWeeks) return;
 
 		this.saveSettingsToLocalStorage();
-		this.dispatchSettingsChanged();
 		logger.debug(`[Settings] Best weeks changed to: ${value}`);
 	}
 
 	private onStartingWeekChange(): void {
 		this.saveSettingsToLocalStorage();
-		this.dispatchSettingsChanged();
 		logger.debug(
 			`[Settings] Starting week changed to: ${this.startingWeekSelect?.value || "default"}`,
 		);
@@ -381,25 +363,11 @@ class SettingsModal {
 		}
 	}
 
-	private dispatchSettingsChanged(): void {
-		// Dispatch unified event
-		dispatchRTOStateEvent({
-			type: "settings",
-		});
-	}
-
 	private onCountryChange(e: Event): void {
 		const countryCode = (e.target as HTMLSelectElement).value;
-		const holidaysAsOOF =
-			this.holidayOofToggle?.getAttribute("aria-checked") === "true";
 
 		this.saveSettingsToLocalStorage();
 		logger.debug(`[Settings] Country changed to: ${countryCode}`);
-
-		dispatchRTOStateEvent({
-			type: "settings",
-			holidays: { countryCode: countryCode || null, holidaysAsOOF },
-		});
 	}
 
 	private onPatternClick(e: Event): void {
@@ -463,10 +431,6 @@ class SettingsModal {
 		}
 
 		this.holidayOofToggle?.setAttribute("aria-checked", "true");
-		dispatchRTOStateEvent({
-			type: "settings",
-			holidays: { holidaysAsOOF: true },
-		});
 
 		this.sickPenalizeToggle?.setAttribute("aria-checked", "true");
 		this.holidayPenalizeToggle?.setAttribute("aria-checked", "true");
@@ -483,8 +447,8 @@ class SettingsModal {
 			this.startingWeekSelect.value = "";
 		}
 
-		localStorage.removeItem(SETTINGS_KEY);
-		this.dispatchSettingsChanged();
+		// Reset the settings store to defaults (also clears localStorage via persistentAtom)
+		settingsStore.set({ ...DEFAULTS });
 		logger.debug("[Settings] Settings reset to defaults");
 
 		this.modal?.close();
@@ -495,7 +459,7 @@ class SettingsModal {
 		if (!window.confirm("Clear all saved data? This cannot be undone.")) return;
 		clearAllData();
 		localStorage.removeItem("datepainter:selectedDates");
-		localStorage.removeItem(SETTINGS_KEY);
+		settingsStore.set({ ...DEFAULTS });
 		window.location.reload();
 	}
 
@@ -619,7 +583,8 @@ class SettingsModal {
 	}
 
 	private saveSettingsToLocalStorage(): void {
-		writeSettings({
+		settingsStore.set({
+			...settingsStore.get(),
 			debug: this.debugToggle?.getAttribute("aria-checked") === "true",
 			saveData: this.saveDataToggle?.getAttribute("aria-checked") === "true",
 			minOfficeDays: this.minOfficeDaysInput
@@ -651,7 +616,7 @@ class SettingsModal {
 
 	private loadSettingsFromLocalStorage(): void {
 		try {
-			const settings = readSettings();
+			const settings = settingsStore.get();
 
 			if (settings.saveData !== true) {
 				logger.debug("[Settings] Data saving disabled, using default settings");
@@ -712,12 +677,6 @@ class SettingsModal {
 					"aria-checked",
 					settings.holidays.holidaysAsOOF.toString(),
 				);
-				dispatchRTOStateEvent({
-					type: "settings",
-					holidays: {
-						holidaysAsOOF: settings.holidays.holidaysAsOOF,
-					},
-				});
 			}
 
 			if (this.sickPenalizeToggle) {
@@ -770,7 +729,6 @@ class SettingsModal {
 		if (colorScheme) {
 			setColorScheme(colorScheme);
 			this.saveSettingsToLocalStorage();
-			this.dispatchSettingsChanged();
 		}
 	}
 }

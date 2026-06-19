@@ -3,13 +3,20 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// Mock the auto-compliance module
-vi.mock("../../lib/auto-compliance", () => ({
-	onComplianceUpdated: vi.fn((callback) => {
+// Mock the complianceStore nanostore
+vi.mock("../../lib/stores/complianceStore", () => ({
+	complianceStore: {
+		subscribe: vi.fn((callback) => {
+			(globalThis as any).__complianceCallback = callback;
+			return () => {};
+		}),
+		get: vi.fn(() => null),
+		set: vi.fn(),
+	},
+	onComplianceChange: vi.fn((callback) => {
 		(globalThis as any).__complianceCallback = callback;
 		return () => {};
 	}),
-	getLatestCompliance: vi.fn(() => null),
 }));
 
 describe("ComplianceLabel", () => {

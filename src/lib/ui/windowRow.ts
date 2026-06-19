@@ -22,11 +22,13 @@ export function buildWindowRowHtml(summary: WindowSummary): string {
 	const tagText = summary.isValid ? "PASS" : "FAIL";
 
 	const dots = summary.weekDetails.map(buildDotHtml).join("");
+	const indexLabel = `<span class="we-row-index">W${summary.windowIndex + 1}</span>`;
 
 	return `<div class="we-row">
+	${indexLabel}
 	<span class="we-row-label">${label}</span>
-	<span class="we-row-tag ${tagClass}">${tagText}</span>
 	<span class="we-row-dots">${dots}</span>
+	<span class="we-row-tag ${tagClass}">${tagText}</span>
 	<span class="we-row-avg">${summary.averageOfficeDays.toFixed(1)}</span>
 </div>`;
 }

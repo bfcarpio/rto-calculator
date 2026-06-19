@@ -33,7 +33,7 @@ This is a **static website** - Astro builds to pure HTML and JavaScript files th
 
 ## The Reactive Validation Flow
 
-Validation runs automatically via the **auto-compliance module** — a singleton that subscribes to datepainter state changes, debounces computation, and dispatches results as a `compliance-updated` CustomEvent on `window`. There is no validate button.
+Validation runs automatically via the **auto-compliance module** — a singleton that subscribes to datepainter state changes, debounces computation, and writes results to the `complianceStore` nanostore. There is no validate button.
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
@@ -45,7 +45,7 @@ Validation runs automatically via the **auto-compliance module** — a singleton
 │  - Debounce (1.5s) then read calendar data + run validation       │
 │  - Call validateSlidingWindow() from rto-core.ts                  │
 │  - Compute best-8-of-12 sliding window stats                      │
-│  - Dispatch compliance-updated CustomEvent on window              │
+│  - Write results to complianceStore (single source of truth)      │
 │  - Toggle .computing opacity fade on sidebar panels               │
 └───────────────────────────────┬──────────────────────────────────┘
                                 │
@@ -58,8 +58,8 @@ Validation runs automatically via the **auto-compliance module** — a singleton
 │  - Enumerate ALL weeks in the calendar range                      │
 │  - Extract selections via datepainter API                         │
 │  - Query holidays from HolidayManager                             │
-│  - Calculate officeDays based on penalize settings                 │
-│  - Respect holidayPenalize & sickDaysPenalize from localStorage   │
+│  - Calculate officeDays based on penalize settings                │
+│  - Respect holidayPenalize & sickDaysPenalize from settingsStore  │
 │  - Return typed data structures (DayInfo, WeekInfo)               │
 └───────────────────────────────┬──────────────────────────────────┘
                                 │
@@ -80,40 +80,28 @@ Validation runs automatically via the **auto-compliance module** — a singleton
 Both consumers — the auto-compliance module (reactive sidebar) and WindowExplorer (manual query) — call the same shared `computeWindowEvaluation()` pipeline.
 
 ```
-User paints/clears a date
-        │
-        ▼
-┌───────────────┐
-│ Auto-         │  Step 1: onStateChange fires, debounce 1.5s
-│ Compliance    │  Sidebar panels dim (opacity 0.5)
-└───────┬───────┘
-        │
-        ▼
-┌───────────────────────────────────┐
-│  computeWindowEvaluation()        │  Step 2: Shared pipeline
-│  (validation/window-evaluation.ts)│  - Reads calendar data via datepainter API
-│                                   │  - Applies startingWeek filter
-│                                   │  - Builds policy from settings
-│                                   │  - Evaluates all sliding windows
-│                                   │  - Returns WindowEvaluationResult
-│                                   │     { summaries, policy, allWeeks, filteredWeeks }
-└───────────────┬───────────────────┘
-        │
-        ▼
-┌───────────────┐
-│  Auto-        │  Step 3: auto-compliance uses summaries to build evaluated set,
-│  Compliance   │  compute best-8-of-12 stats, dispatch compliance-updated event
-└───────┬───────┘
-        │
-        ▼
-┌───────────────┐
-│  Sidebar UI   │  Step 4: Components consume compliance-updated event
-│ (StatusDetails│  - Compliance status box (compliant/not compliant)
-│              )│  - Week summary, capacity, non-compliant weeks
-└───────────────┘
+[Calendar state change]
+       │
+       ▼
+calendarManager.onDateStateChange()  ← fine-grained callback (Phase 3)
+       │
+       ▼
+runComputation(calendarManager)
+       │
+       ▼
+computeWindowEvaluation() → computeComplianceData()
+       │
+       ▼
+complianceStore.set(data)             ← nanostore (single source of truth)
+       │
+       ├──▶ StatusDetailsController subscribes via onComplianceChange()
+       ├──▶ WindowExplorer subscribes via onComplianceChange()
+       ├──▶ ComplianceLabel subscribes via onComplianceChange()
+       ├──▶ SummaryBar subscribes via onComplianceChange()
+       └──▶ WeekSummary subscribes via onComplianceChange()
 ```
 
-WindowExplorer.astro follows the same path (Step 2) but passes results directly to its own UI rendering instead of dispatching an event.
+WindowExplorer.astro follows the same path but passes results directly to its own UI rendering instead of writing to the store.
 
 ---
 
@@ -195,6 +183,66 @@ findNextSafeWfhWeek:
 **Complexity**: O((N−W+1) × W log W) — same cost as validation itself. For a 12-month calendar (~52 weeks, W=12, K=8): ~41 windows × 12 × log(12) ≈ 1,700 comparisons. Completes in <1ms.
 
 **Trade-off**: This is intentionally conservative. A week that appears in some window's best-K might theoretically still be removable if its replacement keeps the average up. But for a user-facing suggestion, conservative is correct — we never recommend removing a week that's actively contributing to compliance in any window.
+
+---
+
+## Store Layer
+
+Nanostores provide the reactive state layer, replacing the previous CustomEvent dispatch and module-level cache system.
+
+| Store             | Type           | Location                            | Purpose                                                                                |
+| ----------------- | -------------- | ----------------------------------- | -------------------------------------------------------------------------------------- |
+| `complianceStore` | atom           | `src/lib/stores/complianceStore.ts` | Compliance data, replaces CustomEvent dispatch + `latestResult` cache                  |
+| `settingsStore`   | persistentAtom | `src/lib/stores/settingsStore.ts`   | App settings, replaces `readSettings()`/`writeSettings()` + direct localStorage access |
+
+### How Stores Work
+
+**complianceStore** — Written by auto-compliance, consumed by UI components:
+
+```typescript
+import {
+  complianceStore,
+  onComplianceChange,
+} from "../lib/stores/complianceStore";
+
+// Write (auto-compliance only)
+complianceStore.set(complianceData);
+
+// Subscribe (UI components) — deduped, only fires on change
+const unsub = onComplianceChange((data) => {
+  // Update UI with new compliance data
+});
+unsub(); // Clean up
+```
+
+**settingsStore** — Persists to localStorage automatically via `persistentAtom`:
+
+```typescript
+import { settingsStore, onSettingsChange } from "../lib/stores/settingsStore";
+
+// Read
+const settings = settingsStore.get();
+
+// Write (auto-syncs to localStorage)
+settingsStore.set({ ...settingsStore.get(), rollingWindowWeeks: 20 });
+
+// Subscribe
+const unsub = onSettingsChange((settings) => {
+  // React to setting changes
+});
+unsub(); // Clean up
+```
+
+### Migration from CustomEvents
+
+| Old (CustomEvent + globals)                                  | New (nanostores)                                       |
+| ------------------------------------------------------------ | ------------------------------------------------------ |
+| `window.dispatchEvent(new CustomEvent('rto:state-changed'))` | `complianceStore.set(data)`                            |
+| `latestResult` module-level variable                         | `complianceStore` atom                                 |
+| `getLatestCompliance()` returns cached data                  | `complianceStore.get()` returns current value          |
+| `onComplianceUpdated(callback)` subscribes to CustomEvents   | `onComplianceChange(callback)` subscribes with dedup   |
+| `readSettings()` parses localStorage each call               | `settingsStore.get()` reads from persistent atom       |
+| `writeSettings(partial)` writes localStorage directly        | `settingsStore.set(merged)` auto-syncs to localStorage |
 
 ---
 
@@ -303,7 +351,7 @@ The application uses the **datepainter** library for calendar rendering and stat
 
 **Reactivity Layers:**
 
-Nanostores and CustomEvents serve different layers and should not be mixed:
+Nanostores and datepainter callbacks serve different layers and should not be mixed:
 
 ```
 nanostores (internal to datepainter package)
@@ -315,11 +363,13 @@ onStateChange (datepainter public API — per-date granularity)
   → StatusLegend: count badges (direct, no debounce)
   → auto-compliance module: debounced aggregate computation
 
-compliance-updated CustomEvent (application layer — aggregate stats)
+complianceStore (application layer — nanostore, single source of truth)
   → StatusDetails: week summary, capacity, non-compliant weeks
+  → SummaryBar: compliance overview
+  → Other sidebar components subscribe via onComplianceChange()
 ```
 
-**Rule of thumb:** Components that need per-date granularity (StatusLegend counts) subscribe to `onStateChange` directly. Components that need aggregate/computed stats (StatusDetails) consume the `compliance-updated` CustomEvent — this avoids duplicating expensive computation and naturally debounces rapid changes.
+**Rule of thumb:** Components that need per-date granularity (StatusLegend counts) subscribe to `onStateChange` directly. Components that need aggregate/computed stats subscribe to `complianceStore` via `onComplianceChange()` — this avoids duplicating expensive computation and naturally deduplicates rapid changes.
 
 **Legacy Note:** `dateStore` in `src/lib/dateStore.ts` is a compatibility stub. New code should use the datepainter `CalendarInstance` API directly.
 
@@ -340,18 +390,24 @@ Manages state snapshots for undo functionality.
 
 **Location:** `src/lib/history/HistoryManager.ts`
 
-### 3. localStorage (Persistence)
+### 3. Settings Store (Persistent State)
+
+The `settingsStore` (powered by `@nanostores/persistent`) is the single source of truth for app settings, automatically syncing to localStorage. It replaces the previous `readSettings()`/`writeSettings()` functions.
 
 **Persisted Data:**
 
 - Selected country code
 - Selected company name
 - Holiday preferences
-- Sick day policy (`sickDaysPenalize` - whether sick days count against compliance)
-- Holiday policy (`holidayPenalize` - whether holidays count against compliance)
-- User settings
+- Sick day policy (`sickDaysPenalize` — whether sick days count against compliance)
+- Holiday policy (`holidayPenalize` — whether holidays count against compliance)
+- Rolling window weeks
+- Best weeks count
+- User settings (theme, etc.)
 
-**Managed by:** `src/scripts/localStorage.ts`
+**Location:** `src/lib/stores/settingsStore.ts`
+
+**Legacy note:** `src/lib/settings-reader.ts` still exports `readSettings()` and `writeSettings()` for backward compatibility, but new code should use `settingsStore.get()` and `settingsStore.set()` directly.
 
 ### 4. Configuration State
 
@@ -424,10 +480,15 @@ src/
 │   ├── history/          # Undo/state management
 │   │   └── HistoryManager.ts            # State snapshot management
 │   │
-│   ├── auto-compliance.ts         # Auto-compliance singleton (debounced stats via CustomEvent)
+│   ├── auto-compliance.ts         # Auto-compliance singleton (debounced stats via complianceStore)
 │   ├── calendar-data-reader.ts    # Data extraction layer (DOM → pure data)
 │   ├── rto-config.ts              # Configuration constants
-│   └── dateStore.ts               # Legacy stub (use datepainter CalendarInstance instead)
+│   ├── date-helpers.ts            # parseLocalDate, assertSundayMidnight (UTC safety)
+│   ├── dateStore.ts               # Legacy stub (use datepainter CalendarInstance instead)
+│   ├── stores/                    # Nanostore state management
+│   │   ├── complianceStore.ts     # Compliance data atom (single source of truth)
+│   │   ├── settingsStore.ts       # Settings persistentAtom (auto-syncs localStorage)
+│   │   └── index.ts               # Store re-exports
 │
 ├── scripts/              # Client-side DOM integration
 │   ├── ValidationManager.ts       # Simplified config holder (client-side)
@@ -464,11 +525,11 @@ src/
 
 ### 1. Separation of Concerns
 
-- **Auto-Compliance Hub**: Reactive singleton that debounces, reads data, runs validation, and dispatches results
+- **Auto-Compliance Hub**: Reactive singleton that debounces, reads data, runs validation, and writes results to complianceStore
 - **Shared Pipeline**: `computeWindowEvaluation()` is the single entry point for computing sliding window summaries — used by both auto-compliance and WindowExplorer, eliminating duplicated data reading and evaluation logic
 - **Data Reader Layer**: Single DOM query, returns typed data
 - **Sliding Window Validation**: Pure function in `rto-core.ts`, no DOM dependencies
-- **Sidebar Components**: Consume `compliance-updated` events to render stats
+- **Sidebar Components**: Subscribe to `complianceStore` via `onComplianceChange()` to render stats
 
 ### 2. Pure Functions
 
@@ -609,7 +670,7 @@ interface Holiday {
 
 #### `components/StatusDetails.astro`
 
-- Consumes `compliance-updated` events from auto-compliance module
+- Subscribes to `complianceStore` via `onComplianceChange()` for reactive updates
 - Compliance status box (compliant/not compliant with color coding)
 - Week summary, capacity, current week status, non-compliant weeks
 - Non-compliant weeks show "Dropped" (dimmed) for dropped weeks vs "Needs X more" for counted weeks
@@ -757,9 +818,11 @@ The RTO Calculator architecture prioritizes:
 2. **Pure functions** for business logic (testable, predictable)
 3. **Simple validation** — a single `validateSlidingWindow()` function in `rto-core.ts` (no class hierarchies)
 4. **Single DOM query** to extract data, then pure operations
-5. **Type safety** throughout with comprehensive TypeScript interfaces
-6. **Pluggable holiday system** with Factory Pattern for data source instantiation
-7. **Undo functionality** via HistoryManager
-8. **datepainter integration** for efficient calendar state management
+5. **Nanostores** for reactive state — `complianceStore` for compliance data, `settingsStore` for persistent settings
+6. **Type safety** throughout with comprehensive TypeScript interfaces
+7. **Pluggable holiday system** with Factory Pattern for data source instantiation
+8. **Undo functionality** via HistoryManager
+9. **datepainter integration** for efficient calendar state management
+10. **UTC-safe date handling** — `parseLocalDate()` and `assertSundayMidnight()` prevent timezone bugs
 
 This architecture enables easy testing, maintenance, and extension while maintaining clean separation of concerns and predictable behavior.

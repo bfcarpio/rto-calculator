@@ -6,33 +6,34 @@ import type {
 	MarkedDateRange,
 } from "datepainter";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { settingsStore } from "../../stores/settingsStore";
 import { validateExportData } from "../schema";
 
-// Mock settings-reader so tests don't depend on actual localStorage reads through it
-vi.mock("../../settings-reader", async () => {
-	const actual = await vi.importActual<typeof import("../../settings-reader")>(
-		"../../settings-reader",
-	);
+// Mock settingsStore so tests don't depend on actual localStorage
+vi.mock("../../stores/settingsStore", () => {
+	const mockGet = vi.fn(() => ({
+		debug: false,
+		saveData: true,
+		minOfficeDays: 3,
+		rollingWindowWeeks: 12,
+		bestWeeksCount: 8,
+		sickDaysPenalize: true,
+		holidayPenalize: true,
+		startingWeek: null,
+		defaultPattern: null,
+		roundPercentage: true,
+		holidays: { countryCode: null, holidaysAsOOF: true, companyName: null },
+	}));
+	const mockSet = vi.fn();
 	return {
-		...actual,
-		readSettings: vi.fn(() => ({
-			debug: false,
-			saveData: true,
-			minOfficeDays: 3,
-			rollingWindowWeeks: 12,
-			bestWeeksCount: 8,
-			sickDaysPenalize: true,
-			holidayPenalize: true,
-			startingWeek: null,
-			defaultPattern: null,
-			holidays: { countryCode: null, holidaysAsOOF: true, companyName: null },
-		})),
-		writeSettings: vi.fn(),
-		SETTINGS_KEY: actual.SETTINGS_KEY,
+		settingsStore: {
+			get: mockGet,
+			set: mockSet,
+			subscribe: vi.fn(() => vi.fn()),
+		},
 	};
 });
 
-import { readSettings, writeSettings } from "../../settings-reader";
 import { buildExportJSON, importJSON } from "../json-io";
 
 function mockCalendar(dates: Record<string, string[]>): CalendarInstance {
@@ -80,6 +81,8 @@ function mockCalendar(dates: Record<string, string[]>): CalendarInstance {
 		setPaintingState: vi.fn(),
 		updateConfig: vi.fn(),
 		onStateChange: vi.fn(() => () => {}),
+		onDateStateChange: vi.fn(() => () => {}),
+		onMonthChange: vi.fn(() => () => {}),
 		navigateToDate: vi.fn(),
 		nextMonth: vi.fn(),
 		prevMonth: vi.fn(),
@@ -127,8 +130,8 @@ describe("exportJSON", () => {
 		]);
 	});
 
-	it("includes settings from readSettings()", () => {
-		vi.mocked(readSettings).mockReturnValue({
+	it("includes settings from settingsStore", () => {
+		vi.mocked(settingsStore.get).mockReturnValue({
 			debug: false,
 			saveData: true,
 			minOfficeDays: 3,
@@ -220,16 +223,13 @@ describe("importJSON", () => {
 		expect(cal.setDates).toHaveBeenCalledTimes(3);
 	});
 
-	it("applies settings and dispatches event", () => {
+	it("applies settings via settingsStore", () => {
 		const cal = mockCalendar({ oof: [], holiday: [], sick: [] });
-		const spy = vi.fn();
-		window.addEventListener("rto:state-changed", spy);
-
 		importJSON(validExportJSON({ settings: { rollingWindowWeeks: 16 } }), cal);
 
-		expect(writeSettings).toHaveBeenCalledWith({ rollingWindowWeeks: 16 });
-		expect(spy).toHaveBeenCalled();
-		window.removeEventListener("rto:state-changed", spy);
+		expect(settingsStore.set).toHaveBeenCalled();
+		const setCall = vi.mocked(settingsStore.set).mock.calls[0]?.[0];
+		expect(setCall).toMatchObject({ rollingWindowWeeks: 16 });
 	});
 
 	it("rejects invalid JSON string", () => {

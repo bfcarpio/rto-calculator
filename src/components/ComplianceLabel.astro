@@ -32,7 +32,7 @@ const {
 </p>
 
 <script>
-	import { getLatestCompliance, onComplianceUpdated } from "../lib/auto-compliance";
+	import { onComplianceChange } from "../lib/stores/complianceStore";
 
 	const labelEl = document.getElementById("compliance-label");
 
@@ -41,6 +41,8 @@ const {
 		roundPercentage: boolean;
 		averageOfficeDays: number;
 		bestWeekCount: number;
+		requiredDays: number;
+		totalWeeks: number;
 	}): void {
 		if (!labelEl) return;
 
@@ -64,23 +66,34 @@ const {
 				: ` ${data.averageOfficeDays.toFixed(1)}`;
 		}
 
-		// Update best weeks count (not in ValidationConfig, so manual update)
+		// Update setting indicators from compliance data
+		// These must stay in sync with policy settings so the label
+		// always reflects the current minOfficeDaysPerWeek and rollingPeriodWeeks.
 		const bestWeeksValue = labelEl.querySelector(
 			'.setting-value[data-setting-key="bestWeeksCount"]',
 		);
 		if (bestWeeksValue) {
 			bestWeeksValue.textContent = String(data.bestWeekCount);
 		}
+
+		const requiredDaysValue = labelEl.querySelector(
+			'.setting-value[data-setting-key="minOfficeDaysPerWeek"]',
+		);
+		if (requiredDaysValue) {
+			requiredDaysValue.textContent = String(data.requiredDays);
+		}
+
+		const totalWeeksValue = labelEl.querySelector(
+			'.setting-value[data-setting-key="rollingPeriodWeeks"]',
+		);
+		if (totalWeeksValue) {
+			totalWeeksValue.textContent = String(data.totalWeeks);
+		}
 	}
 
-	// Subscribe to compliance updates
-	onComplianceUpdated(updateLabel);
-
-	// Check for cached data
-	const cached = getLatestCompliance();
-	if (cached) {
-		updateLabel(cached);
-	}
+	// Page-lifetime subscription — no cleanup needed for static Astro pages
+	// onComplianceChange fires immediately if store has data, so no separate get() needed
+	onComplianceChange(updateLabel);
 </script>
 
 <style>

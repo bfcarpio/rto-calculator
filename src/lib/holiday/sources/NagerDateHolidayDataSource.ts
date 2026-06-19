@@ -9,6 +9,7 @@ import type {
 	PublicHolidayV3Dto,
 	VersionApi,
 } from "nager_date_api_reference";
+import { parseLocalDate } from "../../date-helpers";
 import HolidayDataSourceStrategy from "./HolidayDataSourceStrategy";
 import type {
 	DataSourceStatus,
@@ -197,8 +198,7 @@ class NagerDateHolidayDataSource extends HolidayDataSourceStrategy {
 
 				const dateStr = this._formatDate(today);
 				const matchingHolidays = holidays.filter((holiday) => {
-					const holidayDate = new Date(holiday.date);
-					return this._formatDate(holidayDate) === dateStr;
+					return this._formatDate(holiday.date) === dateStr;
 				});
 
 				const result: HolidayCheckResult = {
@@ -306,8 +306,7 @@ class NagerDateHolidayDataSource extends HolidayDataSourceStrategy {
 				const upcomingHolidays = await this.getUpcomingHolidays(countryCode);
 
 				return upcomingHolidays.filter((holiday) => {
-					const holidayDate = new Date(holiday.date);
-					return holidayDate >= startDate && holidayDate <= endDate;
+					return holiday.date >= startDate && holiday.date <= endDate;
 				});
 			} catch (error) {
 				const errorMessage =
@@ -403,19 +402,11 @@ class NagerDateHolidayDataSource extends HolidayDataSourceStrategy {
 		// Parse date string to avoid UTC/local timezone mismatch
 		// API returns "YYYY-MM-DD" strings which should be treated as local dates
 		const dateValue =
-			typeof h.date === "string" ? h.date : h.date.toISOString();
-		const dateStr = dateValue.split("T")[0] || dateValue;
-		const parts = dateStr.split("-");
-		if (parts.length !== 3) {
-			throw new Error(`Invalid date format: ${h.date}`);
+			typeof h.date === "string" ? h.date : h.date.toISOString().split("T")[0];
+		if (!dateValue) {
+			throw new Error(`Invalid date format: ${String(h.date)}`);
 		}
-		const year = Number(parts[0]);
-		const month = Number(parts[1]);
-		const day = Number(parts[2]);
-		if (Number.isNaN(year) || Number.isNaN(month) || Number.isNaN(day)) {
-			throw new Error(`Invalid date format: ${h.date}`);
-		}
-		const localDate = new Date(year, month - 1, day); // month is 0-indexed in JS Date
+		const localDate = parseLocalDate(dateValue);
 
 		const result: Holiday = {
 			date: localDate,

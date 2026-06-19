@@ -5,6 +5,7 @@
  */
 
 import { logger } from "../../../utils/logger";
+import { parseLocalDate } from "../../date-helpers";
 import type {
 	DataSourceStatistics,
 	DataSourceStatus,
@@ -145,8 +146,7 @@ abstract class HolidayDataSourceStrategy implements HolidayDataSource {
 
 		// Filter to date range
 		return holidays.filter((holiday) => {
-			const holidayDate = new Date(holiday.date);
-			return holidayDate >= startDate && holidayDate <= endDate;
+			return holiday.date >= startDate && holiday.date <= endDate;
 		});
 	}
 
@@ -170,7 +170,7 @@ abstract class HolidayDataSourceStrategy implements HolidayDataSource {
 		);
 
 		// Filter to future holidays only
-		return holidays.filter((holiday) => new Date(holiday.date) >= startDate);
+		return holidays.filter((holiday) => holiday.date >= startDate);
 	}
 
 	/**
@@ -188,8 +188,7 @@ abstract class HolidayDataSourceStrategy implements HolidayDataSource {
 
 		const dateStr = this._formatDate(date);
 		const matchingHolidays = holidays.filter((holiday) => {
-			const holidayDate = new Date(holiday.date);
-			return this._formatDate(holidayDate) === dateStr;
+			return this._formatDate(holiday.date) === dateStr;
 		});
 
 		const foundHoliday = matchingHolidays[0];
@@ -423,7 +422,7 @@ abstract class HolidayDataSourceStrategy implements HolidayDataSource {
 		const dateValue =
 			apiHoliday.date instanceof Date
 				? apiHoliday.date
-				: new Date(apiHoliday.date);
+				: parseLocalDate(apiHoliday.date);
 
 		const result: Holiday = {
 			date: dateValue,

@@ -1,12 +1,14 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { validateConfig } from "../../src/config/validate";
 import type { CalendarConfig } from "../../src/types";
 
 describe("Click Toggle Behavior - Validation", () => {
-	const createConfig = (defaultState: "oof" | "holiday" | "sick" = "oof"): CalendarConfig => ({
+	const createConfig = (
+		defaultState: "oof" | "holiday" | "sick" = "oof",
+	): CalendarConfig => ({
 		dateRange: {
-			start: new Date("2024-01-01"),
-			end: new Date("2024-01-31"),
+			start: new Date(2024, 0, 1),
+			end: new Date(2024, 0, 31),
 		},
 		states: {
 			oof: { label: "OOF", color: "#000", bgColor: "#ff0" },
@@ -29,8 +31,8 @@ describe("Click Toggle Behavior - Validation", () => {
 	it("should accept undefined defaultState", () => {
 		const config: CalendarConfig = {
 			dateRange: {
-				start: new Date("2024-01-01"),
-				end: new Date("2024-01-31"),
+				start: new Date(2024, 0, 1),
+				end: new Date(2024, 0, 31),
 			},
 			states: {
 				oof: { label: "OOF", color: "#000", bgColor: "#ff0" },
@@ -49,8 +51,8 @@ describe("Click Toggle Behavior - Validation", () => {
 	it("should throw error if defaultState not in configured states", () => {
 		const invalidConfig: CalendarConfig = {
 			dateRange: {
-				start: new Date("2024-01-01"),
-				end: new Date("2024-01-31"),
+				start: new Date(2024, 0, 1),
+				end: new Date(2024, 0, 31),
 			},
 			states: {
 				oof: { label: "OOF", color: "#000", bgColor: "#ff0" },
@@ -63,15 +65,15 @@ describe("Click Toggle Behavior - Validation", () => {
 		};
 
 		expect(() => validateConfig(invalidConfig)).toThrow(
-			"config.painting.defaultState 'invalid' does not exist in config.states"
+			"config.painting.defaultState 'invalid' does not exist in config.states",
 		);
 	});
 
 	it("should throw error for missing state definition", () => {
 		const invalidConfig: CalendarConfig = {
 			dateRange: {
-				start: new Date("2024-01-01"),
-				end: new Date("2024-01-31"),
+				start: new Date(2024, 0, 1),
+				end: new Date(2024, 0, 31),
 			},
 			states: {
 				oof: { label: "OOF", color: "#000", bgColor: "#ff0" },
@@ -84,7 +86,7 @@ describe("Click Toggle Behavior - Validation", () => {
 		};
 
 		expect(() => validateConfig(invalidConfig)).toThrow(
-			"config.painting.defaultState 'holiday' does not exist in config.states"
+			"config.painting.defaultState 'holiday' does not exist in config.states",
 		);
 	});
 
@@ -95,17 +97,23 @@ describe("Click Toggle Behavior - Validation", () => {
 		// Case 1: Empty cell -> should mark with defaultState
 		let currentState: string | null = null;
 		let expectedResult = defaultState;
-		expect(currentState === defaultState ? null : defaultState).toBe(expectedResult);
+		expect(currentState === defaultState ? null : defaultState).toBe(
+			expectedResult,
+		);
 
 		// Case 2: Cell marked with defaultState -> should clear
 		currentState = "oof";
 		expectedResult = null as any;
-		expect(currentState === defaultState ? null : defaultState).toBe(expectedResult);
+		expect(currentState === defaultState ? null : defaultState).toBe(
+			expectedResult,
+		);
 
 		// Case 3: Cell marked with different state -> should change to defaultState
 		currentState = "holiday";
 		expectedResult = "oof";
-		expect(currentState === defaultState ? null : defaultState).toBe(expectedResult);
+		expect(currentState === defaultState ? null : defaultState).toBe(
+			expectedResult,
+		);
 	});
 
 	it("should validate palette switching behavior", () => {

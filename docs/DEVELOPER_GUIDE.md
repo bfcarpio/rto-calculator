@@ -69,7 +69,7 @@ computeWindowEvaluation() — shared pipeline (validation/window-evaluation.ts)
     ├── auto-compliance.ts (reactive path)
     │     ↓ debounces 1.5s after onStateChange
     │     ↓ builds evaluated set, computes best-8-of-12 stats
-    │     ↓ dispatches compliance-updated CustomEvent
+    │     ↓ writes result to complianceStore
     │
     └── WindowExplorer.astro (manual path)
           ↓ passes summaries directly to UI rendering
@@ -100,11 +100,12 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed explanation.
 - Singleton that subscribes to `onStateChange` with 1.5s debounce
 - Calls `computeWindowEvaluation()` (shared pipeline) to get summaries and week data
 - Builds evaluated set and computes best-8-of-12 sliding window stats
-- Dispatches `compliance-updated` CustomEvent consumed by StatusDetails
+- Writes results to `complianceStore` (nanostore, single source of truth)
+- UI components subscribe via `onComplianceChange()` for reactive updates
 - Loading bar at top of viewport shows progress during debounce
 - `buildEvaluatedSet()` — single-pass helper that collects timestamps of weeks appearing in the best-K of any sliding window into a `Set<number>`. Used by `findNextSafeWfhWeek()` to identify weeks safe to zero out without breaking compliance in any window. See ARCHITECTURE.md "Evaluated Set Algorithm" for full details.
 
-**Reactive Components** (consume `compliance-updated` events):
+**Reactive Components** (subscribe to `complianceStore` via `onComplianceChange()`):
 
 - **StatusDetails** - Week summary, capacity, current week, non-compliant weeks (with ignored/dropped distinction)
 - **StatusLegend** - Count badges for WFH/holiday/sick (directly subscribes to `onStateChange`)
@@ -231,7 +232,77 @@ const oofRanges = calendar.getDateRanges({
 
 **Note**: `dateStore` in `src/lib/dateStore.ts` is a legacy stub. New code should use the datepainter `CalendarInstance` API directly.
 
-### Using HistoryManager (Undo/Redo)
+### Subscribing to Compliance Data
+
+UI components subscribe to compliance data via the `complianceStore` nanostore. This replaces the previous CustomEvent-based system:
+
+```typescript
+import { onComplianceChange } from "../lib/stores/complianceStore";
+
+const unsub = onComplianceChange((data) => {
+  // React to compliance data changes
+  // `data` is ComplianceEventData with compliance status, summaries, etc.
+  // Callback is deduped — only fires when the value actually changes
+});
+
+// Clean up when component unmounts
+unsub();
+```
+
+For one-off reads:
+
+```typescript
+import { complianceStore } from "../lib/stores/complianceStore";
+
+const data = complianceStore.get(); // may be null if not computed yet
+```
+
+### Working with Settings
+
+The `settingsStore` is a `persistentAtom` that auto-syncs to localStorage. Prefer it over direct `readSettings()`/`writeSettings()` calls:
+
+```typescript
+import { settingsStore } from "../lib/stores/settingsStore";
+
+// Read current settings
+const current = settingsStore.get();
+
+// Update settings (auto-syncs to localStorage)
+settingsStore.set({ ...current, rollingWindowWeeks: 20 });
+
+// Subscribe to settings changes
+import { onSettingsChange } from "../lib/stores/settingsStore";
+const unsub = onSettingsChange((settings) => {
+  // React to setting changes (e.g., re-run validation)
+});
+unsub(); // Clean up
+```
+
+**Legacy note:** `readSettings()` and `writeSettings()` in `src/lib/settings-reader.ts` still work for backward compatibility, but new code should use `settingsStore` directly.
+
+### Date Parsing Best Practices
+
+Always use `parseLocalDate()` when creating dates from string input. Never use `new Date("YYYY-MM-DD")` — it parses as UTC midnight, causing off-by-one-day bugs in negative-UTC timezones:
+
+```typescript
+// WRONG — parses as UTC midnight, shows previous day in EST/CST/PST
+new Date("2025-03-22"); // → Sat Mar 21 7pm EST
+
+// CORRECT — parses as local midnight
+import { parseLocalDate } from "../lib/date-helpers";
+parseLocalDate("2025-03-22"); // → Sun Mar 22 midnight local
+
+// CORRECT — constructor with numeric args is also local
+new Date(2025, 2, 22); // → Sun Mar 22 midnight local (month is 0-indexed)
+```
+
+Use `assertSundayMidnight()` to validate week-start dates in tests and runtime:
+
+```typescript
+import { assertSundayMidnight } from "../lib/date-helpers";
+
+assertSundayMidnight(weekStart, "computeWindowEvaluation"); // throws if not Sunday midnight local
+```
 
 ```typescript
 // src/lib/history/HistoryManager.ts
@@ -270,20 +341,22 @@ const canRedo = historyManager.canRedo();
 
 ### Using localStorage
 
+Settings are persisted via `settingsStore` (a `persistentAtom`), which auto-syncs to localStorage. Direct `localStorage` access is discouraged for settings:
+
 ```typescript
-// src/scripts/localStorage.ts
+// PREFERRED — reactive, type-safe, auto-syncs
+import { settingsStore } from "../lib/stores/settingsStore";
+
+const settings = settingsStore.get();
+settingsStore.set({ ...settings, countryCode: "US" });
+
+// LEGACY — still works, but not reactive
 import {
   loadFromLocalStorage,
   saveToLocalStorage,
 } from "../scripts/localStorage";
 
-// Save settings
-saveToLocalStorage("rto-settings", {
-  countryCode: "US",
-  companyName: "Acme Corp",
-});
-
-// Load settings
+saveToLocalStorage("rto-settings", { countryCode: "US" });
 const settings = loadFromLocalStorage("rto-settings");
 ```
 
@@ -321,11 +394,17 @@ export const COMPLIANCE_THRESHOLD = 0.6;
 export const BEST_WEEKS_COUNT = 8; // customizable in settings
 ```
 
-### Shared Settings Reader
+### Shared Settings
 
 ```typescript
-// src/lib/settings-reader.ts
-import { readSettings, writeSettings } from "./settings-reader";
+// src/lib/stores/settingsStore.ts (preferred — reactive, auto-syncs localStorage)
+import { settingsStore } from "./lib/stores/settingsStore";
+
+const settings = settingsStore.get(); // reads current value
+settingsStore.set({ ...settingsStore.get(), rollingWindowWeeks: 20 }); // writes + persists
+
+// src/lib/settings-reader.ts (legacy — still available for backward compatibility)
+import { readSettings } from "./lib/settings-reader";
 
 const settings = readSettings(); // parses localStorage once, merges defaults
 settings.rollingWindowWeeks; // 12 (default)
@@ -441,13 +520,17 @@ error("[MyModule] Error message"); // Always shown
 window.__getHolidayManager().getHolidayDates(2025, "US");
 window.__datepainterInstance.getAllDates();
 
-// Check policy settings via shared reader (preferred)
-import { readSettings } from "./lib/settings-reader";
-const s = readSettings();
-s.sickDaysPenalize; // boolean
-s.holidayPenalize; // boolean
-s.rollingWindowWeeks; // number
-s.bestWeeksCount; // number
+// Check compliance data via nanostore
+import { complianceStore } from "./lib/stores/complianceStore";
+complianceStore.get(); // current compliance data (null if not computed)
+
+// Check settings via nanostore
+import { settingsStore } from "./lib/stores/settingsStore";
+settingsStore.get(); // current settings
+settingsStore.get().sickDaysPenalize; // boolean
+settingsStore.get().holidayPenalize; // boolean
+settingsStore.get().rollingWindowWeeks; // number
+settingsStore.get().bestWeeksCount; // number
 ```
 
 ---
@@ -515,11 +598,14 @@ src/
 │   ├── validation/         # Sliding-window validation (rto-core)
 │   ├── holiday/           # Holiday management
 │   ├── history/           # Undo/redo management
-│   └── calendar-data-reader.ts
-│
+│   ├── stores/            # Nanostore state (complianceStore, settingsStore)
+│   ├── calendar-data-reader.ts
+│   ├── date-helpers.ts    # parseLocalDate, assertSundayMidnight
+│   └── auto-compliance.ts
+
 ├── scripts/               # Client-side DOM integration
 │   └── eventHandlers.ts
-│
+
 ├── components/            # Astro components
 ├── types/                 # TypeScript types
 ├── utils/                 # Utility functions
@@ -617,4 +703,4 @@ git push && git push --tags
 
 ---
 
-_Last Updated: February 2026_
+_Last Updated: June 2026_

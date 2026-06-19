@@ -6,6 +6,7 @@
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { ComplianceEventData } from "../../lib/auto-compliance";
+import { parseLocalDate } from "../../lib/date-helpers";
 import type { WindowWeekDetail } from "../../lib/validation/all-windows";
 import type { RTOPolicyConfig } from "../../lib/validation/rto-core";
 import {
@@ -29,7 +30,7 @@ function createMockWeekDetail(
 	overrides: Partial<WindowWeekDetail> = {},
 ): WindowWeekDetail {
 	return {
-		weekStart: new Date(2025, 0, 6), // Jan 6, 2025 (local time)
+		weekStart: new Date(2025, 0, 5), // Jan 5, 2025 (Sunday)
 		officeDays: 3,
 		isBest: true,
 		isCompliant: true,
@@ -54,10 +55,10 @@ function createMockComplianceData(
 		goodWeeks: 10,
 		bufferWeeks: 2,
 		nextWfhWeek: null,
-		rangeLabel: "Jan 6 – Jan 10",
+		rangeLabel: "Jan 5 – Jan 10",
 		currentWeek: {
-			weekStart: new Date(2025, 0, 6), // Jan 6, 2025 (local time)
-			weekEnd: new Date(2025, 0, 12), // Jan 12, 2025 (local time)
+			weekStart: new Date(2025, 0, 5),
+			weekEnd: new Date(2025, 0, 10), // Friday after Sunday
 			officeDays: 3,
 		},
 		totalWfhDays: 5,
@@ -169,15 +170,15 @@ describe("status-details module", () => {
 		it("should render dots for each week", () => {
 			const weekDetails = [
 				createMockWeekDetail({
-					weekStart: new Date(2025, 0, 6),
+					weekStart: new Date(2025, 0, 5),
 					officeDays: 3,
 				}),
 				createMockWeekDetail({
-					weekStart: new Date(2025, 0, 13),
+					weekStart: new Date(2025, 0, 12),
 					officeDays: 4,
 				}),
 				createMockWeekDetail({
-					weekStart: new Date(2025, 0, 20),
+					weekStart: new Date(2025, 0, 19),
 					officeDays: 2,
 				}),
 			];
@@ -320,12 +321,12 @@ describe("status-details module", () => {
 		});
 
 		it("should update next WFH week display", () => {
-			const nextWeek = new Date(2025, 1, 10); // Feb 10, 2025 (local time)
+			const nextWeek = new Date(2025, 1, 9); // Feb 9, 2025 (Sunday)
 			const data = createMockComplianceData({ nextWfhWeek: nextWeek });
 			updateStats(data);
 
 			const el = document.getElementById("stat-next-wfh");
-			expect(el?.textContent).toBe("Week of Feb 10, 2025");
+			expect(el?.textContent).toBe("Week of Feb 9, 2025");
 		});
 
 		it("should show em-dash when no next WFH week available", () => {
@@ -339,22 +340,22 @@ describe("status-details module", () => {
 		it("should update current week range", () => {
 			const data = createMockComplianceData({
 				currentWeek: {
-					weekStart: new Date(2025, 0, 13), // Jan 13, 2025 (local time)
-					weekEnd: new Date(2025, 0, 19), // Jan 19, 2025 (local time)
+					weekStart: new Date(2025, 0, 12), // Jan 12, 2025 (Sunday)
+					weekEnd: new Date(2025, 0, 17), // Jan 17, 2025 (Friday)
 					officeDays: 3,
 				},
 			});
 			updateStats(data);
 
 			const el = document.getElementById("stat-current-week-range");
-			expect(el?.textContent).toBe("Jan 13, 2025 - Jan 19, 2025");
+			expect(el?.textContent).toBe("Jan 12, 2025 - Jan 17, 2025");
 		});
 
 		it("should update current week office days with correct color", () => {
 			const data = createMockComplianceData({
 				currentWeek: {
-					weekStart: new Date("2025-01-06"),
-					weekEnd: new Date("2025-01-12"),
+					weekStart: parseLocalDate("2025-01-05"),
+					weekEnd: parseLocalDate("2025-01-10"),
 					officeDays: 3,
 				},
 				requiredDays: 3,
@@ -500,11 +501,11 @@ describe("status-details module", () => {
 
 			const weekDetails = [
 				createMockWeekDetail({
-					weekStart: new Date(2025, 0, 6),
+					weekStart: new Date(2025, 0, 5),
 					officeDays: 3,
 				}),
 				createMockWeekDetail({
-					weekStart: new Date(2025, 0, 13),
+					weekStart: new Date(2025, 0, 12),
 					officeDays: 4,
 				}),
 			];
@@ -678,11 +679,11 @@ describe("status-details module", () => {
 
 				const weekDetails = [
 					createMockWeekDetail({
-						weekStart: new Date(2025, 0, 6),
+						weekStart: new Date(2025, 0, 5),
 						officeDays: 3,
 					}),
 					createMockWeekDetail({
-						weekStart: new Date(2025, 0, 13),
+						weekStart: new Date(2025, 0, 12),
 						officeDays: 4,
 					}),
 				];

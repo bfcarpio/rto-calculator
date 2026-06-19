@@ -112,7 +112,16 @@ const {
       const date = cell.getAttribute('data-date');
       if (!date) return;
 
-      const dateObj = new Date(date);
+      // Parse YYYY-MM-DD string using numeric constructor to avoid UTC-midnight bug.
+      // new Date('2024-01-15') parses as UTC midnight, which shifts to the previous
+      // day in negative-UTC-offset timezones. The numeric constructor creates local
+      // midnight as intended.
+      const parts = date.split('-');
+      const dateObj = new Date(
+        Number(parts[0]),
+        Number(parts[1]) - 1,
+        Number(parts[2]),
+      );
       if (!isDateInRange(dateObj, dateRange)) {
         cell.classList.add('datepainter__day--disabled');
         cell.setAttribute('data-disabled', 'true');

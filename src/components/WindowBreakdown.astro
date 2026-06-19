@@ -1,4 +1,5 @@
 ---
+import "../styles/window-shared.css";
 /**
  * WindowBreakdown.astro - Displays visual breakdown of compliance window weeks
  *
@@ -24,8 +25,8 @@ const hasData = selectedSummary && selectedSummary.weekDetails.length > 0;
 
 const labelText = hasData
 	? isCompliant
-		? `Showing most recent window`
-		: `Showing first failing window`
+		? `Earliest window`
+		: `Failing window`
 	: "Mark dates to see window breakdown";
 ---
 
@@ -45,8 +46,6 @@ const labelText = hasData
 </div>
 
 <style>
-	@import '../styles/window-shared.css';
-
 	.window-breakdown-wrapper {
 		width: 100%;
 	}

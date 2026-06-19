@@ -5,6 +5,7 @@
  * satisfy the `{weekStart: Date}` shape structurally — no adapter code needed.
  */
 
+import { assertSundayMidnight } from "../date-helpers";
 import { fmtShort } from "../dateUtils";
 import { FRIDAY_OFFSET } from "../validation/constants";
 
@@ -31,6 +32,7 @@ export function buildWindowRangeLabel(
 	if (weeks.length === 0) return "";
 	const firstWeek = weeks[0];
 	if (!firstWeek) return "";
+	assertSundayMidnight(firstWeek.weekStart, "buildWindowRangeLabel first week");
 	const windowEnd = buildWindowEnd(weeks);
 	if (!windowEnd) return "";
 	return `${fmtShort(firstWeek.weekStart)} – ${fmtShort(windowEnd)}`;

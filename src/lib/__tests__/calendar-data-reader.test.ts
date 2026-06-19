@@ -37,10 +37,33 @@ vi.mock("../validation/rto-core", () => ({
 	}),
 }));
 
+const mockSettings = {
+	debug: false,
+	saveData: true,
+	minOfficeDays: 3,
+	rollingWindowWeeks: 12,
+	bestWeeksCount: 8,
+	sickDaysPenalize: true,
+	holidayPenalize: true,
+	startingWeek: null as string | null,
+	defaultPattern: null as number[] | null,
+	roundPercentage: true,
+	holidays: { countryCode: null, holidaysAsOOF: true, companyName: null },
+};
+
+vi.mock("../stores/settingsStore", () => ({
+	settingsStore: {
+		get: vi.fn(() => ({ ...mockSettings })),
+		set: vi.fn(),
+		subscribe: vi.fn(() => vi.fn()),
+	},
+}));
+
 import type { CalendarInstance } from "../../../packages/datepainter/src/types";
 import { readCalendarData } from "../calendar-data-reader";
 import { getDateRange } from "../dateUtils";
 import { getHolidayDatesForValidation } from "../holiday/CalendarHolidayIntegration";
+import { settingsStore } from "../stores/settingsStore";
 
 // ─── Helpers ─────────────────────────────────────────────────────
 
@@ -62,20 +85,16 @@ function mockCalendar(dateMap: Map<string, string>): CalendarInstance {
 }
 
 /**
- * Set localStorage to simulate specific penalize settings.
+ * Configure settingsStore to simulate specific penalize settings.
  */
 function setSettings(opts: {
 	sickDaysPenalize?: boolean;
 	holidayPenalize?: boolean;
 }): void {
-	const settings: Record<string, unknown> = {
-		saveData: true,
-	};
-	if (opts.sickDaysPenalize !== undefined)
-		settings.sickDaysPenalize = opts.sickDaysPenalize;
-	if (opts.holidayPenalize !== undefined)
-		settings.holidayPenalize = opts.holidayPenalize;
-	localStorage.setItem("rto-calculator-settings", JSON.stringify(settings));
+	vi.mocked(settingsStore.get).mockReturnValue({
+		...mockSettings,
+		...opts,
+	});
 }
 
 /**
@@ -98,7 +117,9 @@ function setupSingleWeek(sundayDate: string): void {
 
 describe("readCalendarData – penalize settings", () => {
 	beforeEach(() => {
-		localStorage.clear();
+		vi.clearAllMocks();
+		// Reset to default settings
+		vi.mocked(settingsStore.get).mockReturnValue({ ...mockSettings });
 	});
 
 	afterEach(() => {
@@ -293,7 +314,8 @@ describe("readCalendarData – penalize settings", () => {
 	// --- No settings in localStorage (defaults) ---
 
 	it("no settings in localStorage: defaults to penalize both", async () => {
-		// localStorage is already clear from beforeEach
+		// Default settings have both penalize flags = true
+		vi.mocked(settingsStore.get).mockReturnValue({ ...mockSettings });
 		setupSingleWeek("2025-06-01");
 		const dates = new Map<string, string>([
 			["2025-06-02", "holiday"],
@@ -311,7 +333,8 @@ describe("readCalendarData – penalize settings", () => {
 	});
 
 	it("malformed localStorage: defaults to penalize both", async () => {
-		localStorage.setItem("rto-calculator-settings", "not-valid-json");
+		// Even with no localStorage data, default settings have both flags = true
+		vi.mocked(settingsStore.get).mockReturnValue({ ...mockSettings });
 		setupSingleWeek("2025-06-01");
 		const dates = new Map<string, string>([
 			["2025-06-02", "holiday"],
@@ -385,7 +408,8 @@ describe("readCalendarData – penalize settings", () => {
 
 describe("readCalendarData – holiday dates from external source", () => {
 	beforeEach(() => {
-		localStorage.clear();
+		vi.clearAllMocks();
+		vi.mocked(settingsStore.get).mockReturnValue({ ...mockSettings });
 	});
 
 	afterEach(() => {

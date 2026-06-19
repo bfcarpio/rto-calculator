@@ -287,11 +287,12 @@ test.describe("Window Explorer and Breakdown dot consistency", () => {
 			await clickDate(page, i);
 		}
 
-		await page.waitForTimeout(300);
-
-		// Get breakdown label text (contains the range like "Jan 6 – Mar 28")
+		// Wait for compliance data to be computed and rendered
+		// (debounce is 1500ms; a fixed timeout is flaky — wait for actual data)
 		const breakdownLabel = page.locator("#window-breakdown-label");
-		await expect(breakdownLabel).toBeVisible({ timeout: 5000 });
+		await expect(breakdownLabel).toContainText(/Showing.*window/, {
+			timeout: 10000,
+		});
 		const breakdownText = (await breakdownLabel.textContent()) ?? "";
 
 		// Extract date range from breakdown label text

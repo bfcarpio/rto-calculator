@@ -8,6 +8,7 @@ import {
 } from "./lib/templateRenderer";
 import {
 	clearDateState,
+	currentMonth,
 	getAllDates,
 	selectedDates,
 	setCurrentMonth,
@@ -511,6 +512,74 @@ export class CalendarManager implements CalendarInstance {
 	}
 
 	/**
+	 * Subscribe to date state changes only (date selection, holiday, OOF toggles).
+	 * Does NOT fire on month navigation.
+	 * Fires immediately with the current dates map on subscription.
+	 * Returns an unsubscribe function to stop receiving updates.
+	 *
+	 * @param callback - Function called with the full dates map on each change
+	 * @returns Unsubscribe function to remove the callback
+	 *
+	 * @example
+	 * ```ts
+	 * const unsubscribe = manager.onDateStateChange((dates) => {
+	 *   console.log(`Dates changed, count: ${dates.size}`);
+	 * });
+	 * // Later...
+	 * unsubscribe();
+	 * ```
+	 */
+	onDateStateChange(
+		callback: (dates: Map<DateString, DateState>) => void,
+	): () => void {
+		const unsubscribe = selectedDates.subscribe((dates) => {
+			callback(dates);
+		});
+		this.unsubscribeFns.push(unsubscribe);
+
+		return () => {
+			const idx = this.unsubscribeFns.indexOf(unsubscribe);
+			if (idx > -1) {
+				this.unsubscribeFns.splice(idx, 1);
+			}
+			unsubscribe();
+		};
+	}
+
+	/**
+	 * Subscribe to month navigation changes only.
+	 * Does NOT fire on date selection changes.
+	 * Fires immediately with the current month on subscription.
+	 * Returns an unsubscribe function to stop receiving updates.
+	 *
+	 * @param callback - Function called with the current month date on each change
+	 * @returns Unsubscribe function to remove the callback
+	 *
+	 * @example
+	 * ```ts
+	 * const unsubscribe = manager.onMonthChange((month) => {
+	 *   console.log(`Navigated to month: ${month.toLocaleDateString()}`);
+	 * });
+	 * // Later...
+	 * unsubscribe();
+	 * ```
+	 */
+	onMonthChange(callback: (month: Date) => void): () => void {
+		const unsubscribe = currentMonth.subscribe((month) => {
+			callback(month);
+		});
+		this.unsubscribeFns.push(unsubscribe);
+
+		return () => {
+			const idx = this.unsubscribeFns.indexOf(unsubscribe);
+			if (idx > -1) {
+				this.unsubscribeFns.splice(idx, 1);
+			}
+			unsubscribe();
+		};
+	}
+
+	/**
 	 * Navigate to a specific date's month, clamped to the calendar date range
 	 * @param date - The target date to navigate to
 	 * @throws Error if calendar not initialized
@@ -640,7 +709,8 @@ export class CalendarManager implements CalendarInstance {
 		}
 
 		// Update store and re-render
-		setCurrentMonth(this.currentViewDate);
+		// Create a new Date so nanostore detects the change (reference equality check)
+		setCurrentMonth(new Date(this.currentViewDate));
 		this.render();
 	}
 

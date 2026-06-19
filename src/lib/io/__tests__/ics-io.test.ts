@@ -53,6 +53,8 @@ function mockCalendar(
 		setPaintingState: vi.fn(),
 		updateConfig: vi.fn(),
 		onStateChange: vi.fn(() => () => {}),
+		onDateStateChange: vi.fn(() => () => {}),
+		onMonthChange: vi.fn(() => () => {}),
 		navigateToDate: vi.fn(),
 		nextMonth: vi.fn(),
 		prevMonth: vi.fn(),

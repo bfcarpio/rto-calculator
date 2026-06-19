@@ -136,7 +136,8 @@ const weeksColorClass =
 </style>
 
 <script>
-	import { onComplianceUpdated, getLatestCompliance, type ComplianceEventData } from '../lib/auto-compliance';
+	import { onComplianceChange } from '../lib/stores/complianceStore';
+	import type { ComplianceEventData } from '../lib/auto-compliance';
 
 	function getStatusColor(current: number, target: number): string {
 		if (current >= target) return 'has-text-success';
@@ -181,10 +182,7 @@ const weeksColorClass =
 		}
 	}
 
-	// Subscribe to auto-compliance events
-	onComplianceUpdated(updateWeekSummary);
-
-	// If auto-compliance already ran before we loaded, use cached result
-	const cached = getLatestCompliance();
-	if (cached) updateWeekSummary(cached);
+	// Page-lifetime subscription — no cleanup needed for static Astro pages
+	// onComplianceChange fires immediately if store has data, so no separate get() needed
+	onComplianceChange(updateWeekSummary);
 </script>

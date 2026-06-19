@@ -27,7 +27,7 @@ import {
 
 // ─── Helpers ──────────────────────────────────────────────────────
 
-const START = new Date(2025, 0, 6); // Monday Jan 6 2025
+const START = new Date(2025, 0, 5); // Sunday Jan 5 2025
 
 function makeWeek(
 	weekStart: Date,
@@ -50,28 +50,28 @@ function makeWeek(
 }
 
 function makeWeeks(
-	startMonday: Date,
+	startSunday: Date,
 	count: number,
 	officeDaysPerWeek: number,
 ): WeekCompliance[] {
 	const weeks: WeekCompliance[] = [];
 	for (let i = 0; i < count; i++) {
-		const ws = new Date(startMonday);
-		ws.setDate(startMonday.getDate() + i * 7);
+		const ws = new Date(startSunday);
+		ws.setDate(startSunday.getDate() + i * 7);
 		weeks.push(makeWeek(ws, officeDaysPerWeek, i + 1));
 	}
 	return weeks;
 }
 
 function makeSchedule(
-	startMonday: Date,
+	startSunday: Date,
 	...segments: [count: number, officeDays: number][]
 ): WeekCompliance[] {
 	const weeks: WeekCompliance[] = [];
 	let offset = 0;
 	for (const [count, officeDays] of segments) {
-		const segStart = new Date(startMonday);
-		segStart.setDate(startMonday.getDate() + offset * 7);
+		const segStart = new Date(startSunday);
+		segStart.setDate(startSunday.getDate() + offset * 7);
 		weeks.push(...makeWeeks(segStart, count, officeDays));
 		offset += count;
 	}
