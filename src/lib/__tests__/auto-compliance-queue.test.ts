@@ -22,6 +22,33 @@ import {
 	type AutoComplianceEvent,
 	EventQueue,
 } from "../auto-compliance";
+import { complianceStore } from "../stores/complianceStore";
+import { computeWindowEvaluation } from "../validation/window-evaluation";
+
+// ─── Mocks ────────────────────────────────────────────────────────────
+
+vi.mock("../validation/window-evaluation", () => ({
+	computeWindowEvaluation: vi.fn().mockResolvedValue({
+		summaries: [],
+		policy: {},
+		allWeeks: [],
+		filteredWeeks: [],
+	}),
+}));
+
+vi.mock("../compute-compliance", () => ({
+	computeComplianceData: vi.fn().mockReturnValue({
+		overallCompliance: 100,
+		message: "Compliant",
+	}),
+}));
+
+vi.mock("../stores/complianceStore", () => ({
+	complianceStore: {
+		set: vi.fn(),
+		get: vi.fn(),
+	},
+}));
 
 // ─── Mock Calendar Manager ─────────────────────────────────────────────
 
@@ -84,68 +111,70 @@ describe("EventQueue", () => {
 	// ─── Basic Queue Functionality ──────────────────────────────────────
 
 	describe("enqueue", () => {
-		it("should add events to the queue", () => {
+		it("should schedule processing after enqueue", async () => {
 			queue.setCalendarManager(mockManager);
 
-			const event: AutoComplianceEvent = {
+			queue.enqueue({
 				type: "state-change",
 				timestamp: Date.now(),
 				calendarManager: mockManager,
-			};
+			});
 
-			queue.enqueue(event);
+			// Processing hasn't started yet (1500ms debounce for state-change)
+			expect(computeWindowEvaluation).not.toHaveBeenCalled();
 
-			// Event should be queued (processing hasn't started yet due to debounce)
-			expect(queue).toBeDefined();
+			// Flush debounce timer to trigger processing
+			await vi.runAllTimersAsync();
+
+			expect(computeWindowEvaluation).toHaveBeenCalledTimes(1);
+			expect(computeWindowEvaluation).toHaveBeenCalledWith(mockManager);
 		});
 
-		it("should allow multiple events of same type in queue (no deduplication)", () => {
+		it("should allow multiple events of same type in queue (no deduplication)", async () => {
 			queue.setCalendarManager(mockManager);
 
-			const event1: AutoComplianceEvent = {
+			queue.enqueue({
 				type: "state-change",
 				timestamp: 1000,
 				calendarManager: mockManager,
-			};
+			});
 
-			const event2: AutoComplianceEvent = {
+			queue.enqueue({
 				type: "state-change",
 				timestamp: 2000,
 				calendarManager: mockManager,
-			};
+			});
 
-			queue.enqueue(event1);
-			queue.enqueue(event2);
+			await vi.runAllTimersAsync();
 
-			// Both events should be in queue (no deduplication)
-			expect(queue).toBeDefined();
+			// Both events processed (no deduplication)
+			expect(computeWindowEvaluation).toHaveBeenCalledTimes(2);
 		});
 
-		it("should allow different event types in the queue simultaneously", () => {
+		it("should allow different event types in the queue simultaneously", async () => {
 			queue.setCalendarManager(mockManager);
 
-			const stateEvent: AutoComplianceEvent = {
+			queue.enqueue({
 				type: "state-change",
 				timestamp: 1000,
 				calendarManager: mockManager,
-			};
+			});
 
-			const settingsEvent: AutoComplianceEvent = {
+			queue.enqueue({
 				type: "settings-change",
 				timestamp: 2000,
-			};
+			});
 
-			const manualEvent: AutoComplianceEvent = {
+			queue.enqueue({
 				type: "manual-trigger",
 				timestamp: 3000,
 				force: true,
-			};
+			});
 
-			queue.enqueue(stateEvent);
-			queue.enqueue(settingsEvent);
-			queue.enqueue(manualEvent);
+			await vi.runAllTimersAsync();
 
-			expect(queue).toBeDefined();
+			// All three event types processed
+			expect(computeWindowEvaluation).toHaveBeenCalledTimes(3);
 		});
 	});
 
@@ -155,37 +184,34 @@ describe("EventQueue", () => {
 		it("should process events in FIFO order", async () => {
 			queue.setCalendarManager(mockManager);
 
-			const event1: AutoComplianceEvent = {
+			queue.enqueue({
 				type: "settings-change",
 				timestamp: 1000,
-			};
-			const event2: AutoComplianceEvent = {
+			});
+			queue.enqueue({
 				type: "manual-trigger",
 				timestamp: 2000,
 				force: false,
-			};
-			const event3: AutoComplianceEvent = {
+			});
+			queue.enqueue({
 				type: "settings-change",
 				timestamp: 3000,
-			};
+			});
 
-			queue.enqueue(event1);
-			queue.enqueue(event2);
-			queue.enqueue(event3);
-
-			// Flush all timers to process queue
 			await vi.runAllTimersAsync();
 
-			// Queue should be empty after processing
-			expect(queue).toBeDefined();
+			// All three events processed sequentially (FIFO)
+			expect(computeWindowEvaluation).toHaveBeenCalledTimes(3);
+			expect(complianceStore.set).toHaveBeenCalledTimes(3);
 		});
 
 		it("should not process when queue is empty", async () => {
 			// Don't enqueue anything, just run timers
 			await vi.runAllTimersAsync();
 
-			// No error should occur
-			expect(queue).toBeDefined();
+			// No computation should have occurred
+			expect(computeWindowEvaluation).not.toHaveBeenCalled();
+			expect(complianceStore.set).not.toHaveBeenCalled();
 		});
 	});
 
@@ -200,10 +226,11 @@ describe("EventQueue", () => {
 				timestamp: 1000,
 			});
 
-			// Advance a bit but don't complete processing
-			await vi.advanceTimersByTimeAsync(10);
+			// Advance past debounce (300ms) to start processing
+			await vi.advanceTimersByTimeAsync(300);
+			expect(computeWindowEvaluation).toHaveBeenCalledTimes(1);
 
-			// Add another event while "processing"
+			// Add another event while first was processed
 			queue.enqueue({
 				type: "manual-trigger",
 				timestamp: 2000,
@@ -212,8 +239,8 @@ describe("EventQueue", () => {
 
 			await vi.runAllTimersAsync();
 
-			// No error should occur
-			expect(queue).toBeDefined();
+			// Both events should have been processed
+			expect(computeWindowEvaluation).toHaveBeenCalledTimes(2);
 		});
 	});
 
@@ -234,14 +261,13 @@ describe("EventQueue", () => {
 
 			await vi.runAllTimersAsync();
 
-			// All events should be processed (no deduplication)
-			expect(queue).toBeDefined();
+			// All 10 events processed (no deduplication)
+			expect(computeWindowEvaluation).toHaveBeenCalledTimes(10);
 		});
 
 		it("should handle mixed event burst", async () => {
 			queue.setCalendarManager(mockManager);
 
-			// Mix of event types
 			queue.enqueue({
 				type: "state-change",
 				timestamp: 1000,
@@ -268,8 +294,8 @@ describe("EventQueue", () => {
 
 			await vi.runAllTimersAsync();
 
-			// All events should be processed
-			expect(queue).toBeDefined();
+			// All 5 mixed events processed
+			expect(computeWindowEvaluation).toHaveBeenCalledTimes(5);
 		});
 
 		it("should handle high-frequency events (100 rapid changes)", async () => {
@@ -286,8 +312,8 @@ describe("EventQueue", () => {
 
 			await vi.runAllTimersAsync();
 
-			// All events should be processed
-			expect(queue).toBeDefined();
+			// All 100 events processed
+			expect(computeWindowEvaluation).toHaveBeenCalledTimes(100);
 		});
 	});
 
@@ -305,12 +331,11 @@ describe("EventQueue", () => {
 
 			// Advance 1000ms - should NOT have processed yet
 			await vi.advanceTimersByTimeAsync(1000);
+			expect(computeWindowEvaluation).not.toHaveBeenCalled();
 
 			// Advance remaining 500ms - should now process
 			await vi.advanceTimersByTimeAsync(500);
-
-			// No error means processing occurred
-			expect(queue).toBeDefined();
+			expect(computeWindowEvaluation).toHaveBeenCalledTimes(1);
 		});
 
 		it("should debounce settings-change events by 300ms", async () => {
@@ -323,11 +348,11 @@ describe("EventQueue", () => {
 
 			// Advance 200ms - should NOT have processed yet
 			await vi.advanceTimersByTimeAsync(200);
+			expect(computeWindowEvaluation).not.toHaveBeenCalled();
 
 			// Advance remaining 100ms - should now process
 			await vi.advanceTimersByTimeAsync(100);
-
-			expect(queue).toBeDefined();
+			expect(computeWindowEvaluation).toHaveBeenCalledTimes(1);
 		});
 
 		it("should process manual-trigger events immediately (0ms debounce)", async () => {
@@ -341,8 +366,7 @@ describe("EventQueue", () => {
 
 			// Should process immediately (next tick)
 			await vi.advanceTimersByTimeAsync(0);
-
-			expect(queue).toBeDefined();
+			expect(computeWindowEvaluation).toHaveBeenCalledTimes(1);
 		});
 
 		it("should reset debounce timer when new event arrives", async () => {
@@ -368,11 +392,11 @@ describe("EventQueue", () => {
 			// Wait another 1000ms (total 2000ms from first event)
 			// But only 1000ms from second event - should NOT process yet
 			await vi.advanceTimersByTimeAsync(1000);
+			expect(computeWindowEvaluation).not.toHaveBeenCalled();
 
-			// Wait remaining 500ms - should now process
+			// Wait remaining 500ms - should now process both queued events
 			await vi.advanceTimersByTimeAsync(500);
-
-			expect(queue).toBeDefined();
+			expect(computeWindowEvaluation).toHaveBeenCalledTimes(2);
 		});
 
 		it("should use shorter debounce when settings-change arrives during state-change wait", async () => {
@@ -392,10 +416,9 @@ describe("EventQueue", () => {
 				timestamp: 2000,
 			});
 
-			// Should process after 300ms from settings-change
+			// Should process after 300ms from settings-change (both events in queue)
 			await vi.advanceTimersByTimeAsync(300);
-
-			expect(queue).toBeDefined();
+			expect(computeWindowEvaluation).toHaveBeenCalledTimes(2);
 		});
 	});
 
@@ -429,8 +452,9 @@ describe("EventQueue", () => {
 
 			await vi.runAllTimersAsync();
 
-			// Queue should be empty after processing
-			expect(queue).toBeDefined();
+			// Computation completed and results stored
+			expect(computeWindowEvaluation).toHaveBeenCalledTimes(1);
+			expect(complianceStore.set).toHaveBeenCalledTimes(1);
 		});
 
 		it("should require calendar manager for non-state-change events", async () => {
@@ -461,8 +485,8 @@ describe("EventQueue", () => {
 
 			// 0ms debounce - should process immediately
 			await vi.advanceTimersByTimeAsync(0);
-
-			expect(queue).toBeDefined();
+			expect(computeWindowEvaluation).toHaveBeenCalledTimes(1);
+			expect(computeWindowEvaluation).toHaveBeenCalledWith(mockManager);
 		});
 
 		it("should respect force flag in manual-trigger events", async () => {
@@ -482,8 +506,8 @@ describe("EventQueue", () => {
 
 			await vi.runAllTimersAsync();
 
-			// Both manual triggers should be processed (no deduplication)
-			expect(queue).toBeDefined();
+			// Both manual triggers processed (no deduplication by force flag)
+			expect(computeWindowEvaluation).toHaveBeenCalledTimes(2);
 		});
 
 		it("should process manual-trigger alongside other event types", async () => {
@@ -503,8 +527,8 @@ describe("EventQueue", () => {
 
 			await vi.runAllTimersAsync();
 
-			// All events should be processed
-			expect(queue).toBeDefined();
+			// Both events processed
+			expect(computeWindowEvaluation).toHaveBeenCalledTimes(2);
 		});
 	});
 
@@ -522,7 +546,8 @@ describe("EventQueue", () => {
 
 			await vi.runAllTimersAsync();
 
-			expect(queue).toBeDefined();
+			// Computation used the event's calendar manager
+			expect(computeWindowEvaluation).toHaveBeenCalledWith(mockManager);
 		});
 
 		it("should use stored calendar manager for non-state-change events", async () => {
@@ -535,7 +560,8 @@ describe("EventQueue", () => {
 
 			await vi.runAllTimersAsync();
 
-			expect(queue).toBeDefined();
+			// Computation used the stored calendar manager
+			expect(computeWindowEvaluation).toHaveBeenCalledWith(mockManager);
 		});
 	});
 
@@ -546,7 +572,8 @@ describe("EventQueue", () => {
 			// Don't enqueue anything
 			await vi.runAllTimersAsync();
 
-			expect(queue).toBeDefined();
+			// No computation should have occurred
+			expect(computeWindowEvaluation).not.toHaveBeenCalled();
 		});
 
 		it("should handle rapid enqueue/dequeue cycles", async () => {
@@ -562,7 +589,8 @@ describe("EventQueue", () => {
 
 			await vi.runAllTimersAsync();
 
-			expect(queue).toBeDefined();
+			// All 5 events processed
+			expect(computeWindowEvaluation).toHaveBeenCalledTimes(5);
 		});
 
 		it("should handle timer being null on processQueue call", async () => {
@@ -577,14 +605,15 @@ describe("EventQueue", () => {
 			await vi.runAllTimersAsync();
 
 			// Should process without error
-			expect(queue).toBeDefined();
+			expect(computeWindowEvaluation).toHaveBeenCalledTimes(1);
+			expect(complianceStore.set).toHaveBeenCalledTimes(1);
 		});
 	});
 
 	// ─── Destroy/Cleanup ────────────────────────────────────────────────
 
 	describe("destroy", () => {
-		it("should clear timer on destroy", () => {
+		it("should clear timer on destroy", async () => {
 			queue.setCalendarManager(mockManager);
 
 			queue.enqueue({
@@ -596,8 +625,11 @@ describe("EventQueue", () => {
 			// Destroy before timer fires
 			queue.destroy();
 
-			// No error should occur
-			expect(queue).toBeDefined();
+			// Advance past debounce period
+			await vi.advanceTimersByTimeAsync(2000);
+
+			// No computation should have occurred after destroy
+			expect(computeWindowEvaluation).not.toHaveBeenCalled();
 		});
 
 		it("should be safe to call destroy multiple times", () => {
@@ -607,8 +639,8 @@ describe("EventQueue", () => {
 			queue.destroy();
 			queue.destroy();
 
-			// No error should occur
-			expect(queue).toBeDefined();
+			// No error should occur - destroy is idempotent
+			expect(computeWindowEvaluation).not.toHaveBeenCalled();
 		});
 	});
 });

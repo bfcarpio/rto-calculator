@@ -14,27 +14,16 @@ vi.mock("../../utils/logger", () => ({
 	logger: { debug: vi.fn(), error: vi.fn(), warn: vi.fn() },
 }));
 
-vi.mock("../dateUtils", () => ({
-	getDateRange: vi.fn(),
-}));
+vi.mock("../dateUtils", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("../dateUtils")>();
+	return {
+		...actual,
+		getDateRange: vi.fn(),
+	};
+});
 
 vi.mock("../holiday/CalendarHolidayIntegration", () => ({
 	getHolidayDatesForValidation: vi.fn(),
-}));
-
-vi.mock("../validation/rto-core", () => ({
-	getStartOfWeek: vi.fn((d: Date) => {
-		// Return the Sunday of the week containing d
-		const day = d.getDay();
-		const sunday = new Date(d);
-		sunday.setDate(d.getDate() - day);
-		sunday.setHours(0, 0, 0, 0);
-		return sunday;
-	}),
-	isWeekday: vi.fn((d: Date) => {
-		const day = d.getDay();
-		return day >= 1 && day <= 5;
-	}),
 }));
 
 const mockSettings = {

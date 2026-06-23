@@ -147,8 +147,8 @@ export async function setupValidationScenario(
 			throw new Error(`Unknown validation scenario: ${scenario}`);
 	}
 
-	// Wait for UI to settle
-	await page.waitForTimeout(100);
+	// Wait for UI to settle after selections
+	await waitForCalendarReady(page);
 }
 
 /**
@@ -320,8 +320,8 @@ export async function applyWeekdayPattern(
 		// Check if this day matches our pattern
 		if (targetDays.includes(dayOfWeek)) {
 			await cell.click();
-			// Small delay between clicks
-			await page.waitForTimeout(50);
+			// Wait for click to register before proceeding
+			await expect(cell).toBeVisible();
 		}
 
 		// Count weeks based on Mondays encountered
@@ -349,8 +349,11 @@ export async function clearAllSelections(page: Page): Promise<void> {
 
 	if (await clearButton.isVisible().catch(() => false)) {
 		await clearButton.click();
-		// Wait for UI to update
-		await page.waitForTimeout(200);
+		// Wait for all selected cells to be cleared
+		const selectedCells = page.locator(
+			'[data-testid="calendar-day"].datepainter-day--oof, [data-testid="calendar-day"].datepainter-day--holiday, [data-testid="calendar-day"].datepainter-day--sick',
+		);
+		await expect(selectedCells).toHaveCount(0, { timeout: 3000 });
 	}
 }
 
@@ -373,7 +376,11 @@ export async function clearMonthSelections(page: Page): Promise<void> {
 
 	if (await clearButton.isVisible().catch(() => false)) {
 		await clearButton.click();
-		await page.waitForTimeout(200);
+		// Wait for month selections to be cleared
+		const selectedCells = page.locator(
+			'[data-testid="calendar-day"].datepainter-day--oof, [data-testid="calendar-day"].datepainter-day--holiday, [data-testid="calendar-day"].datepainter-day--sick',
+		);
+		await expect(selectedCells).toHaveCount(0, { timeout: 3000 });
 	}
 }
 
@@ -612,8 +619,11 @@ export async function openMobileMenu(page: Page): Promise<void> {
 	}
 
 	await menuButton.click();
-	// Wait for menu animation
-	await page.waitForTimeout(300);
+	// Wait for menu content to become visible
+	await page
+		.locator('nav, [data-testid="mobile-menu"], [role="menu"]')
+		.first()
+		.waitFor({ state: "visible", timeout: 3000 });
 }
 
 /**
@@ -629,7 +639,11 @@ export async function openMobileMenu(page: Page): Promise<void> {
 export async function closeMobileMenu(page: Page): Promise<void> {
 	// Click outside menu or press Escape
 	await page.keyboard.press("Escape");
-	await page.waitForTimeout(200);
+	// Wait for menu to be hidden
+	await page
+		.locator('nav, [data-testid="mobile-menu"], [role="menu"]')
+		.first()
+		.waitFor({ state: "hidden", timeout: 3000 });
 }
 
 /**
@@ -667,7 +681,15 @@ export async function toggleMobilePanel(
 	}
 
 	await toggle.locator("summary").click();
-	await page.waitForTimeout(300);
+	// Wait for the details panel to toggle (content visibility change)
+	await page.waitForFunction(
+		(sel) => {
+			const el = document.querySelector(sel);
+			return el instanceof HTMLDetailsElement;
+		},
+		"details.panel-toggle",
+		{ timeout: 3000 },
+	);
 }
 
 // ============================================================================
