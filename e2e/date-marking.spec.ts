@@ -8,7 +8,11 @@ import {
 	expectDateHasState,
 	getDateCells,
 } from "./helpers/datepainter";
-import { expectModeActive, expectModeCount, selectMode } from "./helpers/statusLegend";
+import {
+	expectModeActive,
+	expectModeCount,
+	selectMode,
+} from "./helpers/statusLegend";
 
 test.describe("Date Marking Flows", () => {
 	test.beforeEach(async ({ page }) => {
@@ -24,13 +28,12 @@ test.describe("Date Marking Flows", () => {
 	});
 
 	test("should mark single date as sick", async ({ page }) => {
-		// Type assertion needed until statusLegend is updated to include "sick" mode
-		await selectMode(page, "sick" as any);
+		await selectMode(page, "sick");
 
 		await clickDate(page, 0);
 
 		await expectDateHasState(page, 0, "sick");
-		await expectModeCount(page, "sick" as any, 1);
+		await expectModeCount(page, "sick", 1);
 	});
 
 	test("should mark single date as OOF", async ({ page }) => {
@@ -82,7 +85,9 @@ test.describe("Date Marking Flows", () => {
 		await expectModeCount(page, "oof", 3);
 	});
 
-	test("should toggle between selected state and cleared (not cycle)", async ({ page }) => {
+	test("should toggle between selected state and cleared (not cycle)", async ({
+		page,
+	}) => {
 		// Select OOF
 		await selectMode(page, "oof");
 
@@ -99,7 +104,9 @@ test.describe("Date Marking Flows", () => {
 		await expectDateHasState(page, 0, "oof");
 	});
 
-	test("should change to new palette selection when clicking marked date", async ({ page }) => {
+	test("should change to new palette selection when clicking marked date", async ({
+		page,
+	}) => {
 		// Mark as OOF
 		await selectMode(page, "oof");
 		await clickDate(page, 0);
@@ -117,16 +124,22 @@ test.describe("Date Marking Flows", () => {
 		await expectDateHasNoState(page, 0);
 	});
 
-	test("should use palette selection for both click and drag", async ({ page }) => {
+	test("should use palette selection for both click and drag", async ({
+		page,
+	}) => {
 		// Select Sick
-		await selectMode(page, "sick" as any);
+		await selectMode(page, "sick");
 
 		// Click to mark
 		await clickDate(page, 0);
 		await expectDateHasState(page, 0, "sick");
 
 		// Drag across multiple dates (exclude both empty and disabled cells)
-		const cells = await page.locator('[data-testid="calendar-day"]:not(.datepainter__day--empty):not(.datepainter__day--disabled)').all();
+		const cells = await page
+			.locator(
+				'[data-testid="calendar-day"]:not(.datepainter__day--empty):not(.datepainter__day--disabled)',
+			)
+			.all();
 		if (cells.length >= 4) {
 			// Simulate drag from cell 1 to cell 3
 			if (cells[1] && cells[2] && cells[3]) {
@@ -144,7 +157,9 @@ test.describe("Date Marking Flows", () => {
 		}
 	});
 
-	test("should use keyboard shortcuts to update behavior immediately", async ({ page }) => {
+	test("should use keyboard shortcuts to update behavior immediately", async ({
+		page,
+	}) => {
 		// Press '1' for OOF
 		await page.keyboard.press("1");
 		await clickDate(page, 0);
@@ -161,7 +176,9 @@ test.describe("Date Marking Flows", () => {
 		await expectDateHasState(page, 2, "sick");
 	});
 
-	test("should show active state on palette button when selected", async ({ page }) => {
+	test("should show active state on palette button when selected", async ({
+		page,
+	}) => {
 		// Arrange - OOF is default active mode on load
 		await expectModeActive(page, "oof");
 
@@ -174,7 +191,9 @@ test.describe("Date Marking Flows", () => {
 		await expect(oofButton).not.toHaveClass(/is-active/);
 	});
 
-	test("should drag-paint multiple cells with active palette state", async ({ page }) => {
+	test("should drag-paint multiple cells with active palette state", async ({
+		page,
+	}) => {
 		// Arrange - select holiday mode
 		await selectMode(page, "holiday");
 		const cells = getDateCells(page);
@@ -216,20 +235,28 @@ test.describe("Date Marking Flows", () => {
 		await expectModeCount(page, "oof", 0);
 	});
 
-	test("should preserve marked dates after month navigation", async ({ page }) => {
+	test("should preserve marked dates after month navigation", async ({
+		page,
+	}) => {
 		// Mark a date
 		await selectMode(page, "oof");
 		await clickDate(page, 5);
 		await expectDateHasState(page, 5, "oof");
 
 		// Navigate to next month and wait for month label to change
-		const originalMonth = await page.locator(".datepainter__month-label").textContent();
+		const originalMonth = await page
+			.locator(".datepainter__month-label")
+			.textContent();
 		await page.click('button[aria-label="Next month"]');
-		await expect(page.locator(".datepainter__month-label")).not.toHaveText(originalMonth!);
+		await expect(page.locator(".datepainter__month-label")).not.toHaveText(
+			originalMonth!,
+		);
 
 		// Navigate back and wait for original month label to return
 		await page.click('button[aria-label="Previous month"]');
-		await expect(page.locator(".datepainter__month-label")).toHaveText(originalMonth!);
+		await expect(page.locator(".datepainter__month-label")).toHaveText(
+			originalMonth!,
+		);
 
 		// Date should still be marked
 		await expectDateHasState(page, 5, "oof");

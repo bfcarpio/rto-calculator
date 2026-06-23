@@ -6,6 +6,10 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type {
+	Holiday,
+	HolidayDataSource,
+} from "../../types/holiday-data-source";
 import { parseLocalDate } from "../date-helpers";
 import { HolidayManager } from "../holiday/HolidayManager";
 import { HolidayDataSourceFactory } from "../holiday/sources";
@@ -31,7 +35,7 @@ vi.mock("../holiday/data/company-filters.json", () => ({
 }));
 
 // Mock holiday data for testing
-const mockHolidays = {
+const mockHolidays: Record<string, Holiday[]> = {
 	"US-2024": [
 		{
 			date: new Date(2024, 0, 1),
@@ -82,31 +86,34 @@ const mockHolidays = {
 
 describe("HolidayManager", () => {
 	let manager: HolidayManager;
-	let mockDataSource: any;
+	let mockDataSource: HolidayDataSource;
 
 	beforeEach(async () => {
 		// Clear any existing instance
-		(HolidayManager as any).instance = null;
+		(
+			HolidayManager as unknown as { instance: HolidayManager | null }
+		).instance = null;
 
-		// Create mock data source
+		// Create mock data source implementing HolidayDataSource interface
 		mockDataSource = {
+			name: "mock-data-source",
+			description: "Mock data source",
+			config: {},
 			getHolidaysByYear: vi.fn(),
-			getHolidaysByDateRange: vi.fn(),
+			getHolidaysForDateRange: vi.fn(),
 			getUpcomingHolidays: vi.fn(),
 			isHoliday: vi.fn(),
 			isTodayHoliday: vi.fn(),
 			queryHolidays: vi.fn(),
 			clearCache: vi.fn(),
 			updateConfig: vi.fn(),
-			name: "mock-data-source",
-			description: "Mock data source",
-			config: {},
+			checkAvailability: vi.fn(),
 		};
 
 		// Configure the factory mock to return our mock data source
 		vi.mocked(HolidayDataSourceFactory.getInstance).mockResolvedValue({
 			getDataSource: vi.fn().mockReturnValue(mockDataSource),
-		} as any);
+		} as unknown as HolidayDataSourceFactory);
 
 		manager = await HolidayManager.getInstance();
 	});
@@ -166,7 +173,7 @@ describe("HolidayManager", () => {
 	describe("Fetching Holidays", () => {
 		beforeEach(() => {
 			// Setup mock to return different holidays based on year/country
-			mockDataSource.getHolidaysByYear.mockImplementation(
+			vi.mocked(mockDataSource.getHolidaysByYear).mockImplementation(
 				async (year: number, countryCode: string) => {
 					const key = `${countryCode}-${year}`;
 					return mockHolidays[key as keyof typeof mockHolidays] || [];
@@ -212,7 +219,7 @@ describe("HolidayManager", () => {
 		});
 
 		it("should return empty result on API error", async () => {
-			mockDataSource.getHolidaysByYear.mockRejectedValue(
+			vi.mocked(mockDataSource.getHolidaysByYear).mockRejectedValue(
 				new Error("API Error"),
 			);
 
@@ -280,7 +287,7 @@ describe("HolidayManager", () => {
 
 	describe("Getting Holiday Dates", () => {
 		beforeEach(() => {
-			mockDataSource.getHolidaysByYear.mockImplementation(
+			vi.mocked(mockDataSource.getHolidaysByYear).mockImplementation(
 				async (year: number, countryCode: string) => {
 					const key = `${countryCode}-${year}`;
 					return mockHolidays[key as keyof typeof mockHolidays] || [];
@@ -320,7 +327,7 @@ describe("HolidayManager", () => {
 
 	describe("Checking if Date is Holiday", () => {
 		beforeEach(() => {
-			mockDataSource.getHolidaysByYear.mockImplementation(
+			vi.mocked(mockDataSource.getHolidaysByYear).mockImplementation(
 				async (year: number, countryCode: string) => {
 					const key = `${countryCode}-${year}`;
 					return mockHolidays[key as keyof typeof mockHolidays] || [];
@@ -373,7 +380,7 @@ describe("HolidayManager", () => {
         <div class="calendar-day" data-year="2024" data-month="11" data-day="25">25</div>
       `;
 
-			mockDataSource.getHolidaysByYear.mockImplementation(
+			vi.mocked(mockDataSource.getHolidaysByYear).mockImplementation(
 				async (year: number, countryCode: string) => {
 					const key = `${countryCode}-${year}`;
 					return mockHolidays[key as keyof typeof mockHolidays] || [];
@@ -506,7 +513,7 @@ describe("HolidayManager", () => {
         <div class="calendar-day" data-year="2024" data-month="11" data-day="25">25</div>
       `;
 
-			mockDataSource.getHolidaysByYear.mockImplementation(
+			vi.mocked(mockDataSource.getHolidaysByYear).mockImplementation(
 				async (year: number, countryCode: string) => {
 					const key = `${countryCode}-${year}`;
 					return mockHolidays[key as keyof typeof mockHolidays] || [];
@@ -540,8 +547,8 @@ describe("HolidayManager", () => {
 
 	describe("Holiday Summary", () => {
 		it("should generate summary for holidays", async () => {
-			mockDataSource.getHolidaysByYear.mockResolvedValue(
-				mockHolidays["US-2024"],
+			vi.mocked(mockDataSource.getHolidaysByYear).mockResolvedValue(
+				mockHolidays["US-2024"]!,
 			);
 
 			const result = await manager.fetchHolidays({
@@ -557,8 +564,8 @@ describe("HolidayManager", () => {
 		});
 
 		it("should generate summary for filtered holidays", async () => {
-			mockDataSource.getHolidaysByYear.mockResolvedValue(
-				mockHolidays["US-2024"],
+			vi.mocked(mockDataSource.getHolidaysByYear).mockResolvedValue(
+				mockHolidays["US-2024"]!,
 			);
 
 			const result = await manager.fetchHolidays({
@@ -574,7 +581,7 @@ describe("HolidayManager", () => {
 		});
 
 		it("should generate summary for no holidays", async () => {
-			mockDataSource.getHolidaysByYear.mockResolvedValue([]);
+			vi.mocked(mockDataSource.getHolidaysByYear).mockResolvedValue([]);
 
 			const result = await manager.fetchHolidays({
 				countryCode: "XX",
