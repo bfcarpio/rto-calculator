@@ -7,6 +7,18 @@
  * in data objects instead of separate Map caches.
  */
 
+import type {
+	CalendarInstance,
+	DateRangeOptions,
+	DateState,
+	DateString,
+	MarkedDateRange,
+} from "datepainter";
+import { vi } from "vitest";
+import {
+	DEFAULT_RTO_POLICY,
+	type WeekCompliance,
+} from "../../../lib/validation/rto-core";
 import type { DayInfo, WeekInfo } from "../../../types";
 
 /**
@@ -340,4 +352,176 @@ export function verifyElementDataAttributes(dayInfo: DayInfo): boolean {
  */
 export function restoreDOM(): void {
 	document.body.innerHTML = "";
+}
+
+// ─── Mock Calendar Helpers ─────────────────────────────────────────
+
+/**
+ * Create a minimal mock CalendarInstance from a date→state map.
+ *
+ * Only `getAllDates()` is functional — all other methods are no-op stubs.
+ * Use this for tests that only read the date map (e.g. calendar-data-reader).
+ *
+ * @param dateMap - Map of "YYYY-MM-DD" → "oof" | "office" | "holiday" | "sick"
+ * @returns Mock CalendarInstance
+ */
+export function mockCalendarFromMap(
+	dateMap: Map<string, string>,
+): CalendarInstance {
+	return {
+		getAllDates: vi.fn(() => dateMap),
+	} as unknown as CalendarInstance;
+}
+
+/**
+ * Create a fully-stubbed mock CalendarInstance from a record of state→dates.
+ *
+ * Builds `getAllDates()`, `getDatesByState()`, and `getDateRanges()` with
+ * auto-computed contiguous ranges (or caller-supplied ranges).
+ * Use this for I/O tests that exercise export/import paths.
+ *
+ * @param dates - Record of state name → array of "YYYY-MM-DD" strings
+ * @param ranges - Optional pre-computed date ranges (auto-computed if omitted)
+ * @returns Mock CalendarInstance with all methods stubbed
+ */
+export function mockCalendarInstance(
+	dates: Record<string, string[]>,
+	ranges?: MarkedDateRange[],
+): CalendarInstance {
+	const dateMap = new Map<DateString, DateState>();
+	const rangesByState = new Map<DateState, MarkedDateRange[]>();
+
+	for (const [state, ds] of Object.entries(dates)) {
+		for (const d of ds) dateMap.set(d as DateString, state as DateState);
+
+		const sorted = [...ds].sort();
+		const stateRanges: MarkedDateRange[] = [];
+		let i = 0;
+		while (i < sorted.length) {
+			const start = new Date(`${sorted[i]}T12:00:00`);
+			let end = start;
+			while (
+				i + 1 < sorted.length &&
+				new Date(`${sorted[i + 1]}T12:00:00`).getTime() - end.getTime() ===
+					86400000
+			) {
+				i++;
+				end = new Date(`${sorted[i]}T12:00:00`);
+			}
+			stateRanges.push({ start, end, state: state as DateState });
+			i++;
+		}
+		rangesByState.set(state as DateState, stateRanges);
+	}
+
+	const computedRanges = ranges ?? [...rangesByState.values()].flat();
+
+	return {
+		getAllDates: vi.fn(() => dateMap),
+		getDatesByState: vi.fn((s: DateState) => (dates[s] ?? []) as DateString[]),
+		getDateRanges: vi.fn((opts?: DateRangeOptions) =>
+			opts?.state ? (rangesByState.get(opts.state) ?? []) : computedRanges,
+		),
+		clearAll: vi.fn(),
+		setDates: vi.fn(),
+		clearDates: vi.fn(),
+		getSelectedDates: vi.fn(() => []),
+		getState: vi.fn(() => null),
+		getCurrentMonth: vi.fn(() => new Date()),
+		toggleDate: vi.fn(),
+		setPaintingState: vi.fn(),
+		updateConfig: vi.fn(),
+		onStateChange: vi.fn(() => () => {}),
+		onDateStateChange: vi.fn(() => () => {}),
+		onMonthChange: vi.fn(() => () => {}),
+		navigateToDate: vi.fn(),
+		nextMonth: vi.fn(),
+		prevMonth: vi.fn(),
+		destroy: vi.fn(),
+	} as CalendarInstance;
+}
+
+// ─── Validation Test Helpers ───────────────────────────────────────
+
+/**
+ * Create a single WeekCompliance object for validation tests.
+ *
+ * @param weekStart - Date representing the start of the week
+ * @param officeDays - Number of office days (0–5)
+ * @param weekNumber - Week number (default: 1)
+ * @returns WeekCompliance object
+ */
+export function makeWeek(
+	weekStart: Date,
+	officeDays: number,
+	weekNumber = 1,
+): WeekCompliance {
+	const totalDays = 5;
+	return {
+		weekNumber,
+		weekStart,
+		officeDays,
+		totalDays,
+		oofDays: totalDays - officeDays,
+		wfhDays: totalDays - officeDays,
+		isCompliant: officeDays >= DEFAULT_RTO_POLICY.minOfficeDaysPerWeek,
+		status:
+			officeDays >= DEFAULT_RTO_POLICY.minOfficeDaysPerWeek
+				? "compliant"
+				: "violation",
+	};
+}
+
+/**
+ * Create N consecutive weeks with the same office-day count.
+ *
+ * @param startDate - Date representing the start of the first week
+ * @param count - Number of weeks to create
+ * @param officeDaysPerWeek - Office days for each week
+ * @returns Array of WeekCompliance objects
+ */
+export function makeWeeks(
+	startDate: Date,
+	count: number,
+	officeDaysPerWeek: number,
+): WeekCompliance[] {
+	const weeks: WeekCompliance[] = [];
+	for (let i = 0; i < count; i++) {
+		const weekStart = new Date(startDate);
+		weekStart.setDate(startDate.getDate() + i * 7);
+		weeks.push(makeWeek(weekStart, officeDaysPerWeek, i + 1));
+	}
+	return weeks;
+}
+
+/**
+ * Create a schedule of weeks with varying office-day counts per segment.
+ *
+ * Each segment is a `[count, officeDays]` tuple. Weeks are concatenated
+ * in order and re-numbered sequentially.
+ *
+ * @param startDate - Date representing the start of the first week
+ * @param segments - Tuples of [weekCount, officeDaysPerWeek]
+ * @returns Array of WeekCompliance objects with sequential week numbers
+ *
+ * @example
+ * makeSchedule(START, [8, 5], [4, 1])
+ * // 8 weeks with 5 office days, then 4 weeks with 1 office day
+ */
+export function makeSchedule(
+	startDate: Date,
+	...segments: [count: number, officeDays: number][]
+): WeekCompliance[] {
+	const weeks: WeekCompliance[] = [];
+	let offset = 0;
+	for (const [count, officeDays] of segments) {
+		const segStart = new Date(startDate);
+		segStart.setDate(startDate.getDate() + offset * 7);
+		weeks.push(...makeWeeks(segStart, count, officeDays));
+		offset += count;
+	}
+	weeks.forEach((w, i) => {
+		w.weekNumber = i + 1;
+	});
+	return weeks;
 }

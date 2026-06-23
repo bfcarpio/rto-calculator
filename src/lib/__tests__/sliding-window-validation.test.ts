@@ -16,71 +16,17 @@
 
 import { describe, expect, it } from "vitest";
 import {
+	makeSchedule,
+	makeWeek,
+	makeWeeks,
+} from "../../utils/astro/__tests__/testHelpers";
+import {
 	DEFAULT_RTO_POLICY,
 	validateSlidingWindow,
 	type WeekCompliance,
 } from "../validation/rto-core";
 
 const policy = DEFAULT_RTO_POLICY;
-
-// ─── Helpers ──────────────────────────────────────────────────────
-
-/** Create a single WeekCompliance for a given Monday */
-function makeWeek(
-	weekStart: Date,
-	officeDays: number,
-	weekNumber = 1,
-): WeekCompliance {
-	const totalDays = 5;
-	return {
-		weekNumber,
-		weekStart,
-		officeDays,
-		totalDays,
-		oofDays: totalDays - officeDays,
-		wfhDays: totalDays - officeDays,
-		isCompliant: officeDays >= DEFAULT_RTO_POLICY.minOfficeDaysPerWeek,
-		status:
-			officeDays >= DEFAULT_RTO_POLICY.minOfficeDaysPerWeek
-				? "compliant"
-				: "violation",
-	};
-}
-
-/** Create N consecutive weeks starting from a given Monday */
-function makeWeeks(
-	startMonday: Date,
-	count: number,
-	officeDaysPerWeek: number,
-): WeekCompliance[] {
-	const weeks: WeekCompliance[] = [];
-	for (let i = 0; i < count; i++) {
-		const weekStart = new Date(startMonday);
-		weekStart.setDate(startMonday.getDate() + i * 7);
-		weeks.push(makeWeek(weekStart, officeDaysPerWeek, i + 1));
-	}
-	return weeks;
-}
-
-/** Concatenate multiple runs of weeks with different office day counts */
-function makeSchedule(
-	startMonday: Date,
-	...segments: [count: number, officeDays: number][]
-): WeekCompliance[] {
-	const weeks: WeekCompliance[] = [];
-	let offset = 0;
-	for (const [count, officeDays] of segments) {
-		const segStart = new Date(startMonday);
-		segStart.setDate(startMonday.getDate() + offset * 7);
-		weeks.push(...makeWeeks(segStart, count, officeDays));
-		offset += count;
-	}
-	// Fix weekNumbers to be sequential
-	weeks.forEach((w, i) => {
-		w.weekNumber = i + 1;
-	});
-	return weeks;
-}
 
 const START = new Date(2025, 0, 6); // Monday Jan 6 2025
 

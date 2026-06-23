@@ -48,7 +48,7 @@ vi.mock("../stores/settingsStore", () => ({
 	},
 }));
 
-import type { CalendarInstance } from "../../../packages/datepainter/src/types";
+import { mockCalendarFromMap } from "../../utils/astro/__tests__/testHelpers";
 import { readCalendarData } from "../calendar-data-reader";
 import { getDateRange } from "../dateUtils";
 import { getHolidayDatesForValidation } from "../holiday/CalendarHolidayIntegration";
@@ -61,16 +61,6 @@ function sunday(dateStr: string): Date {
 	const d = new Date(`${dateStr}T00:00:00`);
 	d.setHours(0, 0, 0, 0);
 	return d;
-}
-
-/**
- * Build a mock CalendarInstance whose getAllDates() returns the given map.
- * dateMap keys are "YYYY-MM-DD" strings, values are "oof" | "holiday" | "sick".
- */
-function mockCalendar(dateMap: Map<string, string>): CalendarInstance {
-	return {
-		getAllDates: vi.fn(() => dateMap),
-	} as unknown as CalendarInstance;
 }
 
 /**
@@ -121,7 +111,7 @@ describe("readCalendarData – penalize settings", () => {
 		setupSingleWeek("2025-06-01"); // Mon Jun 2
 		// Mark Wed as holiday
 		const dates = new Map<string, string>([["2025-06-04", "holiday"]]);
-		const cal = mockCalendar(dates);
+		const cal = mockCalendarFromMap(dates);
 
 		const result = await readCalendarData(cal);
 		const week = result.weeks[0]!;
@@ -140,7 +130,7 @@ describe("readCalendarData – penalize settings", () => {
 			["2025-06-03", "holiday"],
 			["2025-06-04", "holiday"],
 		]);
-		const cal = mockCalendar(dates);
+		const cal = mockCalendarFromMap(dates);
 
 		const result = await readCalendarData(cal);
 		const week = result.weeks[0]!;
@@ -158,7 +148,7 @@ describe("readCalendarData – penalize settings", () => {
 		setSettings({ holidayPenalize: false });
 		setupSingleWeek("2025-06-01");
 		const dates = new Map<string, string>([["2025-06-04", "holiday"]]);
-		const cal = mockCalendar(dates);
+		const cal = mockCalendarFromMap(dates);
 
 		const result = await readCalendarData(cal);
 		const week = result.weeks[0]!;
@@ -180,7 +170,7 @@ describe("readCalendarData – penalize settings", () => {
 			["2025-06-05", "holiday"],
 			["2025-06-06", "holiday"],
 		]);
-		const cal = mockCalendar(dates);
+		const cal = mockCalendarFromMap(dates);
 
 		const result = await readCalendarData(cal);
 		const week = result.weeks[0]!;
@@ -204,7 +194,7 @@ describe("readCalendarData – penalize settings", () => {
 			["2025-06-05", "holiday"],
 			["2025-06-06", "holiday"],
 		]);
-		const cal = mockCalendar(dates);
+		const cal = mockCalendarFromMap(dates);
 
 		const result = await readCalendarData(cal);
 		const week = result.weeks[0]!;
@@ -274,7 +264,7 @@ describe("readCalendarData – penalize settings", () => {
 			["2025-06-03", "sick"],
 			["2025-06-04", "oof"],
 		]);
-		const cal = mockCalendar(dates);
+		const cal = mockCalendarFromMap(dates);
 
 		const result = await readCalendarData(cal);
 		const week = result.weeks[0]!;
@@ -297,7 +287,7 @@ describe("readCalendarData – penalize settings", () => {
 			["2025-06-02", "holiday"],
 			["2025-06-03", "sick"],
 		]);
-		const cal = mockCalendar(dates);
+		const cal = mockCalendarFromMap(dates);
 
 		const result = await readCalendarData(cal);
 		const week = result.weeks[0]!;
@@ -316,7 +306,7 @@ describe("readCalendarData – penalize settings", () => {
 			["2025-06-02", "holiday"],
 			["2025-06-03", "sick"],
 		]);
-		const cal = mockCalendar(dates);
+		const cal = mockCalendarFromMap(dates);
 
 		const result = await readCalendarData(cal);
 		const week = result.weeks[0]!;
@@ -331,7 +321,7 @@ describe("readCalendarData – penalize settings", () => {
 	it("clean week with no marks: 5 office days regardless of settings", async () => {
 		setSettings({ holidayPenalize: false, sickDaysPenalize: false });
 		setupSingleWeek("2025-06-01");
-		const cal = mockCalendar(new Map());
+		const cal = mockCalendarFromMap(new Map());
 
 		const result = await readCalendarData(cal);
 		const week = result.weeks[0]!;
@@ -351,7 +341,7 @@ describe("readCalendarData – penalize settings", () => {
 			["2025-06-03", "holiday"],
 			["2025-06-04", "oof"],
 		]);
-		const cal = mockCalendar(dates);
+		const cal = mockCalendarFromMap(dates);
 
 		const result = await readCalendarData(cal);
 		const week = result.weeks[0]!;
@@ -369,7 +359,7 @@ describe("readCalendarData – penalize settings", () => {
 			["2025-06-03", "holiday"],
 			["2025-06-04", "oof"],
 		]);
-		const cal = mockCalendar(dates);
+		const cal = mockCalendarFromMap(dates);
 
 		const result = await readCalendarData(cal);
 		const week = result.weeks[0]!;
@@ -408,7 +398,7 @@ describe("readCalendarData – holiday dates from external source", () => {
 		);
 
 		// No painted dates
-		const cal = mockCalendar(new Map());
+		const cal = mockCalendarFromMap(new Map());
 
 		const result = await readCalendarData(cal);
 		const week = result.weeks[0]!;
@@ -432,7 +422,7 @@ describe("readCalendarData – holiday dates from external source", () => {
 			new Set<Date>([wed]),
 		);
 
-		const cal = mockCalendar(new Map());
+		const cal = mockCalendarFromMap(new Map());
 
 		const result = await readCalendarData(cal);
 		const week = result.weeks[0]!;
