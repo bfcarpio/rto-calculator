@@ -1,50 +1,47 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, test } from "vitest";
 import type { DotInfo } from "../weekDot";
 import { buildDotClass, buildDotHtml } from "../weekDot";
 
 describe("buildDotClass", () => {
-	it("returns 'we-dot we-dot--best-ok' when isBest=true and isCompliant=true", () => {
+	test.each([
+		{
+			isBest: true,
+			isCompliant: true,
+			officeDays: 3,
+			expected: "we-dot we-dot--best-ok",
+		},
+		{
+			isBest: true,
+			isCompliant: false,
+			officeDays: 2,
+			expected: "we-dot we-dot--best-bad",
+		},
+		{
+			isBest: false,
+			isCompliant: true,
+			officeDays: 3,
+			expected: "we-dot we-dot--drop-ok",
+		},
+		{
+			isBest: false,
+			isCompliant: false,
+			officeDays: 2,
+			expected: "we-dot we-dot--drop-bad",
+		},
+	])("returns '$expected' when isBest=$isBest and isCompliant=$isCompliant", ({
+		isBest,
+		isCompliant,
+		officeDays,
+		expected,
+	}) => {
 		expect(
 			buildDotClass({
 				weekStart: new Date(2025, 0, 6),
-				officeDays: 3,
-				isBest: true,
-				isCompliant: true,
+				officeDays,
+				isBest,
+				isCompliant,
 			}),
-		).toBe("we-dot we-dot--best-ok");
-	});
-
-	it("returns 'we-dot we-dot--best-bad' when isBest=true and isCompliant=false", () => {
-		expect(
-			buildDotClass({
-				weekStart: new Date(2025, 0, 6),
-				officeDays: 2,
-				isBest: true,
-				isCompliant: false,
-			}),
-		).toBe("we-dot we-dot--best-bad");
-	});
-
-	it("returns 'we-dot we-dot--drop-ok' when isBest=false and isCompliant=true", () => {
-		expect(
-			buildDotClass({
-				weekStart: new Date(2025, 0, 6),
-				officeDays: 3,
-				isBest: false,
-				isCompliant: true,
-			}),
-		).toBe("we-dot we-dot--drop-ok");
-	});
-
-	it("returns 'we-dot we-dot--drop-bad' when isBest=false and isCompliant=false", () => {
-		expect(
-			buildDotClass({
-				weekStart: new Date(2025, 0, 6),
-				officeDays: 2,
-				isBest: false,
-				isCompliant: false,
-			}),
-		).toBe("we-dot we-dot--drop-bad");
+		).toBe(expected);
 	});
 });
 

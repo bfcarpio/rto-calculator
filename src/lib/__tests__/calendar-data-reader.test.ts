@@ -6,7 +6,7 @@
  * office-day and total-effective-day calculations are correct.
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, test, vi } from "vitest";
 
 // ─── Mocks ───────────────────────────────────────────────────────
 
@@ -215,10 +215,59 @@ describe("readCalendarData – penalize settings", () => {
 		expect(week.isCompliant).toBe(false);
 	});
 
-	// --- Sick penalize interactions ---
+	// --- Penalize setting combinations ---
 
-	it("both penalize ON: holidays and sick days reduce officeDays", async () => {
-		setSettings({ holidayPenalize: true, sickDaysPenalize: true });
+	test.each([
+		{
+			name: "both penalize ON: holidays and sick days reduce officeDays",
+			settings: { holidayPenalize: true, sickDaysPenalize: true },
+			expected: {
+				officeDays: 2,
+				totalDays: 5,
+				isCompliant: false,
+				oofCount: 1,
+				holidayCount: 1,
+				sickCount: 1,
+			},
+		},
+		{
+			name: "both penalize OFF: holidays and sick days reduce totalEffectiveDays",
+			settings: { holidayPenalize: false, sickDaysPenalize: false },
+			expected: {
+				officeDays: 4,
+				totalDays: 3,
+				isCompliant: true,
+				oofCount: 1,
+				holidayCount: 1,
+				sickCount: 1,
+			},
+		},
+		{
+			name: "holiday penalize OFF, sick penalize ON: mixed behavior",
+			settings: { holidayPenalize: false, sickDaysPenalize: true },
+			expected: {
+				officeDays: 3,
+				totalDays: 4,
+				isCompliant: true,
+				oofCount: 1,
+				holidayCount: 1,
+				sickCount: 1,
+			},
+		},
+		{
+			name: "holiday penalize ON, sick penalize OFF: mixed behavior",
+			settings: { holidayPenalize: true, sickDaysPenalize: false },
+			expected: {
+				officeDays: 3,
+				totalDays: 4,
+				isCompliant: true,
+				oofCount: 1,
+				holidayCount: 1,
+				sickCount: 1,
+			},
+		},
+	])("$name", async ({ settings, expected }) => {
+		setSettings(settings);
 		setupSingleWeek("2025-06-01");
 		const dates = new Map<string, string>([
 			["2025-06-02", "holiday"],
@@ -230,74 +279,12 @@ describe("readCalendarData – penalize settings", () => {
 		const result = await readCalendarData(cal);
 		const week = result.weeks[0]!;
 
-		// officeDays = 5 - 1 (oof) - 1 (holiday) - 1 (sick) = 2
-		// totalEffectiveDays = 5
-		expect(week.oofCount).toBe(1);
-		expect(week.holidayCount).toBe(1);
-		expect(week.sickCount).toBe(1);
-		expect(week.officeDays).toBe(2);
-		expect(week.totalDays).toBe(5);
-		expect(week.isCompliant).toBe(false);
-	});
-
-	it("both penalize OFF: holidays and sick days reduce totalEffectiveDays", async () => {
-		setSettings({ holidayPenalize: false, sickDaysPenalize: false });
-		setupSingleWeek("2025-06-01");
-		const dates = new Map<string, string>([
-			["2025-06-02", "holiday"],
-			["2025-06-03", "sick"],
-			["2025-06-04", "oof"],
-		]);
-		const cal = mockCalendar(dates);
-
-		const result = await readCalendarData(cal);
-		const week = result.weeks[0]!;
-
-		// officeDays = 5 - 1 (oof) = 4
-		// totalEffectiveDays = 5 - 1 (holiday) - 1 (sick) = 3
-		expect(week.officeDays).toBe(4);
-		expect(week.totalDays).toBe(3);
-		expect(week.isCompliant).toBe(true);
-	});
-
-	it("holiday penalize OFF, sick penalize ON: mixed behavior", async () => {
-		setSettings({ holidayPenalize: false, sickDaysPenalize: true });
-		setupSingleWeek("2025-06-01");
-		const dates = new Map<string, string>([
-			["2025-06-02", "holiday"],
-			["2025-06-03", "sick"],
-			["2025-06-04", "oof"],
-		]);
-		const cal = mockCalendar(dates);
-
-		const result = await readCalendarData(cal);
-		const week = result.weeks[0]!;
-
-		// officeDays = 5 - 1 (oof) - 1 (sick) = 3
-		// totalEffectiveDays = 5 - 1 (holiday) = 4
-		expect(week.officeDays).toBe(3);
-		expect(week.totalDays).toBe(4);
-		expect(week.isCompliant).toBe(true);
-	});
-
-	it("holiday penalize ON, sick penalize OFF: mixed behavior", async () => {
-		setSettings({ holidayPenalize: true, sickDaysPenalize: false });
-		setupSingleWeek("2025-06-01");
-		const dates = new Map<string, string>([
-			["2025-06-02", "holiday"],
-			["2025-06-03", "sick"],
-			["2025-06-04", "oof"],
-		]);
-		const cal = mockCalendar(dates);
-
-		const result = await readCalendarData(cal);
-		const week = result.weeks[0]!;
-
-		// officeDays = 5 - 1 (oof) - 1 (holiday) = 3
-		// totalEffectiveDays = 5 - 1 (sick) = 4
-		expect(week.officeDays).toBe(3);
-		expect(week.totalDays).toBe(4);
-		expect(week.isCompliant).toBe(true);
+		expect(week.oofCount).toBe(expected.oofCount);
+		expect(week.holidayCount).toBe(expected.holidayCount);
+		expect(week.sickCount).toBe(expected.sickCount);
+		expect(week.officeDays).toBe(expected.officeDays);
+		expect(week.totalDays).toBe(expected.totalDays);
+		expect(week.isCompliant).toBe(expected.isCompliant);
 	});
 
 	// --- No settings in localStorage (defaults) ---

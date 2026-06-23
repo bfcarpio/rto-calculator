@@ -4,7 +4,7 @@
  * Tests for extracted StatusDetails functions.
  */
 
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, test } from "vitest";
 import type { ComplianceEventData } from "../../lib/auto-compliance";
 import { parseLocalDate } from "../../lib/date-helpers";
 import type { WindowWeekDetail } from "../../lib/validation/all-windows";
@@ -81,19 +81,19 @@ function createMockComplianceData(
 
 describe("status-details module", () => {
 	describe("getStatusColor", () => {
-		it("should return success color when current >= target", () => {
-			expect(getStatusColor(3, 3)).toBe("has-text-success");
-			expect(getStatusColor(4, 3)).toBe("has-text-success");
-		});
-
-		it("should return warning color when within 0.5 of target", () => {
-			expect(getStatusColor(2.5, 3)).toBe("has-text-warning");
-			expect(getStatusColor(2.6, 3)).toBe("has-text-warning");
-		});
-
-		it("should return danger color when below target by more than 0.5", () => {
-			expect(getStatusColor(2, 3)).toBe("has-text-danger");
-			expect(getStatusColor(0, 3)).toBe("has-text-danger");
+		test.each([
+			{ current: 3, target: 3, expected: "has-text-success" },
+			{ current: 4, target: 3, expected: "has-text-success" },
+			{ current: 2.5, target: 3, expected: "has-text-warning" },
+			{ current: 2.6, target: 3, expected: "has-text-warning" },
+			{ current: 2, target: 3, expected: "has-text-danger" },
+			{ current: 0, target: 3, expected: "has-text-danger" },
+		])("returns $expected when current=$current and target=$target", ({
+			current,
+			target,
+			expected,
+		}) => {
+			expect(getStatusColor(current, target)).toBe(expected);
 		});
 	});
 

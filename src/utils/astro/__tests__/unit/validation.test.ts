@@ -10,7 +10,7 @@
  * - Fixture-Based Scenarios: Integration tests using pre-built scenarios
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, test } from "vitest";
 import { elementToDaySelection } from "../../../../lib/dom-adapters";
 import {
 	calculateOfficeDaysInWeek,
@@ -453,41 +453,22 @@ describe("elementToDaySelection", () => {
 		expect(result?.selectionType).toBe("out-of-office");
 	});
 
-	it("should return null for element without year", () => {
-		const mockElement = {
-			dataset: {
-				month: "0",
-				day: "6",
-				selectionType: "out-of-office",
-			},
-		} as unknown as HTMLElement;
-
-		const result = elementToDaySelection(mockElement);
-		expect(result).toBeNull();
-	});
-
-	it("should return null for element without month", () => {
-		const mockElement = {
-			dataset: {
-				year: "2025",
-				day: "6",
-				selectionType: "out-of-office",
-			},
-		} as unknown as HTMLElement;
-
-		const result = elementToDaySelection(mockElement);
-		expect(result).toBeNull();
-	});
-
-	it("should return null for element without day", () => {
-		const mockElement = {
-			dataset: {
-				year: "2025",
-				month: "0",
-				selectionType: "out-of-office",
-			},
-		} as unknown as HTMLElement;
-
+	test.each([
+		{
+			desc: "year",
+			dataset: { month: "0", day: "6", selectionType: "out-of-office" },
+		},
+		{
+			desc: "month",
+			dataset: { year: "2025", day: "6", selectionType: "out-of-office" },
+		},
+		{
+			desc: "day",
+			dataset: { year: "2025", month: "0", selectionType: "out-of-office" },
+		},
+		{ desc: "all attributes (empty dataset)", dataset: {} },
+	])("should return null for element without $desc", ({ dataset }) => {
+		const mockElement = { dataset } as unknown as HTMLElement;
 		const result = elementToDaySelection(mockElement);
 		expect(result).toBeNull();
 	});
@@ -521,130 +502,51 @@ describe("elementToDaySelection", () => {
 // ============================================================================
 
 describe("validateTopKWeeks - Fixture-Based Scenarios", () => {
-	it("should validate scenario with all 8 weeks compliant", () => {
-		const { selections, expected } = SCENARIO_8_WEEKS_COMPLIANT;
+	test.each([
+		{
+			name: "all 8 weeks compliant",
+			fixture: SCENARIO_8_WEEKS_COMPLIANT,
+			testPolicy: DEFAULT_RTO_POLICY,
+		},
+		{
+			name: "all 8 weeks in violation",
+			fixture: SCENARIO_8_WEEKS_VIOLATION,
+			testPolicy: DEFAULT_RTO_POLICY,
+		},
+		{
+			name: "12-week period with later weeks compliant",
+			fixture: SCENARIO_12_WEEKS_LATER_COMPLIANT,
+			testPolicy: DEFAULT_RTO_POLICY,
+		},
+		{
+			name: "one bad week",
+			fixture: SCENARIO_ONE_BAD_WEEK,
+			testPolicy: { ...DEFAULT_RTO_POLICY, roundPercentage: false },
+		},
+		{
+			name: "boundary case with exactly 60% compliance",
+			fixture: SCENARIO_BOUNDARY_60_PERCENT,
+			testPolicy: DEFAULT_RTO_POLICY,
+		},
+		{
+			name: "boundary case just below 60% compliance",
+			fixture: SCENARIO_BOUNDARY_BELOW_60_PERCENT,
+			testPolicy: { ...DEFAULT_RTO_POLICY, roundPercentage: false },
+		},
+		{
+			name: "empty selections as fully compliant",
+			fixture: SCENARIO_EMPTY_SELECTIONS,
+			testPolicy: DEFAULT_RTO_POLICY,
+		},
+	])("should validate scenario with $name", ({ fixture, testPolicy }) => {
+		const { selections, expected } = fixture;
 		const calendarStart = new Date(
 			BASE_CALENDAR.startYear,
 			BASE_CALENDAR.startMonth,
 			BASE_CALENDAR.startDay,
 		);
 
-		const result = validateTopKWeeks(selections, calendarStart);
-
-		expect(result.isValid).toBe(expected.isValid);
-		expect(result.averageOfficeDays).toBeCloseTo(expected.averageOfficeDays, 1);
-		expect(result.averageOfficePercentage).toBeCloseTo(
-			expected.averageOfficePercentage,
-			1,
-		);
-		expect(result.weeksData).toHaveLength(policy.topWeeksToCheck);
-	});
-
-	it("should validate scenario with all 8 weeks in violation", () => {
-		const { selections, expected } = SCENARIO_8_WEEKS_VIOLATION;
-		const calendarStart = new Date(
-			BASE_CALENDAR.startYear,
-			BASE_CALENDAR.startMonth,
-			BASE_CALENDAR.startDay,
-		);
-
-		const result = validateTopKWeeks(selections, calendarStart);
-
-		expect(result.isValid).toBe(expected.isValid);
-		expect(result.averageOfficeDays).toBeCloseTo(expected.averageOfficeDays, 1);
-		expect(result.averageOfficePercentage).toBeCloseTo(
-			expected.averageOfficePercentage,
-			1,
-		);
-	});
-
-	it("should validate 12-week period with later weeks compliant", () => {
-		const { selections, expected } = SCENARIO_12_WEEKS_LATER_COMPLIANT;
-		const calendarStart = new Date(
-			BASE_CALENDAR.startYear,
-			BASE_CALENDAR.startMonth,
-			BASE_CALENDAR.startDay,
-		);
-
-		const result = validateTopKWeeks(selections, calendarStart);
-
-		expect(result.isValid).toBe(expected.isValid);
-		expect(result.averageOfficeDays).toBeCloseTo(expected.averageOfficeDays, 1);
-		expect(result.averageOfficePercentage).toBeCloseTo(
-			expected.averageOfficePercentage,
-			1,
-		);
-	});
-
-	it("should validate scenario with one bad week", () => {
-		const { selections, expected } = SCENARIO_ONE_BAD_WEEK;
-		const calendarStart = new Date(
-			BASE_CALENDAR.startYear,
-			BASE_CALENDAR.startMonth,
-			BASE_CALENDAR.startDay,
-		);
-
-		const result = validateTopKWeeks(selections, calendarStart, {
-			...DEFAULT_RTO_POLICY,
-			roundPercentage: false,
-		});
-
-		expect(result.isValid).toBe(expected.isValid);
-		expect(result.averageOfficeDays).toBeCloseTo(expected.averageOfficeDays, 1);
-		expect(result.averageOfficePercentage).toBeCloseTo(
-			expected.averageOfficePercentage,
-			1,
-		);
-	});
-
-	it("should validate boundary case with exactly 60% compliance", () => {
-		const { selections, expected } = SCENARIO_BOUNDARY_60_PERCENT;
-		const calendarStart = new Date(
-			BASE_CALENDAR.startYear,
-			BASE_CALENDAR.startMonth,
-			BASE_CALENDAR.startDay,
-		);
-
-		const result = validateTopKWeeks(selections, calendarStart);
-
-		expect(result.isValid).toBe(expected.isValid);
-		expect(result.averageOfficeDays).toBeCloseTo(expected.averageOfficeDays, 1);
-		expect(result.averageOfficePercentage).toBeCloseTo(
-			expected.averageOfficePercentage,
-			1,
-		);
-	});
-
-	it("should validate boundary case just below 60% compliance", () => {
-		const { selections, expected } = SCENARIO_BOUNDARY_BELOW_60_PERCENT;
-		const calendarStart = new Date(
-			BASE_CALENDAR.startYear,
-			BASE_CALENDAR.startMonth,
-			BASE_CALENDAR.startDay,
-		);
-
-		const result = validateTopKWeeks(selections, calendarStart, {
-			...DEFAULT_RTO_POLICY,
-			roundPercentage: false,
-		});
-
-		expect(result.isValid).toBe(expected.isValid);
-		expect(result.averageOfficeDays).toBeCloseTo(expected.averageOfficeDays, 1);
-		expect(result.averageOfficePercentage).toBeCloseTo(
-			expected.averageOfficePercentage,
-			1,
-		);
-	});
-
-	it("should validate empty selections as fully compliant", () => {
-		const { selections, expected } = SCENARIO_EMPTY_SELECTIONS;
-		const calendarStart = new Date(
-			BASE_CALENDAR.startYear,
-			BASE_CALENDAR.startMonth,
-			BASE_CALENDAR.startDay,
-		);
-
-		const result = validateTopKWeeks(selections, calendarStart);
+		const result = validateTopKWeeks(selections, calendarStart, testPolicy);
 
 		expect(result.isValid).toBe(expected.isValid);
 		expect(result.averageOfficeDays).toBeCloseTo(expected.averageOfficeDays, 1);
@@ -675,47 +577,46 @@ describe("validateTopKWeeks - Pattern Builders", () => {
 		expect(result.averageOfficeDays).toBeCloseTo(3, 1);
 	});
 
-	it("should correctly validate all weekly pattern types", () => {
+	test.each([
+		{
+			pattern: "PERFECT" as const,
+			expectedOfficeDays: 5,
+			expectedValid: true,
+		},
+		{
+			pattern: "EXCELLENT" as const,
+			expectedOfficeDays: 4,
+			expectedValid: true,
+		},
+		{ pattern: "GOOD" as const, expectedOfficeDays: 3, expectedValid: true },
+		{ pattern: "POOR" as const, expectedOfficeDays: 2, expectedValid: false },
+		{ pattern: "BAD" as const, expectedOfficeDays: 1, expectedValid: false },
+		{
+			pattern: "TERRIBLE" as const,
+			expectedOfficeDays: 0,
+			expectedValid: false,
+		},
+	])("should correctly validate $pattern pattern", ({
+		pattern,
+		expectedOfficeDays,
+		expectedValid,
+	}) => {
 		const calendarStart = new Date(
 			BASE_CALENDAR.startYear,
 			BASE_CALENDAR.startMonth,
 			BASE_CALENDAR.startDay,
 		);
+		const selections = createWeeksWithPatterns(
+			BASE_CALENDAR.startYear,
+			BASE_CALENDAR.startMonth,
+			6, // Monday Jan 6 — selections must start on a weekday
+			Array(8).fill(pattern), // Create 8 weeks with this pattern
+		);
 
-		const patternTests = [
-			{
-				pattern: "PERFECT" as const,
-				expectedOfficeDays: 5,
-				expectedValid: true,
-			},
-			{
-				pattern: "EXCELLENT" as const,
-				expectedOfficeDays: 4,
-				expectedValid: true,
-			},
-			{ pattern: "GOOD" as const, expectedOfficeDays: 3, expectedValid: true },
-			{ pattern: "POOR" as const, expectedOfficeDays: 2, expectedValid: false },
-			{ pattern: "BAD" as const, expectedOfficeDays: 1, expectedValid: false },
-			{
-				pattern: "TERRIBLE" as const,
-				expectedOfficeDays: 0,
-				expectedValid: false,
-			},
-		];
+		const result = validateTopKWeeks(selections, calendarStart);
 
-		patternTests.forEach(({ pattern, expectedOfficeDays, expectedValid }) => {
-			const selections = createWeeksWithPatterns(
-				BASE_CALENDAR.startYear,
-				BASE_CALENDAR.startMonth,
-				6, // Monday Jan 6 — selections must start on a weekday
-				Array(8).fill(pattern), // Create 8 weeks with this pattern
-			);
-
-			const result = validateTopKWeeks(selections, calendarStart);
-
-			expect(result.isValid).toBe(expectedValid);
-			expect(result.averageOfficeDays).toBeCloseTo(expectedOfficeDays, 1);
-		});
+		expect(result.isValid).toBe(expectedValid);
+		expect(result.averageOfficeDays).toBeCloseTo(expectedOfficeDays, 1);
 	});
 });
 
@@ -1212,48 +1113,20 @@ describe("Holiday Integration - End-to-End", () => {
 });
 
 describe("roundToNearest20Percent", () => {
-	it("rounds 57.5 to 60", () => {
-		expect(roundToNearest20Percent(57.5)).toBe(60);
-	});
-
-	it("rounds 57.4 to 60", () => {
-		expect(roundToNearest20Percent(57.4)).toBe(60);
-	});
-
-	it("rounds 55 to 60", () => {
-		expect(roundToNearest20Percent(55)).toBe(60);
-	});
-
-	it("rounds 54 to 60", () => {
-		expect(roundToNearest20Percent(54)).toBe(60);
-	});
-
-	it("rounds 45 to 40", () => {
-		expect(roundToNearest20Percent(45)).toBe(40);
-	});
-
-	it("rounds 35 to 40", () => {
-		expect(roundToNearest20Percent(35)).toBe(40);
-	});
-
-	it("rounds 25 to 20", () => {
-		expect(roundToNearest20Percent(25)).toBe(20);
-	});
-
-	it("rounds 75 to 80", () => {
-		expect(roundToNearest20Percent(75)).toBe(80);
-	});
-
-	it("rounds 74 to 80", () => {
-		expect(roundToNearest20Percent(74)).toBe(80);
-	});
-
-	it("handles 0", () => {
-		expect(roundToNearest20Percent(0)).toBe(0);
-	});
-
-	it("handles 100", () => {
-		expect(roundToNearest20Percent(100)).toBe(100);
+	test.each([
+		[57.5, 60],
+		[57.4, 60],
+		[55, 60],
+		[54, 60],
+		[45, 40],
+		[35, 40],
+		[25, 20],
+		[75, 80],
+		[74, 80],
+		[0, 0],
+		[100, 100],
+	])("rounds %s to %i", (input, expected) => {
+		expect(roundToNearest20Percent(input)).toBe(expected);
 	});
 });
 

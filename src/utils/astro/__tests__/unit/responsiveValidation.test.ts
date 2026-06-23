@@ -11,7 +11,7 @@
  * Aligns with E2E tests for consistent behavior across testing layers.
  */
 
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, test } from "vitest";
 import {
 	DESKTOP_VIOLATION_SCENARIO,
 	generateSelectionsForScenario,
@@ -508,23 +508,22 @@ describe("Responsive Validation - Breakpoint Detection", () => {
 	});
 
 	describe("common device widths", () => {
-		const deviceWidths = [
-			{ width: 320, device: "mobile", name: "iPhone SE" },
-			{ width: 375, device: "mobile", name: "iPhone 12 mini" },
-			{ width: 414, device: "mobile", name: "iPhone 12 Pro Max" },
-			{ width: 768, device: "tablet", name: "iPad Mini" },
-			{ width: 820, device: "tablet", name: "iPad Air" },
-			{ width: 1024, device: "tablet", name: "iPad Pro 12.9 landscape" },
-			{ width: 1366, device: "desktop", name: "MacBook Air" },
-			{ width: 1920, device: "desktop", name: "Full HD monitor" },
-			{ width: 2560, device: "desktop", name: "2K monitor" },
-		];
-
-		deviceWidths.forEach(({ width, device, name }) => {
-			it(`should correctly identify ${name} (${width}px) as ${device}`, () => {
-				const result = getDeviceTypeFromWidth(width);
-				expect(result).toBe(device);
-			});
+		test.each([
+			{ name: "iPhone SE", width: 320, device: "mobile" },
+			{ name: "iPhone 12 mini", width: 375, device: "mobile" },
+			{ name: "iPhone 12 Pro Max", width: 414, device: "mobile" },
+			{ name: "iPad Mini", width: 768, device: "tablet" },
+			{ name: "iPad Air", width: 820, device: "tablet" },
+			{ name: "iPad Pro 12.9 landscape", width: 1024, device: "tablet" },
+			{ name: "MacBook Air", width: 1366, device: "desktop" },
+			{ name: "Full HD monitor", width: 1920, device: "desktop" },
+			{ name: "2K monitor", width: 2560, device: "desktop" },
+		])("should correctly identify $name ($widthpx) as $device", ({
+			width,
+			device,
+		}) => {
+			const result = getDeviceTypeFromWidth(width);
+			expect(result).toBe(device);
 		});
 	});
 });
