@@ -201,45 +201,6 @@ describe("getOutOfOfficeDates", () => {
 		expect(result[0]).toEqual(new Date(2025, 0, 7)); // Tuesday
 		expect(result[1]).toEqual(new Date(2025, 0, 8)); // Wednesday
 	});
-
-	it("should exclude holidays from OOF dates", () => {
-		const selections: DaySelection[] = [
-			createDaySelection(2025, 0, 6, "out-of-office"), // Monday, will be a holiday
-			createDaySelection(2025, 0, 7, "out-of-office"), // Tuesday
-			createDaySelection(2025, 0, 8, "out-of-office"), // Wednesday
-		];
-		const holidayDates = [new Date(2025, 0, 6)];
-		const result = getOutOfOfficeDates(selections, holidayDates);
-		expect(result).toHaveLength(2); // Holiday excluded from OOF count
-		expect(result[0]).toEqual(new Date(2025, 0, 7)); // Tuesday
-		expect(result[1]).toEqual(new Date(2025, 0, 8)); // Wednesday
-	});
-
-	it("should exclude holidays from OOF dates", () => {
-		const selections: DaySelection[] = [
-			createDaySelection(2025, 0, 6, "out-of-office"), // Monday, will be a holiday
-			createDaySelection(2025, 0, 7, "out-of-office"), // Tuesday
-			createDaySelection(2025, 0, 8, "out-of-office"), // Wednesday
-		];
-		const holidayDates = [new Date(2025, 0, 6)]; // Monday Jan 6 is a holiday
-		const result = getOutOfOfficeDates(selections, holidayDates);
-		expect(result).toHaveLength(2); // Holiday excluded from OOF count
-		expect(result[0]).toEqual(new Date(2025, 0, 7)); // Tuesday
-		expect(result[1]).toEqual(new Date(2025, 0, 8)); // Wednesday
-	});
-
-	it("should exclude holidays from OOF dates", () => {
-		const selections: DaySelection[] = [
-			createDaySelection(2025, 0, 6, "out-of-office"), // Monday, will be a holiday
-			createDaySelection(2025, 0, 7, "out-of-office"), // Tuesday
-			createDaySelection(2025, 0, 8, "out-of-office"), // Wednesday
-		];
-		const holidayDates = [new Date(2025, 0, 6)]; // Monday Jan 6 is a holiday
-		const result = getOutOfOfficeDates(selections, holidayDates);
-		expect(result).toHaveLength(2); // Holiday excluded from OOF count
-		expect(result[0]).toEqual(new Date(2025, 0, 7)); // Tuesday
-		expect(result[1]).toEqual(new Date(2025, 0, 8)); // Wednesday
-	});
 });
 
 describe("groupDatesByWeek", () => {
@@ -471,16 +432,6 @@ describe("createDaySelection", () => {
 		expect(result.month).toBe(0);
 		expect(result.day).toBe(6);
 		expect(result.selectionType).toBe("out-of-office");
-	});
-
-	it("should create none selection", () => {
-		const result = createDaySelection(2025, 0, 6, "none");
-		expect(result.selectionType).toBe("none");
-	});
-
-	it("should create none selection", () => {
-		const result = createDaySelection(2025, 0, 6, "none");
-		expect(result.selectionType).toBe("none");
 	});
 });
 
@@ -716,26 +667,6 @@ describe("validateTopKWeeks - Pattern Builders", () => {
 			BASE_CALENDAR.startMonth,
 			6, // Monday Jan 6 — selections must start on a weekday
 			Array(8).fill("GOOD" as const), // 8 weeks with 2 WFH days each
-		);
-
-		const result = validateTopKWeeks(selections, calendarStart);
-
-		expect(result.isValid).toBe(true);
-		expect(result.averageOfficeDays).toBeCloseTo(3, 1);
-	});
-
-	it("should create and validate 8 weeks using pattern array helper", () => {
-		const calendarStart = new Date(
-			BASE_CALENDAR.startYear,
-			BASE_CALENDAR.startMonth,
-			BASE_CALENDAR.startDay,
-		);
-
-		const selections = createWeeksWithPatterns(
-			BASE_CALENDAR.startYear,
-			BASE_CALENDAR.startMonth,
-			6, // Monday Jan 6 — selections must start on a weekday
-			Array(8).fill("GOOD" as const),
 		);
 
 		const result = validateTopKWeeks(selections, calendarStart);

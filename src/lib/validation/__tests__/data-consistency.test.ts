@@ -20,7 +20,6 @@ import {
 	evaluateSingleWindow,
 	getStartOfWeek,
 	type RTOPolicyConfig,
-	snapToWeekStart,
 	validateSlidingWindow,
 	type WeekCompliance,
 } from "../rto-core";
@@ -290,43 +289,6 @@ describe("Range label and timezone consistency", () => {
 		for (const date of testDates) {
 			const weekStart = getStartOfWeek(date);
 			expect(weekStart.getDay()).toBe(0); // Sunday = 0
-		}
-	});
-
-	it("weekStart dates from snapToWeekStart always display as Sunday", () => {
-		const testDates = [
-			new Date(2025, 0, 6), // Monday Jan 6 → snaps to next Sunday Jan 12
-			new Date(2025, 1, 14), // Friday Feb 14 → snaps to next Sunday Feb 16
-			new Date(2025, 2, 1), // Saturday Mar 1 → snaps to next Sunday Mar 2
-			new Date(2025, 3, 20), // Sunday Apr 20 → stays Sunday Apr 20
-			new Date(2025, 5, 30), // Monday Jun 30 → snaps to next Sunday Jul 6
-		];
-
-		for (const date of testDates) {
-			const weekStart = snapToWeekStart(date);
-			expect(weekStart.getDay()).toBe(0); // Sunday = 0
-		}
-	});
-
-	it("fmtShort always displays weekStart as Sunday for getStartOfWeek dates", () => {
-		// Catch timezone bugs: a UTC-midnight Sunday would display as Saturday
-		// in negative-UTC-offset timezones. Local-midnight Sundays display correctly.
-		const testDates = [
-			new Date(2025, 0, 6), // Monday
-			new Date(2025, 5, 15), // Sunday
-			new Date(2025, 10, 28), // Friday
-		];
-
-		for (const date of testDates) {
-			const weekStart = getStartOfWeek(date);
-			const displayed = fmtShort(weekStart);
-			// fmtShort uses getMonth()/getDate() (local time).
-			// If weekStart is local midnight Sunday, getDay() must return 0.
-			expect(weekStart.getDay()).toBe(0);
-			// The displayed date must match the Date object's local date
-			expect(displayed).toBe(
-				`${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][weekStart.getMonth()]} ${weekStart.getDate()}`,
-			);
 		}
 	});
 

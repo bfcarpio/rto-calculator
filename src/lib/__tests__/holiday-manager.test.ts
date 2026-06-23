@@ -261,21 +261,13 @@ describe("HolidayManager", () => {
 				expect(result.filteredCount).toBe(1);
 			});
 
-			it("should return all holidays when company is null", async () => {
+			it.each([
+				null,
+				"",
+			])("should return all holidays when company is %s", async (companyName) => {
 				const result = await manager.fetchHolidays({
 					countryCode: "US",
-					companyName: null,
-					years: [2024],
-				});
-
-				expect(result.holidays).toHaveLength(3);
-				expect(result.filteredCount).toBe(0);
-			});
-
-			it("should return all holidays when company is empty string", async () => {
-				const result = await manager.fetchHolidays({
-					countryCode: "US",
-					companyName: "",
+					companyName,
 					years: [2024],
 				});
 

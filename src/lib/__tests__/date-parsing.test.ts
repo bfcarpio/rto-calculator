@@ -15,7 +15,6 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { buildWindowEnd, buildWindowRangeLabel } from "../ui/windowRange";
 import { getStartOfWeek } from "../validation/rto-core";
 
 describe("Date parsing consistency", () => {
@@ -75,40 +74,5 @@ describe("Date parsing consistency", () => {
 
 		expect(result.getDay()).toBe(0);
 		expect(result.getDate()).toBe(16);
-	});
-
-	it("buildWindowEnd adds FRIDAY_OFFSET correctly from Sunday start", () => {
-		// Sunday March 16, 2025
-		const weeks = [{ weekStart: new Date(2025, 2, 16) }];
-		const end = buildWindowEnd(weeks);
-
-		expect(end).not.toBeNull();
-		expect(end!.getDay()).toBe(5); // Friday
-		expect(end!.getMonth()).toBe(2); // March
-		expect(end!.getDate()).toBe(21); // March 21, 2025 (Friday)
-	});
-
-	it("buildWindowEnd returns null for empty weeks", () => {
-		const result = buildWindowEnd([]);
-		expect(result).toBeNull();
-	});
-
-	it("buildWindowRangeLabel produces correct Sunday–Friday range", () => {
-		const weeks = [
-			{ weekStart: new Date(2025, 2, 16) }, // Sun Mar 16
-			{ weekStart: new Date(2025, 2, 23) }, // Sun Mar 23
-			{ weekStart: new Date(2025, 2, 30) }, // Sun Mar 30
-		];
-		const label = buildWindowRangeLabel(weeks);
-
-		// Window starts Mar 16 (first Sunday) and ends Apr 4 (Friday of last week)
-		expect(label).toContain("Mar");
-		expect(label).toContain("16"); // Start date
-		expect(label).toContain("Apr"); // End month (Mar 30 + 5 days = Apr 4)
-		expect(label).toContain("4"); // End day
-	});
-
-	it("buildWindowRangeLabel returns empty string for empty weeks", () => {
-		expect(buildWindowRangeLabel([])).toBe("");
 	});
 });

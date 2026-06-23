@@ -17,11 +17,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CalendarInstance } from "../../../packages/datepainter/src/types";
-import {
-	_testExports,
-	type AutoComplianceEvent,
-	EventQueue,
-} from "../auto-compliance";
+import { _testExports, EventQueue } from "../auto-compliance";
 import { complianceStore } from "../stores/complianceStore";
 import { computeWindowEvaluation } from "../validation/window-evaluation";
 
