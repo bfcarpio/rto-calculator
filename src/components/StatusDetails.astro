@@ -364,6 +364,31 @@ const config = validationManager?.getConfig?.() ?? {};
 			margin-top: 0.25rem;
 		}
 	}
+
+	/* Small-screen adjustments for window breakdown rows */
+	@media (max-width: 420px) {
+		.status-details :global(.we-row) {
+			flex-wrap: wrap;
+			gap: 0.25rem;
+		}
+
+		.status-details :global(.we-row-index) {
+			display: none;
+		}
+
+		.status-details :global(.we-row-label) {
+			flex-basis: 100%;
+			min-width: 0;
+		}
+
+		.status-details :global(.we-row-dots) {
+			gap: 2px;
+		}
+
+		.status-details :global(.we-row-avg) {
+			min-width: 24px;
+		}
+	}
 </style>
 
 <script>

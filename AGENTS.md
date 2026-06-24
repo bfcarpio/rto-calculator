@@ -1,9 +1,11 @@
 # Agent Guidelines for RTO Calculator
 
 ## Role
+
 You are a senior software engineer focused on writing maintainable, bug-free code.
 
 ## Core Principles
+
 1. Write brief, concise responses with minimal code output in chat
 2. Follow the project's existing conventions and tool stack
 3. Prefer TypeScript over JavaScript always
@@ -11,6 +13,7 @@ You are a senior software engineer focused on writing maintainable, bug-free cod
 ## CRITICAL RULES
 
 ### DO NOT
+
 - ❌ **NEVER run `npm run dev` for E2E tests** - Use `npx playwright test` which auto-starts a preview server via `webServer` config. If a dev server is already running it will be reused.
 - ❌ Do not use `any` type - Use `unknown` with type guards
 - ❌ Do not use wildcard imports - Use explicit imports: `import { Thing } from './path'`
@@ -19,6 +22,7 @@ You are a senior software engineer focused on writing maintainable, bug-free cod
 - ❌ Do not commit without verification - Always run lints, checks, and tests first
 
 ### DO
+
 - ✅ Use TypeScript for all new/modified files
 - ✅ Add explicit return types to public functions
 - ✅ Throw descriptive errors with context
@@ -44,6 +48,7 @@ Follow this exact sequence for every change:
 **Critical:** Steps 3 (Test) and 4 (Document) MUST happen before commits.
 
 **End-of-workflow checklist** (applies to ALL workflows):
+
 - Tests MUST be updated or added to cover any changes
 - Documentation MUST be updated to reflect behavior changes
 - Commits MUST be focused and atomic (separate commits for feature, tests, docs)
@@ -51,6 +56,7 @@ Follow this exact sequence for every change:
 ## Documentation Reference
 
 Read these before making significant changes:
+
 - **[docs/README.md](./docs/README.md)** - Documentation index
 - **[docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)** - System architecture and data flow
 - **[docs/DEVELOPER_GUIDE.md](./docs/DEVELOPER_GUIDE.md)** - Development workflows
@@ -72,6 +78,8 @@ npm test -- path/to/specific.test.ts  # Run single test
 
 # E2E Testing (Playwright)
 # Preferred: let Playwright handle the server via webServer config
+# **Local development:** Only Chromium is available in the local environment.
+# Use `npx playwright test --project=chromium-desktop` for local E2E testing.
 npx playwright test                          # Run all E2E tests (auto-starts preview server)
 npx playwright test --project=chromium-desktop  # Single browser project
 npx playwright test --workers=2              # Limit parallelism
@@ -89,6 +97,7 @@ npm run check           # Run all checks (lint + types)
 ## NPM Workspaces
 
 This project uses npm workspaces to manage multiple packages in the `packages/` directory:
+
 - **datepainter** - Calendar component package
 - **nager.date** - Holiday API client package
 
@@ -124,11 +133,13 @@ npm list --workspaces                      # List all workspaces
 ### When to Use Workspace Commands
 
 **Use workspace-specific commands when:**
+
 - ✅ Developing or testing a specific package in isolation
 - ✅ Adding dependencies to a specific package
 - ✅ Running package-specific scripts
 
 **Use root commands when:**
+
 - ✅ Running application-wide tests (E2E tests)
 - ✅ Building the entire application
 - ✅ Linting/formatting the entire codebase
@@ -143,6 +154,7 @@ npm list --workspaces                      # List all workspaces
 Apply these principles to all code:
 
 1. **Early Exit** - Handle edge cases at the top with guard clauses
+
    ```typescript
    // ✅ Good
    function process(data: Data | null) {
@@ -163,6 +175,7 @@ Apply these principles to all code:
    ```
 
 2. **Parse, Don't Validate** - Parse inputs at boundaries, trust typed data internally
+
    ```typescript
    // ✅ Good - Parse once at boundary
    function handleInput(raw: unknown): Result {
@@ -181,6 +194,7 @@ Apply these principles to all code:
    ```
 
 3. **Atomic Predictability** - Pure functions: same input = same output
+
    ```typescript
    // ✅ Good - Pure function
    function calculateDays(start: Date, end: Date): number {
@@ -194,30 +208,32 @@ Apply these principles to all code:
    ```
 
 4. **Fail Fast, Fail Loud** - Throw descriptive errors immediately for invalid states
+
    ```typescript
    // ✅ Good
    if (!weekStart) {
-     throw new Error('Week start not initialized. Call setWeekStart() first.');
+     throw new Error("Week start not initialized. Call setWeekStart() first.");
    }
 
    // ❌ Bad
    if (!weekStart) {
-     console.log('no week start');
+     console.log("no week start");
      return;
    }
    ```
 
 5. **Intentional Naming** - Names read like English sentences
+
    ```typescript
    // ✅ Good
-   isUserEligible()
-   calculateOfficeDays()
-   getWeekCompliance()
+   isUserEligible();
+   calculateOfficeDays();
+   getWeekCompliance();
 
    // ❌ Bad
-   check()
-   calc()
-   get()
+   check();
+   calc();
+   get();
    ```
 
 ### TypeScript Rules
@@ -230,8 +246,8 @@ export function calculateDays(start: Date, end: Date): number {
 
 // ✅ DO: Use unknown with type guards instead of any
 function process(data: unknown): string {
-  if (typeof data !== 'string') {
-    throw new Error('Expected string');
+  if (typeof data !== "string") {
+    throw new Error("Expected string");
   }
   return data.toUpperCase();
 }
@@ -249,33 +265,33 @@ function process(data: any): string {
 
 ### Naming Conventions
 
-| Type | Convention | Examples |
-|------|-----------|----------|
-| **Files (classes)** | PascalCase | `ValidationStrategy.ts`, `HolidayManager.ts` |
-| **Files (utilities)** | camelCase | `dateUtils.ts`, `formatters.ts` |
-| **Classes** | PascalCase | `ValidationStrategy`, `HolidayManager` |
-| **Functions** | camelCase | `getWeekCompliance`, `calculateOfficeDays` |
-| **Constants** | UPPER_SNAKE_CASE | `MAX_DAYS`, `DEFAULT_CONFIG` |
-| **Interfaces** | PascalCase | `ValidationResult`, `WeekCompliance` |
+| Type                  | Convention       | Examples                                     |
+| --------------------- | ---------------- | -------------------------------------------- |
+| **Files (classes)**   | PascalCase       | `ValidationStrategy.ts`, `HolidayManager.ts` |
+| **Files (utilities)** | camelCase        | `dateUtils.ts`, `formatters.ts`              |
+| **Classes**           | PascalCase       | `ValidationStrategy`, `HolidayManager`       |
+| **Functions**         | camelCase        | `getWeekCompliance`, `calculateOfficeDays`   |
+| **Constants**         | UPPER_SNAKE_CASE | `MAX_DAYS`, `DEFAULT_CONFIG`                 |
+| **Interfaces**        | PascalCase       | `ValidationResult`, `WeekCompliance`         |
 
 ### Import/Export Rules
 
 ```typescript
 // ✅ DO: Explicit named imports
-import { ValidationStrategy } from './ValidationStrategy';
-import { formatDate, parseDate } from './dateUtils';
+import { ValidationStrategy } from "./ValidationStrategy";
+import { formatDate, parseDate } from "./dateUtils";
 
 // ✅ DO: Order imports logically
-import { Component } from 'astro:components';  // External libs
-import type { ValidationResult } from './types';  // Types
-import { ValidationFactory } from './validation';  // Internal modules
+import { Component } from "astro:components"; // External libs
+import type { ValidationResult } from "./types"; // Types
+import { ValidationFactory } from "./validation"; // Internal modules
 
 // ✅ DO: Named exports for utilities, default for main class
-export class ValidationStrategy { }  // default
-export { helper1, helper2 };  // named
+export class ValidationStrategy {} // default
+export { helper1, helper2 }; // named
 
 // ❌ DON'T: Wildcard imports
-import * as utils from './dateUtils';
+import * as utils from "./dateUtils";
 ```
 
 ### Error Handling
@@ -283,23 +299,25 @@ import * as utils from './dateUtils';
 ```typescript
 // ✅ DO: Descriptive errors with context
 if (!weekStart) {
-  throw new Error('Week start not initialized. Call setWeekStart() before validation.');
+  throw new Error(
+    "Week start not initialized. Call setWeekStart() before validation.",
+  );
 }
 
 // ✅ DO: Guard clauses for expected failures
 function validate(data: Data | null): ValidationResult {
-  if (!data) return { valid: false, reason: 'No data provided' };
-  if (!data.startDate) return { valid: false, reason: 'Missing start date' };
+  if (!data) return { valid: false, reason: "No data provided" };
+  if (!data.startDate) return { valid: false, reason: "Missing start date" };
   // ... continue with valid data
 }
 
 // ✅ DO: Conditional logging
 if (config.debug) {
-  console.log('Validation result:', result);
+  console.log("Validation result:", result);
 }
 
 // ❌ DON'T: Generic errors
-throw new Error('Invalid');
+throw new Error("Invalid");
 
 // ❌ DON'T: Try-catch for expected failures
 try {
@@ -317,17 +335,17 @@ try {
 // src/lib/validation/__tests__/ValidationStrategy.test.ts
 
 // ✅ DO: Descriptive test names
-test('should return compliant when office days >= 3', () => {
+test("should return compliant when office days >= 3", () => {
   const result = validator.validate(threeOfficeDays);
   expect(result.compliant).toBe(true);
 });
 
 // ✅ DO: Test edge cases
-test('should handle null input gracefully', () => {
+test("should handle null input gracefully", () => {
   expect(() => validator.validate(null)).toThrow();
 });
 
-test('should handle empty array', () => {
+test("should handle empty array", () => {
   expect(validator.validate([])).toEqual({ compliant: true, violations: [] });
 });
 
@@ -352,6 +370,7 @@ src/
 ## Architecture Patterns
 
 ### Singleton Pattern
+
 Use for stateful managers with `getInstance()` method.
 
 ```typescript
@@ -375,6 +394,7 @@ export class HolidayManager {
 When multiple UI components need the same computed data, use a **single event emitter** instead of having each component independently subscribe, compute, and update.
 
 **Pattern: Event-driven stats**
+
 ```
 Single producer (auto-compliance module)
   → subscribes to onStateChange once
@@ -383,12 +403,14 @@ Single producer (auto-compliance module)
 ```
 
 **Why:**
+
 - Eliminates duplicated computation across components
 - Components don't need polling or direct calendar access
 - Adding a new consumer = one `addEventListener` call, no changes to producers
 - Natural debouncing — compute once, broadcast to all
 
 **Anti-pattern: Each component subscribes independently**
+
 ```
 StatusDetails subscribes → computes weeks → updates DOM
 StatusLegend subscribes → counts states → updates DOM
@@ -401,6 +423,7 @@ This pattern led to duplicated computation when multiple components independentl
 When a function uses a fixed value internally (e.g., a reference date), tests shouldn't mock globals to "prove" it works. If the implementation doesn't depend on `new Date()`, the test shouldn't either.
 
 **Prefer:**
+
 1. Pure functions with explicit parameters over functions that read globals
 2. `vi.useFakeTimers()` + `vi.setSystemTime()` when you truly need to control "now"
 3. Deleting the mock entirely when the function under test doesn't use the mocked thing
