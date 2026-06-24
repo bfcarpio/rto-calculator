@@ -64,13 +64,13 @@
 		"nanostores": "1.1.0"
 	},
 	"peerDependencies": {
-		"astro": "^4.16.12 || ^5.0.0"
+		"astro": "^7.0.2"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "1.9.4",
-		"@vitest/ui": "2.1.8",
+		"@vitest/ui": "^4.1.9",
 		"tsup": "^8.0.0",
 		"typescript": "5.7.2",
-		"vitest": "2.1.8"
+		"vitest": "^4.1.9"
 	}
 }
