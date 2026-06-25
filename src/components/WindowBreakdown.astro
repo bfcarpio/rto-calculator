@@ -13,27 +13,15 @@ import type { WindowSummary } from "../lib/validation/all-windows";
 export interface WindowBreakdownProps {
 	/** The selected window summary (same object Explorer uses) */
 	selectedSummary?: WindowSummary;
-	/** Whether the overall compliance check passed */
-	isCompliant?: boolean;
 }
 
-const { selectedSummary, isCompliant = false } =
-	Astro.props as unknown as WindowBreakdownProps;
+const { selectedSummary } = Astro.props as unknown as WindowBreakdownProps;
 
 // Early exit: no data to display
 const hasData = selectedSummary && selectedSummary.weekDetails.length > 0;
-
-const labelText = hasData
-	? isCompliant
-		? `Earliest window`
-		: `Failing window`
-	: "Mark dates to see window breakdown";
 ---
 
 <div class="window-breakdown-wrapper">
-	<p class="is-size-7 has-text-grey mb-3" id="window-breakdown-label">
-		{labelText}
-	</p>
 	<div class="content" id="window-breakdown-content">
 		{hasData ? (
 			<Fragment set:html={buildWindowRowHtml(selectedSummary)} />

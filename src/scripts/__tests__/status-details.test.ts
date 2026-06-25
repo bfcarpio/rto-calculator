@@ -99,16 +99,13 @@ describe("status-details module", () => {
 
 	describe("renderWindowBreakdown", () => {
 		let mockContent: HTMLElement;
-		let mockLabel: HTMLElement;
 
 		beforeEach(() => {
 			// Create mock DOM elements
 			document.body.innerHTML = `
-				<div id="window-breakdown-label"></div>
 				<div id="window-breakdown-content"></div>
 			`;
 			mockContent = document.getElementById("window-breakdown-content")!;
-			mockLabel = document.getElementById("window-breakdown-label")!;
 		});
 
 		afterEach(() => {
@@ -131,7 +128,6 @@ describe("status-details module", () => {
 			expect(mockContent.innerHTML).toContain(
 				"Mark dates to see window breakdown",
 			);
-			expect(mockLabel.textContent).toBe("Mark dates to see window breakdown");
 		});
 
 		it("should not throw if content element is missing", () => {
@@ -293,7 +289,6 @@ describe("status-details module", () => {
 				<div id="compliance-label"></div>
 				<div id="compliance-status-box" class="box compliance-status"></div>
 				<div id="window-breakdown-content"></div>
-				<div id="window-breakdown-label"></div>
 			`;
 		});
 
@@ -429,7 +424,6 @@ describe("status-details module", () => {
 		function createTestContainer(): HTMLElement {
 			const container = document.createElement("div");
 			container.innerHTML = `
-				<div id="window-breakdown-label"></div>
 				<div id="window-breakdown-content"></div>
 			`;
 			return container;
@@ -453,9 +447,7 @@ describe("status-details module", () => {
 			controller.renderWindowBreakdown(data);
 
 			const content = container.querySelector("#window-breakdown-content")!;
-			const label = container.querySelector("#window-breakdown-label")!;
 			expect(content.innerHTML).toContain("Mark dates to see window breakdown");
-			expect(label.textContent).toBe("Mark dates to see window breakdown");
 		});
 
 		it("should render PASS tag when compliant via container root", async () => {
@@ -572,7 +564,6 @@ describe("status-details module", () => {
 					<div id="compliance-label"></div>
 					<div id="compliance-status-box" class="box compliance-status"></div>
 					<div id="window-breakdown-content"></div>
-					<div id="window-breakdown-label"></div>
 				</div>
 			`;
 			controllerContainer = document.getElementById(

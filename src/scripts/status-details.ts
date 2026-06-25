@@ -122,7 +122,6 @@ function renderBreakdownInto(
 	const elContent = root.querySelector<HTMLDivElement>(
 		"#window-breakdown-content",
 	);
-	const elLabel = root.querySelector<HTMLDivElement>("#window-breakdown-label");
 
 	// Early exit if container not found
 	if (!elContent) return;
@@ -132,18 +131,9 @@ function renderBreakdownInto(
 
 	// Handle empty data
 	if (!hasData) {
-		if (elLabel) {
-			elLabel.textContent = "Mark dates to see window breakdown";
-		}
 		elContent.innerHTML =
 			'<p class="has-text-centered has-text-grey-light is-size-7">Mark dates to see window breakdown</p>';
 		return;
-	}
-
-	if (elLabel) {
-		elLabel.textContent = data.isCompliant
-			? `Window ${data.selectedSummary.windowIndex + 1} of ${data.allSummaries.length} — earliest window (${data.rangeLabel})`
-			: `Window ${data.selectedSummary.windowIndex + 1} of ${data.allSummaries.length} — failing window (${data.rangeLabel})`;
 	}
 
 	elContent.innerHTML = buildWindowRowHtml(data.selectedSummary);

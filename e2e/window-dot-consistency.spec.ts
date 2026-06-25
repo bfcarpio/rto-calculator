@@ -287,19 +287,10 @@ test.describe("Window Explorer and Breakdown dot consistency", () => {
 			await clickDate(page, i);
 		}
 
-		// Wait for compliance data to be computed and rendered
-		// (debounce is 1500ms; a fixed timeout is flaky — wait for actual data)
-		const breakdownLabel = page.locator("#window-breakdown-label");
-		await expect(breakdownLabel).toContainText(/Window.*window/, {
-			timeout: 10000,
-		});
-		const breakdownText = (await breakdownLabel.textContent()) ?? "";
-
-		// Extract date range from breakdown label text
-		// Format: "Window 1 of 54 — earliest window (Mar 29 – Jun 19)" or
-		//         "Window 3 of 54 — most recent window (Jun 15 – Jun 19)"
-		const breakdownRangeMatch = breakdownText.match(/\((.+?)\)/);
-		const breakdownRange = breakdownRangeMatch?.[1]?.trim() ?? "";
+		// Wait for breakdown row to render and get date range from we-row-label
+		const breakdownRowLabel = page.locator("#window-breakdown-content .we-row-label");
+		await expect(breakdownRowLabel).toBeVisible({ timeout: 10000 });
+		const breakdownRange = (await breakdownRowLabel.textContent())?.trim() ?? "";
 
 		await openExplorer(page);
 
