@@ -26,6 +26,7 @@ export interface CalendarReaderConfig {
 	minOfficeDaysPerWeek: number;
 	totalWeekdaysPerWeek: number;
 	DEBUG: boolean;
+	weekendBonus?: boolean;
 }
 
 /**
@@ -93,6 +94,7 @@ export async function readCalendarData(
 	const appSettings = settingsStore.get();
 	const sickDaysPenalize = appSettings.sickDaysPenalize;
 	const holidayPenalize = appSettings.holidayPenalize;
+	const weekendBonus = appSettings.weekendBonus;
 
 	// Iterate through ALL Sunday-aligned weeks in the calendar range
 	const weeks: WeekInfo[] = [];
@@ -113,6 +115,7 @@ export async function readCalendarData(
 		let oofCount = 0;
 		let holidayCount = 0;
 		let sickCount = 0;
+		let weekendOfficeCount = 0;
 
 		// Check each day in this week (isWeekday filters to Mon-Fri)
 		for (let i = 0; i < 7; i++) {
@@ -123,7 +126,23 @@ export async function readCalendarData(
 			if (date > range.endDate) break;
 
 			const weekday = isWeekday(date);
-			if (!weekday) continue;
+
+			// Weekend bonus: count office-marked weekend days before skipping
+			if (!weekday) {
+				if (weekendBonus) {
+					const year = date.getFullYear();
+					const month = String(date.getMonth() + 1).padStart(2, "0");
+					const day = String(date.getDate()).padStart(2, "0");
+					const dateKey = `${year}-${month}-${day}`;
+
+					const state = dateStateLookup.get(dateKey) ?? null;
+					// Weekend day marked as office (not OOF, not null, not out-of-office)
+					if (state !== null && state !== "oof" && state !== "out-of-office") {
+						weekendOfficeCount++;
+					}
+				}
+				continue;
+			}
 
 			// Format as YYYY-MM-DD to match datepainter keys
 			const year = date.getFullYear();
@@ -178,6 +197,12 @@ export async function readCalendarData(
 				officeDays -= sickCount;
 			} else {
 				totalEffectiveDays -= sickCount;
+			}
+
+			// Weekend bonus: add weekend office days to numerator only
+			if (weekendBonus && weekendOfficeCount > 0) {
+				officeDays += weekendOfficeCount;
+				// totalEffectiveDays stays the same (denominator unchanged)
 			}
 
 			const isCompliant = officeDays >= mergedConfig.minOfficeDaysPerWeek;

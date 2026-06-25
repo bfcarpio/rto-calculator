@@ -34,6 +34,7 @@ const mockSettings = {
 	bestWeeksCount: 8,
 	sickDaysPenalize: true,
 	holidayPenalize: true,
+	weekendBonus: false,
 	startingWeek: null as string | null,
 	defaultPattern: null as number[] | null,
 	roundPercentage: true,
@@ -69,6 +70,7 @@ function sunday(dateStr: string): Date {
 function setSettings(opts: {
 	sickDaysPenalize?: boolean;
 	holidayPenalize?: boolean;
+	weekendBonus?: boolean;
 }): void {
 	vi.mocked(settingsStore.get).mockReturnValue({
 		...mockSettings,
@@ -431,5 +433,186 @@ describe("readCalendarData – holiday dates from external source", () => {
 		// With penalize OFF: officeDays = 5, totalDays = 4
 		expect(week.officeDays).toBe(5);
 		expect(week.totalDays).toBe(4);
+	});
+});
+
+describe("readCalendarData – weekend bonus", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		vi.mocked(settingsStore.get).mockReturnValue({ ...mockSettings });
+	});
+
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
+	it("weekendBonus=false: weekend work has no effect on officeDays", async () => {
+		setSettings({ weekendBonus: false });
+		setupSingleWeek("2025-06-01"); // Sun Jun 1 → Sat Jun 7
+		// Saturday Jun 7 marked as some work state (not OOF)
+		const dates = new Map<string, string>([["2025-06-07", "work"]]);
+		const cal = mockCalendarFromMap(dates);
+
+		const result = await readCalendarData(cal);
+		const week = result.weeks[0]!;
+
+		// Weekend work ignored: officeDays = 5 (clean weekday week)
+		expect(week.officeDays).toBe(5);
+		expect(week.totalDays).toBe(5);
+	});
+
+	it("weekendBonus=true: Saturday work adds to officeDays", async () => {
+		setSettings({ weekendBonus: true });
+		setupSingleWeek("2025-06-01"); // Sun Jun 1 → Sat Jun 7
+		// Mon-Wed OOF (3 days), Saturday marked as work
+		const dates = new Map<string, string>([
+			["2025-06-02", "oof"],
+			["2025-06-03", "oof"],
+			["2025-06-04", "oof"],
+			["2025-06-07", "work"],
+		]);
+		const cal = mockCalendarFromMap(dates);
+
+		const result = await readCalendarData(cal);
+		const week = result.weeks[0]!;
+
+		// 5 weekdays - 3 OOF = 2, + 1 weekend bonus = 3
+		expect(week.officeDays).toBe(3);
+		// Denominator unchanged
+		expect(week.totalDays).toBe(5);
+	});
+
+	it("weekendBonus=true: totalDays never changes from weekend work", async () => {
+		setSettings({ weekendBonus: true });
+		setupSingleWeek("2025-06-01");
+		// Both Sun (Jun 1) and Sat (Jun 7) marked as work
+		const dates = new Map<string, string>([
+			["2025-06-01", "work"],
+			["2025-06-07", "work"],
+		]);
+		const cal = mockCalendarFromMap(dates);
+
+		const result = await readCalendarData(cal);
+		const week = result.weeks[0]!;
+
+		// officeDays = 5 + 2 weekend bonus = 7
+		expect(week.officeDays).toBe(7);
+		// Denominator stays 5
+		expect(week.totalDays).toBe(5);
+	});
+
+	it("weekendBonus=true: both Sat and Sun marked as office", async () => {
+		setSettings({ weekendBonus: true });
+		setupSingleWeek("2025-06-01");
+		// Mon-Thu OOF, Sun (Jun 1) + Sat (Jun 7) work
+		const dates = new Map<string, string>([
+			["2025-06-02", "oof"],
+			["2025-06-03", "oof"],
+			["2025-06-04", "oof"],
+			["2025-06-05", "oof"],
+			["2025-06-01", "work"],
+			["2025-06-07", "work"],
+		]);
+		const cal = mockCalendarFromMap(dates);
+
+		const result = await readCalendarData(cal);
+		const week = result.weeks[0]!;
+
+		// 5 - 4 OOF = 1, + 2 weekend = 3
+		expect(week.officeDays).toBe(3);
+		expect(week.totalDays).toBe(5);
+		expect(week.isCompliant).toBe(true); // 3 >= 3
+	});
+
+	it("weekendBonus=true: weekend OOF does NOT count as bonus", async () => {
+		setSettings({ weekendBonus: true });
+		setupSingleWeek("2025-06-01");
+		// Saturday marked as OOF (out-of-office) — should not count
+		// Sunday marked as work — should count
+		const dates = new Map<string, string>([
+			["2025-06-07", "oof"],
+			["2025-06-01", "work"],
+		]);
+		const cal = mockCalendarFromMap(dates);
+
+		const result = await readCalendarData(cal);
+		const week = result.weeks[0]!;
+
+		// Only Sunday work counts: 5 + 1 = 6
+		expect(week.officeDays).toBe(6);
+		expect(week.totalDays).toBe(5);
+	});
+
+	it("weekendBonus=true: unmarked weekend days do NOT count", async () => {
+		setSettings({ weekendBonus: true });
+		setupSingleWeek("2025-06-01");
+		// No weekend dates painted at all
+		const cal = mockCalendarFromMap(new Map());
+
+		const result = await readCalendarData(cal);
+		const week = result.weeks[0]!;
+
+		expect(week.officeDays).toBe(5);
+		expect(week.totalDays).toBe(5);
+	});
+
+	it("weekendBonus=true: stacks with holiday penalize settings", async () => {
+		setSettings({ weekendBonus: true, holidayPenalize: true });
+		setupSingleWeek("2025-06-01");
+		// 1 holiday (Wed), 1 OOF (Mon), Saturday work
+		const dates = new Map<string, string>([
+			["2025-06-02", "oof"],
+			["2025-06-04", "holiday"],
+			["2025-06-07", "work"],
+		]);
+		const cal = mockCalendarFromMap(dates);
+
+		const result = await readCalendarData(cal);
+		const week = result.weeks[0]!;
+
+		// 5 - 1 (oof) - 1 (holiday) = 3, + 1 weekend = 4
+		expect(week.officeDays).toBe(4);
+		expect(week.totalDays).toBe(5);
+		expect(week.isCompliant).toBe(true);
+	});
+
+	it("weekendBonus=true: stacks with sick day penalize", async () => {
+		setSettings({ weekendBonus: true, sickDaysPenalize: true });
+		setupSingleWeek("2025-06-01");
+		// 1 sick (Tue), 1 OOF (Thu), Saturday work
+		const dates = new Map<string, string>([
+			["2025-06-03", "sick"],
+			["2025-06-05", "oof"],
+			["2025-06-07", "work"],
+		]);
+		const cal = mockCalendarFromMap(dates);
+
+		const result = await readCalendarData(cal);
+		const week = result.weeks[0]!;
+
+		// 5 - 1 (oof) - 1 (sick) = 3, + 1 weekend = 4
+		expect(week.officeDays).toBe(4);
+		expect(week.totalDays).toBe(5);
+	});
+
+	it("weekendBonus example from spec: 3 weekdays + Saturday = 4/5", async () => {
+		setSettings({ weekendBonus: true });
+		setupSingleWeek("2025-06-01");
+		// Mon-Wed office (no marks), Thu-Fri OOF, Saturday work
+		const dates = new Map<string, string>([
+			["2025-06-05", "oof"],
+			["2025-06-06", "oof"],
+			["2025-06-07", "work"],
+		]);
+		const cal = mockCalendarFromMap(dates);
+
+		const result = await readCalendarData(cal);
+		const week = result.weeks[0]!;
+
+		// 5 - 2 (oof) = 3, + 1 weekend = 4
+		// 4/5 = 80%
+		expect(week.officeDays).toBe(4);
+		expect(week.totalDays).toBe(5);
+		expect(week.isCompliant).toBe(true);
 	});
 });

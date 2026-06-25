@@ -79,6 +79,7 @@ describe("exportJSON", () => {
 			bestWeeksCount: 10,
 			sickDaysPenalize: true,
 			holidayPenalize: true,
+			weekendBonus: false,
 			startingWeek: null,
 			defaultPattern: null,
 			roundPercentage: true,

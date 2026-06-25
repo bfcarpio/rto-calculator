@@ -22,6 +22,7 @@ export interface AppSettings {
 	bestWeeksCount: number;
 	sickDaysPenalize: boolean;
 	holidayPenalize: boolean;
+	weekendBonus: boolean;
 	startingWeek: string | null;
 	defaultPattern: number[] | null;
 	roundPercentage: boolean;
@@ -40,6 +41,7 @@ export const DEFAULTS: AppSettings = {
 	bestWeeksCount: BEST_WEEKS_COUNT,
 	sickDaysPenalize: true,
 	holidayPenalize: true,
+	weekendBonus: false,
 	startingWeek: null,
 	defaultPattern: null,
 	roundPercentage: true,

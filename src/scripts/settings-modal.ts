@@ -57,6 +57,7 @@ class SettingsModal {
 	private holidayOofToggle: HTMLButtonElement | null = null;
 	private sickPenalizeToggle: HTMLButtonElement | null = null;
 	private holidayPenalizeToggle: HTMLButtonElement | null = null;
+	private weekendBonusToggle: HTMLButtonElement | null = null;
 	private rollingWindowInput: HTMLInputElement | null = null;
 	private bestWeeksInput: HTMLInputElement | null = null;
 	private startingWeekSelect: HTMLSelectElement | null = null;
@@ -110,6 +111,9 @@ class SettingsModal {
 		) as HTMLButtonElement | null;
 		this.holidayPenalizeToggle = document.getElementById(
 			"holiday-penalize-toggle",
+		) as HTMLButtonElement | null;
+		this.weekendBonusToggle = document.getElementById(
+			"weekend-bonus-toggle",
 		) as HTMLButtonElement | null;
 		this.rollingWindowInput = document.getElementById(
 			"rolling-window-input",
@@ -181,6 +185,9 @@ class SettingsModal {
 		this.holidayPenalizeToggle?.addEventListener("click", () =>
 			this.toggleHolidayPenalize(),
 		);
+		this.weekendBonusToggle?.addEventListener("click", () =>
+			this.toggleWeekendBonus(),
+		);
 		this.rollingWindowInput?.addEventListener("change", () =>
 			this.onRollingWindowChange(),
 		);
@@ -223,6 +230,10 @@ class SettingsModal {
 
 	private toggleHolidayPenalize(): void {
 		toggleBooleanSetting(this.holidayPenalizeToggle, "Holiday penalize");
+	}
+
+	private toggleWeekendBonus(): void {
+		toggleBooleanSetting(this.weekendBonusToggle, "Weekend bonus");
 	}
 
 	private toggleRoundPercentage(): void {
@@ -412,6 +423,7 @@ class SettingsModal {
 		setToggleState(this.holidayOofToggle, true);
 		setToggleState(this.sickPenalizeToggle, true);
 		setToggleState(this.holidayPenalizeToggle, true);
+		setToggleState(this.weekendBonusToggle, DEFAULTS.weekendBonus);
 		setToggleState(this.roundPercentageToggle, true);
 
 		if (this.rollingWindowInput) {
@@ -592,6 +604,7 @@ class SettingsModal {
 			holidayPenalize: !readToggleState(this.holidayPenalizeToggle)
 				? true
 				: readToggleState(this.holidayPenalizeToggle),
+			weekendBonus: readToggleState(this.weekendBonusToggle),
 			roundPercentage: !readToggleState(this.roundPercentageToggle)
 				? true
 				: readToggleState(this.roundPercentageToggle),
@@ -661,6 +674,10 @@ class SettingsModal {
 
 			if (this.holidayPenalizeToggle) {
 				setToggleState(this.holidayPenalizeToggle, settings.holidayPenalize);
+			}
+
+			if (this.weekendBonusToggle) {
+				setToggleState(this.weekendBonusToggle, settings.weekendBonus);
 			}
 
 			if (this.roundPercentageToggle) {

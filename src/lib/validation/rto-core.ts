@@ -24,6 +24,7 @@ export interface RTOPolicyConfig {
 	rollingPeriodWeeks: number;
 	topWeeksToCheck: number;
 	roundPercentage?: boolean;
+	weekendBonus?: boolean;
 }
 
 export interface WeekCompliance {

@@ -45,6 +45,7 @@ export function buildPolicyFromSettings(
 		rollingPeriodWeeks: settings.rollingWindowWeeks,
 		topWeeksToCheck: settings.bestWeeksCount,
 		roundPercentage: settings.roundPercentage,
+		weekendBonus: settings.weekendBonus,
 	};
 }
 
