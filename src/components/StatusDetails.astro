@@ -365,51 +365,37 @@ const config = validationManager?.getConfig?.() ?? {};
 		}
 	}
 
-	/* Window breakdown responsive grid: two-line layout for narrow containers */
+	/* Window breakdown flex layout: split into two lines before dots */
 	@media (max-width: 1400px) {
 		.status-details :global(.we-row) {
-			grid-template-columns: 2.5rem 1fr auto auto;
-			grid-template-rows: auto auto;
-			gap: 0.25rem;
+			display: flex;
+			flex-wrap: wrap;
+			align-items: center;
+			gap: 0.25rem 0.75rem;
 		}
 
 		.status-details :global(.we-row-index) {
-			grid-column: 1;
-			grid-row: 1;
+			/* inline with label on line 1 */
 		}
 
 		.status-details :global(.we-row-label) {
-			grid-column: 2;
-			grid-row: 1;
+			flex: 1 1 auto;
 			min-width: 0;
 		}
 
-		.status-details :global(.we-row-tag) {
-			grid-column: 3;
-			grid-row: 1;
-		}
-
-		.status-details :global(.we-row-avg) {
-			grid-column: 4;
-			grid-row: 1;
-		}
-
+		/* Force dots to new line; tag and avg follow naturally */
 		.status-details :global(.we-row-dots) {
-			grid-column: 1 / -1;
-			grid-row: 2;
+			flex-basis: 100%;
 			display: flex;
 			gap: 2px;
+			overflow: hidden;
 		}
 	}
 
-	/* Very small screens: hide window index, tighter spacing */
+	/* Very small screens: hide window index */
 	@media (max-width: 420px) {
 		.status-details :global(.we-row-index) {
 			display: none;
-		}
-
-		.status-details :global(.we-row-avg) {
-			min-width: 24px;
 		}
 	}
 </style>
