@@ -1,4 +1,5 @@
 # RTO Calculator
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/bfcarpio/rto-calculator)
 
 A static Astro website that calculates Return-to-Office (RTO) compliance using an interactive calendar. All validation runs client-side in the browser.
 
